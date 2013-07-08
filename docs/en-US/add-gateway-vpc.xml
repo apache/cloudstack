@@ -144,10 +144,11 @@
   <section id="acl-private-gateway">
     <title>ACL on Private Gateway</title>
     <para>The traffic on the VPC private gateway is controlled by creating both ingress and egress
-      network ACL rules. The ACLs contains both allow and deny rules. As per the rule, all the
-      ingress traffic to the private gateway interface and all the egress traffic out from the
-      private gateway interface are blocked. You can change this default behaviour while creating a
-      private gateway.</para>
+      network ACL rules. The ACLs contains both allow and deny rules. In addition to the default ACL
+      rules, rules you might have created are also listed in the ACL drop-down list. As per the
+      rule, all the ingress traffic to the private gateway interface and all the egress traffic out
+      from the private gateway interface are blocked. You can change this default behaviour while
+      creating a private gateway.</para>
   </section>
   <section id="static-route">
     <title>Creating a Static Route</title>

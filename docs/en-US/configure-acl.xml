@@ -25,119 +25,197 @@
     default, all incoming and outgoing traffic to the guest networks is blocked. To open the ports,
     you must create a new network ACL. The network ACLs can be created for the tiers only if the
     NetworkACL service is supported.</para>
-  <orderedlist>
-    <listitem>
-      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
-    </listitem>
-    <listitem>
-      <para>In the left navigation, choose Network.</para>
-    </listitem>
-    <listitem>
-      <para>In the Select view, select VPC.</para>
-      <para>All the VPCs that you have created for the account is listed in the page.</para>
-    </listitem>
-    <listitem>
-      <para>Click the Configure button of the VPC, for which you want to configure load balancing
-        rules.</para>
-      <para>For each tier, the following options are displayed:</para>
-      <itemizedlist>
-        <listitem>
-          <para>Internal LB</para>
-        </listitem>
-        <listitem>
-          <para>Public LB IP</para>
-        </listitem>
-        <listitem>
-          <para>Static NAT</para>
-        </listitem>
-        <listitem>
-          <para>Virtual Machines</para>
-        </listitem>
-        <listitem>
-          <para>CIDR</para>
-        </listitem>
-      </itemizedlist>
-      <para>The following router information is displayed:</para>
-      <itemizedlist>
-        <listitem>
-          <para>Private Gateways</para>
-        </listitem>
-        <listitem>
-          <para>Public IP Addresses</para>
-        </listitem>
-        <listitem>
-          <para>Site-to-Site VPNs</para>
-        </listitem>
-        <listitem>
-          <para>Network ACL Lists</para>
-        </listitem>
-      </itemizedlist>
-    </listitem>
-    <listitem>
-      <para>Select Network ACL Lists.</para>
-      <para>The following default rules are displayed in the Network ACLs page: default_allow,
-        default_deny.</para>
-    </listitem>
-    <listitem>
-      <para>Click Add ACL Lists, and specify the following:</para>
-      <itemizedlist>
-        <listitem>
-          <para><emphasis role="bold">ACL List Name</emphasis>: A name for the ACL list.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Description</emphasis>: A short description of the ACL list
-            that can be displayed to users.</para>
-        </listitem>
-      </itemizedlist>
-    </listitem>
-    <listitem>
-      <para>Select the ACL list.</para>
-    </listitem>
-    <listitem>
-      <para>Select the ACL List Rules tab.</para>
-      <para>To add an ACL rule, fill in the following fields to specify what kind of network traffic
-        is allowed in the VPC. </para>
-      <itemizedlist>
-        <listitem>
-          <para><emphasis role="bold">CIDR</emphasis>: The CIDR acts as the Source CIDR for the
-            Ingress rules, and Destination CIDR for the Egress rules. To accept traffic only from or
-            to the IP addresses within a particular address block, enter a CIDR or a comma-separated
-            list of CIDRs. The CIDR is the base IP address of the incoming traffic. For example,
-            192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Protocol</emphasis>: The networking protocol that sources use
-            to send traffic to the tier. The TCP and UDP protocols are typically used for data
-            exchange and end-user communications. The ICMP protocol is typically used to send error
-            messages or network monitoring data. All supports all the traffic. Other option is
-            Protocol Number.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Start Port</emphasis>, <emphasis role="bold">End
-              Port</emphasis> (TCP, UDP only): A range of listening ports that are the destination
-            for the incoming traffic. If you are opening a single port, use the same number in both
-            fields.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Protocol Number</emphasis>: The protocol number associated
-            with IPv4 or IPv6. For more information, see <ulink
-              url="http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml">Protocol
-              Numbers</ulink>.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">ICMP Type</emphasis>, <emphasis role="bold">ICMP
-              Code</emphasis> (ICMP only): The type of message and error code that will be
-            sent.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Action</emphasis>: What action to be taken. </para>
-        </listitem>
-      </itemizedlist>
-    </listitem>
-    <listitem>
-      <para>Click Add. The ACL rule is added.</para>
-      <para>You can edit the tags assigned to the ACL rules and delete the ACL rules you have
-        created. Click the appropriate button in the Details tab.</para>
-    </listitem>
-  </orderedlist>
+  <section id="acl-list">
+    <title>Creating ACL Lists</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, choose Network.</para>
+      </listitem>
+      <listitem>
+        <para>In the Select view, select VPC.</para>
+        <para>All the VPCs that you have created for the account is listed in the page.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Configure button of the VPC.</para>
+        <para>For each tier, the following options are displayed:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Internal LB</para>
+          </listitem>
+          <listitem>
+            <para>Public LB IP</para>
+          </listitem>
+          <listitem>
+            <para>Static NAT</para>
+          </listitem>
+          <listitem>
+            <para>Virtual Machines</para>
+          </listitem>
+          <listitem>
+            <para>CIDR</para>
+          </listitem>
+        </itemizedlist>
+        <para>The following router information is displayed:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Private Gateways</para>
+          </listitem>
+          <listitem>
+            <para>Public IP Addresses</para>
+          </listitem>
+          <listitem>
+            <para>Site-to-Site VPNs</para>
+          </listitem>
+          <listitem>
+            <para>Network ACL Lists</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>Select Network ACL Lists.</para>
+        <para>The following default rules are displayed in the Network ACLs page: default_allow,
+          default_deny.</para>
+      </listitem>
+      <listitem>
+        <para>Click Add ACL Lists, and specify the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">ACL List Name</emphasis>: A name for the ACL list.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Description</emphasis>: A short description of the ACL list
+              that can be displayed to users.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="add-acl-rule">
+    <title>Creating an ACL Rule</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, choose Network.</para>
+      </listitem>
+      <listitem>
+        <para>In the Select view, select VPC.</para>
+        <para>All the VPCs that you have created for the account is listed in the page.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Configure button of the VPC.</para>
+      </listitem>
+      <listitem>
+        <para>Select Network ACL Lists.</para>
+        <para>In addition to the custom ACL lists you have created, the following default rules are
+          displayed in the Network ACLs page: default_allow, default_deny.</para>
+      </listitem>
+      <listitem>
+        <para>Select the desired ACL list.</para>
+      </listitem>
+      <listitem>
+        <para>Select the ACL List Rules tab.</para>
+        <para>To add an ACL rule, fill in the following fields to specify what kind of network
+          traffic is allowed in the VPC. </para>
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">CIDR</emphasis>: The CIDR acts as the Source CIDR for the
+              Ingress rules, and Destination CIDR for the Egress rules. To accept traffic only from
+              or to the IP addresses within a particular address block, enter a CIDR or a
+              comma-separated list of CIDRs. The CIDR is the base IP address of the incoming
+              traffic. For example, 192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Protocol</emphasis>: The networking protocol that sources
+              use to send traffic to the tier. The TCP and UDP protocols are typically used for data
+              exchange and end-user communications. The ICMP protocol is typically used to send
+              error messages or network monitoring data. All supports all the traffic. Other option
+              is Protocol Number.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Start Port</emphasis>, <emphasis role="bold">End
+                Port</emphasis> (TCP, UDP only): A range of listening ports that are the destination
+              for the incoming traffic. If you are opening a single port, use the same number in
+              both fields.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Protocol Number</emphasis>: The protocol number associated
+              with IPv4 or IPv6. For more information, see <ulink
+                url="http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml">Protocol
+                Numbers</ulink>.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">ICMP Type</emphasis>, <emphasis role="bold">ICMP
+                Code</emphasis> (ICMP only): The type of message and error code that will be
+              sent.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Action</emphasis>: What action to be taken. </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>Click Add. The ACL rule is added.</para>
+        <para>You can edit the tags assigned to the ACL rules and delete the ACL rules you have
+          created. Click the appropriate button in the Details tab.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="create-acl-tier">
+    <title>Assigning a Custom ACL List to a Tier</title>
+    <orderedlist>
+      <listitem>
+        <para>Create a VPC.</para>
+      </listitem>
+      <listitem>
+        <para>Create a custom ACL list.</para>
+      </listitem>
+      <listitem>
+        <para>Add ACL rules to the ACL list.</para>
+      </listitem>
+      <listitem>
+        <para>Create a tier in the VPC.</para>
+        <para>Select the desired ACL list while creating a tier.</para>
+      </listitem>
+      <listitem><para>Click OK.</para></listitem>
+    </orderedlist>
+  </section>
+  <section id="assign-acl-tier">
+    <title>Assigning a Custom ACL List to a Tier</title>
+    <orderedlist>
+      <listitem>
+        <para>Create a VPC.</para>
+      </listitem>
+      <listitem>
+        <para>Create a tier in the VPC.</para>
+      </listitem>
+      <listitem>
+        <para>Associate the tier with the default ACL rule.</para>
+      </listitem>
+      <listitem>
+        <para>Create a custom ACL list.</para>
+      </listitem>
+      <listitem>
+        <para>Add ACL rules to the ACL list.</para>
+      </listitem>
+      <listitem>
+        <para>Select the tier for which you want to assign the custom ACL.</para>
+      </listitem>
+      <listitem><para>Click the Replace ACL List icon.<inlinemediaobject>
+        <imageobject>
+          <imagedata fileref="./images/replace-acl-icon.png"/>
+        </imageobject>
+        <textobject>
+              <phrase>replace-acl-icon.png: button to replace an ACL list</phrase>
+            </textobject>
+      </inlinemediaobject></para>
+      <para>The Replace ACL List dialog is displayed.</para></listitem>
+      <listitem><para>Select the desired ACL list.</para></listitem>
+      <listitem><para>Click OK.</para></listitem>
+    </orderedlist>
+  </section>
 </section>
