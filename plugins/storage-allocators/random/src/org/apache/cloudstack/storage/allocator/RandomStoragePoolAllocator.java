@@ -46,6 +46,11 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
+
+		if (clusterId == null) {
+			return null;
+		}
+
         s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         List<StoragePoolVO> pools = _storagePoolDao.listBy(dcId, podId, clusterId, ScopeType.CLUSTER);
         if (pools.size() == 0) {
