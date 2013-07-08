@@ -1971,35 +1971,37 @@
                   }
                 },
                  
-               replaceACL:{
-                  label:'Replace ACL',
-                  createForm:{
-                    title:'Replace ACL',
-                    label:'Replace ACL',
-                   fields:{
-                    aclid:{
-                 label:'ACL',
-                 select:function(args){
-                 $.ajax({
-                 url: createURL('listNetworkACLLists'),
-                 dataType: 'json',
-                 async: true,
-                 success: function(json) {
-                      var objs = json.listnetworkacllistsresponse.networkacllist;
-                      var items = [];
-                      $(objs).each(function() {
-
-                          items.push({id: this.id, description: this.name});
-                           });
-                     args.response.success({data: items});
-                       }
-                     });
+                replaceACL: {
+                  label: 'Replace ACL',
+                  createForm: {
+                    title: 'Replace ACL',
+                    label: 'Replace ACL',
+                    fields: {
+                      aclid: {
+                        label: 'ACL',
+                        select: function(args){
+                          $.ajax({
+                            url: createURL('listNetworkACLLists'),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var objs = json.listnetworkacllistsresponse.networkacllist;
+                              var items = [];
+                              
+                              $(objs).each(function() {
+                                items.push({
+                                  id: this.id, description: this.name
+                                });
+                              });
+                              args.response.success({data: items});
+                            }
+                          });
+                        }
+                      }
                     }
-                }
-              }
-             },
-           
-               action: function(args) {
+                  },
+                  
+                  action: function(args) {
                     $.ajax({
                       url: createURL("replaceNetworkACLList&gatewayid=" + args.context.vpcGateways[0].id + "&aclid=" + args.data.aclid ),
                       dataType: "json",
@@ -2007,31 +2009,31 @@
                         var jid = json.replacenetworkacllistresponse.jobid;
                         args.response.success(
 
-                          {_custom:
+                          {_custom: 
                            {
                              jobId: jid,
                              getUpdatedItem: function(json) {
                                var item = json.queryasyncjobresultresponse.jobresult.aclid;
-                               return {data:item};
+                               return {data: item};
                              }
                            }
                           }
 
-                       )
+                        )
                       },
 
-                      error:function(json){
+                      error: function(json){
 
-                         args.response.error(parseXMLHttpResponse(json));
-                     }
+                        args.response.error(parseXMLHttpResponse(json));
+                      }
                     });
                   },
 
-                   notification: {
-                  poll: pollAsyncJobResult
-                },
+                  notification: {
+                    poll: pollAsyncJobResult
+                  },
 
-                    messages: {
+                  messages: {
                     confirm: function(args) {
                       return 'Do you want to replace the ACL with a new one ?';
                     },
@@ -2039,7 +2041,7 @@
                       return 'ACL replaced';
                     }
                   }
-                 }
+                }
               },
               tabs: {
                 details: {
@@ -2874,74 +2876,73 @@
             }
           },
 
-          replaceacllist:{
-
-             label:'Replace ACL List',
-              createForm:{
-                    title:'Replace ACL List',
-                    label:'Replace ACL List',
-                   fields:{
-                    aclid:{
-                 label:'ACL',
-                 select:function(args){
-                 $.ajax({
-                 url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
-                 dataType: 'json',
-                 async: true,
-                 success: function(json) {
-                      var objs = json.listnetworkacllistsresponse.networkacllist;
-                      var items = [];
-                      $(objs).each(function() {
+          replaceacllist: {
+            label: 'Replace ACL List',
+            createForm: {
+              title: 'Replace ACL List',
+              label: 'Replace ACL List',
+              fields: {
+                aclid: {
+                  label: 'ACL',
+                  select: function(args){
+                    $.ajax({
+                      url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
+                      dataType: 'json',
+                      async: true,
+                      success: function(json) {
+                        var objs = json.listnetworkacllistsresponse.networkacllist;
+                        var items = [];
+                        $(objs).each(function() {
 
                           items.push({id: this.id, description: this.name});
-                           });
-                     args.response.success({data: items});
-                       }
-                     });
-                    }
+                        });
+                        args.response.success({data: items});
+                      }
+                    });
+                  }
                 }
               }
-             },
-              action: function(args) {
-                    $.ajax({
-                      url: createURL("replaceNetworkACLList&networkid=" + args.context.networks[0].id + "&aclid=" + args.data.aclid ),
-                      dataType: "json",
-                      success: function(json) {
-                        var jid = json.replacenetworkacllistresponse.jobid;
-                        args.response.success(
+            },
+            action: function(args) {
+              $.ajax({
+                url: createURL("replaceNetworkACLList&networkid=" + args.context.networks[0].id + "&aclid=" + args.data.aclid ),
+                dataType: "json",
+                success: function(json) {
+                  var jid = json.replacenetworkacllistresponse.jobid;
+                  args.response.success(
 
-                          {_custom:
-                           {
-                             jobId: jid,
-                             getUpdatedItem: function(json) {
-                               var item = json.queryasyncjobresultresponse.jobresult.aclid;
-                               return {data:item};
-                             }
-                           }
-                          }
-
-                       )
-                      },
-
-                      error:function(json){
-
-                         args.response.error(parseXMLHttpResponse(json));
+                    {_custom: 
+                     {
+                       jobId: jid,
+                       getUpdatedItem: function(json) {
+                         var item = json.queryasyncjobresultresponse.jobresult.aclid;
+                         return {data: item};
+                       }
                      }
-                    });
-                  },
-                  notification: {
-                  poll: pollAsyncJobResult
+                    }
+
+                  )
                 },
 
-                    messages: {
-                    confirm: function(args) {
-                      return 'Do you want to replace the ACL with a new one ?';
-                    },
-                    notification: function(args) {
-                      return 'ACL replaced';
-                    }
-                  }
-             } 
+                error: function(json){
+
+                  args.response.error(parseXMLHttpResponse(json));
+                }
+              });
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            },
+
+            messages: {
+              confirm: function(args) {
+                return 'Do you want to replace the ACL with a new one ?';
+              },
+              notification: function(args) {
+                return 'ACL replaced';
+              }
+            }
+          }
         },
 
         tabFilter: function(args) {
