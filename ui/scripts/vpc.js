@@ -1115,7 +1115,7 @@
                       data: items,
                       actionFilter: function(args) {
                         var allowedActions = [];
-                        if(isAdmin()) {
+                        if(isAdmin() && items.vpcid) {
                           allowedActions.push("remove");
 
                         }
