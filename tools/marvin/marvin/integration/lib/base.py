@@ -2970,10 +2970,10 @@ class AffinityGroup:
         cmd.name = aff_grp['name']
         cmd.displayText = aff_grp['name']
         cmd.type = aff_grp['type']
-        #if account is not None:
-        #    cmd.account = account
-        #if domainid is not None:
-        #    cmd.domainid = domainid
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
         return AffinityGroup(apiclient.createAffinityGroup(cmd).__dict__)
 
     def update(self, apiclient):

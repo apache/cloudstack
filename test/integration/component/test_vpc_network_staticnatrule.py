@@ -37,7 +37,6 @@ from marvin.integration.lib.common import (get_domain,
                                                         get_zone,
                                                         get_template,
                                                         cleanup_resources,
-                                                        wait_for_cleanup,
                                                         list_routers)
 
 
@@ -248,9 +247,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self._cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                                            "network.gc.interval",
-                                                            "network.gc.wait"])
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -336,9 +332,9 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         try:
                 urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
                 if not testnegative:
-                    self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                    self.debug("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
                 else:
-                    self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                    self.fail("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
         except:
                 if not testnegative:
                     self.fail("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
