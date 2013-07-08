@@ -145,6 +145,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     protected List<StoragePool> reOrder(List<StoragePool> pools,
             VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan) {
+        if (pools == null) {
+            return null;
+        }
         Account account = null;
         if (vmProfile.getVirtualMachine() != null) {
             account = vmProfile.getOwner();
