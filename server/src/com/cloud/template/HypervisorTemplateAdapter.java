@@ -246,6 +246,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     TemplateApiResult result = future.get();
                     success = result.isSuccess();
                     if (!success) {
+                        s_logger.warn("Failed to delete the template " + template + 
+                                " from the image store: " + imageStore.getName() + " due to: " + result.getResult());
                         break;
                     }
 
