@@ -972,4 +972,17 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         return false;
     }
+
+    public LicenseAssignmentManagerMO getLicenseAssignmentManager() throws Exception {
+        ManagedObjectReference licenseMgr;
+        ManagedObjectReference licenseAssignmentManager;
+        LicenseManagerMO licenseMgrMo;
+
+        licenseMgr = _context.getServiceContent().getLicenseManager();
+        licenseMgrMo = new LicenseManagerMO(_context, licenseMgr);
+        licenseAssignmentManager = licenseMgrMo.getLicenseAssignmentManager();
+
+        return new LicenseAssignmentManagerMO(_context, licenseAssignmentManager);
+    }
+
 }
