@@ -1143,7 +1143,9 @@
                       $.ajax({
                         url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
                         success:function(json){
-                          var items = json.listnetworkaclsresponse.networkacl;
+                          var items = json.listnetworkaclsresponse.networkacl.sort(function(a, b) {
+                            return a.number >= b.number;
+                          });
 
                           args.response.success({
                             data:items
