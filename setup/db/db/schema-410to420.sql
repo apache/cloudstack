@@ -2153,6 +2153,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'execute.in.sequence.network.element.commands', 'false', 'If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.');
 
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `dynamically_scalable` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory';
+UPDATE `cloud`.`vm_template` SET dynamically_scalable = 1 WHERE name = "CentOS 5.6(64-bit) no GUI (XenServer)" AND type = "BUILTIN";
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'external.baremetal.system.url', null, 'url of external baremetal system that CloudStack will talk to');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'external.baremetal.resource.classname', null, 'class name for handling external baremetal resource');
