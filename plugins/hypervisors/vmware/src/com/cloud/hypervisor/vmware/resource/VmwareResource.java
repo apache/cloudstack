@@ -31,25 +31,77 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
+import com.google.gson.Gson;
+import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.DatastoreSummary;
+import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.GuestOsDescriptor;
+import com.vmware.vim25.HostCapability;
+import com.vmware.vim25.HostFirewallInfo;
+import com.vmware.vim25.HostFirewallRuleset;
+import com.vmware.vim25.HostHostBusAdapter;
+import com.vmware.vim25.HostInternetScsiHba;
+import com.vmware.vim25.HostInternetScsiHbaAuthenticationProperties;
+import com.vmware.vim25.HostInternetScsiHbaStaticTarget;
+import com.vmware.vim25.HostInternetScsiTargetTransport;
+import com.vmware.vim25.HostScsiDisk;
+import com.vmware.vim25.HostScsiTopology;
+import com.vmware.vim25.HostScsiTopologyInterface;
+import com.vmware.vim25.HostScsiTopologyLun;
+import com.vmware.vim25.HostScsiTopologyTarget;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
+import com.vmware.vim25.PerfCounterInfo;
+import com.vmware.vim25.PerfEntityMetric;
+import com.vmware.vim25.PerfEntityMetricBase;
+import com.vmware.vim25.PerfMetricId;
+import com.vmware.vim25.PerfMetricIntSeries;
+import com.vmware.vim25.PerfMetricSeries;
+import com.vmware.vim25.PerfQuerySpec;
+import com.vmware.vim25.PerfSampleInfo;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.ToolsUnavailableFaultMsg;
+import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualMachinePowerState;
+import com.vmware.vim25.VirtualMachineRelocateSpec;
+import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
+import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import com.vmware.vim25.VirtualSCSISharing;
 
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -82,9 +134,6 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
-import com.cloud.agent.api.MigrateWithStorageAnswer;
-import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -102,6 +151,8 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateWithStorageAnswer;
+import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
@@ -139,6 +190,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
@@ -175,16 +227,16 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.CreateAnswer;
+import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
 import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -215,13 +267,13 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
+import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
-import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
@@ -267,57 +319,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
-import com.google.gson.Gson;
-import com.vmware.vim25.AboutInfo;
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ComputeResourceSummary;
-import com.vmware.vim25.DatastoreSummary;
-import com.vmware.vim25.DynamicProperty;
-import com.vmware.vim25.GuestInfo;
-import com.vmware.vim25.GuestOsDescriptor;
-import com.vmware.vim25.HostCapability;
-import com.vmware.vim25.HostFirewallInfo;
-import com.vmware.vim25.HostFirewallRuleset;
-import com.vmware.vim25.HostHostBusAdapter;
-import com.vmware.vim25.HostInternetScsiTargetTransport;
-import com.vmware.vim25.HostScsiTopology;
-import com.vmware.vim25.HostInternetScsiHba;
-import com.vmware.vim25.HostInternetScsiHbaAuthenticationProperties;
-import com.vmware.vim25.HostInternetScsiHbaStaticTarget;
-import com.vmware.vim25.HostScsiDisk;
-import com.vmware.vim25.HostScsiTopologyInterface;
-import com.vmware.vim25.HostScsiTopologyLun;
-import com.vmware.vim25.HostScsiTopologyTarget;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.ObjectContent;
-import com.vmware.vim25.OptionValue;
-import com.vmware.vim25.PerfCounterInfo;
-import com.vmware.vim25.PerfEntityMetric;
-import com.vmware.vim25.PerfEntityMetricBase;
-import com.vmware.vim25.PerfMetricId;
-import com.vmware.vim25.PerfMetricIntSeries;
-import com.vmware.vim25.PerfMetricSeries;
-import com.vmware.vim25.PerfQuerySpec;
-import com.vmware.vim25.PerfSampleInfo;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.ToolsUnavailableFaultMsg;
-import com.vmware.vim25.VimPortType;
-import com.vmware.vim25.VirtualDevice;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
-import com.vmware.vim25.VirtualDisk;
-import com.vmware.vim25.VirtualEthernetCard;
-import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
-import com.vmware.vim25.VirtualLsiLogicController;
-import com.vmware.vim25.VirtualMachineConfigOption;
-import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.VirtualMachineFileInfo;
-import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
-import com.vmware.vim25.VirtualMachinePowerState;
-import com.vmware.vim25.VirtualMachineRelocateSpec;
-import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
-import com.vmware.vim25.VirtualMachineRuntimeInfo;
-import com.vmware.vim25.VirtualSCSISharing;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -2431,9 +2432,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             int ramMb = (int) (vmSpec.getMinRam()/(1024 * 1024));
+            long hotaddIncrementSizeInMb;
+            long hotaddMemoryLimitInMb;
+            long requestedMaxMemoryInMb = vmSpec.getMaxRam() / (1024 * 1024);
+
+            // Check if VM is really running on hypervisor host
+            if (getVmState(vmMo) != State.Running) {
+                throw new CloudRuntimeException("Found that the VM " + vmMo.getVmName() + " is not running. Unable to scale-up this VM");
+            }
+
+            // Check max hot add limit
+            hotaddIncrementSizeInMb = vmMo.getHotAddMemoryIncrementSizeInMb();
+            hotaddMemoryLimitInMb = vmMo.getHotAddMemoryLimitInMb();
+            if (requestedMaxMemoryInMb > hotaddMemoryLimitInMb) {
+                throw new CloudRuntimeException("Memory of VM " + vmMo.getVmName() + " cannot be scaled to " + requestedMaxMemoryInMb + "MB." +
+                        " Requested memory limit is beyond the hotadd memory limit for this VM at the moment is " + hotaddMemoryLimitInMb + "MB.");
+            }
+
+            // Check increment is multiple of increment size
+            long reminder = requestedMaxMemoryInMb % hotaddIncrementSizeInMb;
+            if (reminder != 0) {
+                requestedMaxMemoryInMb = requestedMaxMemoryInMb + hotaddIncrementSizeInMb - reminder;
+            }
+
             // Check if license supports the feature
             VmwareHelper.isFeatureLicensed(hyperHost, FeatureKeyConstants.HOTPLUG);
-            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024 * 1024)), ramMb, vmSpec.getLimitCpuUse());
+            VmwareHelper
+                    .setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(), (int)requestedMaxMemoryInMb, ramMb, vmSpec.getLimitCpuUse());
 
             if(!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");
@@ -3012,7 +3037,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 svlanId = getPvlanInfo(nicTo);
             }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, vlanId, svlanId,
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, 
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType,
                     _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType());
         }
 
@@ -4081,6 +4106,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     final HostStorageSystemMO hss = hostStorageSystem;
 
                     threads.add(new Thread() {
+                        @Override
                         public void run() {
                             try {
                                 hss.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
@@ -4188,6 +4214,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     final String iScsiHbaDevice = hba.getDevice();
 
                     Thread thread = new Thread() {
+                        @Override
                         public void run() {
                             try {
                                 hostStorageSystem.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
