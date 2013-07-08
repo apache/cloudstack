@@ -48,8 +48,8 @@
                     args.response.success();
                   },
                   error: function(errorMsg) {
-                    clearInterval(pollTimer);                      
-                    args.response.error(parseXMLHttpResponse(errorMsg));
+                    clearInterval(pollTimer);
+                    args.response.error(errorMsg);
                   }
                 });
               }, 1000);               
