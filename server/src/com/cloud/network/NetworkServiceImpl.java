@@ -1419,7 +1419,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
-        if (!_accountMgr.isAdmin(caller.getType()) || (!listAll && (projectId != null && projectId.longValue() != -1 && domainId == null))) {
+        if (!_accountMgr.isAdmin(caller.getType()) || (projectId != null && projectId.longValue() != -1 && domainId == null)) {
             permittedAccounts.add(caller.getId());
             domainId = caller.getDomainId();
         }
@@ -1443,7 +1443,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     ex.addProxyObject(project.getUuid(), "projectId");
                     throw ex;
                 }
+                
+                //add project account
                 permittedAccounts.add(project.getProjectAccountId());
+                //add caller account (if admin)
+                if (_accountMgr.isAdmin(caller.getType())) {
+                    permittedAccounts.add(caller.getId());
+                }
             }
             skipProjectNetworks = false;
         }
