@@ -97,7 +97,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	public
     List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
     	List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
-    	return reOrder(pools, vmProfile, plan);
+        return reOrder(pools, vmProfile, plan);
     }
     
     protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools, Account account) {
@@ -133,6 +133,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     protected List<StoragePool> reOrder(List<StoragePool> pools, 
     		VirtualMachineProfile<? extends VirtualMachine> vmProfile,
     		DeploymentPlan plan) {
+        if (pools == null) {
+            return null;
+        }
     	Account account = null;
     	if(vmProfile.getVirtualMachine() != null){
     		account = vmProfile.getOwner();

@@ -95,6 +95,9 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
             }
         } else {
+            if (plan.getClusterId() == null) {
+                return null;
+            }
         	List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
         	for (StoragePoolVO pool : availablePools) {
         		if (suitablePools.size() == returnUpTo) {
