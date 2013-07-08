@@ -8975,6 +8975,10 @@
 
                      }
                     }
+                  else {
+                      args.response.success({data: item});
+                    }
+
                  },
                  error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -11027,6 +11031,10 @@
                       });
                     }
                   }
+                  else {
+                      args.response.success({data: item});
+                    }
+
                   },
 
                    error: function(XMLHttpResponse) {
