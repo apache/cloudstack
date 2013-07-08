@@ -89,6 +89,7 @@
           complete: function($panel) {
             var $detailView = $('<div>').detailView(
               $.extend(true, {}, cloudStack.vpc.tiers.detailView, {
+                section: 'networks',
                 $browser: $browser,
                 context: context,
                 onActionComplete: function() {

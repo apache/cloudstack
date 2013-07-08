@@ -2892,9 +2892,15 @@
                       success: function(json) {
                         var objs = json.listnetworkacllistsresponse.networkacllist;
                         var items = [];
+                        
                         $(objs).each(function() {
-
+                          if (this.id == args.context.networks[0].aclid) {
+                            return true;
+                          }
+                          
                           items.push({id: this.id, description: this.name});
+
+                          return true;
                         });
                         args.response.success({data: items});
                       }
@@ -2905,23 +2911,23 @@
             },
             action: function(args) {
               $.ajax({
-                url: createURL("replaceNetworkACLList&networkid=" + args.context.networks[0].id + "&aclid=" + args.data.aclid ),
+                url: createURL("replaceNetworkACLList&networkid=" + args.context.networks[0].id + "&aclid=" + args.data.aclid),
                 dataType: "json",
                 success: function(json) {
                   var jid = json.replacenetworkacllistresponse.jobid;
-                  args.response.success(
+                  
+                  args.response.success({
+                    _custom: {
+                      jobId: jid,
+                      getUpdatedItem: function(json) {
+                        var network = args.context.networks[0];
 
-                    {_custom: 
-                     {
-                       jobId: jid,
-                       getUpdatedItem: function(json) {
-                         var item = json.queryasyncjobresultresponse.jobresult.aclid;
-                         return {data: item};
-                       }
-                     }
+                        network.aclid = args.data.aclid;
+                        
+                        return { aclid: args.data.aclid };
+                      }
                     }
-
-                  )
+                  });
                 },
 
                 error: function(json){
