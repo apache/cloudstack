@@ -586,7 +586,7 @@
                     return 'Downloading template';
                   },
                   complete: function(args) {
-                    var url = decodeURIComponent(args.url);
+                    var url = args.url;
                     var htmlMsg = _l('message.download.template');
                     var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                     return htmlMsg2;
@@ -1235,7 +1235,7 @@
                     return 'label.action.download.ISO';
                   },
                   complete: function(args) {
-                    var url = decodeURIComponent(args.url);
+                    var url = args.url;
                     var htmlMsg = _l('message.download.ISO');
                     var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                     return htmlMsg2;
