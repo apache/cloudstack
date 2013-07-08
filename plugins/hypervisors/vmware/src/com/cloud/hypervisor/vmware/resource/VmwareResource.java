@@ -214,6 +214,7 @@ import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
@@ -2430,7 +2431,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             int ramMb = (int) (vmSpec.getMinRam()/(1024 * 1024));
-
+            // Check if license supports the feature
+            VmwareHelper.isFeatureLicensed(hyperHost, FeatureKeyConstants.HOTPLUG);
             VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024 * 1024)), ramMb, vmSpec.getLimitCpuUse());
 
             if(!vmMo.configureVm(vmConfigSpec)) {

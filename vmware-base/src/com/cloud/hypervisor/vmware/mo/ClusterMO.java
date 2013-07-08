@@ -23,8 +23,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfHostIpRouteEntry;
 import com.vmware.vim25.ClusterComputeResourceSummary;
@@ -48,6 +46,10 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -575,5 +577,11 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
     	return portInfo;
 	}
+
+    @Override
+    public LicenseAssignmentManagerMO getLicenseAssignmentManager() throws Exception {
+        // LicenseAssignmentManager deals with only host/vcenter licenses only. Has nothing todo with cluster
+        throw new CloudRuntimeException("Unable to get LicenseAssignmentManager at cluster level");
+    }
 }
 
