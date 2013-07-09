@@ -29,6 +29,8 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.api.commands.SimulatorAddSecondaryAgent;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.resource.*;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockHostVO;
@@ -81,6 +83,8 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     ResourceManager _resourceMgr;
     @Inject
     SimulatorSecondaryDiscoverer discoverer;
+    @Inject
+    HostDao hostDao;
     private SecureRandom random;
     private final Map<String, AgentResourceBase> _resources = new ConcurrentHashMap<String, AgentResourceBase>();
     private ThreadPoolExecutor _executor;
@@ -250,10 +254,8 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             this.mode = "Stop";
         }
 
-        @Override
-        @DB
-        public void run() {
 
+        private void handleSystemVMStop() {
             Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
             try {
                 if (this.mode.equalsIgnoreCase("Stop")) {
@@ -279,6 +281,25 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                 txn.close();
                 txn = Transaction.open(Transaction.CLOUD_DB);
                 txn.close();
+            }
+
+            //stop ssvm agent
+            HostVO host = hostDao.findByGuid(this.guid);
+            if (host != null) {
+                try {
+                    _resourceMgr.deleteHost(host.getId(), true, true);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to delete host: ", e);
+                }
+            }
+        }
+
+        @Override
+        @DB
+        public void run() {
+            if (this.mode.equalsIgnoreCase("Stop")) {
+                handleSystemVMStop();
+                return;
             }
 
             String resource = null;

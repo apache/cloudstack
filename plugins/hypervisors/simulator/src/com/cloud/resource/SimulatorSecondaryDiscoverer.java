@@ -25,6 +25,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
@@ -54,6 +58,8 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     @Inject AgentManager _agentMgr;
     @Inject ResourceManager _resourceMgr;
     @Inject SnapshotDao _snapshotDao;
+    @Inject
+    ImageStoreDao imageStoreDao;
     protected SecondaryStorageResource resource;
 
     public void setResource(SecondaryStorageResource resource) {
@@ -73,6 +79,10 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
             s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
+        List<ImageStoreVO> stores = imageStoreDao.listImageStores();
+        for (ImageStoreVO store : stores) {
+            _mockStorageMgr.preinstallTemplates(store.getUrl(), dcId);
+        }
         Map<SecondaryStorageResource, Map<String, String>> resources = new HashMap<SecondaryStorageResource, Map<String, String>>();
         resources.put(this.resource, new HashMap<String, String>());
         return resources;
@@ -81,12 +91,7 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
 
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId) {
-        for (HostVO host: hosts) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Preinstalling simulator templates");
-            }
-            _mockStorageMgr.preinstallTemplates(host.getStorageUrl(), host.getDataCenterId());
-        }
+
     }
 
     @Override
