@@ -247,13 +247,6 @@
   <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
-  <bean id="mockConfigurationDaoImpl" class="com.cloud.simulator.dao.MockConfigurationDaoImpl" />
-  <bean id="mockHostDaoImpl" class="com.cloud.simulator.dao.MockHostDaoImpl" />
-  <bean id="mockSecStorageDaoImpl" class="com.cloud.simulator.dao.MockSecStorageDaoImpl" />
-  <bean id="mockSecurityRulesDaoImpl" class="com.cloud.simulator.dao.MockSecurityRulesDaoImpl" />
-  <bean id="mockStoragePoolDaoImpl" class="com.cloud.simulator.dao.MockStoragePoolDaoImpl" />
-  <bean id="mockVMDaoImpl" class="com.cloud.simulator.dao.MockVMDaoImpl" />
-  <bean id="mockVolumeDaoImpl" class="com.cloud.simulator.dao.MockVolumeDaoImpl" />
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
   <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
   <bean id="networkACLItemDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemDaoImpl" />
@@ -857,18 +850,11 @@
   <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
   <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
   <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />
-  <bean id="mockAgentManagerImpl" class="com.cloud.agent.manager.MockAgentManagerImpl" />
 
   <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
   <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
   <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl" />
 
-  <!--Simulator Components-->
-  <!--<bean id="simulatorImageStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl" />-->
-  <bean id="mockStorageManagerImpl" class="com.cloud.agent.manager.MockStorageManagerImpl" />
-  <bean id="mockVmManagerImpl" class="com.cloud.agent.manager.MockVmManagerImpl" />
-  <bean id="mockNetworkManagerImpl" class="com.cloud.agent.manager.MockNetworkManagerImpl" />
-  <bean id="simulatorManagerImpl" class="com.cloud.agent.manager.SimulatorManagerImpl" />
   <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
 
 

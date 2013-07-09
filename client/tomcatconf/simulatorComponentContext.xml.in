@@ -35,6 +35,18 @@
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="Simulator Guru"/>
   </bean>
+  <bean id="mockConfigurationDaoImpl" class="com.cloud.simulator.dao.MockConfigurationDaoImpl" />
+  <bean id="mockHostDaoImpl" class="com.cloud.simulator.dao.MockHostDaoImpl" />
+  <bean id="mockSecStorageDaoImpl" class="com.cloud.simulator.dao.MockSecStorageDaoImpl" />
+  <bean id="mockSecurityRulesDaoImpl" class="com.cloud.simulator.dao.MockSecurityRulesDaoImpl" />
+  <bean id="mockStoragePoolDaoImpl" class="com.cloud.simulator.dao.MockStoragePoolDaoImpl" />
+  <bean id="mockVMDaoImpl" class="com.cloud.simulator.dao.MockVMDaoImpl" />
+  <bean id="mockVolumeDaoImpl" class="com.cloud.simulator.dao.MockVolumeDaoImpl" />
+  <bean id="simulatorManagerImpl" class="com.cloud.agent.manager.SimulatorManagerImpl" />
+  <bean id="mockStorageManagerImpl" class="com.cloud.agent.manager.MockStorageManagerImpl" />
+  <bean id="mockVmManagerImpl" class="com.cloud.agent.manager.MockVmManagerImpl" />
+  <bean id="mockNetworkManagerImpl" class="com.cloud.agent.manager.MockNetworkManagerImpl" />
+  <bean id="mockAgentManagerImpl" class="com.cloud.agent.manager.MockAgentManagerImpl" />
 
   <bean id="SimulatorImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl"/>
