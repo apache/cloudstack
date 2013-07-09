@@ -343,7 +343,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         if ( _vpcRouterMgr.setupPrivateGateway(gateway, router) ) {
             try {
-                if (!applyACLItemsToPrivateGw(gateway)) {
+                List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
+                if (!applyACLItemsToPrivateGw(gateway, rules)) {
                     s_logger.debug ("Failed to apply network acl id  "+ gateway.getNetworkACLId() + "  on gateway ");
                     return  false;
                 }
@@ -446,9 +447,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean applyACLItemsToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException {
+    public boolean applyACLItemsToPrivateGw(PrivateGateway gateway,List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         VpcGatewayVO vpcGatewayVo = _vpcGatewayDao.findById(gateway.getId());
-        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(vpcGatewayVo.getNetworkACLId());
         Network config = _networkDao.findById(gateway.getNetworkId());
         boolean isPrivateGateway = true;
 
