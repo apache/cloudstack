@@ -399,8 +399,7 @@
 						g_timezone = null;
 						g_supportELB = null;						
 						g_loginCmdText = null;
-						window.name = '';
-						
+												
 						$.cookie('JSESSIONID', null);
 						$.cookie('sessionKey', null);
 						$.cookie('username', null);
@@ -476,8 +475,7 @@
       }
     };
 
-    if ($.urlParam('loginUrl') != 0
-		||(window.name != null && window.name.indexOf("&domain=") != -1)) {
+    if ($.urlParam('loginUrl') != 0) {
       // SSO
       loginArgs.hideLoginScreen = true;
     }

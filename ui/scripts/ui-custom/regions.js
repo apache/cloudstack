@@ -88,8 +88,7 @@
     var switchRegion = function(url) {
       closeRegionSelector({
         complete: function() {
-          $('#container').prepend($('<div>').addClass('loading-overlay'));
-          //window.name = g_loginCmdText;
+          $('#container').prepend($('<div>').addClass('loading-overlay'));          
           document.location.href = url;
         }
       });
