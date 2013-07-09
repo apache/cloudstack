@@ -249,6 +249,13 @@ listSwifts=1
 addS3=1
 listS3s=1
 
+#### image store commands
+addImageStore=1
+listImageStores=1
+deleteImageStore=1
+createCacheStore=1
+listCacheStores=1
+
 #### host commands
 addHost=3
 addCluster=1
@@ -265,6 +272,10 @@ addSecondaryStorage=1
 updateHostPassword=1
 releaseHostReservation=1
 
+#### VmWare DC
+addVmwareDc=1
+removeVmwareDc=1
+
 #### volume commands
 attachVolume=15
 uploadVolume=15
@@ -276,10 +287,6 @@ extractVolume=15
 migrateVolume=15
 resizeVolume=15
 updateVolume=1
-addVolumeDetail=1
-updateVolumeDetail=1
-removeVolumeDetail=1
-listVolumeDetails=1
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -350,10 +357,6 @@ updateNetwork=15
 addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
-addNicDetail=1
-updateNicDetail=1
-removeNicDetail=1
-listNicDetails=1
 
 ####
 addIpToNic=15
@@ -599,6 +602,17 @@ revertToVMSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+addBaremetalPxeKickStartServer=1
+addBaremetalPxePingServer=1
+addBaremetalDhcp=1
+listBaremetalDhcp=1
+listBaremetalPxePingServer=1
+
+#### UCS commands
+addUcsManager=1
+listUcsProfile=1
+listUcsBlade=1
+associatesUcsProfileToBlade=1
 
 #### New Load Balancer commands
 createLoadBalancer=15
@@ -628,6 +642,11 @@ addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
 
+#### portable public IP commands
+createPortableIpRange=1
+deletePortableIpRange=1
+listPortableIpRanges=1
+
 #### Internal LB VM commands
 stopInternalLoadBalancerVM=1
 startInternalLoadBalancerVM=1
@@ -635,3 +654,17 @@ listInternalLoadBalancerVMs=1
 
 ### Network Isolation methods listing
 listNetworkIsolationMethods=1
+
+#### Dedicated Resource commands
+dedicateZone=1
+dedicatePod=1
+dedicateCluster=1
+dedicateHost=1
+releaseDedicatedZone=1
+releaseDedicatedPod=1
+releaseDedicatedCluster=1
+releaseDedicatedHost=1
+listDedicatedZones=1
+listDedicatedPods=1
+listDedicatedClusters=1
+listDedicatedHosts=1

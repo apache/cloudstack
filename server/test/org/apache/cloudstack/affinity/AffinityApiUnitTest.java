@@ -17,6 +17,7 @@
 package org.apache.cloudstack.affinity;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -51,6 +52,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -64,6 +66,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
@@ -101,6 +105,10 @@ public class AffinityApiUnitTest {
 
     @Inject
     EventDao _eventDao;
+
+    @Inject
+    DedicatedResourceDao _dedicatedDao;
+
 
     private static long domainId = 5L;
 
@@ -172,20 +180,6 @@ public class AffinityApiUnitTest {
         _affinityService.deleteAffinityGroup(null, "user", domainId, null);
     }
 
-    @Test(expected = ResourceInUseException.class)
-    public void deleteAffinityGroupInUse() throws ResourceInUseException {
-        List<AffinityGroupVMMapVO> affinityGroupVmMap = new ArrayList<AffinityGroupVMMapVO>();
-        AffinityGroupVMMapVO mapVO = new AffinityGroupVMMapVO(20L, 10L);
-        affinityGroupVmMap.add(mapVO);
-        when(_affinityGroupVMMapDao.listByAffinityGroup(20L)).thenReturn(affinityGroupVmMap);
-
-        AffinityGroupVO groupVO = new AffinityGroupVO();
-        when(_groupDao.findById(20L)).thenReturn(groupVO);
-        when(_groupDao.lockRow(20L, true)).thenReturn(groupVO);
-
-        _affinityService.deleteAffinityGroup(20L, "user", domainId, null);
-    }
-
     @Test(expected = InvalidParameterValueException.class)
     public void updateAffinityGroupVMRunning() throws ResourceInUseException {
 
@@ -227,6 +221,11 @@ public class AffinityApiUnitTest {
         @Bean
         public AffinityGroupVMMapDao affinityGroupVMMapDao() {
             return Mockito.mock(AffinityGroupVMMapDao.class);
+        }
+
+        @Bean
+        public DedicatedResourceDao dedicatedResourceDao() {
+            return Mockito.mock(DedicatedResourceDao.class);
         }
 
         @Bean

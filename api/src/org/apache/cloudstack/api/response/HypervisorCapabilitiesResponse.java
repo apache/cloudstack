@@ -42,6 +42,14 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is supported")
     private boolean isSecurityGroupEnabled;
 
+    @SerializedName(ApiConstants.MAX_DATA_VOLUMES_LIMIT) @Param(description="the maximum number of Data Volumes that can be attached for this hypervisor")
+    private Integer maxDataVolumesLimit;
+
+    @SerializedName(ApiConstants.MAX_HOSTS_PER_CLUSTER) @Param(description="the maximum number of Hosts per cluster for this hypervisor")
+    private Integer maxHostsPerCluster;
+
+    @SerializedName(ApiConstants.STORAGE_MOTION_ENABLED) @Param(description="true if storage motion is supported")
+    private boolean isStorageMotionSupported;
 
     public String getId() {
         return id;
@@ -82,5 +90,29 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
 
     public void setIsSecurityGroupEnabled(Boolean sgEnabled) {
         this.isSecurityGroupEnabled = sgEnabled;
+    }
+
+    public Boolean getIsStorageMotionSupported() {
+        return this.isStorageMotionSupported;
+    }
+
+    public void setIsStorageMotionSupported(Boolean smSupported) {
+        this.isStorageMotionSupported = smSupported;
+    }
+
+    public Integer getMaxDataVolumesLimit() {
+        return maxDataVolumesLimit;
+    }
+
+    public void setMaxDataVolumesLimit(Integer maxDataVolumesLimit) {
+        this.maxDataVolumesLimit = maxDataVolumesLimit;
+    }
+
+    public Integer getMaxHostsPerCluster() {
+        return maxHostsPerCluster;
+    }
+
+    public void setMaxHostsPerCluster(Integer maxHostsPerCluster) {
+        this.maxHostsPerCluster = maxHostsPerCluster;
     }
 }

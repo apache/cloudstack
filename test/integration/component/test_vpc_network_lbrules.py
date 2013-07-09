@@ -41,7 +41,6 @@ from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         cleanup_resources,
-                                        wait_for_cleanup,
                                         list_routers)
 
 class Services:
@@ -65,8 +64,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 1000,
-                                    "memory": 512,
+                                    "cpuspeed": 100,
+                                    "memory": 128,
                                     },
                         "network_offering": {
                                     "name": 'VPC Network offering',
@@ -87,8 +86,6 @@ class Services:
                                             "StaticNat": 'VpcVirtualRouter',
                                             "NetworkACL": 'VpcVirtualRouter'
                                         },
-                                    "servicecapabilitylist": {
-                                    },
                                 },
                         "network_offering_no_lb": {
                                     "name": 'VPC Network offering',
@@ -176,7 +173,6 @@ class Services:
                         "ostype": 'CentOS 5.3 (64-bit)',
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced'
                     }
 
 class TestVPCNetworkLBRules(cloudstackTestCase):
@@ -244,7 +240,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         vpcofferingid=self.vpc_off.id,
                         zoneid=self.zone.id,
                         account=self.account.name,
-                        domainid=self.account.account.domainid
+                        domainid=self.account.domainid
                         )
         return
 
@@ -252,10 +248,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self._cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                            "network.gc.interval",
-                                            "network.gc.wait"])
-
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -264,7 +256,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def get_Router_For_VPC(self):
         routers = list_routers(self.apiclient,
                             account=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             )
         self.assertEqual(isinstance(routers, list),
                         True,
@@ -287,7 +279,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
         routers = list_routers(self.apiclient,
                             account=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             )
         self.assertEqual(isinstance(routers, list),
                         True,
@@ -308,7 +300,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
         routers = list_routers(self.apiclient,
                             account=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             zoneid=self.zone.id
                             )
         self.assertEqual(isinstance(routers, list),
@@ -391,7 +383,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         public_ip = PublicIPAddress.create(self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=None, #network.id,
                                 vpcid=self.vpc.id
                                 )
@@ -408,7 +400,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     self.services["vpc_offering"]
                                     )
 
-        self._cleanup.append(self.vpc_off)
+        self._cleanup.append(vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
@@ -420,7 +412,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         vpcofferingid=vpc_off.id,
                         zoneid=self.zone.id,
                         account=self.account.name,
-                        domainid=self.account.account.domainid
+                        domainid=self.account.domainid
                         )
         return vpc
 
@@ -442,7 +434,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             obj_network = Network.create(self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkofferingid=nw_off.id,
                                     zoneid=self.zone.id,
                                     gateway=gateway,
@@ -460,7 +452,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     networkids=[str(network.id)],
                                     hostid=host_id
@@ -487,7 +479,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     accountid=self.account.name,
                                     networkid=network.id,
                                     vpcid=self.vpc.id,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                 )
         self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray))
         lb_rule.assign(self.apiclient, vmarray)
@@ -505,7 +497,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return nwacl_internet_1
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_01_VPC_LBRulesListing(self):
         """ Test case no 210 and 227: List Load Balancing Rules belonging to a VPC
         """
@@ -551,7 +542,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_02_VPC_LBRulesAndVMListing(self):
         """ Test case no 211 and 228: List only VMs suitable for the Virtual Network on VPC for LB Rule
         """
@@ -595,7 +585,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_03_VPC_CreateLBRuleInMultipleNetworks(self):
         """ Test case no 212 : Create LB rules for 1 network which is part of a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -623,7 +612,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a 
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
@@ -651,7 +639,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return    
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_05_VPC_CreateAndDeleteLBRule(self):
         """ Test case no 214 : Delete few(not all) LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -683,7 +670,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_06_VPC_CreateAndDeleteLBRuleVRStopppedState(self):
         """ Test case no 224 : Delete few(not all) LB rules for a single virtual network of 
             a VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
@@ -715,7 +701,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return    
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_07_VPC_CreateAndDeleteAllLBRule(self):
         """ Test case no 215 : Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -749,7 +734,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_08_VPC_CreateAndDeleteAllLBRuleVRStoppedState(self):
         """ Test case no 225 and 226 : Delete all LB rules for a single virtual network of a 
             VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
@@ -783,7 +767,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
     
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_09_VPC_LBRuleCreateFailMultipleVPC(self):
         """ Test case no 234 : User should not be allowed to create a LB rule for a VM that belongs to a different VPC.
         """
@@ -822,7 +805,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_10_VPC_FailedToCreateLBRuleNonVPCNetwork(self):
         """ Test case no 216 and 235: User should not be allowed to create a LB rule for a VM that does not belong to any VPC.
         """
@@ -860,7 +842,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_11_VPC_LBRuleCreateNotAllowed(self):
         """ Test case no 217 and 236: User should not be allowed to create a LB rule for a
             VM that does not belong to the same network but belongs to the same VPC.
@@ -899,7 +880,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_12_VPC_LBRuleCreateFailForRouterIP(self):
         """ Test case no 218 and 237: User should not be allowed to create a LB rule on an Ipaddress that Source Nat enabled.
         """
@@ -928,7 +908,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_13_VPC_LBRuleCreateFailForPFSourceNATIP(self):
         """ Test case no 219 : User should not be allowed to create a LB rule on an Ipaddress that already has a PF rule.
         """
@@ -959,7 +938,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_14_VPC_LBRuleCreateFailForStaticNatRule(self):
         """ Test case no 220 : User should not be allowed to create a LB rule on an Ipaddress that already has a Static Nat rule.
         """
@@ -990,7 +968,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_15_VPC_RleaseIPForLBRuleCreated(self):
         """ Test case no 221 : Release Ip address that has a LB rule assigned to it.
         """

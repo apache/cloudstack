@@ -28,7 +28,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -45,17 +44,15 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.simulator.MockHost;
@@ -74,14 +71,22 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
+
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import com.cloud.agent.api.to.NfsTO;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -111,6 +116,8 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
     MockVMDao _mockVMDao = null;
     @Inject
     MockHostDao _mockHostDao = null;
+    @Inject
+    VMTemplateDao templateDao;
 
     private MockVolumeVO findVolumeFromSecondary(String path, String ssUrl, MockVolumeType type) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
@@ -256,7 +263,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             }
             txn.commit();
 
-            return new AttachVolumeAnswer(cmd, cmd.getDeviceId());
+            return new AttachVolumeAnswer(cmd, cmd.getDeviceId(), cmd.getVolumePath());
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Error when attaching volume " + cmd.getVolumeName() + " to VM "
@@ -357,7 +364,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
-        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateInfo>());
+        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateProp>());
     }
 
     @Override
@@ -398,7 +405,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
-        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateInfo>());
+        return new ModifyStoragePoolAnswer(cmd, storagePool.getCapacity(), 0, new HashMap<String, TemplateProp>());
     }
 
     @Override
@@ -449,9 +456,9 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             List<MockVolumeVO> volumes = _mockVolumeDao.findByStorageIdAndType(storage.getId(),
                     MockVolumeType.VOLUME);
 
-            Map<Long, TemplateInfo> templateInfos = new HashMap<Long, TemplateInfo>();
+            Map<Long, TemplateProp> templateInfos = new HashMap<Long, TemplateProp>();
             for (MockVolumeVO volume : volumes) {
-                templateInfos.put(volume.getId(), new TemplateInfo(volume.getName(), volume.getPath()
+                templateInfos.put(volume.getId(), new TemplateProp(volume.getName(), volume.getPath()
                         .replaceAll(storage.getMountPoint(), ""), volume.getSize(), volume.getSize(), true, false));
             }
             txn.commit();
@@ -468,37 +475,27 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public Answer ListTemplates(ListTemplateCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-        MockSecStorageVO storage = null;
-        try {
-            txn.start();
-            storage = _mockSecStorageDao.findByUrl(cmd.getSecUrl());
-            if (storage == null) {
-                return new Answer(cmd, false, "Failed to get secondary storage");
-            }
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("Error when finding sec storage " + cmd.getSecUrl(), ex);
-        } finally {
-            txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
+        DataStoreTO store = cmd.getDataStore();
+        if ( !(store instanceof NfsTO )){
+            return new Answer(cmd, false, "Unsupported image data store: " + store);
         }
 
-        txn = Transaction.open(Transaction.SIMULATOR_DB);
+        MockSecStorageVO storage = null;
+        String nfsUrl = ((NfsTO) store).getUrl();
+
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        storage = _mockSecStorageDao.findByUrl(nfsUrl);
         try {
             txn.start();
             List<MockVolumeVO> templates = _mockVolumeDao.findByStorageIdAndType(storage.getId(),
                     MockVolumeType.TEMPLATE);
 
-            Map<String, TemplateInfo> templateInfos = new HashMap<String, TemplateInfo>();
+            Map<String, TemplateProp> templateInfos = new HashMap<String, TemplateProp>();
             for (MockVolumeVO template : templates) {
-                templateInfos.put(template.getName(), new TemplateInfo(template.getName(), template.getPath()
+                templateInfos.put(template.getName(), new TemplateProp(template.getName(), template.getPath()
                         .replaceAll(storage.getMountPoint(), ""), template.getSize(), template.getSize(), true, false));
             }
-            txn.commit();
-            return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+            return new ListTemplateAnswer(nfsUrl, templateInfos);
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Error when finding template on sec storage " + storage.getId(), ex);
@@ -775,28 +772,6 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
     }
 
     @Override
-    public Answer DeleteSnapshotBackup(DeleteSnapshotBackupCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-        try {
-            txn.start();
-            MockVolumeVO backSnapshot = _mockVolumeDao.findByName(cmd.getSnapshotUuid());
-            if (backSnapshot == null) {
-                return new Answer(cmd, false, "can't find the backupsnapshot: " + cmd.getSnapshotUuid());
-            }
-            _mockVolumeDao.remove(backSnapshot.getId());
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("Error when deleting snapshot");
-        } finally {
-            txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-        }
-        return new Answer(cmd);
-    }
-
-    @Override
     public CreateVolumeFromSnapshotAnswer CreateVolumeFromSnapshot(CreateVolumeFromSnapshotCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         MockVolumeVO backSnapshot = null;
@@ -850,20 +825,21 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         return new CreateVolumeFromSnapshotAnswer(cmd, true, null, volume.getPath());
     }
 
+
     @Override
-    public Answer DeleteTemplate(DeleteTemplateCommand cmd) {
+    public Answer Delete(DeleteCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();
-            MockVolumeVO template = _mockVolumeDao.findByStoragePathAndType(cmd.getTemplatePath());
+            MockVolumeVO template = _mockVolumeDao.findByStoragePathAndType(cmd.getData().getPath());
             if (template == null) {
-                return new Answer(cmd, false, "can't find template:" + cmd.getTemplatePath());
+                return new Answer(cmd, false, "can't find object to delete:" + cmd.getData().getPath());
             }
             _mockVolumeDao.remove(template.getId());
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when deleting template");
+            throw new CloudRuntimeException("Error when deleting object");
         } finally {
             txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
@@ -872,6 +848,9 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         return new Answer(cmd);
     }
 
+
+
+
     @Override
     public Answer SecStorageVMSetup(SecStorageVMSetupCommand cmd) {
         return new Answer(cmd);
@@ -879,19 +858,16 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        // TODO Auto-generated method stub
         return true;
     }
 
     @Override
     public boolean start() {
-        // TODO Auto-generated method stub
         return true;
     }
 
     @Override
     public boolean stop() {
-        // TODO Auto-generated method stub
         return true;
     }
 
@@ -902,97 +878,64 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public void preinstallTemplates(String url, long zoneId) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         MockSecStorageVO storage = null;
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();
             storage = _mockSecStorageDao.findByUrl(url);
-            txn.commit();
+
+            if (storage == null) {
+                storage = new MockSecStorageVO();
+                URI uri;
+                try {
+                    uri = new URI(url);
+                } catch (URISyntaxException e) {
+                    return;
+                }
+
+                String nfsHost = uri.getHost();
+                String nfsPath = uri.getPath();
+                String path = nfsHost + ":" + nfsPath;
+                String dir = "/mnt/" + UUID.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
+
+                storage.setUrl(url);
+                storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
+
+                storage.setMountPoint(dir);
+
+
+                storage = _mockSecStorageDao.persist(storage);
+
+                // preinstall default templates into secondary storage
+                long defaultTemplateSize = 2 * 1024 * 1024 * 1024L;
+                MockVolumeVO template = new MockVolumeVO();
+                template.setName("simulator-domR");
+                template.setPath(storage.getMountPoint() + "template/tmpl/1/100/" + UUID.randomUUID().toString());
+                template.setPoolId(storage.getId());
+                template.setSize(defaultTemplateSize);
+                template.setType(MockVolumeType.TEMPLATE);
+                template.setStatus(Status.DOWNLOADED);
+                template = _mockVolumeDao.persist(template);
+
+
+                template = new MockVolumeVO();
+                template.setName("simulator-Centos");
+                template.setPath(storage.getMountPoint() + "template/tmpl/1/111/" + UUID.randomUUID().toString());
+                template.setPoolId(storage.getId());
+                template.setSize(defaultTemplateSize);
+                template.setType(MockVolumeType.TEMPLATE);
+                template.setStatus(Status.DOWNLOADED);
+
+                template = _mockVolumeDao.persist(template);
+
+                txn.commit();
+            }
         } catch (Exception ex) {
-            txn.rollback();
             throw new CloudRuntimeException("Unable to find sec storage at " + url, ex);
         } finally {
-            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
-        if (storage == null) {
-            storage = new MockSecStorageVO();
-            URI uri;
-            try {
-                uri = new URI(url);
-            } catch (URISyntaxException e) {
-                return;
-            }
-
-            String nfsHost = uri.getHost();
-            String nfsPath = uri.getPath();
-            String path = nfsHost + ":" + nfsPath;
-            String dir = "/mnt/" + UUID.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
-
-            storage.setUrl(url);
-            storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
-
-            storage.setMountPoint(dir);
-            txn = Transaction.open(Transaction.SIMULATOR_DB);
-            try {
-                txn.start();
-                storage = _mockSecStorageDao.persist(storage);
-                txn.commit();
-            } catch (Exception ex) {
-                txn.rollback();
-                throw new CloudRuntimeException("Error when saving storage " + storage, ex);
-            } finally {
-                txn.close();
-                txn = Transaction.open(Transaction.CLOUD_DB);
-                txn.close();
-            }
-
-            // preinstall default templates into secondary storage
-            long defaultTemplateSize = 2 * 1024 * 1024 * 1024L;
-            MockVolumeVO template = new MockVolumeVO();
-            template.setName("simulator-domR");
-            template.setPath(storage.getMountPoint() + "template/tmpl/1/100/" + UUID.randomUUID().toString());
-            template.setPoolId(storage.getId());
-            template.setSize(defaultTemplateSize);
-            template.setType(MockVolumeType.TEMPLATE);
-            template.setStatus(Status.DOWNLOADED);
-            txn = Transaction.open(Transaction.SIMULATOR_DB);
-            try {
-                txn.start();
-                template = _mockVolumeDao.persist(template);
-                txn.commit();
-            } catch (Exception ex) {
-                txn.rollback();
-                throw new CloudRuntimeException("Error when saving template " + template, ex);
-            } finally {
-                txn.close();
-                txn = Transaction.open(Transaction.CLOUD_DB);
-                txn.close();
-            }
-
-            template = new MockVolumeVO();
-            template.setName("simulator-Centos");
-            template.setPath(storage.getMountPoint() + "template/tmpl/1/111/" + UUID.randomUUID().toString());
-            template.setPoolId(storage.getId());
-            template.setSize(defaultTemplateSize);
-            template.setType(MockVolumeType.TEMPLATE);
-            template.setStatus(Status.DOWNLOADED);
-            txn = Transaction.open(Transaction.SIMULATOR_DB);
-            try {
-                txn.start();
-                template = _mockVolumeDao.persist(template);
-                txn.commit();
-            } catch (Exception ex) {
-                txn.rollback();
-                throw new CloudRuntimeException("Error when saving template " + template, ex);
-            } finally {
-                txn.close();
-                txn = Transaction.open(Transaction.CLOUD_DB);
-                txn.close();
-            }
-        }
-
     }
 
     @Override

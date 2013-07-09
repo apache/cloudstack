@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -28,12 +29,12 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "extractTemplate", description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
@@ -113,8 +114,8 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         return  "extracting template: " + getId() + " from zone: " + getZoneId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Template;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Template;
     }
 
     public Long getInstanceId() {
@@ -125,9 +126,9 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     public void execute(){
         try {
             UserContext.current().setEventDetails(getEventDescription());
-            Long uploadId = _templateService.extract(this);
-            if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
+            String uploadUrl = _templateService.extract(this);
+            if (uploadUrl != null) {
+                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

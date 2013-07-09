@@ -18,16 +18,12 @@
  */
 package com.cloud.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -37,8 +33,10 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -102,7 +100,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     @Inject
     ManagementServer server;
     @Inject DataStoreProviderManager providerMgr;
-    
+
     @Override
     public boolean maintain(DataStore store) {
         Long userId = UserContext.current().getCallerUserId();
@@ -110,9 +108,38 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Account account = UserContext.current().getCaller();
         StoragePoolVO pool = this.primaryDataStoreDao.findById(store.getId());
         try {
+            List<StoragePoolVO> spes = null;
+            // Handling Zone and Cluster wide storage scopes.
+            // if the storage is ZONE wide then we pass podid and cluster id as null as they will be empty for ZWPS 
+            if (pool.getScope() == ScopeType.ZONE) {
+                spes = primaryDataStoreDao.listBy(
+                        pool.getDataCenterId(), null,
+                        null, ScopeType.ZONE);
+            }
+            else {
+                spes = primaryDataStoreDao.listBy(
+                        pool.getDataCenterId(), pool.getPodId(),
+                        pool.getClusterId(), ScopeType.CLUSTER);
+            }
+            for (StoragePoolVO sp : spes) {
+                if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
+                    throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId()
+                            + " is already in  PrepareForMaintenance mode ");
+                }
+            }
             StoragePool storagePool = (StoragePool) store;
-            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
-                    pool.getClusterId(), Status.Up);
+
+            //Handeling the Zone wide and cluster wide primay storage
+            List<HostVO> hosts = new ArrayList<HostVO>();
+            // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+            //TODO: if it's zone wide, this code will list a lot of hosts in the zone, which may cause performance/OOM issue.
+            if (pool.getScope().equals(ScopeType.ZONE)) {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor() , pool.getDataCenterId());
+            } else {
+                hosts = _resourceMgr.listHostsInClusterByStatus(
+                        pool.getClusterId(), Status.Up);
+            }
+
             if (hosts == null || hosts.size() == 0) {
                 pool.setStatus(StoragePoolStatus.Maintenance);
                 primaryDataStoreDao.update(pool.getId(), pool);
@@ -131,11 +158,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("ModifyStoragePool false failed due to "
                                 + ((answer == null) ? "answer null" : answer
-                                        .getDetails()));
+                                .getDetails()));
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("ModifyStoragePool false secceeded");
+                        s_logger.debug("ModifyStoragePool false succeeded");
                     }
                 }
             }
@@ -315,7 +342,6 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 }
             }
-            
         } catch(Exception e) {
             s_logger.error(
                     "Exception in enabling primary storage maintenance:", e);
@@ -335,9 +361,17 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         StoragePoolVO poolVO = this.primaryDataStoreDao
                 .findById(store.getId());
         StoragePool pool = (StoragePool)store;
-       
-        List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
+
+        //Handeling the Zone wide and cluster wide primay storage
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+        if (poolVO.getScope().equals(ScopeType.ZONE)) {
+            hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+        } else {
+            hosts = _resourceMgr.listHostsInClusterByStatus(
                 pool.getClusterId(), Status.Up);
+        }
+
         if (hosts == null || hosts.size() == 0) {
             return true;
         }
@@ -350,7 +384,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("ModifyStoragePool add failed due to "
                             + ((answer == null) ? "answer null" : answer
-                                    .getDetails()));
+                            .getDetails()));
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {

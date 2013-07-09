@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -164,6 +165,12 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -454,5 +461,16 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+	@Override
+	public boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+    @Override
+    public void collectVmDiskStatistics (UserVmVO userVm) {
+        // TODO Auto-generated method stub
     }
 }

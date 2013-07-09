@@ -32,7 +32,7 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.exception.ConnectionException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.SearchCriteria;
@@ -70,7 +70,7 @@ public class StorageCapacityListener implements Listener {
 
 
     @Override
-    public void processConnect(HostVO server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
         
         if (!(startup instanceof StartupStorageCommand)) {
             return;

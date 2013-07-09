@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -167,8 +166,8 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.GlobalLoadBalancerRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.GlobalLoadBalancerRule;
     }
 
     @Override

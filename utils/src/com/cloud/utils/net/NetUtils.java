@@ -26,14 +26,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,6 +39,7 @@ import com.googlecode.ipv6.IPv6Network;
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang.SystemUtils;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -61,6 +55,8 @@ public class NetUtils {
     public final static String ALL_PROTO = "all";
 
     public final static String ALL_CIDRS = "0.0.0.0/0";
+    public final static int PORT_RANGE_MIN = 0;
+    public final static int PORT_RANGE_MAX = 65535;
 
     public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
@@ -156,8 +152,10 @@ public class NetUtils {
         return false;
     }
 
+
+
     public static String getDefaultHostIp() {
-        if(isWindows()) {
+        if(SystemUtils.IS_OS_WINDOWS) {
             Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
             try {
                 Process result = Runtime.getRuntime().exec("route print -4");
@@ -195,6 +193,10 @@ public class NetUtils {
     }
 
     public static String getDefaultEthDevice() {
+        if (SystemUtils.IS_OS_MAC) {
+            String defDev = Script.runSimpleBashScript("/sbin/route -n get default | grep interface | awk '{print $2}'");
+            return defDev;
+        }
         String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
 
         if (defaultRoute == null) {
@@ -209,6 +211,8 @@ public class NetUtils {
 
         return defaultRouteList[7];
     }
+
+
 
     public static InetAddress getFirstNonLoopbackLocalInetAddress() {
         InetAddress[] addrs = getAllLocalInetAddresses();
@@ -255,7 +259,7 @@ public class NetUtils {
             return ipFromInetAddress(addr);
         }
 
-        return new String("127.0.0.1");
+        return "127.0.0.1";
     }
 
     public static String ipFromInetAddress(InetAddress addr) {
@@ -793,6 +797,37 @@ public class NetUtils {
         return new Pair<String, Integer>(tokens[0], Integer.parseInt(tokens[1]));
     }
 
+    public static int isNetowrkASubsetOrSupersetOfNetworkB (String cidrA, String cidrB) {
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+        long shift =0;
+        if (cidrALong == null || cidrBLong == null) {
+            //implies error in the cidr format
+            return -1;
+        }
+        if (cidrALong[1] >= cidrBLong[1]) {
+            shift = 32 - cidrBLong[1];
+        }
+        else {
+            shift = 32 - cidrALong[1];
+        }
+        long result = (cidrALong[0] >> shift) - (cidrBLong[0] >> shift);
+        if (result == 0) {
+            if (cidrALong[1] < cidrBLong[1]) {
+                //this implies cidrA is super set of cidrB
+                return 1;
+            }
+            else if (cidrALong[1] == cidrBLong[1]) {
+             //this implies both the cidrs are equal
+                return 3;
+            }
+            // implies cidrA is subset of cidrB
+            return 2;
+        }
+        //this implies no overlap.
+        return 0;
+    }
+
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {
         Long[] cidrALong = cidrToLong(cidrA);
         Long[] cidrBLong = cidrToLong(cidrB);
@@ -1021,6 +1056,34 @@ public class NetUtils {
         return NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
     }
 
+    // Check if 2 CIDRs have exactly same IP Range
+    public static boolean isSameIpRange (String cidrA, String cidrB) {
+
+        if(!NetUtils.isValidCIDR(cidrA)) {
+            s_logger.info("Invalid value of cidr " + cidrA);
+            return false;
+        }
+         if (!NetUtils.isValidCIDR(cidrB)) {
+            s_logger.info("Invalid value of cidr " + cidrB);
+            return false;
+        }
+        String[] cidrPairFirst = cidrA.split("\\/");
+        String[] cidrPairSecond = cidrB.split("\\/");
+
+        Long networkSizeFirst = Long.valueOf(cidrPairFirst[1]);
+        Long networkSizeSecond = Long.valueOf(cidrPairSecond[1]);
+        String ipRangeFirst [] = NetUtils.getIpRangeFromCidr(cidrPairFirst[0], networkSizeFirst);
+        String ipRangeSecond [] = NetUtils.getIpRangeFromCidr(cidrPairFirst[0], networkSizeSecond);
+
+        long startIpFirst = NetUtils.ip2Long(ipRangeFirst[0]);
+        long endIpFirst = NetUtils.ip2Long(ipRangeFirst[1]);
+        long startIpSecond = NetUtils.ip2Long(ipRangeSecond[0]);
+        long endIpSecond = NetUtils.ip2Long(ipRangeSecond[1]);
+        if(startIpFirst == startIpSecond && endIpFirst == endIpSecond) {
+            return true;
+        }
+        return false;
+    }
     public static boolean validateGuestCidr(String cidr) {
         // RFC 1918 - The Internet Assigned Numbers Authority (IANA) has reserved the
         // following three blocks of the IP address space for private internets:
@@ -1296,6 +1359,18 @@ public class NetUtils {
 		return resultIp;
 	}
 
+    public static boolean isValidVlan(String vlan) {
+        try {
+            int vnet = Integer.parseInt(vlan);
+            if (vnet < 0 || vnet > 4096) {
+                return false;
+            }
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
 	public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
         return URI.create("pvlan://" + primaryVlan + "-i" + isolatedPvlan);
 	}
@@ -1319,5 +1394,15 @@ public class NetUtils {
 			}
 		}
 		return null;
+	}
+
+	public static String generateMacOnIncrease(String baseMac, long l) {
+		long mac = mac2Long(baseMac);
+		if (l > 0xFFFFl) {
+			return null;
+		}
+		mac = mac + (l << 24);
+		mac = mac & 0x06FFFFFFFFFFl;
+		return long2Mac(mac);
 	}
 }

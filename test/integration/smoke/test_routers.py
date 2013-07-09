@@ -107,7 +107,6 @@ class TestRouterServices(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
-                       cls.vm_1,
                        cls.account,
                        cls.service_offering
                        ]
@@ -172,7 +171,7 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list host returns a valid list"
                         )
         host = hosts[0]
-        
+
         self.debug("Router ID: %s, state: %s" % (router.id, router.state))
 
         self.assertEqual(
@@ -181,21 +180,32 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service dnsmasq status"
-                                )
-        res = str(result)
-        self.debug("Dnsmasq process status: %s" % res)
+        if self.apiclient.hypervisor.lower() == 'vmware':
+               result = get_process_status(
+                                   self.apiclient.connection.mgtSvr,
+                                   22,
+                               self.apiclient.connection.user,
+                               self.apiclient.connection.passwd,
+                               router.linklocalip,
+                               "service dnsmasq status",
+                                   hypervisor=self.apiclient.hypervisor
+                               )
+        else:
+                result = get_process_status(
+                                    host.ipaddress,
+                                    self.services['virtual_machine']["publicport"],
+                                    self.vm_1.username,
+                                    self.vm_1.password,
+                                    router.linklocalip,
+                                    "service dnsmasq status"
+                                    )
+                res = str(result)
+                self.debug("Dnsmasq process status: %s" % res)
 
-        self.assertEqual(
-                            res.count("running"),
-                            1,
-                            "Check dnsmasq service is running or not"
+                self.assertEqual(
+                                res.count("running"),
+                                1,
+                                "Check dnsmasq service is running or not"
                         )
         return
 
@@ -243,7 +253,18 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+           result = get_process_status(
+                           self.apiclient.connection.mgtSvr,
+                               22,
+                           self.apiclient.connection.user,
+                           self.apiclient.connection.passwd,
+                           router.linklocalip,
+                           "service dnsmasq status",
+                               hypervisor=self.apiclient.hypervisor
+                           )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
@@ -260,7 +281,18 @@ class TestRouterServices(cloudstackTestCase):
                             "Check dnsmasq service is running or not"
                         )
 
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+           result = get_process_status(
+                               self.apiclient.connection.mgtSvr,
+                           22,
+                           self.apiclient.connection.user,
+                           self.apiclient.connection.passwd,
+                           router.linklocalip,
+                           "service haproxy status",
+                           hypervisor=self.apiclient.hypervisor
+                           )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
@@ -424,7 +456,18 @@ class TestRouterServices(cloudstackTestCase):
                         )
         host = hosts[0]
 
-        res = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+           res = get_process_status(
+                           self.apiclient.connection.mgtSvr,
+                           22,
+                           self.apiclient.connection.user,
+                           self.apiclient.connection.passwd,
+                           router.linklocalip,
+                           "uptime",
+                           hypervisor=self.apiclient.hypervisor
+                           )
+        else:
+            res = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
@@ -745,97 +788,4 @@ class TestRouterServices(cloudstackTestCase):
                             public_ip,
                             "Check list router response for router public IP"
                         )
-        return
-
-    @attr(configuration = "network.gc")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
-    def test_10_network_gc(self):
-        """Test network GC
-        """
-
-        # Validate the following
-        # 1. stop All User VMs in the account
-        # 2. wait for network.gc.interval time"
-        # 3. After network.gc.interval, router should be stopped
-        # 4. ListRouters should return the router in Stopped state
-
-        list_vms = list_virtual_machines(
-                                         self.apiclient,
-                                         account=self.account.name,
-                                         domainid=self.account.domainid
-                                         )
-        self.assertEqual(
-                            isinstance(list_vms, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                            len(list_vms),
-                            0,
-                            "Check length of list VM response"
-                        )
-
-        for vm in list_vms:
-            self.debug("Stopping the VM with ID: %s" % vm.id)
-            # Stop all virtual machines associated with that account
-            cmd = stopVirtualMachine.stopVirtualMachineCmd()
-            cmd.id = vm.id
-            self.apiclient.stopVirtualMachine(cmd)
-
-        # Get network.gc.interval config value
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='network.gc.interval'
-                                     )
-        self.assertEqual(
-                            isinstance(config, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        gcinterval = config[0]
-
-        # Get network.gc.wait config value
-        config = list_configurations(
-                                     self.apiclient,
-                                     name='network.gc.wait'
-                                     )
-        self.assertEqual(
-                            isinstance(config, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        gcwait = config[0]
-
-        total_wait = int(gcinterval.value) + int(gcwait.value)
-        # Wait for wait_time * 2 time to cleanup all the resources
-        time.sleep(total_wait * 2)
-        
-        timeout = self.services["timeout"]
-        while True:
-            #Check status of network router
-            list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid
-                                    )
-            if isinstance(list_router_response, list):
-                break
-            elif timeout == 0:
-                raise Exception("List router call failed!")
-            time.sleep(5)
-            timeout = timeout -1
-            
-        self.assertEqual(
-                            isinstance(list_router_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        router = list_router_response[0]
-        
-        self.debug("Router state after network.gc.interval: %s" % router.state)
-        self.assertEqual(
-            router.state,
-            'Stopped',
-            "Check state of the router after stopping all VMs associated"
-            )
         return

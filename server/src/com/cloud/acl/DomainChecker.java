@@ -19,11 +19,11 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.BaseCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -95,6 +95,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 if (BaseCmd.isRootAdmin(caller.getType()) || (owner.getId() == caller.getId())) {
                     return true;
                 }
+                //special handling for the project case
+                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
+                    return true;
+                }
                 
                 // since the current account is not the owner of the template, check the launch permissions table to see if the
                 // account can launch a VM from this template
@@ -106,7 +110,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 // Domain admin and regular user can delete/modify only templates created by them
                 if (accessType != null && accessType == AccessType.ModifyEntry) {
                     if (!BaseCmd.isRootAdmin(caller.getType()) && owner.getId() != caller.getId()) {
-                        throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                        // For projects check if the caller account can access the project account
+                        if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
+                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                        }
                     }
                 }
             }

@@ -19,7 +19,7 @@
  * VpnGatewayType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +33,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = VpnGatewayType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -144,6 +144,12 @@
                         
                                     protected java.lang.String localAvailabilityZone ;
                                 
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localAvailabilityZoneTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -161,6 +167,14 @@
                                */
                                public void setAvailabilityZone(java.lang.String param){
                             
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localAvailabilityZoneTracker = true;
+                                       } else {
+                                          localAvailabilityZoneTracker = false;
+                                              
+                                       }
+                                   
                                             this.localAvailabilityZone=param;
                                     
 
@@ -324,7 +338,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":VpnGatewayType",
@@ -338,7 +352,7 @@
                
                    }
                
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -372,7 +386,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -406,7 +420,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -439,8 +453,8 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                              if (localAvailabilityZoneTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -473,17 +487,17 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             }
                                             if (localAttachments==null){
                                                  throw new org.apache.axis2.databinding.ADBException("attachments cannot be null!!");
                                             }
-                                           localAttachments.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","attachments"),
+                                           localAttachments.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","attachments"),
                                                factory,xmlWriter);
                                          if (localTagSetTracker){
                                             if (localTagSet==null){
                                                  throw new org.apache.axis2.databinding.ADBException("tagSet cannot be null!!");
                                             }
-                                           localTagSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","tagSet"),
+                                           localTagSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","tagSet"),
                                                factory,xmlWriter);
                                         }
                     xmlWriter.writeEndElement();
@@ -648,7 +662,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "vpnGatewayId"));
                                  
                                         if (localVpnGatewayId != null){
@@ -657,7 +671,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("vpnGatewayId cannot be null!!");
                                         }
                                     
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "state"));
                                  
                                         if (localState != null){
@@ -666,7 +680,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("state cannot be null!!");
                                         }
                                     
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "type"));
                                  
                                         if (localType != null){
@@ -674,8 +688,8 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("type cannot be null!!");
                                         }
-                                    
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                     if (localAvailabilityZoneTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "availabilityZone"));
                                  
                                         if (localAvailabilityZone != null){
@@ -683,8 +697,8 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("availabilityZone cannot be null!!");
                                         }
-                                    
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                    }
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "attachments"));
                             
                             
@@ -693,7 +707,7 @@
                                     }
                                     elementList.add(localAttachments);
                                  if (localTagSetTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "tagSet"));
                             
                             
@@ -780,7 +794,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","vpnGatewayId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","vpnGatewayId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -799,7 +813,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","state").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","state").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -818,7 +832,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","type").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","type").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -837,7 +851,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","availabilityZone").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","availabilityZone").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -848,15 +862,14 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","attachments").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","attachments").equals(reader.getName())){
                                 
                                                 object.setAttachments(com.amazon.ec2.AttachmentSetType.Factory.parse(reader));
                                               
@@ -872,7 +885,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","tagSet").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","tagSet").equals(reader.getName())){
                                 
                                                 object.setTagSet(com.amazon.ec2.ResourceTagSetType.Factory.parse(reader));
                                               

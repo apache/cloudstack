@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.usage.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.usage.UsageNetworkVO;
@@ -24,4 +25,5 @@ import com.cloud.utils.db.GenericDao;
 public interface UsageNetworkDao extends GenericDao<UsageNetworkVO, Long> {
     Map<String, UsageNetworkVO> getRecentNetworkStats();
     void deleteOldStats(long maxEventTime);
+    void saveUsageNetworks(List<UsageNetworkVO> usageNetworks);
 }

@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -53,9 +54,12 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
@@ -91,6 +95,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
@@ -157,6 +162,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     @Inject protected HostDao _hostDao;
     @Inject protected HostPodDao _podDao;
     @Inject protected ClusterDao _clusterDao;
+    @Inject protected DedicatedResourceDao _dedicatedDao;
     @Inject protected GuestOSDao _guestOSDao = null;
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DiskOfferingDao _diskOfferingDao;
@@ -196,6 +202,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         // call affinitygroup chain
         VirtualMachine vm = vmProfile.getVirtualMachine();
         long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 
         if (vmGroupCount > 0) {
             for (AffinityGroupProcessor processor : _affinityProcessors) {
@@ -203,13 +210,14 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
 
+        checkForNonDedicatedResources(vmProfile, dc, avoids);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: "
                     + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
         }
 
         // call planners
-        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        //DataCenter dc = _dcDao.findById(vm.getDataCenterId());
         // check if datacenter is in avoid set
         if (avoids.shouldAvoid(dc)) {
             if (s_logger.isDebugEnabled()) {
@@ -283,9 +291,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 if (!suitableVolumeStoragePools.isEmpty()) {
                     List<Host> suitableHosts = new ArrayList<Host>();
                     suitableHosts.add(host);
-
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner));
+                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids));
                     if (potentialResources != null) {
                         Pod pod = _podDao.findById(host.getPodId());
                         Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -339,13 +346,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                 vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
                         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                         List<Volume> readyAndReusedVolumes = result.second();
+
                         // choose the potential pool for this VM for this host
                         if (!suitableVolumeStoragePools.isEmpty()) {
                             List<Host> suitableHosts = new ArrayList<Host>();
                             suitableHosts.add(host);
-
                             Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner));
+                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids));
                             if (potentialResources != null) {
                                 Pod pod = _podDao.findById(host.getPodId());
                                 Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -380,7 +387,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
                 if (planner instanceof DeploymentClusterPlanner) {
 
-                    ExcludeList PlannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                    ExcludeList plannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
                             avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                             avoids.getPoolsToAvoid());
 
@@ -388,19 +395,19 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
                     if (clusterList != null && !clusterList.isEmpty()) {
                         // planner refactoring. call allocators to list hosts
-                        ExcludeList PlannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                        ExcludeList plannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
                                 avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                                 avoids.getPoolsToAvoid());
 
-                        resetAvoidSet(PlannerAvoidOutput, PlannerAvoidInput);
+                        resetAvoidSet(plannerAvoidOutput, plannerAvoidInput);
 
                         dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
-                                getPlannerUsage(planner), PlannerAvoidOutput);
+                                getPlannerUsage(planner, vmProfile, plan, avoids), plannerAvoidOutput);
                         if (dest != null) {
                             return dest;
                         }
                         // reset the avoid input to the planners
-                        resetAvoidSet(avoids, PlannerAvoidOutput);
+                        resetAvoidSet(avoids, plannerAvoidOutput);
 
                     } else {
                         return null;
@@ -430,6 +437,73 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return dest;
     }
 
+    private void checkForNonDedicatedResources(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DataCenter dc, ExcludeList avoids) {
+        boolean isExplicit = false;
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        // check affinity group of type Explicit dedication exists
+        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), "ExplicitDedication");
+
+        if (vmGroupMappings != null && !vmGroupMappings.isEmpty()){
+            isExplicit = true;
+        }
+
+        if (!isExplicit && vm.getType() == VirtualMachine.Type.User) {
+            //add explicitly dedicated resources in avoidList
+            DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
+            if (dedicatedZone != null) {
+                long accountDomainId = vmProfile.getOwner().getDomainId();
+                long accountId = vmProfile.getOwner().getAccountId();
+                if (dedicatedZone.getDomainId() != null && !dedicatedZone.getDomainId().equals(accountDomainId)) {
+                    throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+                }
+
+                // If a zone is dedicated to an account then all hosts in this zone will be explicitly dedicated to
+                // that account. So there won't be any shared hosts in the zone, the only way to deploy vms from that
+                // account will be to use explicit dedication affinity group.
+                if (dedicatedZone.getAccountId() != null) {
+                    if (dedicatedZone.getAccountId().equals(accountId)) {
+                        throw new CloudRuntimeException("Failed to deploy VM. There are no shared hosts available in" +
+                                " this dedicated zone.");
+                    } else {
+                        throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+                    }
+                }
+            }
+
+            List<HostPodVO> podsInDc = _podDao.listByDataCenterId(dc.getId());
+            for (HostPodVO pod : podsInDc) {
+                DedicatedResourceVO dedicatedPod = _dedicatedDao.findByPodId(pod.getId());
+                if (dedicatedPod != null) {
+                    avoids.addPod(dedicatedPod.getPodId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot use this dedicated pod " + pod.getName() + ".");
+                    }
+                }
+            }
+
+            List<ClusterVO> clusterInDc = _clusterDao.listClustersByDcId(dc.getId());
+            for (ClusterVO cluster : clusterInDc) {
+                DedicatedResourceVO dedicatedCluster = _dedicatedDao.findByClusterId(cluster.getId());
+                if (dedicatedCluster != null) {
+                    avoids.addCluster(dedicatedCluster.getClusterId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot use this dedicated Cluster " + cluster.getName() + ".");
+                    }
+                }
+            }
+            List<HostVO> hostInDc = _hostDao.listByDataCenterId(dc.getId());
+            for (HostVO host : hostInDc) {
+                DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(host.getId());
+                if (dedicatedHost != null) {
+                    avoids.addHost(dedicatedHost.getHostId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot use this dedicated host " + host.getName() + ".");
+                    }
+                }
+            }
+        }
+    }
+
     private void resetAvoidSet(ExcludeList avoidSet, ExcludeList removeSet) {
         if (avoidSet.getDataCentersToAvoid() != null && removeSet.getDataCentersToAvoid() != null) {
             avoidSet.getDataCentersToAvoid().removeAll(removeSet.getDataCentersToAvoid());
@@ -448,9 +522,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
     }
 
-    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner) {
+    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException {
         if (planner != null && planner instanceof DeploymentClusterPlanner) {
-            return ((DeploymentClusterPlanner) planner).getResourceUsage();
+            return ((DeploymentClusterPlanner) planner).getResourceUsage(vmProfile, plan, avoids);
         } else {
             return DeploymentPlanner.PlannerResourceUsage.Shared;
         }
@@ -650,7 +724,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
@@ -815,12 +889,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // remove any hosts/pools that the planners might have added
         // to get the list of hosts/pools that Allocators flagged as 'avoid'
-        if (allocatorAvoidOutput.getHostsToAvoid() != null && plannerAvoidOutput.getHostsToAvoid() != null) {
-            allocatorAvoidOutput.getHostsToAvoid().removeAll(plannerAvoidOutput.getHostsToAvoid());
-        }
-        if (allocatorAvoidOutput.getPoolsToAvoid() != null && plannerAvoidOutput.getPoolsToAvoid() != null) {
-            allocatorAvoidOutput.getPoolsToAvoid().removeAll(plannerAvoidOutput.getPoolsToAvoid());
-        }
+
+        resetAvoidSet(allocatorAvoidOutput, plannerAvoidOutput);
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
@@ -829,8 +899,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(),
                 clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
         for (HostVO host : allhostsInCluster) {
-            if (allocatorAvoidOutput.getHostsToAvoid() == null
-                    || !allocatorAvoidOutput.getHostsToAvoid().contains(host.getId())) {
+            if (!allocatorAvoidOutput.shouldAvoid(host)) {
                 // there's some host in the cluster that is not yet in avoid set
                 avoidAllHosts = false;
             }
@@ -839,8 +908,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
                 clusterVO.getPodId(), clusterVO.getId(), null);
         for (StoragePoolVO pool : allPoolsInCluster) {
-            if (allocatorAvoidOutput.getPoolsToAvoid() == null
-                    || !allocatorAvoidOutput.getPoolsToAvoid().contains(pool.getId())) {
+            if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                 // there's some pool in the cluster that is not yet in avoid set
                 avoidAllPools = false;
             }

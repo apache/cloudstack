@@ -25,13 +25,16 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import com.cloud.org.Cluster;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 /**
  * Storage Pool DB view.
@@ -56,7 +59,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="host_address")
     private String hostAddress;
-
 
     @Column(name="status")
     @Enumerated(value=EnumType.STRING)
@@ -97,9 +99,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name="data_center_name")
     private String zoneName;
 
-    @Column(name="data_center_type")
-    private String zoneType;
-    
     @Column(name="pod_id")
     private long podId;
 
@@ -108,7 +107,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="pod_name")
     private String podName;
-
 
     @Column(name="tag")
     private String tag;
@@ -119,7 +117,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name="disk_reserved_capacity")
     private long reservedCapacity;
 
-
     @Column(name="job_id")
     private Long jobId;
 
@@ -128,10 +125,17 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="job_status")
     private int jobStatus;
-    
+
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
+
+    @Column(name="capacity_iops")
+    private Long capacityIops;
+
+    @Column(name = "hypervisor")
+    @Enumerated(value = EnumType.STRING)
+    private HypervisorType hypervisor;
 
     /**
      * @return the scope
@@ -145,6 +149,14 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
      */
     public void setScope(ScopeType scope) {
         this.scope = scope;
+    }
+
+    public HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(HypervisorType hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     @Override
@@ -230,6 +242,14 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
         this.capacityBytes = capacityBytes;
     }
 
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
+    }
+
     public long getClusterId() {
         return clusterId;
     }
@@ -286,14 +306,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
         this.zoneName = zoneName;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
-    }
-    
     public long getPodId() {
         return podId;
     }

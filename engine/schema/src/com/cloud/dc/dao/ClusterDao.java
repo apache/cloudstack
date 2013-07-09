@@ -34,4 +34,5 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     Map<Long, List<Long>> getPodClusterIdMap(List<Long> clusterIds);
     List<Long> listDisabledClusters(long zoneId, Long podId);
     List<Long> listClustersWithDisabledPods(long zoneId);
+    List<ClusterVO> listClustersByDcId(long zoneId);
 }

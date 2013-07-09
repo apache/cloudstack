@@ -114,11 +114,7 @@ function createURL(apiName, options) {
   if (cloudStack.context && cloudStack.context.projects && !options.ignoreProject) {
     urlString = urlString + '&projectid=' + cloudStack.context.projects[0].id;
   }
-    
-  if(cloudStack.context != null && cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
-    urlString = urlString + '&zonetype=' + cloudStack.context.zoneType;    
-  }    
-  
+   
   return urlString;
 }
 
@@ -276,7 +272,7 @@ cloudStack.actionFilter = {
   guestNetwork: function(args) {    
     var jsonObj = args.context.item;
 		var allowedActions = [];
-    
+                allowedActions.push('replaceacllist');
 		if(jsonObj.type == 'Isolated') {
 		  allowedActions.push('edit');		//only Isolated network is allowed to upgrade to a different network offering (Shared network is not allowed to)
 			allowedActions.push('restart');   
@@ -325,8 +321,8 @@ cloudStack.converters = {
   toBooleanText: function(booleanValue) {
     if(booleanValue == true)
       return "Yes";
-    else if(booleanValue == false)
-      return "No";
+
+    return "No";
   },
   convertHz: function(hz) {
     if (hz == null)
@@ -825,6 +821,10 @@ cloudStack.api = {
           data.projectid=args.context.projects[0].id;
         }
         
+				if(args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
+				  data.projectid = args.jsonObj.projectid;
+				}
+				
         $.ajax({
           url: createURL('listTags'),
           data: data,

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -27,7 +28,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 
 @APICommand(name = "listStoragePools", description="Lists storage pools.", responseObject=StoragePoolResponse.class)
 public class ListStoragePoolsCmd extends BaseListCmd {
@@ -59,13 +59,14 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             description="the Zone ID for the storage pool")
     private Long zoneId;
-
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
     
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
             description="the ID of the storage pool")
     private Long id;
+
+    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING, entityType = StoragePoolResponse.class,
+            description="the ID of the storage pool")
+    private String scope;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -95,10 +96,6 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     public Long getId() {
         return id;
     }
@@ -112,8 +109,8 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.StoragePool;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.StoragePool;
     }
 
     @Override
@@ -121,5 +118,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         ListResponse<StoragePoolResponse> response = _queryService.searchForStoragePools(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+    }
+
+    public String getScope() {
+        return scope;
     }
 }

@@ -73,7 +73,7 @@ public class LibvirtStorageVolumeDef {
         storageVolBuilder.append("<name>" + _volName + "</name>\n");
         if (_volSize != null) {
             storageVolBuilder
-                    .append("<capacity >" + _volSize + "</capacity>\n");
+                    .append("<capacity>" + _volSize + "</capacity>\n");
         }
         storageVolBuilder.append("<target>\n");
         storageVolBuilder.append("<format type='" + _volFormat + "'/>\n");

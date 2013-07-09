@@ -19,7 +19,7 @@
  * DescribeSnapshotAttributeResponseType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +33,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = DescribeSnapshotAttributeResponseType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -108,30 +108,30 @@
                             
 
                         /**
-                        * field for CreateVolumePermission
+                        * field for DescribeSnapshotAttributeResponseTypeChoice_type0
                         */
 
                         
-                                    protected com.amazon.ec2.CreateVolumePermissionListType localCreateVolumePermission ;
+                                    protected com.amazon.ec2.DescribeSnapshotAttributeResponseTypeChoice_type0 localDescribeSnapshotAttributeResponseTypeChoice_type0 ;
                                 
 
                            /**
                            * Auto generated getter method
-                           * @return com.amazon.ec2.CreateVolumePermissionListType
+                           * @return com.amazon.ec2.DescribeSnapshotAttributeResponseTypeChoice_type0
                            */
-                           public  com.amazon.ec2.CreateVolumePermissionListType getCreateVolumePermission(){
-                               return localCreateVolumePermission;
+                           public  com.amazon.ec2.DescribeSnapshotAttributeResponseTypeChoice_type0 getDescribeSnapshotAttributeResponseTypeChoice_type0(){
+                               return localDescribeSnapshotAttributeResponseTypeChoice_type0;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param CreateVolumePermission
+                               * @param param DescribeSnapshotAttributeResponseTypeChoice_type0
                                */
-                               public void setCreateVolumePermission(com.amazon.ec2.CreateVolumePermissionListType param){
+                               public void setDescribeSnapshotAttributeResponseTypeChoice_type0(com.amazon.ec2.DescribeSnapshotAttributeResponseTypeChoice_type0 param){
                             
-                                            this.localCreateVolumePermission=param;
+                                            this.localDescribeSnapshotAttributeResponseTypeChoice_type0=param;
                                     
 
                                }
@@ -220,7 +220,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":DescribeSnapshotAttributeResponseType",
@@ -234,7 +234,7 @@
                
                    }
                
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -268,7 +268,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -302,11 +302,10 @@
                                     
                                    xmlWriter.writeEndElement();
                              
-                                            if (localCreateVolumePermission==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("createVolumePermission cannot be null!!");
+                                            if (localDescribeSnapshotAttributeResponseTypeChoice_type0==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("DescribeSnapshotAttributeResponseTypeChoice_type0 cannot be null!!");
                                             }
-                                           localCreateVolumePermission.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","createVolumePermission"),
-                                               factory,xmlWriter);
+                                           localDescribeSnapshotAttributeResponseTypeChoice_type0.serialize(null,factory,xmlWriter);
                                         
                     xmlWriter.writeEndElement();
                
@@ -470,7 +469,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "requestId"));
                                  
                                         if (localRequestId != null){
@@ -479,7 +478,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("requestId cannot be null!!");
                                         }
                                     
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "snapshotId"));
                                  
                                         if (localSnapshotId != null){
@@ -488,14 +487,14 @@
                                            throw new org.apache.axis2.databinding.ADBException("snapshotId cannot be null!!");
                                         }
                                     
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
-                                                                      "createVolumePermission"));
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "DescribeSnapshotAttributeResponseTypeChoice_type0"));
                             
                             
-                                    if (localCreateVolumePermission==null){
-                                         throw new org.apache.axis2.databinding.ADBException("createVolumePermission cannot be null!!");
+                                    if (localDescribeSnapshotAttributeResponseTypeChoice_type0==null){
+                                         throw new org.apache.axis2.databinding.ADBException("DescribeSnapshotAttributeResponseTypeChoice_type0 cannot be null!!");
                                     }
-                                    elementList.add(localCreateVolumePermission);
+                                    elementList.add(localDescribeSnapshotAttributeResponseTypeChoice_type0);
                                 
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
@@ -575,7 +574,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","requestId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","requestId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -594,7 +593,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","snapshotId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","snapshotId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -613,19 +612,12 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","createVolumePermission").equals(reader.getName())){
+                                    if (reader.isStartElement() ){
                                 
-                                                object.setCreateVolumePermission(com.amazon.ec2.CreateVolumePermissionListType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
+                                                object.setDescribeSnapshotAttributeResponseTypeChoice_type0(com.amazon.ec2.DescribeSnapshotAttributeResponseTypeChoice_type0.Factory.parse(reader));
+                                            
                               }  // End of if for expected property start element
-                                
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                              
+                                  
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             

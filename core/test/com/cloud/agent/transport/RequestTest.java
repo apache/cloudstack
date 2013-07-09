@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -28,22 +30,25 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateVO;
 
 /**
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  */
 
 public class RequestTest extends TestCase {
@@ -51,7 +56,7 @@ public class RequestTest extends TestCase {
 
     public void testSerDeser() {
         s_logger.info("Testing serializing and deserializing works as expected");
-        
+
         s_logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
         UpdateHostPasswordCommand cmd1 = new UpdateHostPasswordCommand("abc", "def");
         s_logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
@@ -89,7 +94,7 @@ public class RequestTest extends TestCase {
         logger.setLevel(level);
 
         byte[] bytes = sreq.getBytes();
-        
+
         assert Request.getSequence(bytes) == 892403717;
         assert Request.getManagementServerId(bytes) == 3;
         assert Request.getAgentId(bytes) == 2;
@@ -126,11 +131,46 @@ public class RequestTest extends TestCase {
         compareRequest(cresp, sresp);
     }
 
+
+    public void testSerDeserTO() {
+        s_logger.info("Testing serializing and deserializing interface TO works as expected");
+
+        NfsTO nfs = new NfsTO("nfs://192.168.56.10/opt/storage/secondary", DataStoreRole.Image);
+       // SecStorageSetupCommand cmd = new SecStorageSetupCommand(nfs, "nfs://192.168.56.10/opt/storage/secondary", null);
+        ListTemplateCommand cmd = new ListTemplateCommand(nfs);
+        Request sreq = new Request(2, 3, cmd, true);
+        sreq.setSequence(892403718);
+
+
+        byte[] bytes = sreq.getBytes();
+
+        assert Request.getSequence(bytes) == 892403718;
+        assert Request.getManagementServerId(bytes) == 3;
+        assert Request.getAgentId(bytes) == 2;
+        assert Request.getViaAgentId(bytes) == 2;
+        Request creq = null;
+        try {
+            creq = Request.parse(bytes);
+        } catch (ClassNotFoundException e) {
+            s_logger.error("Unable to parse bytes: ", e);
+        } catch (UnsupportedVersionException e) {
+            s_logger.error("Unable to parse bytes: ", e);
+        }
+
+        assert creq != null : "Couldn't get the request back";
+
+        compareRequest(creq, sreq);
+        assertEquals("nfs://192.168.56.10/opt/storage/secondary", ((NfsTO)((ListTemplateCommand)creq.getCommand()).getDataStore()).getUrl());
+    }
+
     public void testDownload() {
         s_logger.info("Testing Download answer");
         VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
                 HypervisorType.KVM, null);
-        DownloadCommand cmd = new DownloadCommand("secUrl", template, 30000000l);
+        NfsTO nfs = new NfsTO("secUrl", DataStoreRole.Image);
+        TemplateObjectTO to = new TemplateObjectTO(template);
+        to.setImageDataStore(nfs);
+        DownloadCommand cmd = new DownloadCommand(to, 30000000l);
         Request req = new Request(1, 1, cmd, true);
 
         req.logD("Debug for Download");
@@ -161,7 +201,7 @@ public class RequestTest extends TestCase {
             }
         }
     }
-    
+
     public void testLogging() {
         s_logger.info("Testing Logging");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);

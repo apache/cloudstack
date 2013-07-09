@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-  var requiresStorageMotion = false;
+  var vmMigrationHostObjs;
   cloudStack.sections.instances = {
     title: 'label.instances',
     id: 'instances',
@@ -70,7 +70,7 @@
 								listAll: true
 							},
 							success: function(json) {
-								var zones = json.listzonesresponse.zone;
+								var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 								args.response.success({
 									data: $.map(zones, function(zone) {
@@ -204,6 +204,14 @@
 					  affinitygroupid: args.context.affinityGroups[0].id
 					});		
 				}
+
+        if("vpc" in args.context &&
+           "networks" in args.context) {
+          $.extend(data, {
+            vpcid: args.context.vpc[0].id,
+            networkid: args.context.networks[0].id
+          });
+        }
               
         $.ajax({
           url: createURL('listVirtualMachines'),
@@ -632,9 +640,14 @@
                       name: { label: 'label.name' },
                       type: { label: 'label.type' }
                     },
-                    dataProvider: function(args) {										  
+                    dataProvider: function(args) {				
+                      var data = {
+                        domainid: args.context.instances[0].domainid,
+                        account: args.context.instances[0].account
+                      };                    
 											$.ajax({
 												url: createURL('listAffinityGroups'),
+												data: data,
 												async: false, //make it sync to avoid dataProvider() being called twice which produces duplicate data
 												success: function(json) {	
                           var items = [];												
@@ -1065,83 +1078,89 @@
                   validation: { required: true },
                   select: function(args) {
                     $.ajax({
-                      url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.instances[0].id),
-                      //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                      url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.instances[0].id),                      
                       dataType: "json",
                       async: true,
                       success: function(json) {
-                        if(json.findhostsformigrationresponse.host != undefined){
-                        var hosts = json.findhostsformigrationresponse.host;
-                        requiresStorageMotion =  json.findhostsformigrationresponse.host[0].requiresStorageMotion;
-                        var items = [];
-                        $(hosts).each(function() {
-                        if(this.requiresStorageMotion == true){
-                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable, ": "Not Suitable, ")  +  "Storage migration required)"  )});
-
+                        if(json.findhostsformigrationresponse.host != undefined) {
+                          vmMigrationHostObjs = json.findhostsformigrationresponse.host;                        
+                          var items = [];
+                          $(vmMigrationHostObjs).each(function() {
+                            if(this.requiresStorageMotion == true){
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable, ": "Not Suitable, ")  +  "Storage migration required)"  )});
+    
+                            }
+                            else {                     
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable")  + ")"  )});
+                            }
+                          });
+                          args.response.success({data: items});
                         }
                         else {
-                     
-                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable")  + ")"  )});
-
-                          }
-                         });
-                        args.response.success({data: items});
-                        }
-                       else
                           cloudStack.dialog.notice({ message: _l('No Hosts are avaialble for Migration') }); //Only a single host in the set up 
-                        
+                        }                        
                       }
                     });
                   }
                 }
               }
             },
-            action: function(args) {
+            action: function(args) {         
+              var selectedHostObj;
+              if(vmMigrationHostObjs != null) {
+                for(var i = 0; i < vmMigrationHostObjs.length; i++) {
+                  if(vmMigrationHostObjs[i].id == args.data.hostId) {
+                    selectedHostObj = vmMigrationHostObjs[i];
+                    break;
+                  }
+                }
+              }
+              if(selectedHostObj == null)
+                return;
               
-            if(requiresStorageMotion == true){   
-              $.ajax({
-                url: createURL("migrateVirtualMachineWithVolume&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
-                dataType: "json",
-                async: true,
-                success: function(json) {
-                  var jid = json.migratevirtualmachinewithvolumeresponse.jobid;
-                  args.response.success(
-                    {_custom:
-                     {jobId: jid,
-                      getUpdatedItem: function(json) {
-                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                      },
-                      getActionFilter: function() {
-                        return vmActionfilter;
+              if(selectedHostObj.requiresStorageMotion == true){   
+                $.ajax({
+                  url: createURL("migrateVirtualMachineWithVolume&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+                    var jid = json.migratevirtualmachinewithvolumeresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {
+                          return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                        },
+                        getActionFilter: function() {
+                          return vmActionfilter;
+                        }
+                       }
                       }
-                     }
-                    }
-                  );
-                }
-              });
-             }
-             else{
-                  $.ajax({
-                url: createURL("migrateVirtualMachine&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
-                dataType: "json",
-                async: true,
-                success: function(json) {
-                  var jid = json.migratevirtualmachineresponse.jobid;
-                  args.response.success(
-                    {_custom:
-                     {jobId: jid,
-                      getUpdatedItem: function(json) {
-                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                      },
-                      getActionFilter: function() {
-                        return vmActionfilter;
+                    );
+                  }
+                });
+               }
+               else{
+                $.ajax({
+                  url: createURL("migrateVirtualMachine&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+                    var jid = json.migratevirtualmachineresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {
+                          return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                        },
+                        getActionFilter: function() {
+                          return vmActionfilter;
+                        }
+                       }
                       }
-                     }
-                    }
-                  );
-                }
-              });
-
+                    );
+                  }
+                });
               } 
             },
             notification: {
@@ -1247,9 +1266,9 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                //  var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success();
-                   /* {_custom:
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success({
+                   _custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
@@ -1258,7 +1277,7 @@
                         return vmActionfilter;
                       }
                      }
-                    } */
+                    });
                  
                 },
                  error:function(json){
@@ -1505,6 +1524,7 @@
                       args.response.success({
                         _custom: { jobId: json.updatedefaultnicforvirtualmachineresponse.jobid }
                       });
+                      cloudStack.dialog.notice({message:_l('Please manually update the default NIC on the VM now.')});
                     }
                   });
                 },
@@ -1568,6 +1588,7 @@
             viewAll: {
               path: 'network.secondaryNicIps',
               attachTo: 'ipaddress',
+              label: 'label.view.secondary.ips',
               title: function(args) {
                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
                 
@@ -1640,7 +1661,11 @@
               totalCPU: { label: 'label.total.cpu' },
               cpuused: { label: 'label.cpu.utilized' },
               networkkbsread: { label: 'label.network.read' },
-              networkkbswrite: { label: 'label.network.write' }
+              networkkbswrite: { label: 'label.network.write' },
+              diskkbsread: { label: 'label.disk.read.bytes' },
+              diskkbswrite: { label: 'label.disk.write.bytes' },
+              diskioread: { label: 'label.disk.read.io' },
+              diskiowrite: { label: 'label.disk.write.io' }
             },
             dataProvider: function(args) {
               $.ajax({
@@ -1654,7 +1679,11 @@
                   totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                   cpuused: jsonObj.cpuused,
                   networkkbsread: (jsonObj.networkkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
-                  networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
+                  networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),
+                  diskkbsread: (jsonObj.diskkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024),
+                  diskkbswrite: (jsonObj.diskkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskkbswrite * 1024),
+                  diskioread: (jsonObj.diskioread == null)? "N/A": jsonObj.diskioread,
+                  diskiowrite: (jsonObj.diskiowrite == null)? "N/A": jsonObj.diskiowrite
                   }
                 });
               }

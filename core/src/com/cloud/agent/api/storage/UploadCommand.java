@@ -18,7 +18,6 @@ package com.cloud.agent.api.storage;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.agent.api.storage.DownloadCommand.PasswordAuth;
 import com.cloud.agent.api.to.TemplateTO;
 import com.cloud.storage.Upload.Type;
 import com.cloud.template.VirtualMachineTemplate;

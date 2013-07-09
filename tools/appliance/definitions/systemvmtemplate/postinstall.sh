@@ -21,6 +21,12 @@ ROOTPW=password
 HOSTNAME=systemvm
 CLOUDSTACK_RELEASE=4.2.0
 
+add_backports () {
+    sed -i '/backports/d' /etc/apt/sources.list
+    echo 'deb http://http.us.debian.org/debian wheezy-backports main' >> /etc/apt/sources.list
+    apt-get update
+}
+
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
@@ -42,6 +48,9 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
   # nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  # nfs irqbalance
+  apt-get --no-install-recommends -q -y --force-yes install irqbalance
+
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
@@ -78,10 +87,7 @@ install_packages() {
   # rm -fr /opt/vmware-tools-distrib
   # apt-get -q -y --force-yes purge build-essential
 
-  # haproxy. Wheezy doesn't have haproxy, install from backports
-  #apt-get --no-install-recommends -q -y --force-yes install haproxy
-  wget http://ftp.us.debian.org/debian/pool/main/h/haproxy/haproxy_1.4.8-1_i386.deb
-  dpkg -i haproxy_1.4.8-1_i386.deb
+  apt-get --no-install-recommends -q -y --force-yes install haproxy
 }
 
 setup_accounts() {
@@ -110,7 +116,7 @@ fix_nameserver() {
   # Replace /etc/resolv.conf also
   cat > /etc/resolv.conf << EOF
 nameserver 8.8.8.8
-nameserver 4.4.4.4
+nameserver 8.8.4.4
 EOF
 }
 
@@ -158,12 +164,17 @@ EOF
   locale-gen en_US.UTF-8
 }
 
+fix_vhdutil() {
+  wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
+}
+
 do_fixes() {
   fix_nameserver
   fix_inittab
   fix_acpid
   fix_hostname
   fix_locale
+  fix_vhdutil
 }
 
 configure_apache2() {
@@ -220,6 +231,8 @@ do_signature() {
 
 begin=$(date +%s)
 
+echo "*************ADDING BACKPORTS********************"
+add_backports
 echo "*************INSTALLING PACKAGES********************"
 install_packages
 echo "*************DONE INSTALLING PACKAGES********************"

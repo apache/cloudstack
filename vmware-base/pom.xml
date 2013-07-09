@@ -33,6 +33,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-api</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>${cs.gson.version}</version>

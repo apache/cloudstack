@@ -74,7 +74,11 @@ public class SnapshotCommandTest {
             return 0L;
         };
 
-        public long getAvailableBytes() {
+        public long getUsedBytes() {
+            return 0L;
+        };
+
+        public Long getCapacityIops() {
             return 0L;
         };
 
@@ -140,12 +144,6 @@ public class SnapshotCommandTest {
         ssc1 = new SnapshotCommand(pool,
                 "secondaryStorageUrl", "snapshotUuid", "snapshotName", 101L,
                 102L, 103L);
-    }
-
-    @Test
-    public void testGetPrimaryStoragePoolNameLabel() {
-        String label = ssc.getPrimaryStoragePoolNameLabel();
-        assertTrue(label.equals("bed9f83e-cac3-11e1-ac8a-0050568b007e"));
     }
 
     @Test

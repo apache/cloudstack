@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage;
 
 public abstract class BaseType {
+    @Override
     public boolean equals(Object that) {
         if (this == that) {
             return true;

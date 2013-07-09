@@ -38,12 +38,15 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.VirtualMachine.State;
 
 
 @Component
@@ -55,6 +58,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     private ConfigurationDao  _configDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
+    private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
 
     protected UserVmJoinDaoImpl() {
 
@@ -64,8 +68,23 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
         this._count = "select count(distinct id) from user_vm_view WHERE ";
 
-
+        activeVmByIsoSearch = createSearchBuilder();
+        activeVmByIsoSearch.and("isoId", activeVmByIsoSearch.entity().getIsoId(), SearchCriteria.Op.EQ);
+        activeVmByIsoSearch.and("stateNotIn", activeVmByIsoSearch.entity().getState(), SearchCriteria.Op.NIN);
+        activeVmByIsoSearch.done();
     }
+
+
+    @Override
+    public List<UserVmJoinVO> listActiveByIsoId(Long isoId) {
+        SearchCriteria<UserVmJoinVO> sc = activeVmByIsoSearch.create();
+        sc.setParameters("isoId", isoId);
+        State[] states = new State[2];
+        states[0] = State.Error;
+        states[1] = State.Expunging;
+        return listBy(sc);
+    }
+
 
     @Override
     public UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
@@ -102,7 +121,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
         userVmResponse.setZoneId(userVm.getDataCenterUuid());
         userVmResponse.setZoneName(userVm.getDataCenterName());
-        userVmResponse.setZoneType(userVm.getDataCenterType());
         if ((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
@@ -123,6 +141,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff)) {
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
             userVmResponse.setServiceOfferingName(userVm.getServiceOfferingName());
+        }
+        if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff) || details.contains(VMDetails.stats)) {
             userVmResponse.setCpuNumber(userVm.getCpu());
             userVmResponse.setCpuSpeed(userVm.getSpeed());
             userVmResponse.setMemory(userVm.getRamSize());
@@ -160,6 +180,22 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
                 Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
                 userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
+
+                if ((userVm.getHypervisorType() != null) 
+                        && (userVm.getHypervisorType().equals(HypervisorType.KVM)
+                        || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
+                    Double diskKbsRead = Double.valueOf(vmStats.getDiskReadKBs());
+                    userVmResponse.setDiskKbsRead(diskKbsRead.longValue());
+
+                    Double diskKbsWrite = Double.valueOf(vmStats.getDiskWriteKBs());
+                    userVmResponse.setDiskKbsWrite(diskKbsWrite.longValue());
+
+                    Double diskIORead = Double.valueOf(vmStats.getDiskReadIOs());
+                    userVmResponse.setDiskIORead(diskIORead.longValue());
+
+                    Double diskIOWrite = Double.valueOf(vmStats.getDiskWriteIOs());
+                    userVmResponse.setDiskIOWrite(diskIOWrite.longValue());
+                }
             }
         }
 
@@ -236,6 +272,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         userVmResponse.setObjectName(objectName);
+        if (userVm.isDynamicallyScalable() == null) {
+            userVmResponse.setDynamicallyScalable(false);
+        } else {
+            userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
+        }
 
         return userVmResponse;
     }

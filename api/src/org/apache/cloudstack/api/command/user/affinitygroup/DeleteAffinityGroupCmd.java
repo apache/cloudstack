@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.affinitygroup;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -27,10 +28,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -123,17 +122,12 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try{
-            boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, domainId, name);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete affinity group");
-            }
-        } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
+        boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, domainId, name);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete affinity group");
         }
     }
 
@@ -148,7 +142,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.AffinityGroup;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.AffinityGroup;
     }
 }

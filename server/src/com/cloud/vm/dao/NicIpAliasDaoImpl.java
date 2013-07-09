@@ -92,15 +92,6 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     }
 
     @Override
-    public List<NicIpAliasVO> listByNetworkIdAndAliasIpAndState(long networkId, String aliasIpOfSubnet, NicIpAlias.state state) {
-        SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
-        sc.setParameters("network", networkId);
-        sc.setParameters("address", aliasIpOfSubnet);
-        sc.setParameters("state", state);
-        return listBy(sc);
-    }
-
-    @Override
     public List<NicIpAliasVO> listByNicIdAndVmid(long nicId, long vmId) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("nicId", nicId);

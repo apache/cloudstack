@@ -20,6 +20,7 @@
 -->
 <section id="create-vpn-connection-vpc">
   <title>Creating a VPN Connection</title>
+  <note><para>&PRODUCT; supports creating up to 8 VPN connections.</para></note>
   <orderedlist>
     <listitem>
       <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
@@ -38,19 +39,37 @@
     </listitem>
     <listitem>
       <para>Click the Settings icon.</para>
-      <para>The following options are displayed.</para>
+      <para>For each tier, the following options are displayed:</para>
       <itemizedlist>
         <listitem>
-          <para>IP Addresses</para>
+          <para>Internal LB</para>
         </listitem>
         <listitem>
-          <para>Gateways</para>
+          <para>Public LB IP</para>
         </listitem>
         <listitem>
-          <para>Site-to-Site VPN</para>
+          <para>Static NAT</para>
         </listitem>
         <listitem>
-          <para>Network ASLs</para>
+          <para>Virtual Machines</para>
+        </listitem>
+        <listitem>
+          <para>CIDR</para>
+        </listitem>
+      </itemizedlist>
+      <para>The following router information is displayed:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Private Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Public IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPNs</para>
+        </listitem>
+        <listitem>
+          <para>Network ACL Lists</para>
         </listitem>
       </itemizedlist>
     </listitem>

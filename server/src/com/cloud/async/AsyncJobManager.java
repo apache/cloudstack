@@ -18,6 +18,7 @@ package com.cloud.async;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import com.cloud.utils.component.Manager;
 
@@ -28,7 +29,7 @@ public interface AsyncJobManager extends Manager {
 	   public AsyncJobVO getAsyncJob(long jobId);
 	    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
 	
-	public List<? extends AsyncJob> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId);
+	public List<? extends AsyncJob> findInstancePendingAsyncJobs(ApiCommandJobType instanceType, Long accountId);
 	
 	public long submitAsyncJob(AsyncJobVO job);
 	public long submitAsyncJob(AsyncJobVO job, boolean scheduleJobExecutionInContext);

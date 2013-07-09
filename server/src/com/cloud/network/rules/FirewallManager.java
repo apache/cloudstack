@@ -85,4 +85,5 @@ public interface FirewallManager extends FirewallService {
      */
     void removeRule(FirewallRule rule);
 
+    boolean applyDefaultEgressFirewallRule(Long networkId, boolean defaultPolicy) throws ResourceUnavailableException;
 }

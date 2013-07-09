@@ -82,7 +82,7 @@ public class SSHKeysHelper {
 		if (!keyMaterial.contains(" ")) 
 			keyMaterial = new String(Base64.decodeBase64(keyMaterial.getBytes()));
 		
-		if (!keyMaterial.startsWith("ssh-rsa") || !keyMaterial.contains(" "))
+		if ((!keyMaterial.startsWith("ssh-rsa") && !keyMaterial.startsWith("ssh-dss")) || !keyMaterial.contains(" "))
 			return null;
 		
 		String[] key = keyMaterial.split(" ");

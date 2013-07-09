@@ -26,6 +26,7 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.resource.ServerResource;
@@ -46,6 +47,7 @@ import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
 import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.api.to.NicTO;
@@ -103,9 +105,9 @@ public class XenServer610Resource extends XenServer56FP1Resource {
         }
     }
 
-    private List<VolumeTO> getUpdatedVolumePathsOfMigratedVm(Connection connection, VM migratedVm,
-            VolumeTO[] volumes) throws CloudRuntimeException {
-        List<VolumeTO> volumeToList = new ArrayList<VolumeTO>();
+    private List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(Connection connection, VM migratedVm,
+            DiskTO[] volumes) throws CloudRuntimeException {
+        List<VolumeObjectTO> volumeToList = new ArrayList<VolumeObjectTO>();
 
         try {
             // Volume paths would have changed. Return that information.
@@ -120,11 +122,14 @@ public class XenServer610Resource extends XenServer56FP1Resource {
                 }
             }
 
-            for (VolumeTO volumeTo : volumes) {
-                Long deviceId = volumeTo.getDeviceId();
+            for (DiskTO volumeTo : volumes) {
+                VolumeObjectTO vol = (VolumeObjectTO)volumeTo.getData();
+                Long deviceId = volumeTo.getDiskSeq();
                 VDI vdi = deviceIdToVdiMap.get(deviceId.toString());
-                volumeTo.setPath(vdi.getUuid(connection));
-                volumeToList.add(volumeTo);
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(vdi.getUuid(connection));
+                newVol.setId(vol.getId());
+                volumeToList.add(newVol);
             }
         } catch (Exception e) {
             s_logger.error("Unable to get the updated VDI paths of the migrated vm " + e.toString(), e);
@@ -194,7 +199,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             }
 
             // Volume paths would have changed. Return that information.
-            List<VolumeTO> volumeToList = getUpdatedVolumePathsOfMigratedVm(connection, vmToMigrate, vmSpec.getDisks());
+            List<VolumeObjectTO> volumeToList = getUpdatedVolumePathsOfMigratedVm(connection, vmToMigrate, vmSpec.getDisks());
             vmToMigrate.setAffinity(connection, host);
             state = State.Stopping;
 
@@ -370,7 +375,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             }
 
             // Volume paths would have changed. Return that information.
-            List<VolumeTO > volumeToSet = getUpdatedVolumePathsOfMigratedVm(connection, migratedVm, vmSpec.getDisks());
+            List<VolumeObjectTO > volumeToSet = getUpdatedVolumePathsOfMigratedVm(connection, migratedVm, vmSpec.getDisks());
             migratedVm.setAffinity(connection, host);
 
             synchronized (_cluster.intern()) {
@@ -412,4 +417,34 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             return new MigrateVolumeAnswer(cmd, false, msg, null);
         }
     }
+
+    @Override
+    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        long recommendedValue = CitrixHelper.getXenServer610StaticMax(os, b);
+        if(recommendedValue == 0){
+            s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
+            return dynamicMaxRam;
+        }
+        long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
+        if (dynamicMaxRam > staticMax){ // XS contraint that dynamic max <= static max
+            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+            return dynamicMaxRam;
+        }
+        return staticMax;
+    }
+
+    @Override
+    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        long recommendedValue = CitrixHelper.getXenServer610StaticMin(os, b);
+        if(recommendedValue == 0){
+            s_logger.warn("No recommended value found for dynamic min");
+            return dynamicMinRam;
+        }
+
+        if(dynamicMinRam < recommendedValue){   // XS contraint that dynamic min > static min
+            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
+        }
+        return dynamicMinRam;
+    }
+
 }

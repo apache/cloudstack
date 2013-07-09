@@ -29,7 +29,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -71,7 +71,7 @@ public class ComputeCapacityListener implements Listener {
 
 
     @Override
-    public void processConnect(HostVO server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
         if (!(startup instanceof StartupRoutingCommand)) {
             return;
         }

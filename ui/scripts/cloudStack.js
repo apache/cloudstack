@@ -191,22 +191,26 @@
 
         if (userValid && isAdmin()) {
           $.ajax({
-            url: createURL("listSwifts"),
-            dataType: "json",
+            url: createURL("listImageStores"),
+            data: {
+              provider: 'Swift'
+            },
             async: false,
             success: function(json) {
-              var items = json.listswiftsresponse.swift;
+              var items = json.listimagestoreresponse.imagestore;
               if(items != null && items.length > 0)
                 havingSwift = true;
             }
           });
           if (havingSwift == false) {
             $.ajax({
-              url: createURL("listS3s"),
-              dataType: "json",
+              url: createURL("listImageStores"),
+              data: {
+                provider: 'S3'
+              },
               async: false,
               success: function(json) {
-                var items = json.lists3sresponse.s3;
+                var items = json.listimagestoreresponse.imagestore;
                 if (items != null && items.length > 0) {
                   havingS3 = true;
                 }
@@ -332,22 +336,26 @@
 
             if (isAdmin()) {
               $.ajax({
-                url: createURL("listSwifts"),
-                dataType: "json",
+                url: createURL("listImageStores"),
+                data:{
+                  provider: 'Swift'
+                },
                 async: false,
                 success: function(json) {
-                  var items = json.listswiftsresponse.swift;
+                  var items = json.listimagestoreresponse.imagestore;
                   if(items != null && items.length > 0)
                     havingSwift = true;
                 }
               });
               if (havingSwift = false) {
                 $.ajax({
-                  url: createURL("listS3s"),
-                  dataType: "json",
+                  url: createURL("listImageStores"),
+                  data: {
+                    provider: 'S3'
+                  },
                   async: false,
                   success: function(json) {
-                    var items = json.lists3sresponse.s3;
+                    var items = json.listimagestoreresponse.imagestore;
                     if (items != null && items.length > 0) {
                       havingS3 = true;
                     }
@@ -467,8 +475,6 @@
         };
       }
     };
-		
-    document.title = 'CloudStack';
 
     if ($.urlParam('loginUrl') != 0
 		||(window.name != null && window.name.indexOf("&domain=") != -1)) {
@@ -482,5 +488,7 @@
     cloudStack.localizationFn = function(str) {
       return dictionary[str];
     };
+
+    document.title = _l('label.app.name');
   });
 })(cloudStack, jQuery);

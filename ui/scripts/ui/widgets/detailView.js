@@ -70,7 +70,8 @@
             action.notification : {};
       var messages = action.messages;
       var id = args.id;
-      var context = args.context ? args.context : $detailView.data('view-args').context;
+      var context = $.extend(true, {},
+                             args.context ? args.context : $detailView.data('view-args').context);
       var _custom = $detailView.data('_custom');
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
@@ -87,8 +88,16 @@
 
       var updateTabContent = function(newData) {
         var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
+        var viewArgs = $detailView.data('view-args');
+        var context =  viewArgs.context;
+        var activeContextItem = viewArgs.section ? context[viewArgs.section][0] : null;
+        
         $detailView.tabs('destroy');
         $detailView.data('view-args').jsonObj = newData;
+
+        if (activeContextItem) {
+          $.extend(activeContextItem, newData);
+        }
 
         makeTabs(
           $detailView,
@@ -273,7 +282,7 @@
         notification.desc = messages.notification(messageArgs);
         notification.section = 'instances';
 
-        if (!action.createForm) {
+        if (!action.createForm && !action.listView) {
           if (messages && messages.confirm) {
             cloudStack.dialog.confirm({
               message: messages.confirm(messageArgs),
@@ -286,7 +295,7 @@
           } else {
             performAction({ id: id });
           }
-        } else {
+        } else if (action.createForm) {
           cloudStack.dialog.createForm({
             form: action.createForm,
             after: function(args) {
@@ -300,6 +309,15 @@
               id: id
             },
             context: context
+          });
+        } else if (action.listView) {
+          cloudStack.dialog.listView({
+            context: context,
+            listView: action.listView,
+            after: function(args) {
+              context = args.context;
+              performAction();
+            }
           });
         }
       }
@@ -1086,7 +1104,12 @@
                   .filter('.' + tabData.viewAll.attachTo).find('td.value')
                   .append(
                     $('<div>').addClass('view-all').append(
-                      $('<span>').html(_l('label.view.all'))
+                      $('<span>').html(
+                        tabData.viewAll.label ?
+                          _l(tabData.viewAll.label) :
+                          _l('label.view.all')
+                      ),
+                      $('<div>').addClass('end')
                     ).click(function() {
                       viewAll(
                         tabData.viewAll.path,
@@ -1163,7 +1186,8 @@
               !$detailView.data('view-args').compact) {
             $('<div>').tagger(
               $.extend(true, {}, tabs.tags, {
-                context: $detailView.data('view-args').context
+                context: $detailView.data('view-args').context,
+								jsonObj: $detailView.data('view-args').jsonObj
               })
             ).appendTo($detailView.find('.main-groups'));
           }

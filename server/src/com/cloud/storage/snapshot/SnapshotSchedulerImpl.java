@@ -56,6 +56,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
@@ -75,7 +76,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected VolumeDao               _volsDao;
     @Inject protected ConfigurationDao 		  _configDao;
-    
+
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
     private Timer      _testClockTimer;
@@ -207,10 +208,6 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
 
-        // This is done for recurring snapshots, which are executed by the system automatically
-        // Hence set user id to that of system
-        long userId = 1;
-
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             long snapshotScheId = snapshotToBeExecuted.getId();
@@ -235,7 +232,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(),
                         EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" + volumeId, 0);
 
                 Map<String, String> params = new HashMap<String, String>();
@@ -246,6 +243,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("ctxStartEventId", String.valueOf(eventId));
 
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                ComponentContext.inject(cmd);
                 ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
                 params.put("id", ""+cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
@@ -350,7 +348,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }
         _currentTimestamp = new Date();
-        
+
         s_logger.info("Snapshot Scheduler is configured.");
 
         return true;

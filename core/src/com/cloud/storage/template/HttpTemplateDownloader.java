@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Date;
 
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -45,11 +46,11 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.storage.DownloadCommand.Proxy;
-import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
+import com.cloud.agent.api.storage.Proxy;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 
 /**
  * Download a template file using HTTP
@@ -79,7 +80,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 	private ResourceType resourceType = ResourceType.TEMPLATE;
 	private final HttpMethodRetryHandler myretryhandler;
 
-	
+
 
 	public HttpTemplateDownloader (StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password, Proxy proxy, ResourceType resourceType) {
 		this._storage = storageLayer;
@@ -88,7 +89,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 		this.status = TemplateDownloader.Status.NOT_STARTED;
 		this.resourceType = resourceType;
 		this.MAX_TEMPLATE_SIZE_IN_BYTES = maxTemplateSizeInBytes;
-		
+
 		this.totalBytes = 0;
 		this.client = new HttpClient(s_httpClientManager);
 
@@ -114,7 +115,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 		        return false;
 		    }
 		};
-		
+
 		try {
 			this.request = new GetMethod(downloadUrl);
 			this.request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
@@ -122,14 +123,14 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 			//this.request.setFollowRedirects(false);
 
 			File f = File.createTempFile("dnld", "tmp_", new File(toDir));
-			
+
 			if (_storage != null) {
 				_storage.setWorldReadableAndWriteable(f);
 			}
-			
+
 			toFile = f.getAbsolutePath();
-			Pair<String, Integer> hostAndPort = validateUrl(downloadUrl);
-			
+			Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
+
 			if (proxy != null) {
 				client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
 				if (proxy.getUserName() != null) {
@@ -144,7 +145,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 				s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
 			} else {
 				s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
-			} 
+			}
 		} catch (IllegalArgumentException iae) {
 			errorString = iae.getMessage();
 			status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
@@ -157,47 +158,8 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 		    s_logger.warn("throwable caught ", th);
 		}
 	}
-	
 
-	private  Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
-		try {
-			URI uri = new URI(url);
-			if (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") ) {
-				throw new IllegalArgumentException("Unsupported scheme for url");
-			}
-			int port = uri.getPort();
-			if (!(port == 80 || port == 443 || port == -1)) {
-				throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-			}
-			
-			if (port == -1 && uri.getScheme().equalsIgnoreCase("https")) {
-				port = 443;
-			} else if (port == -1 && uri.getScheme().equalsIgnoreCase("http")) {
-				port = 80;
-			}
-			
-			String host = uri.getHost();
-			try {
-				InetAddress hostAddr = InetAddress.getByName(host);
-				if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-					throw new IllegalArgumentException("Illegal host specified in url");
-				}
-				if (hostAddr instanceof Inet6Address) {
-					throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-				}
-			    return new Pair<String, Integer>(host, port);
-			} catch (UnknownHostException uhe) {
-				throw new IllegalArgumentException("Unable to resolve " + host);
-			}
-		} catch (IllegalArgumentException iae) {
-			s_logger.warn("Failed uri validation check: " + iae.getMessage());
-			throw iae;
-		} catch (URISyntaxException use) {
-			s_logger.warn("Failed uri syntax check: " + use.getMessage());
-			throw new IllegalArgumentException(use.getMessage());
-		}
-	}
-	
+
 	@Override
 	public long download(boolean resume, DownloadCompleteCallback callback) {
 		switch (status) {
@@ -211,17 +173,17 @@ public class HttpTemplateDownloader implements TemplateDownloader {
         int bytes=0;
 		File file = new File(toFile);
 		try {
-			
+
 			long localFileSize = 0;
 			if (file.exists() && resume) {
 				localFileSize = file.length();
 				s_logger.info("Resuming download to file (current size)=" + localFileSize);
 			}
-			
+
             Date start = new Date();
 
 			int responseCode=0;
-			
+
 			if (localFileSize > 0 ) {
 				// require partial content support for resume
 				request.addRequestHeader("Range", "bytes=" + localFileSize + "-");
@@ -235,7 +197,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 				errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
                 return 0; //FIXME: retry?
             }
-			
+
             Header contentLengthHeader = request.getResponseHeader("Content-Length");
             boolean chunked = false;
             long remoteSize2 = 0;
@@ -250,31 +212,38 @@ public class HttpTemplateDownloader implements TemplateDownloader {
             	}
             } else {
             	remoteSize2 = Long.parseLong(contentLengthHeader.getValue());
+                if ( remoteSize2 == 0 ) {
+                    status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
+                    String downloaded = "(download complete remote=" + remoteSize + "bytes)";
+                    errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
+                    downloadTime = 0;
+                    return 0;
+                }
             }
 
             if (remoteSize == 0) {
             	remoteSize = remoteSize2;
             }
-            
+
             if (remoteSize > MAX_TEMPLATE_SIZE_IN_BYTES) {
             	s_logger.info("Remote size is too large: " + remoteSize + " , max=" + MAX_TEMPLATE_SIZE_IN_BYTES);
             	status = Status.UNRECOVERABLE_ERROR;
             	errorString = "Download file size is too large";
             	return 0;
             }
-            
+
             if (remoteSize == 0) {
             	remoteSize = MAX_TEMPLATE_SIZE_IN_BYTES;
             }
-            
+
             InputStream in = !chunked?new BufferedInputStream(request.getResponseBodyAsStream())
             						: new ChunkedInputStream(request.getResponseBodyAsStream());
-            
+
             RandomAccessFile out = new RandomAccessFile(file, "rwd");
             out.seek(localFileSize);
 
             s_logger.info("Starting download from " + getDownloadUrl() + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + MAX_TEMPLATE_SIZE_IN_BYTES);
-            
+
             byte[] block = new byte[CHUNK_SIZE];
             long offset=0;
             boolean done=false;
@@ -298,7 +267,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
             errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
             downloadTime += finish.getTime() - start.getTime();
             out.close();
-            
+
             return totalBytes;
 		}catch (HttpException hte) {
 			status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
@@ -336,8 +305,8 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 	public long getDownloadTime() {
 		return downloadTime;
 	}
-	
-	
+
+
 	public long getDownloadedBytes() {
 		return totalBytes;
 	}
@@ -375,7 +344,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 		if (remoteSize == 0) {
 			return 0;
 		}
-		
+
 		return (int)(100.0*totalBytes/remoteSize);
 	}
 
@@ -388,7 +357,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 			errorString = "Failed to install: " + t.getMessage();
 			status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
 		}
-		
+
 	}
 
 	@Override
@@ -424,10 +393,10 @@ public class HttpTemplateDownloader implements TemplateDownloader {
 		return toDir;
 	}
 
-	public long getMaxTemplateSizeInBytes() { 
+	public long getMaxTemplateSizeInBytes() {
 		return this.MAX_TEMPLATE_SIZE_IN_BYTES;
 	}
-	
+
 	public static void main(String[] args) {
 		String url ="http:// dev.mysql.com/get/Downloads/MySQL-5.0/mysql-noinstall-5.0.77-win32.zip/from/http://mirror.services.wisc.edu/mysql/";
 		try {

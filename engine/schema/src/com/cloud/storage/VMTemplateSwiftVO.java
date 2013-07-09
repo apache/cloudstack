@@ -101,7 +101,8 @@ public class VMTemplateSwiftVO implements InternalIdentity {
 
     @Override
     public String toString() {
-        return new StringBuilder("TmplSwift[").append(id).append("-").append(templateId).append("-").append(swiftId).append("]").toString();
+        return new StringBuilder("TmplSwift[").append(id).append("-").append(templateId).append("-").append(swiftId)
+                .append("]").toString();
     }
 
 }

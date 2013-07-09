@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -45,12 +46,12 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -405,8 +406,8 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.VirtualMachine;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.VirtualMachine;
     }
 
     @Override
@@ -424,9 +425,15 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 s_logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             } catch (InsufficientCapacityException ex) {
+                StringBuilder message = new StringBuilder(ex.getMessage());
+                if (ex instanceof InsufficientServerCapacityException) {
+                    if(((InsufficientServerCapacityException)ex).isAffinityApplied()){
+                        message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
+                    }
+                }
                 s_logger.info(ex);
-                s_logger.info(ex.getMessage(), ex);
-                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+                s_logger.info(message.toString(), ex);
+                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
             result = _userVmService.getUserVm(getEntityId());

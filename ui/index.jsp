@@ -15,7 +15,7 @@ software distributed under the License is distributed on an
 KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
---%>
+--%><%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <c:if test="${!empty cookie.lang}">
@@ -1698,7 +1698,6 @@ under the License.
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/projectSelect.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/ui-custom/zoneFilter.js?t=<%=now%>"></script>
 
     <!-- Plugin/module API -->
     <script type="text/javascript" src="scripts/ui-custom/pluginListing.js?t=<%=now%>"></script>

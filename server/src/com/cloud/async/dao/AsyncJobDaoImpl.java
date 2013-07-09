@@ -26,7 +26,8 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.async.AsyncJob;
+import org.apache.cloudstack.api.ApiCommandJobType;
+
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.DB;
@@ -43,7 +44,9 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	
 	private final SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;	
 	private final SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;	
-	private final SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;		
+	private final SearchBuilder<AsyncJobVO> expiringUnfinishedAsyncJobSearch;
+	private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
+
 	
 	public AsyncJobDaoImpl() {
 		pendingAsyncJobSearch = createSearchBuilder();
@@ -64,10 +67,19 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 				SearchCriteria.Op.EQ);
 		pendingAsyncJobsSearch.done();
 		
-		expiringAsyncJobSearch = createSearchBuilder();
-		expiringAsyncJobSearch.and("created", expiringAsyncJobSearch.entity().getCreated(), 
+		expiringUnfinishedAsyncJobSearch = createSearchBuilder();
+		expiringUnfinishedAsyncJobSearch.and("created", expiringUnfinishedAsyncJobSearch.entity().getCreated(),
 			SearchCriteria.Op.LTEQ);
-		expiringAsyncJobSearch.done();
+		expiringUnfinishedAsyncJobSearch.and("completeMsId", expiringUnfinishedAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
+		expiringUnfinishedAsyncJobSearch.and("jobStatus", expiringUnfinishedAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+		expiringUnfinishedAsyncJobSearch.done();
+		
+		expiringCompletedAsyncJobSearch = createSearchBuilder();
+		expiringCompletedAsyncJobSearch.and("created", expiringCompletedAsyncJobSearch.entity().getCreated(),
+			SearchCriteria.Op.LTEQ);
+		expiringCompletedAsyncJobSearch.and("completeMsId", expiringCompletedAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NNULL);
+		expiringCompletedAsyncJobSearch.and("jobStatus", expiringCompletedAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.NEQ);
+		expiringCompletedAsyncJobSearch.done();
 	}
 	
 	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
@@ -87,7 +99,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         return null;
 	}
 	
-	public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
+	public List<AsyncJobVO> findInstancePendingAsyncJobs(ApiCommandJobType instanceType, Long accountId) {
 		SearchCriteria<AsyncJobVO> sc = pendingAsyncJobsSearch.create();
         sc.setParameters("instanceType", instanceType);
         
@@ -99,9 +111,20 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         return listBy(sc);
 	}
 	
-	public List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit) {
-		SearchCriteria<AsyncJobVO> sc = expiringAsyncJobSearch.create();
+	@Override
+	public List<AsyncJobVO> getExpiredUnfinishedJobs(Date cutTime, int limit) {
+		SearchCriteria<AsyncJobVO> sc = expiringUnfinishedAsyncJobSearch.create();
 		sc.setParameters("created", cutTime);
+		sc.setParameters("jobStatus", 0);
+		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
+		return listIncludingRemovedBy(sc, filter);
+	}
+	
+	@Override
+	public List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit) {
+		SearchCriteria<AsyncJobVO> sc = expiringCompletedAsyncJobSearch.create();
+		sc.setParameters("created", cutTime);
+		sc.setParameters("jobStatus", 0);
 		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
 		return listIncludingRemovedBy(sc, filter);
 	}

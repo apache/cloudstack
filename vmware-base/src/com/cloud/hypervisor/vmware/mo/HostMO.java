@@ -149,6 +149,13 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		throw new Exception("Could not find host default gateway, host is not properly configured?");
 	}
 
+	public HostStorageSystemMO getHostStorageSystemMO() throws Exception {
+		return new HostStorageSystemMO(_context,
+			(ManagedObjectReference)_context.getVimClient().getDynamicProperty(
+				_mor, "configManager.storageSystem")
+		);
+	}
+
 	public HostDatastoreSystemMO getHostDatastoreSystemMO() throws Exception {
 		return new HostDatastoreSystemMO(_context,
 			(ManagedObjectReference)_context.getVimClient().getDynamicProperty(
@@ -797,14 +804,14 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 
 	@Override
-	public void unmountDatastore(String poolUuid) throws Exception {
+	public void unmountDatastore(String uuid) throws Exception {
 
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - unmountDatastore(). target MOR: " + _mor.getValue() + ", poolUuid: " + poolUuid);
+			s_logger.trace("vCenter API trace - unmountDatastore(). target MOR: " + _mor.getValue() + ", uuid: " + uuid);
 
     	HostDatastoreSystemMO hostDatastoreSystemMo = getHostDatastoreSystemMO();
-    	if(!hostDatastoreSystemMo.deleteDatastore(poolUuid)) {
-    		String msg = "Unable to unmount datastore. uuid: " + poolUuid;
+    	if(!hostDatastoreSystemMo.deleteDatastore(uuid)) {
+    		String msg = "Unable to unmount datastore. uuid: " + uuid;
     		s_logger.error(msg);
 
     		if(s_logger.isTraceEnabled())
@@ -965,4 +972,17 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         return false;
     }
+
+    public LicenseAssignmentManagerMO getLicenseAssignmentManager() throws Exception {
+        ManagedObjectReference licenseMgr;
+        ManagedObjectReference licenseAssignmentManager;
+        LicenseManagerMO licenseMgrMo;
+
+        licenseMgr = _context.getServiceContent().getLicenseManager();
+        licenseMgrMo = new LicenseManagerMO(_context, licenseMgr);
+        licenseAssignmentManager = licenseMgrMo.getLicenseAssignmentManager();
+
+        return new LicenseAssignmentManagerMO(_context, licenseAssignmentManager);
+    }
+
 }

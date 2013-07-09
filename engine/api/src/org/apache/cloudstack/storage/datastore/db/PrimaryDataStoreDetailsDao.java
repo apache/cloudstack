@@ -21,7 +21,8 @@ import java.util.Map;
 import com.cloud.utils.db.GenericDao;
 
 public interface PrimaryDataStoreDetailsDao extends GenericDao<PrimaryDataStoreDetailVO, Long> {
-    
+
     void update(long poolId, Map<String, String> details);
+
     Map<String, String> getDetails(long poolId);
 }

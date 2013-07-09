@@ -298,6 +298,17 @@
      * Layout/behavior for each step in wizard
      */
     var steps = {
+      start: function(args) {
+        if (cloudStack.preInstall) {
+          return cloudStack.preInstall({
+            complete: function() {
+              goTo('intro');
+            }
+          });
+        }
+
+        return steps.intro(args);
+      },
       intro: function(args) {
         var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
         var $title = $('<div></div>').addClass('title').html(_l('label.what.is.cloudstack'));
@@ -598,6 +609,25 @@
             }
           },
 
+        scope:{
+           label:'label.scope',
+           select:function(args){
+             var scopeData=[];
+                //intelligence to handle different hypervisors to be added here
+           /*  if( selectedHypervisor == 'XenServer'){
+                       scopeData.push({ id: 'cluster', description: _l('label.cluster') });
+               }*/
+             // else if (selectedHypervisor == 'KVM'){
+                  scopeData.push({ id: 'cluster', description: _l('label.cluster') });
+                  scopeData.push({ id: 'zone', description: _l('label.zone.wide') });
+
+              args.response.success({
+
+                data: scopeData
+              });
+           }
+          },
+
           server: {
             label: 'label.server',
             validation: { required: true }
@@ -775,7 +805,7 @@
       }
     };
 
-    var initialStep = steps.intro().addClass('step');
+    var initialStep = steps.start().addClass('step');
     
 
     showDiagram('');

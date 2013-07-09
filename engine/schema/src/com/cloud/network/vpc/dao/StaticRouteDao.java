@@ -26,7 +26,7 @@ public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long>{
     
     boolean setStateToAdd(StaticRouteVO rule);
 
-    List<? extends StaticRoute> listByGatewayIdAndNotRevoked(long gatewayId);
+    List<? extends StaticRoute> listByVpcIdAndNotRevoked(long vpcId);
     
     List<StaticRouteVO> listByVpcId(long vpcId);
     

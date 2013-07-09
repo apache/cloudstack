@@ -902,9 +902,24 @@ public class NetscalerResource implements ServerResource {
                                     servicePublicIp, servicePublicPort, siteName);
 
                             // Bind 'gslbservice' service object to GSLB virtual server
-                            GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName);
+                            GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName, site.getWeight());
+
+                            // create a monitor for the service running on the site
+                            GSLB.createGslbServiceMonitor(_netscalerService, servicePublicIp, serviceName);
+
+                            // bind the monitor to the GSLB service
+                            GSLB.createGslbServiceGslbMonitorBinding(_netscalerService, servicePublicIp, serviceName);
 
                         } else {
+
+                            String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
+
+                            // delete GSLB service and GSLB monitor binding
+                            GSLB.deleteGslbServiceGslbMonitorBinding(_netscalerService, monitorName, serviceName);
+
+                            // delete the GSLB service monitor
+                            GSLB.deleteGslbServiceMonitor(_netscalerService, monitorName);
+
                             // Unbind GSLB service with GSLB virtual server
                             GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
 
@@ -935,9 +950,16 @@ public class NetscalerResource implements ServerResource {
                         String servicePublicIp = site.getServicePublicIp();
                         String servicePublicPort = site.getServicePort();
                         String siteName = GSLB.generateUniqueSiteName(sitePrivateIP, sitePublicIP, site.getDataCenterId());
+                        String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
+                        String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
+
+                        // delete GSLB service and GSLB monitor binding
+                        GSLB.deleteGslbServiceGslbMonitorBinding(_netscalerService, servicePublicIp, serviceName);
+
+                        // delete the GSLB service monitor
+                        GSLB.deleteGslbServiceMonitor(_netscalerService, monitorName);
 
                         // remove binding between virtual server and services
-                        String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
                         GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
 
                         // delete service object
@@ -1312,13 +1334,16 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName)
+        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName,
+                                                        long weight)
                     throws ExecutionException {
             String errMsg;
             try {
+                assert(weight >= 1 && weight <= 100);
                 gslbvserver_gslbservice_binding binding = new gslbvserver_gslbservice_binding();
                 binding.set_name(vserverName);
                 binding.set_servicename(serviceName);
+                binding.set_weight(weight);
                 gslbvserver_gslbservice_binding.add(client, binding);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully created service: " + serviceName + " and virtual server: "
@@ -1426,6 +1451,75 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
+        private static void createGslbServiceMonitor(nitro_service nsService, String servicePublicIp,
+                                                     String serviceName) throws ExecutionException {
+            try {
+                lbmonitor newmonitor = new lbmonitor();
+                String monitorName =  generateGslbServiceMonitorName(servicePublicIp);
+                newmonitor.set_type("TCP");
+                newmonitor.set_servicename(serviceName);
+                newmonitor.set_monitorname(monitorName);
+                newmonitor.set_state("ENABLED");
+                lbmonitor.add(nsService, newmonitor);
+            } catch (nitro_exception ne) {
+                if (ne.getErrorCode() == NitroError.NS_RESOURCE_EXISTS) {
+                    return;
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to create GSLB monitor for service public ip" + servicePublicIp;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
+            }
+        }
+
+        private static void deleteGslbServiceMonitor(nitro_service nsService, String monitorName)
+                throws ExecutionException {
+            try {
+                lbmonitor serviceMonitor = lbmonitor.get(nsService, monitorName);
+                if (serviceMonitor != null) {
+                    lbmonitor.delete(nsService, serviceMonitor);
+                }
+            } catch (nitro_exception ne) {
+                if (ne.getErrorCode() != NitroError.NS_RESOURCE_NOT_EXISTS) {
+                    String errMsg = "Failed to delete monitor "+ monitorName + " for GSLB service due to " + ne.getMessage();
+                    s_logger.debug(errMsg);
+                    throw new com.cloud.utils.exception.ExecutionException(errMsg);
+                }
+            } catch (Exception e) {
+                String errMsg = "Failed to delete monitor "+ monitorName + " for GSLB service due to " + e.getMessage();
+                s_logger.debug(errMsg);
+                throw new com.cloud.utils.exception.ExecutionException(errMsg);
+            }
+        }
+
+        private static void createGslbServiceGslbMonitorBinding(nitro_service nsService, String servicePublicIp,
+                                                            String serviceName) {
+            try {
+                String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
+                gslbservice_lbmonitor_binding monitorBinding = new gslbservice_lbmonitor_binding();
+                monitorBinding.set_monitor_name(monitorName);
+                monitorBinding.set_servicename(serviceName);
+                gslbservice_lbmonitor_binding.add(nsService, monitorBinding);
+            } catch (Exception e) {
+                // TODO: Nitro API version 10.* is not compatible for NetScalers 9.*, so may fail
+                // against NetScaler version lesser than 10 hence ignore the exception
+                s_logger.warn("Failed to bind monitor to GSLB service due to " + e.getMessage());
+            }
+        }
+
+        private static void deleteGslbServiceGslbMonitorBinding(nitro_service nsService, String monitorName,
+                                                                String serviceName) {
+            try {
+                gslbservice_lbmonitor_binding[] monitorBindings = gslbservice_lbmonitor_binding.get(nsService, serviceName);
+                gslbservice_lbmonitor_binding.delete(nsService, monitorBindings);
+            } catch (Exception e) {
+                s_logger.warn("Failed to delet GSLB monitor " + monitorName + "and GSLB service " +  serviceName +
+                        " binding due to " + e.getMessage());
+            }
+        }
+
         // get 'gslbsite' object corresponding to a site name
         private static gslbsite getSiteObject(nitro_service client, String siteName) {
             try {
@@ -1467,6 +1561,10 @@ public class NetscalerResource implements ServerResource {
 
         private static String generateUniqueServiceName(String siteName, String publicIp, String publicPort) {
             return "cloud-gslb-service-" + siteName + "-" + publicIp + "-" + publicPort;
+        }
+
+        private static String generateGslbServiceMonitorName(String publicIp) {
+            return "cloud-monitor-" + publicIp;
         }
 
         private static boolean gslbServerExists(nitro_service client, String serverName) throws ExecutionException {

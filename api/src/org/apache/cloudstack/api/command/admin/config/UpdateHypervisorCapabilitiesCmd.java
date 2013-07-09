@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.config;
 
+import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,13 +25,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.user.Account;
-
-@APICommand(name = "updateHypervisorCapabilities", description="Updates a hypervisor capabilities.", responseObject=ServiceOfferingResponse.class, since="3.0.0")
+@APICommand(name = "updateHypervisorCapabilities", description="Updates a hypervisor capabilities.", responseObject=HypervisorCapabilitiesResponse.class, since="3.0.0")
 public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
     private static final String s_name = "updatehypervisorcapabilitiesresponse";

@@ -18,12 +18,17 @@ package com.cloud.storage;
 
 import java.net.UnknownHostException;
 
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 
+import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 
@@ -43,6 +48,8 @@ public interface StorageService{
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException,
     UnknownHostException, ResourceUnavailableException;
+    
+    ImageStore createCacheStore(CreateCacheStoreCmd cmd);
 
     /**
      * Delete the storage pool
@@ -82,4 +89,9 @@ public interface StorageService{
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
     public StoragePool getStoragePool(long id);
+
+    boolean deleteImageStore(DeleteImageStoreCmd cmd);
+
+    ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
 }

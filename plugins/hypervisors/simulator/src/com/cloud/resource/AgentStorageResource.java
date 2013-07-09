@@ -50,7 +50,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     public AgentStorageResource() {
-        setType(Host.Type.SecondaryStorage);
+        setType(Type.SecondaryStorageVM);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     @Override
-    public String getRootDir(ssCommand cmd) {
+    public String getRootDir(String url) {
         // TODO Auto-generated method stub
         return null;
     }

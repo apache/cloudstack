@@ -81,42 +81,44 @@ public class OvsVifDriver extends VifDriverBase {
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1)? nic.getNetworkRateMbps().intValue() * 128: 0;
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan)
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
-                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 } else {
-                    intf.defBridgeNet(_pifs.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
                 s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
                 intf.setVirtualPortInterfaceId(nic.getUuid());
                 String brName = (trafficLabel != null && !trafficLabel.isEmpty()) ? _pifs.get(trafficLabel) : _pifs.get("private");
-                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
+                intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
             }
             else {
-                intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
             }
         } else if (nic.getType() == Networks.TrafficType.Control) {
             /* Make sure the network is still there */
             createControlNetwork(_bridges.get("linklocal"));
             intf.defBridgeNet(_bridges.get("linklocal"), null, nic.getMac(), getGuestNicModel(guestOsType));
         } else if (nic.getType() == Networks.TrafficType.Public) {
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1)? nic.getNetworkRateMbps().intValue() * 128: 0;
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()){
                     s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
-                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 } else {
-                    intf.defBridgeNet(_pifs.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                    intf.defBridgeNet(_pifs.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else {
-                intf.defBridgeNet(_bridges.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType));
+                intf.defBridgeNet(_bridges.get("public"), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
             }
         } else if (nic.getType() == Networks.TrafficType.Management) {
             intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType));

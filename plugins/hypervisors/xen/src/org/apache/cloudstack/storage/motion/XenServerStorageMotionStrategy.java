@@ -19,20 +19,23 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -50,6 +53,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -73,7 +77,12 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
 
     @Override
     public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return true;
+        boolean canHandle = false;
+        if (srcHost.getHypervisorType() == HypervisorType.XenServer &&
+                destHost.getHypervisorType() == HypervisorType.XenServer) {
+            canHandle = true;
+        }
+        return canHandle;
     }
 
     @Override
@@ -211,12 +220,12 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         }
     }
 
-    private void updateVolumePathsAfterMigration(Map<VolumeInfo, DataStore> volumeToPool, List<VolumeTO> volumeTos) {
+    private void updateVolumePathsAfterMigration(Map<VolumeInfo, DataStore> volumeToPool, List<VolumeObjectTO> volumeTos) {
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
             boolean updated = false;
             VolumeInfo volume = entry.getKey();
             StoragePool pool = (StoragePool)entry.getValue();
-            for (VolumeTO volumeTo : volumeTos) {
+            for (VolumeObjectTO volumeTo : volumeTos) {
                 if (volume.getId() == volumeTo.getId()) {
                     VolumeVO volumeVO = volDao.findById(volume.getId());
                     Long oldPoolId = volumeVO.getPoolId();

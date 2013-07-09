@@ -81,10 +81,15 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param useVirtualNetwork
      * @param deploymentPlanner
      * @param details
+     * @param bytesReadRate
+     * @param bytesWriteRate
+     * @param iopsReadRate
+     * @param iopsWriteRate
      * @return ID
      */
     ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details);
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
     /**
      * Creates a new disk offering
@@ -97,9 +102,18 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param isCustomized
      * @param localStorageRequired
      * @param isDisplayOfferingEnabled
+     * @param isCustomizedIops (is admin allowing users to set custom iops?)
+     * @param minIops
+     * @param maxIops
+     * @param bytesReadRate
+     * @param bytesWriteRate
+     * @param iopsReadRate
+     * @param iopsWriteRate
      * @return newly created disk offering
      */
-    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled);
+    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
+    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
+    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
     /**
      * Creates a new pod
@@ -205,7 +219,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap,
             boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap,
-            boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail,String> details);
+            boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail,String> details, boolean egressDefaultPolicy);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.host;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -26,7 +27,6 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -83,8 +83,8 @@ public class ReleaseHostReservationCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Host;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Host;
     }
 
     @Override

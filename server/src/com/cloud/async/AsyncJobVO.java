@@ -32,6 +32,8 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -86,7 +88,7 @@ public class AsyncJobVO implements AsyncJob {
     
     @Enumerated(value=EnumType.STRING)
     @Column(name="instance_type", length=64)
-    private Type instanceType;
+    private ApiCommandJobType instanceType;
     
 	@Column(name="instance_id", length=64)
     private Long instanceId;
@@ -125,7 +127,7 @@ public class AsyncJobVO implements AsyncJob {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, Type instanceType) {
+    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, ApiCommandJobType instanceType) {
 	this.userId = userId;
 	this.accountId = accountId;
 	this.cmd = cmd;
@@ -137,7 +139,7 @@ public class AsyncJobVO implements AsyncJob {
     }
 
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
+	int callbackType, String callbackAddress, Long instanceId, ApiCommandJobType instanceType) {
 
 	this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
 	this.callbackType = callbackType;
@@ -309,11 +311,11 @@ public class AsyncJobVO implements AsyncJob {
 	}
 	
     @Override
-    public Type getInstanceType() {
+    public ApiCommandJobType getInstanceType() {
 		return instanceType;
 	}
 
-	public void setInstanceType(Type instanceType) {
+	public void setInstanceType(ApiCommandJobType instanceType) {
 		this.instanceType = instanceType;
 	}
 

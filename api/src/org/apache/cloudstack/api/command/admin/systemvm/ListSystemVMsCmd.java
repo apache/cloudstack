@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
@@ -74,9 +74,6 @@ public class ListSystemVMsCmd extends BaseListCmd {
             description="the storage ID where vm's volumes belong to", since="3.0.1")
     private Long storageId;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -113,10 +110,6 @@ public class ListSystemVMsCmd extends BaseListCmd {
         return storageId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -126,8 +119,8 @@ public class ListSystemVMsCmd extends BaseListCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.SystemVm;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SystemVm;
     }
 
     @Override

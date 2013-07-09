@@ -18,15 +18,34 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
 
 public interface DataObject {
-    public long getId();
-    public String getUri();
-    public DataStore getDataStore();
-    public Long getSize();
-    public DataObjectType getType();
-    public DiskFormat getFormat();
-    public String getUuid();
-    public void processEvent(ObjectInDataStoreStateMachine.Event event);
+    long getId();
+
+    String getUri();
+
+    DataTO getTO();
+
+    DataStore getDataStore();
+
+    Long getSize();
+
+    DataObjectType getType();
+
+    String getUuid();
+
+    boolean delete();
+
+    void processEvent(ObjectInDataStoreStateMachine.Event event);
+
+    void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer);
+
+    void incRefCount();
+
+    void decRefCount();
+
+    Long getRefCount();
 }

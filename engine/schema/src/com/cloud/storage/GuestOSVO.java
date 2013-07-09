@@ -25,66 +25,63 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 @Entity
-@Table(name="guest_os")
+@Table(name = "guest_os")
 public class GuestOSVO implements GuestOS {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="category_id")
+    @Column(name = "category_id")
     private long categoryId;
 
-    @Column(name="name")
+    @Column(name = "name")
     String name;
 
-    @Column(name="display_name")
+    @Column(name = "display_name")
     String displayName;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
     @Override
     public long getId() {
-    	return id;
+        return id;
     }
 
     public long getCategoryId() {
-    	return categoryId;
+        return categoryId;
     }
 
     public void setCategoryId(long categoryId) {
-    	this.categoryId = categoryId;
+        this.categoryId = categoryId;
     }
 
     @Override
     public String getName() {
-    	return name;
+        return name;
     }
 
     public void setName(String name) {
-    	this.name = name;
+        this.name = name;
     }
 
     @Override
     public String getDisplayName() {
-    	return displayName;
+        return displayName;
     }
 
     public void setDisplayName(String displayName) {
-    	this.displayName = displayName;
+        this.displayName = displayName;
     }
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 }

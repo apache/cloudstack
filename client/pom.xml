@@ -22,12 +22,22 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-volume-solidfire</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-acl-static-role-based</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-dedicated-resources</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -85,7 +95,12 @@
       <artifactId>cloud-plugin-network-midonet</artifactId>
       <version>${project.version}</version>
     </dependency>
-  <dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-ssp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-internallb</artifactId>
       <version>${project.version}</version>
@@ -98,6 +113,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -134,6 +154,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-planner-implicit-dedication</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-explicit-dedication</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -201,7 +226,7 @@
     </dependency>
     <dependency>
         <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-backup</artifactId>
+        <artifactId>cloud-engine-storage-cache</artifactId>
         <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -211,7 +236,7 @@
     </dependency>
     <dependency>
         <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-imagemotion</artifactId>
+        <artifactId>cloud-engine-storage-datamotion</artifactId>
         <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -233,6 +258,26 @@
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-plugin-storage-volume-default</artifactId>
         <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-image-default</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-image-s3</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-storage-image-swift</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-image-simulator</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -272,6 +317,8 @@
         <artifactId>maven-jetty-plugin</artifactId>
         <version>6.1.26</version>
         <configuration>
+          <stopPort>9966</stopPort>
+          <stopKey>stop-jetty</stopKey>
           <connectors>
             <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
               <port>8080</port>

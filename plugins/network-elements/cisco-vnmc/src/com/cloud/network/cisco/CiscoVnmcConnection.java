@@ -74,16 +74,16 @@ public interface CiscoVnmcConnection {
             String ipAddress) throws ExecutionException;
 
     public boolean createTenantVDCDNatRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String publicIp)
             throws ExecutionException;
 
     public boolean deleteTenantVDCDNatRule(String tenantName,
-            String identifier, String policyIdentifier)
+            long ruleId, String policyIdentifier)
             throws ExecutionException;
 
     public boolean createTenantVDCAclRuleForDNat(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String ipAddress)
             throws ExecutionException;
 
@@ -104,17 +104,17 @@ public interface CiscoVnmcConnection {
             String ipAddress) throws ExecutionException;
 
     public boolean createTenantVDCPFRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String publicIp,
             String startPort, String endPort)
             throws ExecutionException;
 
     public boolean deleteTenantVDCPFRule(String tenantName,
-            String identifier, String policyIdentifier)
+            long ruleId, String policyIdentifier)
             throws ExecutionException;
 
     public boolean createTenantVDCAclRuleForPF(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String ipAddress,
             String startPort, String endPort)
             throws ExecutionException;
@@ -138,29 +138,29 @@ public interface CiscoVnmcConnection {
             throws ExecutionException;
 
     public boolean createTenantVDCIngressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort)
             throws ExecutionException;
 
     public boolean createTenantVDCIngressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp)
             throws ExecutionException;
 
     public boolean createTenantVDCEgressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort)
             throws ExecutionException;
 
     public boolean createTenantVDCEgressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp)
             throws ExecutionException;
 
     public boolean deleteTenantVDCAclRule(String tenantName,
-            String identifier, String policyIdentifier) throws ExecutionException;
+            long ruleId, String policyIdentifier) throws ExecutionException;
 
     public boolean createTenantVDCAclPolicy(String tenantName,
             String identifier) throws ExecutionException;

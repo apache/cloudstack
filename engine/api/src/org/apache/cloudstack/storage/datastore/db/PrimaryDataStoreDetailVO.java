@@ -24,28 +24,28 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="storage_pool_details")
+@Table(name = "storage_pool_details")
 public class PrimaryDataStoreDetailVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="pool_id")
+
+    @Column(name = "pool_id")
     long poolId;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     String name;
-    
-    @Column(name="value")
+
+    @Column(name = "value")
     String value;
-    
+
     public PrimaryDataStoreDetailVO(long poolId, String name, String value) {
         this.poolId = poolId;
         this.name = name;
         this.value = value;
     }
-   
+
     public long getId() {
         return id;
     }

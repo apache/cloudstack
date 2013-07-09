@@ -70,10 +70,12 @@
           response: {
             success: function(args) {
               var vmID = args.data.virtualmachineid;
+              var vmIP = args.data.vmipaddress;
               var vmName = args.data.virtualmachinename;
 
               $vmName.append(
-                $('<span>').html('VM: ' + vmName)
+                $('<span>').html('VM: ' + _s(vmName)),
+                $('<span>').html('<br/>VM IP: ' + vmIP)
               );
 
               $vmName.click(function() {

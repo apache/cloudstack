@@ -17,6 +17,7 @@
 package com.cloud.resource;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +25,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -37,6 +43,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.manager.MockStorageManager;
 import com.cloud.exception.ConnectionException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.storage.SnapshotVO;
@@ -51,6 +58,13 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     @Inject AgentManager _agentMgr;
     @Inject ResourceManager _resourceMgr;
     @Inject SnapshotDao _snapshotDao;
+    @Inject
+    ImageStoreDao imageStoreDao;
+    protected SecondaryStorageResource resource;
+
+    public void setResource(SecondaryStorageResource resource) {
+        this.resource = resource;
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -61,33 +75,23 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
 
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
-        if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("file")
-                && !uri.getScheme().equalsIgnoreCase("iso") && !uri.getScheme().equalsIgnoreCase("dummy")) {
+        if (!uri.getScheme().equalsIgnoreCase("sim")) {
             s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
-
-        if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("iso")) {
-            return createNfsSecondaryStorageResource(dcId, podId, uri);
-        } else if (uri.getScheme().equalsIgnoreCase("file")) {
-            return createLocalSecondaryStorageResource(dcId, podId, uri);
-        } else if (uri.getScheme().equalsIgnoreCase("dummy")) {
-            return createDummySecondaryStorageResource(dcId, podId, uri);
-        } else {
-            return null;
+        List<ImageStoreVO> stores = imageStoreDao.listImageStores();
+        for (ImageStoreVO store : stores) {
+            _mockStorageMgr.preinstallTemplates(store.getUrl(), dcId);
         }
+        Map<SecondaryStorageResource, Map<String, String>> resources = new HashMap<SecondaryStorageResource, Map<String, String>>();
+        resources.put(this.resource, new HashMap<String, String>());
+        return resources;
     }
 
 
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId) {
-        super.postDiscovery(hosts, msId);
-        for (HostVO host: hosts) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Preinstalling simulator templates");
-            }
-            _mockStorageMgr.preinstallTemplates(host.getStorageUrl(), host.getDataCenterId());
-        }
+
     }
 
     @Override
@@ -113,16 +117,8 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
             boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        long hostId = host.getId();
-        List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
-        if (snapshots != null && !snapshots.isEmpty()) {
-            throw new CloudRuntimeException("Cannot delete this secondary storage because there are still snapshots on it ");
-        }
-        _vmTemplateHostDao.deleteByHost(hostId);
-        host.setGuid(null);
-        _hostDao.update(hostId, host);
-        _hostDao.remove(hostId);
-        return new DeleteHostAnswer(true);
+        // no need to handle, since secondary storage is no longer a host anymore.
+        return null;
     }
 
     @Override
@@ -157,7 +153,7 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd,
+    public void processConnect(Host host, StartupCommand cmd,
             boolean forRebalance) throws ConnectionException {
 
     }

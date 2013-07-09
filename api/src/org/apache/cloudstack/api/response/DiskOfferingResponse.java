@@ -52,11 +52,32 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("iscustomized") @Param(description="true if disk offering uses custom size, false otherwise")
     private Boolean customized;
 
+    @SerializedName("iscustomizediops") @Param(description="true if disk offering uses custom iops, false otherwise")
+    private Boolean customizedIops;
+
+    @SerializedName(ApiConstants.MIN_IOPS) @Param(description="the min iops of the disk offering")
+    private Long minIops;
+
+    @SerializedName(ApiConstants.MAX_IOPS) @Param(description="the max iops of the disk offering")
+    private Long maxIops;
+
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
     private String tags;
 
     @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
     private String storageType;
+
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk offering")
+    private Long bytesReadRate;
+
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the disk offering")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the disk offering")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk offering")
+    private Long iopsWriteRate;
 
     @SerializedName("displayoffering") @Param(description="whether to display the offering to the end user or not.")
     private Boolean displayOffering;
@@ -142,11 +163,51 @@ public class DiskOfferingResponse extends BaseResponse {
         this.customized = customized;
     }
 
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
     public String getStorageType() {
         return storageType;
     }
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
     }
 }

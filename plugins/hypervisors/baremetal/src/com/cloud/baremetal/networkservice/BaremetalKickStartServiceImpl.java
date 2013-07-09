@@ -27,6 +27,9 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
+import org.apache.cloudstack.api.AddBaremetalPxeCmd;
+import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;

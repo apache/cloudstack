@@ -322,7 +322,18 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         @Override
         public int compare(String cidr1, String cidr2) {
-            return cidr1.compareTo(cidr2); // FIXME
+           // parse both to find significance first (low number of bits is high)
+           // if equal then just do a string compare
+           if(significance(cidr1) == significance(cidr2)) {
+                return cidr1.compareTo(cidr2);
+           }
+           else {
+                return significance(cidr2) - significance(cidr1);
+           }
+        }
+        private int significance(String cidr)
+        {
+           return Integer.parseInt(cidr.substring(cidr.indexOf('/')+1));
         }
 
     }

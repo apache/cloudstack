@@ -21,6 +21,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -29,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -106,8 +106,8 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
         return  "configuring virtual router provider: " + id;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.None;
     }
 
     public Long getInstanceId() {

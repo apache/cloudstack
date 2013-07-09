@@ -208,6 +208,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         VpcNetworksCount = createSearchBuilder(Long.class);
         VpcNetworksCount.and("vpcId", VpcNetworksCount.entity().getVpcId(), Op.EQ);
         VpcNetworksCount.select(null, Func.COUNT, VpcNetworksCount.entity().getId());
+        SearchBuilder<NetworkOfferingVO> join9 = _ntwkOffDao.createSearchBuilder();
+        join9.and("isSystem", join9.entity().isSystemOnly(), Op.EQ);
+        VpcNetworksCount.join("offerings", join9, VpcNetworksCount.entity().getNetworkOfferingId(), join9.entity().getId(), JoinBuilder.JoinType.INNER);
         VpcNetworksCount.done();
 
         OfferingAccountNetworkSearch = createSearchBuilder();
@@ -587,6 +590,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public long countVpcNetworks(long vpcId) {
         SearchCriteria<Long> sc = VpcNetworksCount.create();
         sc.setParameters("vpcId", vpcId);
+        //offering shouldn't be system (the one used by the private gateway)
+        sc.setJoinParameters("offerings", "isSystem", false);
         return customSearch(sc, null).get(0);
     }
 

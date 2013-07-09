@@ -38,7 +38,7 @@ class cloudConnection(object):
                  apiKey=None, securityKey=None,
                  asyncTimeout=3600, logging=None, scheme='http',
                  path='client/api'):
-        self.loglevel() #Turn off requests logs
+        self.loglevel()  # Turn off requests logs
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
@@ -172,8 +172,7 @@ class cloudConnection(object):
         requests = {}
         required = []
         for attribute in dir(cmd):
-            if attribute != "__doc__" and attribute != "__init__" and\
-               attribute != "__module__":
+            if not attribute.startswith('__'):
                 if attribute == "isAsync":
                     isAsync = getattr(cmd, attribute)
                 elif attribute == "required":
@@ -204,7 +203,7 @@ class cloudConnection(object):
                             i = i + 1
         return cmdname, isAsync, requests
 
-    def marvin_request(self, cmd, response_type=None, method='GET'):
+    def marvin_request(self, cmd, response_type=None, method='GET', data=''):
         """
         Requester for marvin command objects
         @param cmd: marvin's command from cloudstackAPI
@@ -219,7 +218,10 @@ class cloudConnection(object):
             cmdname, self.auth, payload=payload, method=method)
         self.logging.debug("Request: %s Response: %s" %
                            (response.url, response.text))
-        response = jsonHelper.getResultObj(response.json(), response_type)
+        try:
+            response = jsonHelper.getResultObj(response.json(), response_type)
+        except TypeError:
+            response = jsonHelper.getResultObj(response.json, response_type)
 
         if isAsync == "false":
             return response

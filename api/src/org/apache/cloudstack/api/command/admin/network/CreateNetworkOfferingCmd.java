@@ -95,9 +95,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IS_PERSISTENT, type=CommandType.BOOLEAN, description="true if network offering supports persistent networks; defaulted to false if not specified")
     private Boolean isPersistent;
     
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, since="4.2.0", description="Template details in key/value pairs." +
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, since="4.2.0", description="Network offering details in key/value pairs." +
     		" Supported keys are internallbprovider/publiclbprovider with service provider as a value")
     protected Map details;
+
+    @Parameter(name=ApiConstants.EGRESS_DEFAULT_POLICY, type=CommandType.BOOLEAN, description="true if default guest network egress policy is allow; false if default egress policy is deny")
+    private Boolean egressDefaultPolicy;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -160,6 +163,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getIsPersistent() {
         return isPersistent == null ? false : isPersistent;
+    }
+
+    public Boolean getEgressDefaultPolicy() {
+        if (egressDefaultPolicy == null) {
+            return true;
+        }
+        return egressDefaultPolicy;
     }
 
     public Map<String, List<String>> getServiceProviders() {

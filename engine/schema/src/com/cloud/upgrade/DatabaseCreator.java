@@ -147,6 +147,13 @@ public class DatabaseCreator {
                 databases = arg.substring(arg.lastIndexOf("=") + 1, arg.length()).split(",");
             } else if (arg.endsWith(".sql")) {
                 sqlFiles.add(arg);
+            } else if (arg.endsWith(".sql.override")) {
+            	if (fileExists(arg)) {
+            		int index = arg.lastIndexOf(".override");
+            		String fileToOverride = arg.substring(0, index);
+            		sqlFiles.remove(fileToOverride);
+            		sqlFiles.add(arg);
+            	}
             } else if (arg.endsWith(".properties")) {
                 if (!dbPropsFile.endsWith("properties.override") && fileExists(arg))
                     dbPropsFile = arg;

@@ -84,6 +84,7 @@ class Services:
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
+                                "ostype": 'CentOS 5.3 (64-bit)',
                         },
                         "natrule": {
                                     "publicport": 22,
@@ -385,7 +386,6 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             )
         return
 
-    @unittest.skip("Open Questions")
     @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_02_remove_all_users(self):
         """Test Remove both users from the account
@@ -561,7 +561,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % account_1.account.name)
+        self.debug("Created account: %s" % account_1.name)
         self.cleanup.append(account_1)
         account_2 = Account.create(
                             self.apiclient,
@@ -712,7 +712,6 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
         return
 
 
-@unittest.skip("Open Questions")
 class TestServiceOfferingHierarchy(cloudstackTestCase):
 
     @classmethod
@@ -755,12 +754,13 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
                             )
 
         cls._cleanup = [
-                        cls.account_1,
-                        cls.account_2,
-                        cls.service_offering,
-                        cls.domain_1,
-                        cls.domain_2,
-                        ]
+                       cls.account_2,
+                       cls.domain_2,
+                       cls.service_offering,
+                       cls.account_1,
+                       cls.domain_1,
+                       ]
+
         return
 
     @classmethod
@@ -841,7 +841,6 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
         return
 
 
-@unittest.skip("Open Questions")
 class TesttemplateHierarchy(cloudstackTestCase):
 
     @classmethod
@@ -889,11 +888,11 @@ class TesttemplateHierarchy(cloudstackTestCase):
                                             domainid=cls.domain_1.id
                                         )
         cls._cleanup = [
-                        cls.template,
-                        cls.account_1,
                         cls.account_2,
-                        cls.domain_1,
                         cls.domain_2,
+           cls.template,
+                        cls.account_1,
+                        cls.domain_1,
                         ]
         return
 
@@ -1441,7 +1440,6 @@ class TestUserDetails(cloudstackTestCase):
                          )
         return
 
-@unittest.skip("Login API response returns nothing")
 class TestUserLogin(cloudstackTestCase):
 
     @classmethod

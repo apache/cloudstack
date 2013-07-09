@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vpc;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -27,7 +28,6 @@ import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -140,7 +140,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.StaticRoute;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.StaticRoute;
     }
 }

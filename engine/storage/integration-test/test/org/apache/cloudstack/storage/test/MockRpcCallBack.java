@@ -32,20 +32,20 @@ public class MockRpcCallBack implements Runnable {
     AgentManager agentMgr;
     private Command cmd;
     private long hostId;
-    private AsyncCompletionCallback<Answer> callback; 
-    
+    private AsyncCompletionCallback<Answer> callback;
+
     public void setCmd(Command cmd) {
         this.cmd = cmd;
     }
-    
+
     public void setHostId(long hostId) {
         this.hostId = hostId;
     }
-    
+
     public void setCallback(AsyncCompletionCallback<Answer> callback) {
         this.callback = callback;
     }
-    
+
     @Override
     @DB
     public void run() {
@@ -56,5 +56,5 @@ public class MockRpcCallBack implements Runnable {
             s_logger.debug("send command failed:", e);
         }
     }
-    
+
 }

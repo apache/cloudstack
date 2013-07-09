@@ -212,7 +212,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
@@ -225,7 +225,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -259,7 +259,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -425,7 +425,7 @@ class TestLbWithLeastConn(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
@@ -438,7 +438,7 @@ class TestLbWithLeastConn(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -472,14 +472,14 @@ class TestLbWithLeastConn(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -644,7 +644,7 @@ class TestLbWithSourceIp(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
@@ -657,7 +657,7 @@ class TestLbWithSourceIp(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -691,7 +691,7 @@ class TestLbWithSourceIp(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -791,7 +791,7 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -808,7 +808,7 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -816,7 +816,7 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
@@ -1003,7 +1003,7 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -1020,7 +1020,7 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -1028,7 +1028,7 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
@@ -1212,7 +1212,7 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -1229,7 +1229,7 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -1238,7 +1238,7 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
@@ -1425,7 +1425,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -1442,7 +1442,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -1451,7 +1451,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
@@ -1639,7 +1639,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -1656,7 +1656,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -1665,7 +1665,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
@@ -1853,7 +1853,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -1870,7 +1870,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -1878,7 +1878,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [

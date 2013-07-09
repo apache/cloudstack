@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -29,7 +30,6 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -78,9 +78,6 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
             description="the ID of the zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -118,10 +115,6 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     public boolean listInReadyState() {
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null
@@ -149,22 +142,13 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Iso;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Iso;
     }
 
     @Override
     public void execute(){
-        Set<Pair<Long, Long>> isoZonePairSet = _mgr.listIsos(this);
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> iso : isoZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createIsoResponses(iso.first(), iso.second(), listInReadyState());
-            templateResponses.addAll(responses);
-        }
-        response.setResponses(templateResponses);
+        ListResponse<TemplateResponse> response = _queryService.listIsos(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

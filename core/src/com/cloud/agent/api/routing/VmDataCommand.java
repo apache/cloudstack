@@ -28,27 +28,29 @@ public class VmDataCommand extends NetworkElementCommand {
 	String vmName;
 	@LogLevel(Log4jLevel.Trace)
 	List<String[]> vmData;
+	boolean executeInSequence = false;
 
     protected VmDataCommand() {
     }
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return executeInSequence;
     }
 
-    public VmDataCommand(String vmIpAddress) {
-    	this(vmIpAddress, null);
+    public VmDataCommand(String vmIpAddress, boolean executeInSequence) {
+    	this(vmIpAddress, null, executeInSequence);
     }
 
     public String getVmName() {
         return vmName;
     }
 
-    public VmDataCommand(String vmIpAddress, String vmName) {
+    public VmDataCommand(String vmIpAddress, String vmName, boolean executeInSequence) {
         this.vmName = vmName;
         this.vmIpAddress = vmIpAddress;
         this.vmData = new ArrayList<String[]>();
+        this.executeInSequence = executeInSequence;
     }
 
 

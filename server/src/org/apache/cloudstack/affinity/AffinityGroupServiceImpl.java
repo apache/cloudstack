@@ -36,6 +36,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
@@ -124,8 +125,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
-    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
-            throws ResourceInUseException {
+    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName) {
 
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
@@ -163,7 +163,15 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         List<AffinityGroupVMMapVO> affinityGroupVmMap = _affinityGroupVMMapDao.listByAffinityGroup(affinityGroupId);
         if (!affinityGroupVmMap.isEmpty()) {
-            throw new ResourceInUseException("Cannot delete affinity group when it's in use by virtual machines");
+            SearchBuilder<AffinityGroupVMMapVO> listByAffinityGroup = _affinityGroupVMMapDao.createSearchBuilder();
+            listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(),
+                    SearchCriteria.Op.EQ);
+            listByAffinityGroup.done();
+            SearchCriteria<AffinityGroupVMMapVO> sc = listByAffinityGroup.create();
+            sc.setParameters("affinityGroupId", affinityGroupId);
+
+            _affinityGroupVMMapDao.lockRows(sc, null, true);
+            _affinityGroupVMMapDao.remove(sc);
         }
 
         _affinityGroupDao.expunge(affinityGroupId);
@@ -332,6 +340,14 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             } else {
                 // verify permissions
                 _accountMgr.checkAccess(caller, null, true, owner, ag);
+                // Root admin has access to both VM and AG by default, but make sure the
+                // owner of these entities is same
+                if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                    if (ag.getAccountId() != owner.getAccountId()) {
+                        throw new PermissionDeniedException("Affinity Group " + ag
+                                + " does not belong to the VM's account");
+                    }
+                }
             }
         }
         _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);

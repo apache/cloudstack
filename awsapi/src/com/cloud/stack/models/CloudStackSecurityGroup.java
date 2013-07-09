@@ -39,6 +39,8 @@ public class CloudStackSecurityGroup {
     private String name;
     @SerializedName(ApiConstants.INGRESS_RULE)
     private List<CloudStackIngressRule> ingressRules;
+    @SerializedName(ApiConstants.TAGS)
+    private List<CloudStackKeyValue> tags;
 
     
     public CloudStackSecurityGroup() {
@@ -79,4 +81,9 @@ public class CloudStackSecurityGroup {
 	public List<CloudStackIngressRule> getIngressRules() {
 		return ingressRules;
 	}
+
+    public List<CloudStackKeyValue> getTags() {
+        return tags;
+    }
+
 }

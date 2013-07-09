@@ -19,13 +19,13 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
@@ -118,7 +118,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.PhysicalNetwork;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.PhysicalNetwork;
     }
 }

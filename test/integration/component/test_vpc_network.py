@@ -35,139 +35,142 @@ class Services:
 
     def __init__(self):
         self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                                    },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    "memory": 128,
-                                    },
-                         "network_offering": {
-                                    "name": 'VPC Network offering',
-                                    "displaytext": 'VPC Network off',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "useVpc": 'on',
-                                    "serviceProviderList": {
-                                            "Vpn": 'VpcVirtualRouter',
-                                            "Dhcp": 'VpcVirtualRouter',
-                                            "Dns": 'VpcVirtualRouter',
-                                            "SourceNat": 'VpcVirtualRouter',
-                                            "PortForwarding": 'VpcVirtualRouter',
-                                            "Lb": 'VpcVirtualRouter',
-                                            "UserData": 'VpcVirtualRouter',
-                                            "StaticNat": 'VpcVirtualRouter',
-                                            "NetworkACL": 'VpcVirtualRouter'
-                                        },
-                                    "servicecapabilitylist": {
-                                    },
-                                },
-                         "network_off_netscaler": {
-                                    "name": 'Network offering-netscaler',
-                                    "displaytext": 'Network offering-netscaler',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "useVpc": 'on',
-                                    "serviceProviderList": {
-                                            "Dhcp": 'VpcVirtualRouter',
-                                            "Dns": 'VpcVirtualRouter',
-                                            "SourceNat": 'VpcVirtualRouter',
-                                            "PortForwarding": 'VpcVirtualRouter',
-                                            "Vpn": 'VpcVirtualRouter',
-                                            "Lb": 'Netscaler',
-                                            "UserData": 'VpcVirtualRouter',
-                                            "StaticNat": 'VpcVirtualRouter',
-                                        },
-                                    },
-                         "network_off_shared": {
-                                    "name": 'Shared Network offering',
-                                    "displaytext": 'Shared Network offering',
-                                    "guestiptype": 'Shared',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "useVpc": 'on',
-                                    "specifyIpRanges": True,
-                                    "specifyVlan": True
-                                    },
-                         "vpc_offering": {
-                                    "name": 'VPC off',
-                                    "displaytext": 'VPC off',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                                },
-                         "vpc": {
-                                 "name": "TestVPC",
-                                 "displaytext": "TestVPC",
-                                 "cidr": '10.0.0.1/24'
-                                 },
-                         "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                  "netmask": '255.255.255.0'
-                                },
-                         "lbrule": {
-                                    "name": "SSH",
-                                    "alg": "leastconn",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "openfirewall": False,
-                                    "startport": 22,
-                                    "endport": 2222,
-                                    "protocol": "TCP",
-                                    "cidrlist": '0.0.0.0/0',
-                                },
-                         "natrule": {
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "startport": 22,
-                                    "endport": 22,
-                                    "protocol": "TCP",
-                                    "cidrlist": '0.0.0.0/0',
-                                },
-                         "fw_rule": {
-                                    "startport": 1,
-                                    "endport": 6000,
-                                    "cidr": '0.0.0.0/0',
-                                    # Any network (For creating FW rule)
-                                    "protocol": "TCP"
-                                },
-                         "http_rule": {
-                                    "startport": 80,
-                                    "endport": 80,
-                                    "cidrlist": '0.0.0.0/0',
-                                    "protocol": "ICMP"
-                                },
-                         "virtual_machine": {
-                                    "displayname": "Test VM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    # Hypervisor type should be same as
-                                    # hypervisor type of cluster
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "ostype": 'CentOS 5.3 (64-bit)',
-                         # Cent OS 5.3 (64 bit)
-                         "sleep": 60,
-                         "timeout": 10,
-                         "mode": 'advanced'
-                    }
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                "memory": 128,
+            },
+            "network_offering": {
+                "name": 'VPC Network offering',
+                "displaytext": 'VPC Network off',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "serviceProviderList": {
+                    "Vpn": 'VpcVirtualRouter',
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "Lb": 'VpcVirtualRouter',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                    "NetworkACL": 'VpcVirtualRouter'
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                },
+            },
+            "network_off_netscaler": {
+                "name": 'Network offering-netscaler',
+                "displaytext": 'Network offering-netscaler',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "serviceProviderList": {
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "Vpn": 'VpcVirtualRouter',
+                    "Lb": 'Netscaler',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                },
+            },
+            "network_off_shared": {
+                "name": 'Shared Network offering',
+                "displaytext": 'Shared Network offering',
+                "guestiptype": 'Shared',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "specifyIpRanges": True,
+                "specifyVlan": True
+            },
+            "vpc_offering": {
+                "name": 'VPC off',
+                "displaytext": 'VPC off',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+            },
+            "vpc": {
+                "name": "TestVPC",
+                "displaytext": "TestVPC",
+                "cidr": '10.0.0.1/24'
+            },
+            "network": {
+                "name": "Test Network",
+                "displaytext": "Test Network",
+                "netmask": '255.255.255.0'
+            },
+            "lbrule": {
+                "name": "SSH",
+                "alg": "leastconn",
+                # Algorithm used for load balancing
+                "privateport": 22,
+                "publicport": 2222,
+                "openfirewall": False,
+                "startport": 22,
+                "endport": 2222,
+                "protocol": "TCP",
+                "cidrlist": '0.0.0.0/0',
+            },
+            "natrule": {
+                "privateport": 22,
+                "publicport": 22,
+                "startport": 22,
+                "endport": 22,
+                "protocol": "TCP",
+                "cidrlist": '0.0.0.0/0',
+            },
+            "fw_rule": {
+                "startport": 1,
+                "endport": 6000,
+                "cidr": '0.0.0.0/0',
+                # Any network (For creating FW rule)
+                "protocol": "TCP"
+            },
+            "http_rule": {
+                "startport": 80,
+                "endport": 80,
+                "cidrlist": '0.0.0.0/0',
+                "protocol": "ICMP"
+            },
+            "virtual_machine": {
+                "displayname": "Test VM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                # Hypervisor type should be same as
+                # hypervisor type of cluster
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            # Cent OS 5.3 (64 bit)
+            "sleep": 60,
+            "timeout": 10,
+        }
 
 
 class TestVPCNetwork(cloudstackTestCase):
@@ -224,25 +227,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                   )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -333,7 +318,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -353,7 +338,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -389,7 +374,7 @@ class TestVPCNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_create_network_fail(self):
-        """ Test create network in VPC
+        """ Test create network in VPC mismatched services (Should fail)
         """
 
         # Validate the following
@@ -426,7 +411,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -451,7 +436,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -459,7 +444,6 @@ class TestVPCNetwork(cloudstackTestCase):
                                 )
         return
 
-    @unittest.skip("Skip - Requires netscaler setup")
     @attr(tags=["netscaler", "intervlan"])
     def test_03_create_network_netscaler(self):
         """ Test create network using netscaler for LB
@@ -497,7 +481,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -517,7 +501,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -588,7 +572,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -608,7 +592,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -646,7 +630,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -693,7 +677,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -707,9 +691,8 @@ class TestVPCNetwork(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Skipping - able to create network with RvR")
     def test_06_create_network_with_rvr(self):
-        """ Test create network with eredundant router capability
+        """ Test create network with redundant router capability
         """
 
         # Validate the following
@@ -744,12 +727,12 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
         # Enable redundant router capability for the network offering
-        self.services["network"]["servicecapabilitylist"] = {
+        self.services["network"]["serviceCapabilityList"] = {
                                                 "SourceNat": {
                                                     "RedundantRouter": "true",
                                                     },
@@ -772,7 +755,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -821,7 +804,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -842,7 +825,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -890,7 +873,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -952,7 +935,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -976,7 +959,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1022,7 +1005,7 @@ class TestVPCNetwork(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1038,7 +1021,6 @@ class TestVPCNetwork(cloudstackTestCase):
         "Network creation failed as VPC support nw with conserve mode OFF")
         return
 
-@unittest.skip("tested")
 class TestVPCNetworkRanges(cloudstackTestCase):
 
     @classmethod
@@ -1092,25 +1074,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                   )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -1193,7 +1157,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1215,7 +1179,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.2.1.1',
@@ -1255,7 +1219,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1277,7 +1241,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.2.1.1',
@@ -1317,7 +1281,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1342,7 +1306,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1363,6 +1327,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         # 3. Add network2 with cidr - 10.1.1.1/24  to this VPC
         # 4. Add network3 with cidr - 10.1.1.1/26  to this VPC
         # 5. Network creation in step 3 & 4 should fail.
+        self.services = Services().services
 
         self.debug("Creating a VPC offering")
         vpc_off = VpcOffering.create(
@@ -1384,7 +1349,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1406,7 +1371,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1447,7 +1412,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1465,7 +1430,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1505,7 +1470,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1540,7 +1505,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=account.name,
-                                domainid=account.account.domainid,
+                                domainid=account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1604,19 +1569,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -1670,10 +1623,8 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Error while NW upgrade - Failed to implement network (with specified id) elements and resources as a part of network update")
     def test_01_network_services_upgrade(self):
-        """ Test update Network that is part of a VPC to a network offering
-            that has more services.
+        """ Test update Network that is part of a VPC to a network offering that has more services
         """
 
         # Validate the following
@@ -1710,7 +1661,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1751,7 +1702,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_pf.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1765,7 +1716,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1774,7 +1725,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1785,7 +1736,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_1.id,
                                 vpcid=vpc.id
                                 )
@@ -1804,7 +1755,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                     accountid=self.account.name,
                                     networkid=network_1.id,
                                     vpcid=vpc.id,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                 )
 
         self.debug("Adding virtual machines %s and %s to LB rule" % (
@@ -1816,7 +1767,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_1.id,
                                 vpcid=vpc.id
                                 )
@@ -1845,7 +1796,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                     listall=True,
                                     isstaticnat=True,
                                     account=self.account.name,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                   )
         self.assertEqual(
                          isinstance(public_ips, list),
@@ -1934,7 +1885,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_1.id,
                                 vpcid=vpc.id
                                 )
@@ -2003,7 +1954,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                     )
         self.debug("Checking if we can SSH into VM using NAT rule?")
         try:
-            ssh_3 = vm_3.get_ssh_client(
+            ssh_3 = vm_1.get_ssh_client(
                             ipaddress=public_ip_3.ipaddress.ipaddress,
                             reconnect=True,
                             port=self.services["natrule"]["publicport"]
@@ -2026,8 +1977,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_network_vpcvr2vr_upgrade(self):
-        """ Test update Network that is NOT part of a VPC to a nw offering
-            that has services that are provided by VPCVR and vice versa.
+        """ Test update Network that is NOT part of a VPC to a nw offering that has services that are provided by VPCVR and vice versa
         """
 
         # Validate the following
@@ -2059,7 +2009,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -2099,7 +2049,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -2113,7 +2063,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -2182,7 +2132,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -2197,7 +2147,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -2208,7 +2158,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -2216,7 +2166,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -2224,7 +2174,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -2235,7 +2185,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                     accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                 )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
 
@@ -2243,7 +2193,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -2289,7 +2239,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         for vm in vms:
@@ -2297,7 +2247,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
                 cmd = stopVirtualMachine.stopVirtualMachineCmd()
                 cmd.id = vm.id
                 self.apiclient.stopVirtualMachine(cmd)
-        self.cleanup = []
         return
 
     def tearDown(self):
@@ -2305,20 +2254,12 @@ class TestVPCNetworkGc(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         for vm in vms:
             if vm.state == "Stopped":
-                cmd = startVirtualMachine.startVirtualMachineCmd()
-                cmd.id = vm.id
-                self.apiclient.startVirtualMachine(cmd)
-
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+                vm.start(self.apiclient)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -2396,7 +2337,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -2515,7 +2456,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(

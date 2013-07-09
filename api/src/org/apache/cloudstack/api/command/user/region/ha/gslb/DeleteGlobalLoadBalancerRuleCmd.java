@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
@@ -87,13 +86,19 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        _gslbService.deleteGlobalLoadBalancerRule(this);
-        UserContext.current().setEventDetails("Deleting global Load balancer Id: " + getGlobalLoadBalancerId());
+        UserContext.current().setEventDetails("Deleting global Load balancer rule Id: " + getGlobalLoadBalancerId());
+        boolean result = _gslbService.deleteGlobalLoadBalancerRule(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Global Load Balancer rule.");
+        }
     }
 
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.gslbSyncObject;
     }
 
     @Override
@@ -102,7 +107,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.GlobalLoadBalancerRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.GlobalLoadBalancerRule;
     }
 }

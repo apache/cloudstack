@@ -20,11 +20,14 @@ public class DnsmasqTO {
     String routerIp;
     String gateway;
     String netmask;
+    String startIpOfSubnet;
 
-    public DnsmasqTO(String routerIp, String gateway, String netmask) {
+    public DnsmasqTO(String routerIp, String gateway, String netmask, String StartIpOfSubnet) {
         this.routerIp = routerIp;
+        this.startIpOfSubnet = StartIpOfSubnet;
         this.gateway = gateway;
         this.netmask =netmask;
+
     }
 
     public void setRouterIp(String routerIp){
@@ -39,6 +42,10 @@ public class DnsmasqTO {
         this.netmask = netmask ;
     }
 
+    public void setStartIpOfSubnet( String ipOfSubNet) {
+        startIpOfSubnet = ipOfSubNet;
+    }
+
     public String getRouterIp() {
         return routerIp;
     }
@@ -50,4 +57,8 @@ public class DnsmasqTO {
     public String getNetmask() {
         return netmask;
     }
+    public String getStartIpOfSubnet() {
+        return startIpOfSubnet;
+    }
+
 }

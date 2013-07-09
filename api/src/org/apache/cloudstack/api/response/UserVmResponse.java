@@ -80,9 +80,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description="the network type of the availability zone for the virtual machine")
-    private String zoneType;
-    
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
     private String hostId;
 
@@ -137,6 +134,18 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
+    @SerializedName("diskkbsread") @Param(description="the read (bytes) of disk on the vm")
+    private Long diskKbsRead;
+    
+    @SerializedName("diskkbswrite") @Param(description="the write (bytes) of disk on the vm")
+    private Long diskKbsWrite;
+    
+    @SerializedName("diskioread") @Param(description="the read (io) of disk on the vm")
+    private Long diskIORead;
+    
+    @SerializedName("diskiowrite") @Param(description="the write (io) of disk on the vm")
+    private Long diskIOWrite;
+    
     @SerializedName("guestosid") @Param(description="Os type ID of the virtual machine")
     private String guestOsId;
 
@@ -179,6 +188,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.DISPLAY_VM) @Param(description="an optional field whether to the display the vm to the end user or not.")
     private Boolean displayVm;
+
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    private Boolean isDynamicallyScalable;
 
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -261,10 +273,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.zoneName = zoneName;
     }
 
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
-    }
-    
     public void setHostId(String hostId) {
         this.hostId = hostId;
     }
@@ -299,6 +307,22 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setIsoDisplayText(String isoDisplayText) {
         this.isoDisplayText = isoDisplayText;
+    }
+    
+    public void setDiskKbsRead(Long diskKbsRead) {
+        this.diskKbsRead = diskKbsRead;
+    }
+
+    public void setDiskKbsWrite(Long diskKbsWrite) {
+        this.diskKbsWrite = diskKbsWrite;
+    }
+    
+    public void setDiskIORead(Long diskIORead) {
+        this.diskIORead = diskIORead;
+    }
+
+    public void setDiskIOWrite(Long diskIOWrite) {
+        this.diskIOWrite = diskIOWrite;
     }
 
     public void setServiceOfferingId(String serviceOfferingId) {
@@ -409,6 +433,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void addAffinityGroup(AffinityGroupResponse affinityGroup) {
         this.affinityGroupList.add(affinityGroup);
+    }
+
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
     }
 
 }

@@ -77,8 +77,10 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
             s_logger.error("Unexpected exception: ", e);
             if (connectionAlive) {
                 closeConnection();
-                vncConnection.shutdown();
             }
+        } finally {
+        	s_logger.info("Sending thread exit processing, shutdown connection");
+            vncConnection.shutdown();
         }
     }
 

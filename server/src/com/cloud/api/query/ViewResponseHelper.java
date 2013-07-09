@@ -16,36 +16,6 @@
 // under the License.
 package com.cloud.api.query;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Hashtable;
-import java.util.List;
-
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
@@ -68,6 +38,39 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
+
+import com.cloud.api.query.vo.ImageStoreJoinVO;
+import com.cloud.api.query.vo.TemplateJoinVO;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * Helper class to generate response from DB view VO objects.
@@ -285,11 +288,30 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<StoragePoolForMigrationResponse> createStoragePoolForMigrationResponse(StoragePoolJoinVO... pools) {
-        Hashtable<Long, StoragePoolForMigrationResponse> vrDataList = new Hashtable<Long, StoragePoolForMigrationResponse>();
+
+    public static List<ImageStoreResponse> createImageStoreResponse(ImageStoreJoinVO... stores) {
+        Hashtable<Long, ImageStoreResponse> vrDataList = new Hashtable<Long, ImageStoreResponse>();
+        // Initialise the vrdatalist with the input data
+        for (ImageStoreJoinVO vr : stores) {
+            ImageStoreResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this vm
+                vrData = ApiDBUtils.newImageStoreResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillImageStoreDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<ImageStoreResponse>(vrDataList.values());
+    }
+
+    public static List<StoragePoolResponse> createStoragePoolForMigrationResponse(StoragePoolJoinVO... pools) {
+        Hashtable<Long, StoragePoolResponse> vrDataList = new Hashtable<Long, StoragePoolResponse>();
         // Initialise the vrdatalist with the input data
         for (StoragePoolJoinVO vr : pools) {
-            StoragePoolForMigrationResponse vrData = vrDataList.get(vr.getId());
+            StoragePoolResponse vrData = vrDataList.get(vr.getId());
             if ( vrData == null ) {
                 // first time encountering this vm
                 vrData = ApiDBUtils.newStoragePoolForMigrationResponse(vr);
@@ -299,7 +321,7 @@ public class ViewResponseHelper {
             }
             vrDataList.put(vr.getId(), vrData);
         }
-        return new ArrayList<StoragePoolForMigrationResponse>(vrDataList.values());
+        return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
 
@@ -341,6 +363,57 @@ public class ViewResponseHelper {
             respList.add(ApiDBUtils.newDataCenterResponse(vt, showCapacities));
         }
         return respList;
+    }
+
+    public static List<TemplateResponse> createTemplateResponse(TemplateJoinVO... templates) {
+        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        for (TemplateJoinVO vr : templates) {
+            TemplateResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newTemplateResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<TemplateResponse>(vrDataList.values());
+    }
+
+    public static List<TemplateResponse> createTemplateUpdateResponse(TemplateJoinVO... templates) {
+        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        for (TemplateJoinVO vr : templates) {
+            TemplateResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newTemplateUpdateResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<TemplateResponse>(vrDataList.values());
+    }
+
+    public static List<TemplateResponse> createIsoResponse(TemplateJoinVO... templates) {
+        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        for (TemplateJoinVO vr : templates) {
+            TemplateResponse vrData = vrDataList.get(vr.getId());
+            if ( vrData == null ){
+                // first time encountering this volume
+                vrData = ApiDBUtils.newIsoResponse(vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<TemplateResponse>(vrDataList.values());
     }
 
     public static List<AffinityGroupResponse> createAffinityGroupResponses(List<AffinityGroupJoinVO> groups) {

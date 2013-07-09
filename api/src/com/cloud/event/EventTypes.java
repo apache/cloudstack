@@ -102,6 +102,8 @@ public class EventTypes {
     // Network Events
     public static final String EVENT_NET_IP_ASSIGN = "NET.IPASSIGN";
     public static final String EVENT_NET_IP_RELEASE = "NET.IPRELEASE";
+    public static final String EVENT_PORTABLE_IP_ASSIGN = "PORTABLE.IPASSIGN";
+    public static final String EVENT_PORTABLE_IP_RELEASE = "PORTABLE.IPRELEASE";
     public static final String EVENT_NET_RULE_ADD = "NET.RULEADD";
     public static final String EVENT_NET_RULE_DELETE = "NET.RULEDELETE";
     public static final String EVENT_NET_RULE_MODIFY = "NET.RULEMODIFY";
@@ -431,6 +433,14 @@ public class EventTypes {
     public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
     public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
 
+
+    public static final String EVENT_PORTABLE_IP_RANGE_CREATE = "PORTABLE.IP.RANGE.CREATE";
+    public static final String EVENT_PORTABLE_IP_RANGE_DELETE = "PORTABLE.IP.RANGE.DELETE";
+    public static final String EVENT_PORTABLE_IP_TRANSFER = "PORTABLE.IP.TRANSFER";
+
+    // Dedicated Resources
+    public static final String EVENT_DEDICATE_RESOURCE = "DEDICATE.RESOURCE";
+    public static final String EVENT_DEDICATE_RESOURCE_RELEASE = "DEDICATE.RESOURCE.RELEASE";
 
     static {
 

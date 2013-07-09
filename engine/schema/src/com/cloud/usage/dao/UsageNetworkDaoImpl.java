@@ -19,6 +19,7 @@ package com.cloud.usage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.usage.UsageNetworkVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value={UsageNetworkDao.class})
@@ -40,6 +42,8 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
 	                                                                                                 "GROUP BY netusage.account_id, netusage.zone_id " +
 	                                                                                                 ") joinnet on u.account_id = joinnet.acct_id and u.zone_id = joinnet.z_id and u.event_time_millis = joinnet.max_date";
 	private static final String DELETE_OLD_STATS = "DELETE FROM cloud_usage.usage_network WHERE event_time_millis < ?";
+
+	private static final String INSERT_USAGE_NETWORK = "INSERT INTO cloud_usage.usage_network (account_id, zone_id, host_id, host_type, network_id, bytes_sent, bytes_received, agg_bytes_received, agg_bytes_sent, event_time_millis) VALUES (?,?,?,?,?,?,?,?,?,?)";
 
 	public UsageNetworkDaoImpl() {
 	}
@@ -95,4 +99,34 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
             s_logger.error("error deleting old usage network stats", ex);
         }
 	}
+
+    @Override
+    public void saveUsageNetworks (List<UsageNetworkVO> usageNetworks) {
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            String sql = INSERT_USAGE_NETWORK;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (UsageNetworkVO usageNetwork : usageNetworks) {
+                pstmt.setLong(1, usageNetwork.getAccountId());
+                pstmt.setLong(2, usageNetwork.getZoneId());
+                pstmt.setLong(3, usageNetwork.getHostId());
+                pstmt.setString(4, usageNetwork.getHostType());
+                pstmt.setLong(5, usageNetwork.getNetworkId());
+                pstmt.setLong(6, usageNetwork.getBytesSent());
+                pstmt.setLong(7, usageNetwork.getBytesReceived());
+                pstmt.setLong(8, usageNetwork.getAggBytesReceived());
+                pstmt.setLong(9, usageNetwork.getAggBytesSent());
+                pstmt.setLong(10, usageNetwork.getEventTimeMillis());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error saving usage_network to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+    }
 }

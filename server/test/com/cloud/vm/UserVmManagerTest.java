@@ -24,10 +24,8 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -64,6 +62,7 @@ import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -200,6 +199,7 @@ public class UserVmManagerTest {
         doReturn(false).when(_rootVols).isEmpty();
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
         doReturn(3L).when(_volumeMock).getTemplateId();
+        doReturn(ImageFormat.VHD).when(_templateMock).getFormat();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
         when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
@@ -220,6 +220,40 @@ public class UserVmManagerTest {
 
     }
 
+    // Test restoreVM on providing new ISO Id, when VM(deployed using ISO) is in running state
+    @Test
+    public void testRestoreVMF5()  throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException {
+        doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
+        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
+        doReturn(false).when(_rootVols).isEmpty();
+        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
+        doReturn(null).when(_volumeMock).getTemplateId();
+        doReturn(3L).when(_vmMock).getIsoId();
+        doReturn(ImageFormat.ISO).when(_templateMock).getFormat();
+        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
+        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
+        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
+        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
+        doNothing().when(_vmMock).setIsoId(14L);
+        when(_templateMock.getGuestOSId()).thenReturn(5L);
+        doNothing().when(_vmMock).setGuestOSId(anyLong());
+        doNothing().when(_vmMock).setTemplateId(3L);
+        when(_vmDao.update(314L, _vmMock)).thenReturn(true);
+        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
+        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
+        doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
+        when(_volumeMock.getId()).thenReturn(3L);
+        doNothing().when(_volsDao).detachVolume(anyLong());
+
+        when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
+
+        _userVmMgr.restoreVMInternal(_account, _vmMock, 14L);
+
+        verify(_vmMock, times(1)).setIsoId(14L);
+
+    }
     // Test scaleVm on incompatible HV.
     @Test(expected=InvalidParameterValueException.class)
     public void testScaleVMF1()  throws Exception {

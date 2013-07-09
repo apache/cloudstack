@@ -182,7 +182,8 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
                 Answer pingTestAnswer = _agentMgr.easySend(hostId, new PingTestCommand(routerPrivateIp, privateIp));
                 if (pingTestAnswer!=null && pingTestAnswer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("user vm " + vm.getHostName() + " has been successfully pinged, returning that it is alive");
+                        s_logger.debug("user vm's " + vm.getHostName() + " ip address "+ privateIp + "  has been successfully pinged from the Virtual Router "
+                                + router.getHostName() + ", returning that vm is alive");
                     }
                     return Boolean.TRUE;
                 }

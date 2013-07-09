@@ -55,6 +55,7 @@
               },
 
               createForm: {
+                bigSize: true,
                 title: 'label.add.compute.offering',
                 fields: {
                   name: {
@@ -109,6 +110,34 @@
                       number: true
                     }
                   },
+                  diskBytesReadRate: {
+                      label: 'label.disk.bytes.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskBytesWriteRate: {
+                      label: 'label.disk.bytes.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsReadRate: {
+                      label: 'label.disk.iops.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsWriteRate: {
+                      label: 'label.disk.iops.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   offerHA: {
                     label: 'label.offer.ha',
                     docID: 'helpComputeOfferingHA',
@@ -144,6 +173,38 @@
 
                    },
 
+                  deploymentPlanner:{
+                    label:'Deployment Planner',
+                    select:function(args){
+                      $.ajax({
+                           url:createURL('listDeploymentPlanners'),
+                           dataType:'json',
+                           success:function(json){
+                              var items=[{id: '', description: ''}];
+                               var plannerObjs = json.listdeploymentplannersresponse.deploymentPlanner;
+                          $(plannerObjs).each(function(){
+                            items.push({id: this.name, description: this.name});
+                          });
+                          args.response.success({data: items});
+
+
+                            }
+                      });
+                     }
+                  },
+
+                 // plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
+                  plannerMode:{
+                    label:'Planner Mode',
+                    select:function(args){
+                       var items=[];
+                       items.push({id:'',description:''});
+                       items.push({id:'Strict', description:'Strict'});
+                       items.push({id:'Preferred', description:'Preferred'});
+                       args.response.success({data:items});
+                    }
+                  },
+
                   domainId: {
                     label: 'label.domain',
                     docID: 'helpComputeOfferingDomain',
@@ -176,15 +237,45 @@
 									storageType: args.data.storageType,
 									cpuNumber: args.data.cpuNumber,
 									cpuSpeed: args.data.cpuSpeed,
-									memory: args.data.memory
-								};															
-               
+									memory: args.data.memory 
+								};	
+                
+                if(args.data.deploymentPlanner != null && args.data.deploymentPlanner.length > 0) {
+                  $.extend(data, {
+                    deploymentplanner: args.data.deploymentPlanner
+                  });
+                }
+                
+                var array1 =[];
+                   if(args.data.deploymentPlanner == "ImplicitDedicationPlanner" && args.data.plannerMode != ""){
+                       array1.push("&serviceofferingdetails[0].ImplicitDedicationMode" +  "=" + args.data.plannerMode);
+                 }
+
                 if(args.data.networkRate != null && args.data.networkRate.length > 0) {
 								  $.extend(data, {
 									  networkrate: args.data.networkRate
 									});
 								}
-
+                if(args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesreadrate: args.data.diskBytesReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          byteswriterate: args.data.diskBytesWriteRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsreadrate: args.data.diskIopsReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopswriterate: args.data.diskIopsWriteRate
+                                                                        });
+                                                                }
                 $.extend(data, {
                   offerha: (args.data.offerHA == "on")
                 });								
@@ -216,7 +307,7 @@
 								}
 
                 $.ajax({
-                  url: createURL('createServiceOffering'),
+                  url: createURL('createServiceOffering' + array1.join("")),
                   data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
@@ -353,6 +444,10 @@
                       }
                     },
                     networkrate: { label: 'label.network.rate' },
+                    diskBytesReadRate: { label: 'label.disk.bytes.read.rate' },
+                    diskBytesWriteRate: { label: 'label.disk.bytes.write.rate' },
+                    diskIopsReadRate: { label: 'label.disk.iops.read.rate' },
+                    diskIopsWriteRate: { label: 'label.disk.iops.write.rate' },
                     offerha: {
                       label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
@@ -362,6 +457,7 @@
                       converter: cloudStack.converters.toBooleanText
                     },
                     isvolatile:{ label:'Volatile' , converter: cloudStack.converters.toBooleanText },
+                    deploymentplanner:{label:'Deployment Planner'},
                     tags: { label: 'label.storage.tags' },
                     hosttags: { label: 'label.host.tags' },
                     domain: { label: 'label.domain' },
@@ -490,6 +586,34 @@
                       number: true
                     }
                   },
+                  diskBytesReadRate: {
+                      label: 'label.disk.bytes.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskBytesWriteRate: {
+                      label: 'label.disk.bytes.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsReadRate: {
+                      label: 'label.disk.iops.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsWriteRate: {
+                      label: 'label.disk.iops.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   offerHA: {
                     label: 'label.offer.ha',
                     docID: 'helpSystemOfferingHA',
@@ -558,6 +682,26 @@
 									  networkrate: args.data.networkRate
 									});								
 								}
+                if(args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesreadrate: args.data.diskBytesReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          byteswriterate: args.data.diskBytesWriteRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsreadrate: args.data.diskIopsReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopswriterate: args.data.diskIopsWriteRate
+                                                                        });
+                                                                }
 
 								$.extend(data, {
 								  offerha: (args.data.offerHA == "on")
@@ -737,6 +881,10 @@
                       }
                     },
                     networkrate: { label: 'label.network.rate' },
+                    diskBytesReadRate: { label: 'label.disk.bytes.write.rate' },
+                    diskBytesWriteRate: { label: 'label.disk.bytes.write.rate' },
+                    diskIopsReadRate: { label: 'label.disk.iops.write.rate' },
+                    diskIopsWriteRate: { label: 'label.disk.iops.write.rate' },
                     offerha: {
                       label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
@@ -867,6 +1015,114 @@
                     dependsOn: 'isCustomized',
                     validation: { required: true, number: true }
                   },
+                  qosType: {
+                    label: 'label.qos.type',
+                    docID: 'helpDiskOfferingQoSType',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: '', description: ''});
+                      items.push({id: 'hypervisor', description: 'hypervisor'});
+                      items.push({id: 'storage', description: 'storage'});
+                      args.response.success({data: items});
+                      
+                      args.$select.change(function() {
+                      	var $form = $(this).closest('form');
+                        var $isCustomizedIops = $form.find('.form-item[rel=isCustomizedIops]');
+                        var $minIops = $form.find('.form-item[rel=minIops]');
+                        var $maxIops = $form.find('.form-item[rel=maxIops]');
+                        var $diskBytesReadRate = $form.find('.form-item[rel=diskBytesReadRate]');
+                        var $diskBytesWriteRate = $form.find('.form-item[rel=diskBytesWriteRate]');
+                        var $diskIopsReadRate = $form.find('.form-item[rel=diskIopsReadRate]');
+                        var $diskIopsWriteRate = $form.find('.form-item[rel=diskIopsWriteRate]');
+                        
+                        var qosId = $(this).val();
+                        
+                        if (qosId == 'storage') { // Storage QoS
+                          $diskBytesReadRate.hide();
+                          $diskBytesWriteRate.hide();
+                          $diskIopsReadRate.hide();
+                          $diskIopsWriteRate.hide();
+                          
+                          $isCustomizedIops.css('display', 'inline-block');
+
+                          if ($isCustomizedIops == true) {
+                            $minIops.css('display', 'inline-block');
+                            $maxIops.css('display', 'inline-block');
+                          }
+                          else {
+                            $minIops.hide();
+                            $maxIops.hide();
+                          }
+                        }
+                        else if (qosId == 'hypervisor') { // Hypervisor Qos
+                          $isCustomizedIops.hide();
+                          $minIops.hide();
+                          $maxIops.hide();
+                          
+                          $diskBytesReadRate.css('display', 'inline-block');
+                          $diskBytesWriteRate.css('display', 'inline-block');
+                          $diskIopsReadRate.css('display', 'inline-block');
+                          $diskIopsWriteRate.css('display', 'inline-block');
+                        }
+                        else { // No Qos
+                          $diskBytesReadRate.hide();
+                          $diskBytesWriteRate.hide();
+                          $diskIopsReadRate.hide();
+                          $diskIopsWriteRate.hide();
+                          $isCustomizedIops.hide();
+                          $minIops.hide();
+                          $maxIops.hide();
+                        }
+                      });
+                    }
+                  },
+                  isCustomizedIops: {
+                    label: 'label.custom.disk.iops',
+                    docID: 'helpDiskOfferingCustomDiskIops',
+                    isBoolean: true,
+                    isReverse: true,
+                    isChecked: false
+                  },
+                  minIops: {
+                    label: 'label.disk.iops.min',
+                    docID: 'helpDiskOfferingDiskIopsMin',
+                    dependsOn: 'isCustomizedIops',
+                    validation: { required: false, number: true }
+                  },
+                  maxIops: {
+                    label: 'label.disk.iops.max',
+                    docID: 'helpDiskOfferingDiskIopsMax',
+                    dependsOn: 'isCustomizedIops',
+                    validation: { required: false, number: true }
+                  },
+                  diskBytesReadRate: {
+                      label: 'label.disk.bytes.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskBytesWriteRate: {
+                      label: 'label.disk.bytes.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsReadRate: {
+                      label: 'label.disk.iops.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsWriteRate: {
+                      label: 'label.disk.iops.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   tags: {
                     label: 'label.storage.tags',
                     docID: 'helpDiskOfferingStorageTags'
@@ -904,18 +1160,65 @@
 
               action: function(args) {
                 var data = {
-								  isMirrored: false,
+								    isMirrored: false,
 									name: args.data.name,
 									displaytext: args.data.description,
 									storageType: args.data.storageType,
 									customized: (args.data.isCustomized=="on")
-								};																
-               
+								};
+               	
                 if(args.$form.find('.form-item[rel=disksize]').css("display") != "none") {
 								  $.extend(data, {
 									  disksize: args.data.disksize
-									});		
-								}
+									});
+				}
+				
+				if (args.data.qosType == 'storage') {
+					var customIops = args.data.isCustomizedIops == "on";
+					
+					$.extend(data, {
+						customizediops: customIops
+					});
+					
+					if (!customIops) {
+				   	   if (args.data.minIops != null && args.data.minIops.length > 0) {
+					   	   $.extend(data, {
+							   miniops: args.data.minIops
+						   });
+						}
+
+						if(args.data.maxIops != null && args.data.maxIops.length > 0) {
+					   	   $.extend(data, {
+					       	   maxiops: args.data.maxIops
+					   	   });
+					   	}
+					}
+				}
+				else if (args.data.qosType == 'hypervisor') {
+					if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                        $.extend(data, {
+                            bytesreadrate: args.data.diskBytesReadRate
+                        });
+                    }
+                    
+                	if (args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                        $.extend(data, {
+                            byteswriterate: args.data.diskBytesWriteRate
+                        });
+                    }
+                
+                	if (args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                        $.extend(data, {
+                            iopsreadrate: args.data.diskIopsReadRate
+                        });
+                    }
+                
+                	if (args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                        $.extend(data, {
+                            iopswriterate: args.data.diskIopsWriteRate
+                        });
+                    }
+				}
 
                 if(args.data.tags != null && args.data.tags.length > 0) {
 								  $.extend(data, {
@@ -1040,6 +1343,32 @@
                           return "N/A";
                       }
                     },
+                    iscustomizediops: {
+                      label: 'label.custom.disk.iops',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    miniops: {
+                      label: 'label.disk.iops.min',
+                      converter: function(args) {
+                        if(args > 0)
+                          return args;
+                        else
+                          return "N/A";
+                      }
+                    },
+                    maxiops: {
+                      label: 'label.disk.iops.max',
+                      converter: function(args) {
+                        if(args > 0)
+                          return args;
+                        else
+                          return "N/A";
+                      }
+                    },
+                    diskBytesReadRate: { label: 'label.disk.bytes.write.rate' },
+                    diskBytesWriteRate: { label: 'label.disk.bytes.write.rate' },
+                    diskIopsReadRate: { label: 'label.disk.iops.write.rate' },
+                    diskIopsWriteRate: { label: 'label.disk.iops.write.rate' },
                     tags: { label: 'label.storage.tags' },
                     domain: { label: 'label.domain' },
                     storagetype: { label: 'label.storage.type' }
@@ -1122,7 +1451,8 @@
                 title: 'label.add.network.offering',               														
 								preFilter: function(args) {								  									
                   var $availability = args.$form.find('.form-item[rel=availability]');
-                  var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');									
+                  var $lbType = args.$form.find('.form-item[rel=lbType]');  
+                  var $systemOfferingForRouter = args.$form.find('.form-item[rel=systemOfferingForRouter]');									
 									var $conservemode = args.$form.find('.form-item[rel=conservemode]');										
                   var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');	                  		
                   var hasAdvancedZones = false;
@@ -1147,20 +1477,50 @@
 									  //check whether to show or hide availability field
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
-                    											
+                    
+                    //*** VPC checkbox ***
+                    var $useVpc = args.$form.find('.form-item[rel=\"useVpc\"]');
+                    var $useVpcCb = $useVpc.find("input[type=checkbox]");
                     if($guestTypeField.val() == 'Shared') { //Shared network offering
-                      args.$form.find('.form-item[rel=\"useVpc\"]').hide();
-																						
-											var $useVpcCb = args.$form.find('.form-item[rel=\"useVpc\"]').find("input[type=checkbox]");
-											if($useVpcCb.is(':checked')) { //if useVpc is checked,											  
-												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc
-												$useVpcCb.trigger("click");  //trigger useVpc.onChange()
+                      $useVpc.hide();											
+											if($useVpcCb.is(':checked')) { //if useVpc is checked,												  
+												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc												
 											}
 										}
 										else { //Isolated network offering 
-                      args.$form.find('.form-item[rel=\"useVpc\"]').css('display', 'inline-block');
-										}
-										
+										  $useVpc.css('display', 'inline-block');
+										}										                    
+                    var $providers = $useVpcCb.closest('form').find('.dynamic-input select');                     
+                    var $optionsOfProviders = $providers.find('option');                   
+                    //p.s. Netscaler is supported in both vpc and non-vpc                    
+                    if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***                      
+                      $optionsOfProviders.each(function(index) {                         
+                        if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler') {
+                          $(this).attr('disabled', false);
+                        }
+                        else {
+                          $(this).attr('disabled', true);
+                        }
+                      });     
+                    } 
+                    else { //*** non-vpc ***                      
+                      $optionsOfProviders.each(function(index) {                          
+                        if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') { 
+                          $(this).attr('disabled', true);
+                        }
+                        else {
+                          $(this).attr('disabled', false);
+                        }
+                      });                                              
+                    }                    
+                    $providers.each(function() {  
+                      //if selected option is disabled, select the first enabled option instead
+                      if($(this).find('option:selected:disabled').length > 0) {                        
+                        $(this).val($(this).find('option:first'));
+                      }
+                    });
+                                      
+                    
 											
                     if (!requiredNetworkOfferingExists &&
                         $sourceNATField.is(':checked') &&
@@ -1170,7 +1530,62 @@
                       $availability.hide();
                     }
 
-										
+                    
+                    //*** LB providers ***
+                    var $lbProvider = args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select');
+                    var $lbProviderOptions = $lbProvider.find('option');
+										//when useVpc is checked and service.Lb.isEnabled is checked                    
+                    if($useVpcCb.is(':checked') && $("input[name='service.Lb.isEnabled']").is(":checked") == true) {  
+                      $lbType.css('display', 'inline-block');   
+                                                                                                         
+                      if($lbType.find('select').val() == 'publicLb') { //disable all providers except the ones in lbProviderMap.publicLb.vpc => ["VpcVirtualRouter", "Netscaler"] 
+                        for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                          var $option = $lbProviderOptions.eq(i);                           
+                          var supportedProviders = lbProviderMap.publicLb.vpc;                            
+                          var thisOpionIsSupported = false;
+                          for(var k = 0; k < supportedProviders.length; k++ ) {
+                            if($option.val() == supportedProviders[k]) {
+                              thisOpionIsSupported = true;
+                              break;
+                            }                               
+                          }   
+                          if(thisOpionIsSupported == true) {
+                            $option.attr('disabled', false);
+                          }
+                          else {
+                            $option.attr('disabled', true);
+                          }                            
+                        }                                                    
+                      }                          
+                      else if($lbType.find('select').val() == 'internalLb') { //disable all providers except the ones in lbProviderMap.internalLb.vpc => ["InternalLbVm"]
+                        for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                          var $option = $lbProviderOptions.eq(i);                           
+                          var supportedProviders = lbProviderMap.internalLb.vpc;                            
+                          var thisOpionIsSupported = false;                            
+                          for(var k = 0; k < supportedProviders.length; k++ ) {
+                            if($option.val() == supportedProviders[k]) {
+                              thisOpionIsSupported = true;
+                              break;
+                            }                               
+                          }  
+                          if(thisOpionIsSupported == true) {
+                            $option.attr('disabled', false);
+                          }
+                          else {
+                            $option.attr('disabled', true);
+                          }                            
+                        }                             
+                      }     
+                      
+                      //if selected option is disabled, select the first enabled option instead
+                      if($lbProvider.find('option:selected:disabled').length > 0) { 
+                        $lbProvider.val($lbProvider.find('option:first'));                         
+                      }     
+                    }
+                    else {
+                      $lbType.hide();                      
+                    }
+                    
 										//when service(s) has Virtual Router as provider.....							
                     var havingVirtualRouterForAtLeastOneService = false;									
 										$(serviceCheckboxNames).each(function(){										  
@@ -1185,10 +1600,10 @@
 											}																					
 										});                    
                     if(havingVirtualRouterForAtLeastOneService == true) {
-                      $serviceOfferingId.css('display', 'inline-block');
+                      $systemOfferingForRouter.css('display', 'inline-block');
 										}
                     else {
-                      $serviceOfferingId.hide();		
+                      $systemOfferingForRouter.hide();		
 										}
 
 										
@@ -1426,25 +1841,20 @@
                   useVpc: {
                     label: 'VPC',
                     docID: 'helpNetworkOfferingVPC',
-                    isBoolean: true,
-                    onChange: function(args) {
-                      var $checkbox = args.$checkbox;
-                      var $selects = $checkbox.closest('form').find('.dynamic-input select');
-                      var $vpcOptions = $selects.find('option[value=VpcVirtualRouter]');
-                     
-                      if ($checkbox.is(':checked')) {
-                        $vpcOptions.siblings().attr('disabled', true);
-                        $selects.val('VpcVirtualRouter');
-                      } else {
-                        $vpcOptions.siblings().attr('disabled', false);
-                        $vpcOptions.attr('disabled', true);
-                        $selects.each(function() {
-                          $(this).val($(this).find('option:first'));
-                        });
-                      }
+                    isBoolean: true                    
+                  },
+					                  
+                  lbType: { //only shown when VPC is checked and LB service is checked
+                    label: 'Load Balancer Type', 
+                    isHidden: true,
+                    select: function(args) {
+                      args.response.success({data: [
+                        {id: 'publicLb', description: 'Public LB'}, 
+                        {id: 'internalLb', description: 'Internal LB'}
+                      ]});                       
                     }
                   },
-								
+                                    
                   supportedServices: {
                     label: 'label.supported.services',
 
@@ -1569,8 +1979,9 @@
                   },
 
 									//show or hide upon checked services and selected providers above (begin)
-                  serviceOfferingId: {
-                    label: 'label.system.offering',
+                  systemOfferingForRouter: {
+                    label: 'System Offering for Router',
+                    isHidden: true,
                     docID: 'helpNetworkOfferingSystemOffering',
                     select: function(args) {
                       $.ajax({
@@ -1616,9 +2027,9 @@
                     dependsOn: 'service.SourceNat.isEnabled',
                     select: function(args) {
                       args.response.success({
-                        data: [                          
-                          { id: 'perzone', description: 'Per zone'},
-													{ id: 'peraccount', description: 'Per account'}
+                        data: [     
+													{ id: 'peraccount', description: 'Per account'},
+													{ id: 'perzone', description: 'Per zone'}
                         ]
                       });
                     }
@@ -1748,7 +2159,13 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
-										} 		
+										} 	
+                    else if((key == 'service.Lb.provider') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb  == "InternalLbVm")) {                    
+                      inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+                      inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'lbSchemes';
+                      inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal';
+                      serviceCapabilityIndex++;
+                    }
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
@@ -1788,26 +2205,22 @@
                                                                         inputData['isPersistent'] = false;
 								}
 								else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
-									if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
+								  inputData['specifyIpRanges'] = false;
+								  
+								  if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
 										inputData['specifyVlan'] = true;	
-                                                                                inputData['specifyIpRanges'] = true;							
-
-                    
-
-			
 									}
 									else { //specifyVlan checkbox is unchecked
 										inputData['specifyVlan'] = false;
-										inputData['specifyIpRanges'] = false;
+										
 									}	
                                                                         
-                                                                        if(inputData['isPersistent'] == 'on') {  //It is a persistent network
-                                                                               inputData['isPersistent'] = true;
-                                                                        }
-                                                                        else {    //Isolated Network with Non-persistent network
-                                                                               inputData['isPersistent'] = false;
-                                                                                              }
-				
+                  if(inputData['isPersistent'] == 'on') {  //It is a persistent network
+                    inputData['isPersistent'] = true;
+                  }
+                  else {    //Isolated Network with Non-persistent network
+                    inputData['isPersistent'] = false;
+                  }				
 								}			
 								
 																
@@ -1829,8 +2242,8 @@
 								if(args.$form.find('.form-item[rel=availability]').css("display") == "none")
                   inputData['availability'] = 'Optional';
 								
-                if(args.$form.find('.form-item[rel=serviceOfferingId]').css("display") == "none")									
-									delete inputData.serviceOfferingId;
+                if(args.$form.find('.form-item[rel=systemOfferingForRouter]').css("display") == "none")									
+									delete inputData.systemOfferingForRouter;
 								
                 inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
 								

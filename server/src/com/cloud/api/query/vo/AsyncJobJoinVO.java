@@ -24,8 +24,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.async.AsyncJob.Type;
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -95,7 +96,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
 
     @Enumerated(value=EnumType.STRING)
     @Column(name="instance_type", length=64)
-    private Type instanceType;
+    private ApiCommandJobType instanceType;
 
     @Column(name="instance_id", length=64)
     private Long instanceId;
@@ -301,12 +302,12 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     }
 
 
-    public Type getInstanceType() {
+    public ApiCommandJobType getInstanceType() {
         return instanceType;
     }
 
 
-    public void setInstanceType(Type instanceType) {
+    public void setInstanceType(ApiCommandJobType instanceType) {
         this.instanceType = instanceType;
     }
 

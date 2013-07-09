@@ -98,6 +98,8 @@ import com.cloud.network.cisco.NetworkAsa1000vMapVO;
 import com.cloud.network.dao.CiscoAsa1000vDao;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.dao.CiscoVnmcDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAsa1000vMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -148,7 +150,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject 
+    @Inject
+    IPAddressDao _ipAddressDao;
+    @Inject
     HostDetailsDao _hostDetailsDao;
     @Inject
     HostDao _hostDao;
@@ -342,22 +346,33 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
 
             // due to VNMC limitation of not allowing source NAT ip as the outside ip of firewall,
-            // an additional public ip needs to acquired for assigning as firewall outside ip
+            // an additional public ip needs to acquired for assigning as firewall outside ip.
+            // In case there are already additional ip addresses available (network restart) use one
+            // of them such that it is not the source NAT ip
             IpAddress outsideIp = null;
-            try {
-                Account caller = UserContext.current().getCaller();
-                long callerUserId = UserContext.current().getCallerUserId();
-                outsideIp = _networkMgr.allocateIp(owner, false, caller, callerUserId, zone);
-            } catch (ResourceAllocationException e) {
-                s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
-                return false;
+            List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+            for (IPAddressVO ip : publicIps) {
+                if (!ip.isSourceNat()) {
+                    outsideIp = ip;
+                    break;
+                }
             }
+            if (outsideIp == null) { // none available, acquire one
+                try {
+                    Account caller = UserContext.current().getCaller();
+                    long callerUserId = UserContext.current().getCallerUserId();
+                    outsideIp = _networkMgr.allocateIp(owner, false, caller, callerUserId, zone);
+                } catch (ResourceAllocationException e) {
+                    s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
+                    return false;
+                }
 
-            try {
-                outsideIp = _networkMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
-            } catch (ResourceAllocationException e) {
-                s_logger.error("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details " + e);
-                return false;
+                try {
+                    outsideIp = _networkMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
+                } catch (ResourceAllocationException e) {
+                    s_logger.error("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details " + e);
+                    return false;
+                }
             }
 
             // create logical edge firewall in VNMC
@@ -792,7 +807,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         for (StaticNat rule : rules) {
             IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, 
+            StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule.getSourceIpAddressId(), sourceIp.getAddress().addr(), null,
                     null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
             rulesTO.add(ruleTO);
         }

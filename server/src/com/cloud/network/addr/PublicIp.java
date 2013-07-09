@@ -220,6 +220,15 @@ public class PublicIp implements PublicIpAddress {
         return _addr.getVmIp();
     }
 
+    @Override
+    public boolean isPortable() {
+        return _addr.isPortable();
+    }
+
+    public void setPortable(boolean portable) {
+        _addr.setPortable(portable);
+    }
+
     public Long getIpMacAddress() {
         return  _addr.getMacAddress();
     }

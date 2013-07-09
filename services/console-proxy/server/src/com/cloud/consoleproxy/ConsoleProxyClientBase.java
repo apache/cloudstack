@@ -253,7 +253,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         
         if(s_logger.isTraceEnabled())
             s_logger.trace("Ajax client start, frame buffer w: " + width + ", " + height);
-        
+
+/*        
         int retry = 0;
         tracker.initCoverageTest();
         while(!tracker.hasFullCoverage() && retry < 10) {
@@ -263,6 +264,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             }
             retry++;
         }
+*/
         
         List<TileInfo> tiles = tracker.scan(true);
         String imgUrl = prepareAjaxImage(tiles, true);

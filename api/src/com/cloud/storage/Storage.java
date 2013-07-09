@@ -21,13 +21,14 @@ import java.util.List;
 
 public class Storage {
     public static enum ImageFormat {
-        QCOW2(true, true, false),
-        RAW(false, false, false),
-        VHD(true, true, true),
-        ISO(false, false, false),
+        QCOW2(true, true, false, "qcow2"),
+        RAW(false, false, false, "raw"),
+        VHD(true, true, true, "vhd"),
+        ISO(false, false, false, "iso"),
         OVA(true, true, true, "ova"),
-        BAREMETAL(false, false, false),
-        TAR(false, false, false);
+        VHDX(true, true, true, "vhdx"),
+        BAREMETAL(false, false, false, "BAREMETAL"),
+        TAR(false, false, false, "tar");
 
         private final boolean thinProvisioned;
         private final boolean supportSparse;
@@ -66,6 +67,7 @@ public class Storage {
 
             return fileExtension;
         }
+        
     }
 
     public static enum FileSystem {
@@ -84,6 +86,7 @@ public class Storage {
     }
 
     public static enum TemplateType {
+        ROUTING, // Router template
         SYSTEM, /* routing, system vm template */
         BUILTIN, /* buildin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
@@ -97,8 +100,8 @@ public class Storage {
         Iscsi(true), // for e.g., ZFS Comstar
         ISO(false), // for iso image
         LVM(false), // XenServer local LVM SR
-	CLVM(true),
-        RBD(true),
+        CLVM(true),
+        RBD(true), // http://libvirt.org/storage.html#StorageBackendRBD
         SharedMountPoint(true),
         VMFS(true), // VMware VMFS storage
         PreSetup(true), // for XenServer, Storage Pool is set up by customers.

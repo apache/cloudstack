@@ -22,16 +22,11 @@ import com.cloud.utils.fsm.StateObject;
 
 public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataStoreStateMachine.State> {
     enum State {
-        Allocated("The initial state"),
-        Creating2("This is only used with createOnlyRequested event"),
-        Creating("The object is being creating on data store"),
-        Created("The object is created"),
-        Ready("Template downloading is accomplished"),
-        Copying("The object is being coping"),
-        Migrating("The object is being migrated"),
-        Destroying("Template is destroying"),
-        Destroyed("Template is destroyed"),
-        Failed("Failed to download template");
+        Allocated("The initial state"), Creating2("This is only used with createOnlyRequested event"), Creating(
+                "The object is being creating on data store"), Created("The object is created"), Ready(
+                "Template downloading is accomplished"), Copying("The object is being coping"), Migrating(
+                "The object is being migrated"), Destroying("Template is destroying"), Destroyed(
+                "Template is destroyed"), Failed("Failed to download template");
         String _description;
 
         private State(String description) {
@@ -42,17 +37,9 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
             return _description;
         }
     }
-    
+
     enum Event {
-        CreateRequested,
-        CreateOnlyRequested,
-        DestroyRequested,
-        OperationSuccessed,
-        OperationFailed,
-        CopyingRequested,
-        MigrationRequested,
-        ResizeRequested,
-        ExpungeRequested
-        
+        CreateRequested, CreateOnlyRequested, DestroyRequested, OperationSuccessed, OperationFailed, CopyingRequested, MigrationRequested, ResizeRequested, ExpungeRequested
+
     }
 }

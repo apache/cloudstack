@@ -24,6 +24,8 @@ import java.util.UUID;
 
 public class LibvirtVMDef {
     private String _hvsType;
+    private static long _libvirtVersion;
+    private static long _qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -354,7 +356,7 @@ public class LibvirtVMDef {
     }
 
     public static class DiskDef {
-        enum deviceType {
+        public enum deviceType {
             FLOPPY("floppy"), DISK("disk"), CDROM("cdrom");
             String _type;
 
@@ -396,7 +398,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum diskBus {
+        public enum diskBus {
             IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML(
                     "uml"), FDC("fdc");
             String _bus;
@@ -411,7 +413,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum diskFmtType {
+        public enum diskFmtType {
             RAW("raw"), QCOW2("qcow2");
             String _fmtType;
 
@@ -439,6 +441,10 @@ public class LibvirtVMDef {
         private boolean _readonly = false;
         private boolean _shareable = false;
         private boolean _deferAttach = false;
+        private Long _bytesReadRate;
+        private Long _bytesWriteRate;
+        private Long _iopsReadRate;
+        private Long _iopsWriteRate;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -584,6 +590,22 @@ public class LibvirtVMDef {
             return suffix - 'a';
         }
 
+        public void setBytesReadRate(Long bytesReadRate) {
+            _bytesReadRate = bytesReadRate;
+        }
+
+        public void setBytesWriteRate(Long bytesWriteRate) {
+            _bytesWriteRate = bytesWriteRate;
+        }
+
+        public void setIopsReadRate(Long iopsReadRate) {
+            _iopsReadRate = iopsReadRate;
+        }
+
+        public void setIopsWriteRate(Long iopsWriteRate) {
+            _iopsWriteRate = iopsWriteRate;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -627,6 +649,22 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if ((_deviceType != deviceType.CDROM) && (_libvirtVersion >= 9008) && (_qemuVersion >= 1001000)
+                    && (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                    || ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)) )) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+                diskBuilder.append("<iotune>\n");
+                if ((_bytesReadRate != null) && (_bytesReadRate > 0))
+                    diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
+                if ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                    diskBuilder.append("<write_bytes_sec>" + _bytesWriteRate + "</write_bytes_sec>\n");
+                if ((_iopsReadRate != null) && (_iopsReadRate > 0))
+                    diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
+                if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
+                    diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
+                diskBuilder.append("</iotune>\n");
+            }
+
             diskBuilder.append("</disk>\n");
             return diskBuilder.toString();
         }
@@ -679,45 +717,69 @@ public class LibvirtVMDef {
         private String _ipAddr;
         private String _scriptPath;
         private nicModel _model;
+        private Integer _networkRateKBps;
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
 
         public void defBridgeNet(String brName, String targetBrName,
                 String macAddr, nicModel model) {
+            defBridgeNet(brName, targetBrName, macAddr, model, 0);
+        }
+
+        public void defBridgeNet(String brName, String targetBrName,
+                String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.BRIDGE;
             _sourceName = brName;
             _networkName = targetBrName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defDirectNet(String sourceName, String targetName,
                                  String macAddr, nicModel model, String sourceMode) {
+            defDirectNet(sourceName, targetName, macAddr, model, sourceMode, 0);
+        }
+
+        public void defDirectNet(String sourceName, String targetName,
+                                 String macAddr, nicModel model, String sourceMode, Integer networkRateKBps) {
             _netType = guestNetType.DIRECT;
             _netSourceMode = sourceMode;
             _sourceName = sourceName;
             _networkName = targetName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defPrivateNet(String networkName, String targetName,
                 String macAddr, nicModel model) {
+            defPrivateNet(networkName, targetName, macAddr, model, 0);
+        }
+
+        public void defPrivateNet(String networkName, String targetName,
+                String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.NETWORK;
             _sourceName = networkName;
             _networkName = targetName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defEthernet(String targetName, String macAddr, nicModel model, String scriptPath) {
+            defEthernet(targetName, macAddr, model, scriptPath, 0);
+        }
+
+        public void defEthernet(String targetName, String macAddr, nicModel model, String scriptPath, Integer networkRateKBps) {
             _netType = guestNetType.ETHERNET;
             _networkName = targetName;
             _sourceName = targetName;
             _macAddr = macAddr;
             _model = model;
             _scriptPath = scriptPath;
+            _networkRateKBps = networkRateKBps;
          }
 
         public void defEthernet(String targetName, String macAddr, nicModel model) {
@@ -795,6 +857,12 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if ((_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
+                netBuilder.append("<bandwidth>\n");
+                netBuilder.append("<inbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
+                netBuilder.append("<outbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
+                netBuilder.append("</bandwidth>\n");
             }
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
@@ -951,7 +1019,7 @@ public class LibvirtVMDef {
             if (_listenAddr != null) {
                 graphicBuilder.append(" listen='" + _listenAddr + "'");
             } else {
-                graphicBuilder.append(" listen='' ");
+                graphicBuilder.append(" listen=''");
             }
             if (_passwd != null) {
                 graphicBuilder.append(" passwd='" + _passwd + "'");
@@ -1010,6 +1078,14 @@ public class LibvirtVMDef {
 
     public String getHvsType() {
         return _hvsType;
+    }
+
+    public void setLibvirtVersion(long libvirtVersion) {
+        _libvirtVersion = libvirtVersion;
+    }
+
+    public void setQemuVersion(long qemuVersion) {
+        _qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {

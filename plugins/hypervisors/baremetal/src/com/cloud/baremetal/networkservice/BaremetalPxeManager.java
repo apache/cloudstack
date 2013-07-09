@@ -24,6 +24,9 @@ package com.cloud.baremetal.networkservice;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.AddBaremetalPxeCmd;
+import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
+
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
@@ -61,5 +64,5 @@ public interface BaremetalPxeManager extends Manager, PluggableService {
 	public static final String BAREMETAL_PXE_CAPABILITY = "BaremetalPxe";
 	public static final String BAREMETAL_PXE_SERVICE_PROPERTIES = "baremetalpxe_commands.properties";
 	public static final Provider BAREMETAL_PXE_SERVICE_PROVIDER = new Provider("BaremetalPxeProvider", true);;
-	public static final Provider BAREMETAL_USERDATA_PROVIDER = new Provider("BaremetaUserdataProvider", true);
+	public static final Provider BAREMETAL_USERDATA_PROVIDER = new Provider("BaremetalUserdataProvider", true);
 }

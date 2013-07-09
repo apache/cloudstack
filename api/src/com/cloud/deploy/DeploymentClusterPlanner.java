@@ -18,6 +18,7 @@ package com.cloud.deploy;
 
 import java.util.List;
 
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -40,6 +41,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
     List<Long> orderClusters(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid)
             throws InsufficientServerCapacityException;
 
-    PlannerResourceUsage getResourceUsage();
+    PlannerResourceUsage getResourceUsage(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+            DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
 
 }

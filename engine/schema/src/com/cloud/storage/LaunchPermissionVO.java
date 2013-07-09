@@ -24,19 +24,20 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="launch_permission")
+@Table(name = "launch_permission")
 public class LaunchPermissionVO implements InternalIdentity {
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="template_id")
+    @Column(name = "template_id")
     private long templateId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    public LaunchPermissionVO() { }
+    public LaunchPermissionVO() {
+    }
 
     public LaunchPermissionVO(long templateId, long accountId) {
         this.templateId = templateId;

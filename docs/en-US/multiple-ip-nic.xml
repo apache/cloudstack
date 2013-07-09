@@ -24,8 +24,7 @@
   <para>&PRODUCT; now provides you the ability to associate multiple private IP addresses per guest
     VM NIC. This feature is supported on all the network configurations&mdash;Basic, Advanced, and
     VPC. Security Groups, Static NAT and Port forwarding services are supported on these additional
-    IPs. In addition to the primary IP, you can assign additional IPs to the guest VM NIC. Up to 256
-    IP addresses are allowed per NIC.</para>
+    IPs. In addition to the primary IP, you can assign additional IPs to the guest VM NIC.</para>
   <para>As always, you can specify an IP from the guest subnet; if not specified, an IP is
     automatically picked up from the guest VM subnet. You can view the IPs associated with for each
     guest VM NICs on the UI. You can apply NAT on these additional guest IPs by using firewall

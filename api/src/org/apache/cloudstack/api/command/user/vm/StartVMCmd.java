@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -26,14 +27,13 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -103,8 +103,8 @@ public class StartVMCmd extends BaseAsyncCmd {
         return "starting user vm: " + getId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.VirtualMachine;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.VirtualMachine;
     }
 
     public Long getInstanceId() {
@@ -112,7 +112,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, ResourceAllocationException {
         try {
             UserContext.current().setEventDetails("Vm Id: " + getId());
 
@@ -135,6 +135,16 @@ public class StartVMCmd extends BaseAsyncCmd {
         } catch (ExecutionException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        } catch (InsufficientCapacityException ex) {
+            StringBuilder message = new StringBuilder(ex.getMessage());
+            if (ex instanceof InsufficientServerCapacityException) {
+                if (((InsufficientServerCapacityException) ex).isAffinityApplied()) {
+                    message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
+                }
+            }
+            s_logger.info(ex);
+            s_logger.info(message.toString(), ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
         }
     }
 

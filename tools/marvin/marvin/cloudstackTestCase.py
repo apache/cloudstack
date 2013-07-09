@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,9 +31,11 @@ import cloudstackTestClient
 #            cls.AcctType = self.accounttype
 #        return Wrapped
 
+
 def user(Name, DomainName, AcctType):
     def wrapper(cls):
         orig_init = cls.__init__
+
         def __init__(self, *args, **kws):
             cls.UserName = Name
             cls.DomainName = DomainName
@@ -43,13 +45,14 @@ def user(Name, DomainName, AcctType):
         return cls
     return wrapper
 
+
 class cloudstackTestCase(unittest.case.TestCase):
     clstestclient = None
-    
+
     def __init__(self, args):
         unittest.case.TestCase.__init__(self, args)
 #        self.testClient = cloudstackTestClient.cloudstackTestClient()
-        
+
     @classmethod
     def getClsTestClient(cls):
         return cls.clstestclient

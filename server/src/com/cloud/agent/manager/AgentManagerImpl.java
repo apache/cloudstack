@@ -41,8 +41,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.StartupCommandProcessor;
@@ -98,7 +96,6 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -109,7 +106,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -130,16 +126,19 @@ import edu.emory.mathcs.backport.java.util.Collections;
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  *
- * @config {@table || Param Name | Description | Values | Default || || port | port to listen on for agent connection. | Integer
- *         | 8250 || || workers | # of worker threads | Integer | 5 || || router.template.id | default id for template | Integer
- *         | 1 || || router.ram.size | default ram for router vm in mb | Integer | 128 || || router.ip.address | ip address for
- *         the router | ip | 10.1.1.1 || || wait | Time to wait for control commands to return | seconds | 1800 || || domain |
- *         domain for domain routers| String | foo.com || || alert.wait | time to wait before alerting on a disconnected agent |
- *         seconds | 1800 || || update.wait | time to wait before alerting on a updating agent | seconds | 600 || ||
- *         ping.interval | ping interval in seconds | seconds | 60 || || instance.name | Name of the deployment String |
- *         required || || start.retry | Number of times to retry start | Number | 2 || || ping.timeout | multiplier to
- *         ping.interval before announcing an agent has timed out | float | 2.0x || || router.stats.interval | interval to
- *         report router statistics | seconds | 300s || * }
+ * @config {@table  || Param Name | Description | Values | Default ||
+ *                  || port | port to listen on for agent connection. | Integer | 8250 ||
+ *                  || workers | # of worker threads | Integer | 5 || || router.ram.size | default ram for router vm in mb | Integer | 128 ||
+ *                  || router.ip.address | ip address for the router | ip | 10.1.1.1 ||
+ *                  || wait | Time to wait for control commands to return | seconds | 1800 ||
+ *                  || domain | domain for domain routers| String | foo.com ||
+ *                  || alert.wait | time to wait before alerting on a disconnected agent | seconds | 1800 ||
+ *                  || update.wait | time to wait before alerting on a updating agent | seconds | 600 ||
+ *                  || ping.interval | ping interval in seconds | seconds | 60 ||
+ *                  || instance.name | Name of the deployment String | required ||
+ *                  || start.retry | Number of times to retry start | Number | 2 ||
+ *                  || ping.timeout | multiplier to ping.interval before announcing an agent has timed out | float | 2.0x ||
+ *                  || router.stats.interval | interval to report router statistics | seconds | 300s || }
  **/
 @Local(value = { AgentManager.class })
 public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory {
@@ -380,31 +379,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return attache;
     }
 
-    @Override
-    public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
-        if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            return  easySend(ssHost.getId(), cmd);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
-            return  sendToSSVM(ssHost.getDataCenterId(), cmd);
-        } else {
-            String msg = "do not support Secondary Storage type " + ssHost.getType();
-            s_logger.warn(msg);
-            return new Answer(cmd, false, msg);
-        }
-    }
 
-    @Override
-    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException {
-        if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            send(ssHost.getId(), new Commands(cmd), listener);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
-            sendToSSVM(ssHost.getDataCenterId(), cmd, listener);
-        } else {
-            String err = "do not support Secondary Storage type " + ssHost.getType();
-            s_logger.warn(err);
-            throw new CloudRuntimeException(err);
-        }
-    }
 
     private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
         List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);
@@ -1482,6 +1457,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    @Override
     public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
         disconnectInternal(hostId, event, true);
     }

@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.autoscale;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
@@ -123,8 +123,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Condition;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Condition;
     }
 
     @Override

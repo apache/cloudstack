@@ -60,6 +60,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("limitcpuuse") @Param(description="restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
 
+    @SerializedName("isvolatile") @Param(description="true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
+    private Boolean isVolatile;
+
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
@@ -83,6 +86,18 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
+
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the service offering")
+    private Long bytesReadRate;
+
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the service offering")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the service offering")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the service offering")
+    private Long iopsWriteRate;
 
     @SerializedName(ApiConstants.DEPLOYMENT_PLANNER) @Param(description="deployment strategy used to deploy VM.")
     private String deploymentPlanner;
@@ -236,5 +251,29 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setDeploymentPlanner(String deploymentPlanner) {
         this.deploymentPlanner = deploymentPlanner;
+    }
+
+    public boolean getVolatileVm() {
+        return isVolatile;
+    }
+
+    public void setVolatileVm(boolean isVolatile) {
+        this.isVolatile = isVolatile;
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
     }
 }

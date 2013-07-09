@@ -69,7 +69,9 @@ HOSTS=/etc/hosts
 source /root/func.sh
 
 lock="biglock"
-locked=$(getLockFile $lock)
+#default timeout value is 30 mins as DhcpEntryCommand is not synchronized on agent side any more,
+#and multiple commands can be sent to the same VR at a time
+locked=$(getLockFile $lock 1800)
 if [ "$locked" != "1" ]
 then
     exit 1
@@ -94,11 +96,11 @@ wait_for_dnsmasq () {
   return 1
 }
 
-if [ $no_dhcp_release -eq 0 ]
+if [ "$ipv4" != '' -a $no_dhcp_release -eq 0 ]
 then
   #release previous dhcp lease if present
   logger -t cloud "edithosts: releasing $ipv4"
-  dhcp_release lo $ipv4 $(grep $ipv4 $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
+  dhcp_release eth0 $ipv4 $(grep $ipv4 $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
   logger -t cloud "edithosts: released $ipv4"
 fi
 

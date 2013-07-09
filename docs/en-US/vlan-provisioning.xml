@@ -42,4 +42,5 @@
     and the guest networks on different physical NICs.</para>
   <xi:include href="vlan-allocation-eg.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="non-contiguous-vlan.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="vlan-assign-isolated-nw.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

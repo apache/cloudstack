@@ -259,6 +259,32 @@
           }
         });
       },
+      delete: function(stickyRuleID, complete, error) {
+        $.ajax({
+          url: createURL('deleteLBStickinessPolicy'),
+          data: {
+            id: stickyRuleID
+          },
+          success: function(json) {
+            cloudStack.ui.notifications.add(
+              {
+                desc: 'Remove previous LB sticky rule',
+                section: 'Network',
+                poll: pollAsyncJobResult,
+                _custom: {
+                  jobId: json.deleteLBstickinessrruleresponse.jobid
+                }
+              },
+              complete, {},
+              error, {}
+            );
+          },
+          error: function(json) {
+            complete();
+            cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
+          }
+        });
+      },
       recreate: function(stickyRuleID, lbRuleID, data, complete, error) {
         var addStickyPolicy = function() {
           cloudStack.lbStickyPolicy.actions.add(
@@ -270,43 +296,10 @@
         };
         
         // Delete existing rule
-        if (stickyRuleID) {
-          $.ajax({
-            url: createURL('deleteLBStickinessPolicy'),
-            data: {
-              id: stickyRuleID
-            },
-            success: function(json) {
-              cloudStack.ui.notifications.add(
-                {
-                  desc: 'Remove previous LB sticky rule',
-                  section: 'Network',
-                  poll: pollAsyncJobResult,
-                  _custom: {
-                    jobId: json.deleteLBstickinessrruleresponse.jobid
-                  }
-                },
-                function() {
-                  if (data.methodname != 'None') {
-                    addStickyPolicy();
-                  } else {
-                    complete();
-                  }
-                }, {},
-                error, {}
-              );
-            },
-            error: function(json) {
-              cloudStack.dialog.notice({
-                message: parseXMLHttpResponse(json)
-              });
-              error();
-            }
-          });
-        } else if (data.methodname != 'None') {
+        if (data.methodname != 'None') {
           addStickyPolicy();
         } else {
-          complete();
+          cloudStack.lbStickyPolicy.actions.delete(stickyRuleID, complete, error);
         }
       }
     }

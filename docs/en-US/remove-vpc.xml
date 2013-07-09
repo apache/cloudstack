@@ -38,14 +38,15 @@
       <para>Select the VPC you want to work with.</para>
     </listitem>
     <listitem>
-      <para>To remove, click the Remove VPC button<inlinemediaobject>
+      <para>In the Details tab, click the Remove VPC button<inlinemediaobject>
           <imageobject>
             <imagedata fileref="./images/remove-vpc.png"/>
           </imageobject>
           <textobject>
             <phrase>remove-vpc.png: button to remove a VPC</phrase>
           </textobject>
-        </inlinemediaobject></para>
+      </inlinemediaobject></para>
+      <para>You can remove the VPC by also using the remove button in the Quick View.</para>
       <para>You can edit the name and description of a VPC. To do that, select the VPC, then click
         the Edit button. <inlinemediaobject>
           <imageobject>

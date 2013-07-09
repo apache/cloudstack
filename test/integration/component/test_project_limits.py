@@ -193,7 +193,7 @@ class TestProjectLimits(cloudstackTestCase):
         #    Also, verify resource limits for the project are independent of
         #    account resource limits
         # 3. Increase Projects Resources limits above domains limit. Verify
-        #    project can’t have more resources than domain level limit allows.
+        #    project can't have more resources than domain level limit allows.
         # 4. Create Resource more than its set limit for a project. Verify
         #    resource allocation should fail giving proper message
 
@@ -201,8 +201,8 @@ class TestProjectLimits(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.admin.account.name,
-                                 domainid=self.admin.account.domainid
+                                 account=self.admin.name,
+                                 domainid=self.admin.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -312,6 +312,7 @@ class TestProjectLimits(cloudstackTestCase):
                                         max=2
                                       )
             with self.assertRaises(Exception):
+                max_value = 3
                 self.debug(
                     "Attempting to update project: %s resource limit to: %s" % (
                                                                 project.id,
@@ -321,13 +322,12 @@ class TestProjectLimits(cloudstackTestCase):
                 update_resource_limit(
                                         self.apiclient,
                                         resource.resourcetype,
-                                        max=3,
+                                        max=max_value,
                                         projectid=project.id
                                       )
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
-    @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
         """
@@ -342,8 +342,8 @@ class TestProjectLimits(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.admin.account.name,
-                                 domainid=self.admin.account.domainid
+                                 account=self.admin.name,
+                                 domainid=self.admin.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)

@@ -16,6 +16,23 @@
 // under the License.
 cloudStack.docs = {
 
+  //Dedicate Resource
+
+   helpDedicateResource:{
+
+    desc:'Check this box to dedicate the resources to specific domain/account',
+    externalLink:''
+
+  },
+
+   helpAccountForDedication:{
+
+   desc:'Please enter an account name which belongs to the above selected domain in order to dedicate this resource to this account',
+   externalLink:''
+
+  },
+
+
  //Delete/archive events
   helpEventsDeleteType:{
 
@@ -214,7 +231,7 @@ cloudStack.docs = {
   externalLink: ''
   },
   helpComputeOfferingNetworkRate: {
-  desc: 'Allowed data transfer rate in MB per second',
+  desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
   helpComputeOfferingHA: {
@@ -253,12 +270,28 @@ cloudStack.docs = {
   desc: 'Type of disk for the VM. Local is attached to the hypervisor host where the VM is running. Shared is storage accessible via NFS.',
   externalLink: ''
   },
+  helpDiskOfferingQoSType: {
+  desc: 'Type of Quality of Service desired, if any.',
+  externalLink: ''
+  },
   helpDiskOfferingCustomDiskSize: {
   desc: 'If checked, the user can set their own disk size. If not checked, the root administrator must define a value in Disk Size.',
   externalLink: ''
   },
   helpDiskOfferingDiskSize: {
   desc: 'Appears only if Custom Disk Size is not selected. Define the volume size in GB.',
+  externalLink: ''
+  },
+  helpDiskOfferingCustomDiskIops: {
+  desc: 'If checked, the user can set Min and Max IOPS. If not checked, the root administrator can define such values.',
+  externalLink: ''
+  },
+  helpDiskOfferingDiskIopsMin: {
+  desc: 'Appears only if Custom IOPS is not selected. Define the minimum volume IOPS.',
+  externalLink: ''
+  },
+  helpDiskOfferingDiskIopsMax: {
+  desc: 'Appears only if Custom IOPS is not selected. Define the maximum volume IOPS.',
   externalLink: ''
   },
   helpDiskOfferingStorageTags: {
@@ -465,7 +498,7 @@ cloudStack.docs = {
   externalLink: ''
   },
   helpNetworkOfferingNetworkRate: {
-  desc: 'Allowed data transfer rate in MB per second',
+  desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
   helpNetworkOfferingTrafficType: {
@@ -682,7 +715,7 @@ cloudStack.docs = {
   externalLink: ''
   },
   helpSystemOfferingNetworkRate: {
-  desc: 'Allowed data transfer rate in MB per second',
+  desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
   helpSystemOfferingHA: {

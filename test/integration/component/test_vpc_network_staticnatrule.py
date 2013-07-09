@@ -37,7 +37,6 @@ from marvin.integration.lib.common import (get_domain,
                                                         get_zone,
                                                         get_template,
                                                         cleanup_resources,
-                                                        wait_for_cleanup,
                                                         list_routers)
 
 
@@ -61,8 +60,8 @@ class Services:
                                                 "name": "Tiny Instance",
                                                 "displaytext": "Tiny Instance",
                                                 "cpunumber": 1,
-                                                "cpuspeed": 1000,
-                                                "memory": 512,
+                                                "cpuspeed": 100,
+                                                "memory": 128,
                                                 },
                                 "network_offering": {
                                                 "name": 'VPC Network offering',
@@ -83,8 +82,6 @@ class Services:
                                                         "StaticNat": 'VpcVirtualRouter',
                                                         "NetworkACL": 'VpcVirtualRouter'
                                                     },
-                                                "servicecapabilitylist": {
-                                                },
                                         },
                                 "network_offering_no_lb": {
                                                 "name": 'VPC Network offering',
@@ -174,7 +171,6 @@ class Services:
                                 "ostype": 'CentOS 5.3 (64-bit)',
                                 "sleep": 60,
                                 "timeout": 10,
-                                "mode": 'advanced'
                         }
 
 
@@ -243,7 +239,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                 vpcofferingid=self.vpc_off.id,
                                 zoneid=self.zone.id,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid
+                                domainid=self.account.domainid
                                 )
         return
 
@@ -251,9 +247,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self._cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                                            "network.gc.interval",
-                                                            "network.gc.wait"])
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -262,7 +255,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     def get_Router_For_VPC(self):
         routers = list_routers(self.apiclient,
                                         account=self.account.name,
-                                        domainid=self.account.account.domainid,
+                                        domainid=self.account.domainid,
                                         )
         self.assertEqual(isinstance(routers, list),
                                 True,
@@ -285,7 +278,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
 
         routers = list_routers(self.apiclient,
                                         account=self.account.name,
-                                        domainid=self.account.account.domainid,
+                                        domainid=self.account.domainid,
                                         )
         self.assertEqual(isinstance(routers, list),
                                 True,
@@ -306,7 +299,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
 
         routers = list_routers(self.apiclient,
                                         account=self.account.name,
-                                        domainid=self.account.account.domainid,
+                                        domainid=self.account.domainid,
                                         zoneid=self.zone.id
                                         )
         self.assertEqual(isinstance(routers, list),
@@ -339,9 +332,9 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         try:
                 urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
                 if not testnegative:
-                    self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                    self.debug("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
                 else:
-                    self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                    self.fail("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
         except:
                 if not testnegative:
                     self.fail("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
@@ -391,7 +384,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         public_ip = PublicIPAddress.create(self.apiclient,
                                         accountid=self.account.name,
                                         zoneid=self.zone.id,
-                                        domainid=self.account.account.domainid,
+                                        domainid=self.account.domainid,
                                         networkid=None, #network.id,
                                         vpcid=self.vpc.id
                                         )
@@ -420,7 +413,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                 vpcofferingid=vpc_off.id,
                                 zoneid=self.zone.id,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid
+                                domainid=self.account.domainid
                                 )
         return vpc
 
@@ -442,7 +435,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                 obj_network = Network.create(self.apiclient,
                                                 self.services["network"],
                                                 accountid=self.account.name,
-                                                domainid=self.account.account.domainid,
+                                                domainid=self.account.domainid,
                                                 networkofferingid=nw_off.id,
                                                 zoneid=self.zone.id,
                                                 gateway=gateway,
@@ -460,7 +453,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 self.apiclient,
                                                 self.services["virtual_machine"],
                                                 accountid=self.account.name,
-                                                domainid=self.account.account.domainid,
+                                                domainid=self.account.domainid,
                                                 serviceofferingid=self.service_offering.id,
                                                 networkids=[str(network.id)],
                                                 hostid=host_id
@@ -487,7 +480,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 accountid=self.account.name,
                                                 networkid=network.id,
                                                 vpcid=self.vpc.id,
-                                                domainid=self.account.account.domainid
+                                                domainid=self.account.domainid
                                         )
         self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray))
         lb_rule.assign(self.apiclient, vmarray)
@@ -552,7 +545,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_03_VPC_StopCreateMultipleStaticNatRuleStopppedState(self):
         """ Test case no extra : Create Static Nat Rule rules for a two/multiple virtual networks of a VPC using
                 a new Public IP Address available with the VPC when Virtual Router is in Stopped State
@@ -586,7 +578,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_04_VPC_CreateMultipleStaticNatRule(self):
         """ Test case no 230 : Create Static NAT Rules for a two/multiple virtual networks of 
             a VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -619,7 +610,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_05_network_services_VPC_DeleteAllPF(self):
         """ Test case no 232: Delete all Static NAT Rules for a single virtual network of 
             a VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -651,7 +641,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_06_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test case no 233: Delete all Static NAT rules for two/multiple virtual networks of a VPC. 
             Observe the status of the Public IP Addresses of the rules when the Virtual Router is in Running State.

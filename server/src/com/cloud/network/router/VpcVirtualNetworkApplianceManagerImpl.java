@@ -949,9 +949,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getVpcId() != null) {
             if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                 List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
-                s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
-                        + " start for guest network id=" + guestNetworkId);
-                if (!networkACLs.isEmpty()) {
+                if ((networkACLs != null) && !networkACLs.isEmpty()) {
+                    s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router
+                            + " start for guest network id=" + guestNetworkId);
                     createNetworkACLsCommands(networkACLs, router, cmds, guestNetworkId, false);
                 }
             }

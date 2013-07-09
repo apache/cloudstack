@@ -16,19 +16,18 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class LibvirtConnection {
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtConnection.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtConnection.class);
     static private Map<String, Connect> _connections = new HashMap<String, Connect>();
 
     static private Connect _connection;
@@ -48,8 +47,7 @@ public class LibvirtConnection {
             try {
                 conn.getVersion();
             } catch (LibvirtException e) {
-                s_logger.debug("Connection with libvirtd is broken, due to "
-                        + e.getMessage());
+                s_logger.debug("Connection with libvirtd is broken, due to " + e.getMessage());
                 conn = new Connect(hypervisorURI, false);
                 _connections.put(hypervisorURI, conn);
             }
@@ -59,17 +57,16 @@ public class LibvirtConnection {
     }
 
     static public Connect getConnectionByVmName(String vmName) throws LibvirtException {
-        HypervisorType[] hypervisors = new HypervisorType[] {HypervisorType.KVM, Hypervisor.HypervisorType.LXC};
+        HypervisorType[] hypervisors = new HypervisorType[] { HypervisorType.KVM, Hypervisor.HypervisorType.LXC };
 
-        
         for (HypervisorType hypervisor : hypervisors) {
             try {
                 Connect conn = LibvirtConnection.getConnectionByType(hypervisor.toString());
-                if (conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes())) != null) {
+                if (conn.domainLookupByName(vmName) != null) {
                     return conn;
                 }
             } catch (Exception e) {
-               s_logger.debug("can't find connection: " + hypervisor.toString() + ", for vm: " + vmName + ", continue");
+                s_logger.debug("can't find connection: " + hypervisor.toString() + ", for vm: " + vmName + ", continue");
             }
         }
 

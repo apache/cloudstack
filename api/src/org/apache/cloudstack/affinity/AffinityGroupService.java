@@ -18,7 +18,6 @@ package org.apache.cloudstack.affinity;
 
 import java.util.List;
 
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
@@ -45,10 +44,8 @@ public interface AffinityGroupService {
      * @param account
      * @param domainId
      * @param affinityGroupName
-     * @throws ResourceInUseException
      */
-    boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
-            throws ResourceInUseException;
+    boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName);
 
     /** Lists Affinity Groups in your account
      * @param account

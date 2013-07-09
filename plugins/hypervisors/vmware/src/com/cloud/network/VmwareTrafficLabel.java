@@ -74,7 +74,10 @@ public class VmwareTrafficLabel implements TrafficLabel {
             _vSwitchName = tokens[VMWARE_LABEL_FIELD_INDEX_NAME].trim();
         }
         if (tokens.length > VMWARE_LABEL_FIELD_INDEX_VLANID) {
-            _vlanId = tokens[VMWARE_LABEL_FIELD_INDEX_VLANID].trim();
+            String vlanToken = tokens[VMWARE_LABEL_FIELD_INDEX_VLANID].trim();
+            if (!vlanToken.isEmpty()) {
+                _vlanId = vlanToken;
+            }
         }
         if (tokens.length > VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE) {
             _vSwitchType = VirtualSwitchType.getType(tokens[VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE].trim());

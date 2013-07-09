@@ -21,6 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.log4j.Logger;
@@ -37,18 +39,16 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.component.ComponentContext;
 
 public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
@@ -72,7 +72,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 
 
     @Override
-    public String getRootDir(ssCommand cmd){
+    public String getRootDir(String url){
         return getRootDir();
 
     }
@@ -94,7 +94,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         } else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof ListTemplateCommand){
-            return execute((ListTemplateCommand)cmd);   
+            return execute((ListTemplateCommand)cmd);
         } else if (cmd instanceof ComputeChecksumCommand){
             return execute((ComputeChecksumCommand)cmd);
         } else {
@@ -103,14 +103,14 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     }
 
     private Answer execute(ComputeChecksumCommand cmd) {
-        return new Answer(cmd, false, null);   
+        return new Answer(cmd, false, null);
     }
 
 
     private Answer execute(ListTemplateCommand cmd) {
         String root = getRootDir();
-        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
-        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
+        return new ListTemplateAnswer(((NfsTO)cmd.getDataStore()).getUrl(), templateInfos);
     }
 
     @Override
@@ -213,14 +213,14 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 	@Override
 	public void setName(String name) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 
 	@Override
 	public void setConfigParams(Map<String, Object> params) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 
@@ -241,6 +241,6 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 	@Override
 	public void setRunLevel(int level) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

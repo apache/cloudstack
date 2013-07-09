@@ -29,18 +29,19 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
-
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="storage_pool")
-public class StoragePoolVO implements StoragePool{
+@Table(name = "storage_pool")
+public class StoragePoolVO implements StoragePool {
     @Id
-    @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "storage_pool_seq", allocationSize = 1)
+    @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
+            pkColumnValue = "storage_pool_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
@@ -70,8 +71,8 @@ public class StoragePoolVO implements StoragePool{
     @Column(name = "pod_id", updatable = true)
     private Long podId;
 
-    @Column(name = "available_bytes", updatable = true, nullable = true)
-    private long availableBytes;
+    @Column(name = "used_bytes", updatable = true, nullable = true)
+    private long usedBytes;
 
     @Column(name = "capacity_bytes", updatable = true, nullable = true)
     private long capacityBytes;
@@ -102,6 +103,16 @@ public class StoragePoolVO implements StoragePool{
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
+    @Column(name = "managed")
+    private boolean managed;
+
+    @Column(name = "capacity_iops", updatable = true, nullable = true)
+    private Long capacityIops;
+
+    @Column(name = "hypervisor")
+    @Enumerated(value = EnumType.STRING)
+    private HypervisorType hypervisor;
+
     public long getId() {
         return id;
     }
@@ -113,15 +124,15 @@ public class StoragePoolVO implements StoragePool{
     public StoragePoolVO() {
         this.status = StoragePoolStatus.Initial;
     }
-    
-    public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type,
-            long dataCenterId, Long podId, long availableBytes, long capacityBytes, String hostAddress, int port, String hostPath) {
-        this.name  = name;
+
+    public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type, long dataCenterId, Long podId,
+            long availableBytes, long capacityBytes, String hostAddress, int port, String hostPath) {
+        this.name = name;
         this.id = poolId;
         this.uuid = uuid;
         this.poolType = type;
         this.dataCenterId = dataCenterId;
-        this.availableBytes = availableBytes;
+        this.usedBytes = availableBytes;
         this.capacityBytes = capacityBytes;
         this.hostAddress = hostAddress;
         this.path = hostPath;
@@ -131,7 +142,8 @@ public class StoragePoolVO implements StoragePool{
     }
 
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.availableBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
+        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.usedBytes,
+                that.capacityBytes, that.hostAddress, that.port, that.path);
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
@@ -142,7 +154,6 @@ public class StoragePoolVO implements StoragePool{
         this.setStatus(StoragePoolStatus.Initial);
         this.uuid = UUID.randomUUID().toString();
     }
-
 
     public String getName() {
         return name;
@@ -176,8 +187,8 @@ public class StoragePoolVO implements StoragePool{
         return dataCenterId;
     }
 
-    public long getAvailableBytes() {
-        return availableBytes;
+    public long getUsedBytes() {
+        return usedBytes;
     }
 
     public String getStorageProviderName() {
@@ -192,12 +203,28 @@ public class StoragePoolVO implements StoragePool{
         return capacityBytes;
     }
 
-    public void setAvailableBytes(long available) {
-        availableBytes = available;
+    public void setUsedBytes(long available) {
+        usedBytes = available;
     }
 
-    public void setCapacityBytes(long capacity) {
-        capacityBytes = capacity;
+    public void setCapacityBytes(long capacityBytes) {
+        this.capacityBytes = capacityBytes;
+    }
+
+    public void setManaged(boolean managed) {
+    	this.managed = managed;
+    }
+
+    public boolean isManaged() {
+    	return managed;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
     }
 
     public Long getClusterId() {
@@ -276,6 +303,14 @@ public class StoragePoolVO implements StoragePool{
         return this.scope;
     }
 
+    public HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(HypervisorType hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof StoragePoolVO) || obj == null) {
@@ -294,11 +329,11 @@ public class StoragePoolVO implements StoragePool{
     public String toString() {
         return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
     }
-    
+
     public boolean isShared() {
         return this.scope == ScopeType.HOST ? false : true;
     }
-    
+
     public boolean isLocal() {
         return !isShared();
     }

@@ -26,6 +26,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 
 @Local(value=HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru {

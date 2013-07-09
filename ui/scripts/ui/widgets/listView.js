@@ -25,6 +25,7 @@
       var messages = args.action ? args.action.messages : {};
       var preAction = args.action ? args.action.preAction : {};
       var action = args.action ? args.action.action : {};
+      var needsRefresh = args.action.needsRefresh;
       var section;
       var data = {
         id: $instanceRow.data('list-view-item-id'),
@@ -104,6 +105,10 @@
               cloudStack.ui.notifications.add(
                 notification,
                 function(args) {
+                  if (listViewArgs.onActionComplete) {
+                    listViewArgs.onActionComplete();
+                  }
+                  
                   if ($item.is(':visible') && !isHeader) {
                     replaceItem(
                       $item,
@@ -138,6 +143,12 @@
             $item: $instanceRow
           });
         } else {
+          if (needsRefresh) {
+            var $loading = $('<div>').addClass('loading-overlay');
+            
+            $listView.prepend($loading);
+          }
+          
           var actionArgs = {
             data: data,
             ref: options.ref,
@@ -175,6 +186,10 @@
 
                 if (additional && additional.success) additional.success(args);
 
+                if (listViewArgs.onActionComplete == true) {
+                  listViewArgs.onActionComplete();
+                }
+                
                 cloudStack.ui.notifications.add(
                   notification,
 
@@ -198,6 +213,15 @@
                                                 $instanceRow.data('json-obj'),
                                                 actionFilter);
                         }
+
+                        if (needsRefresh) {
+                          if ($listView.closest('.detail-view').size()) {
+                            $('.detail-view:last .button.refresh').click();
+                          } else {                            
+                            $loading.remove();
+                            $listView.listView('refresh');
+                          }
+                        }
                       }
 
                       if (additional && additional.complete)
@@ -212,6 +236,10 @@
 
                     if (options.complete) {
                       options.complete(args);
+                    }
+
+                    if (listViewArgs.onActionComplete) {
+                      listViewArgs.onActionComplete();
                     }
                   },
 
@@ -281,7 +309,8 @@
       if (!args.action.action.externalLink &&
           !args.action.createForm &&
           args.action.addRow != 'true' &&
-          !action.custom && !action.uiCustom) {
+          !action.custom && !action.uiCustom &&
+          !args.action.listView) {
         cloudStack.dialog.confirm({
           message: messages.confirm(messageArgs),
           action: function() {
@@ -294,6 +323,14 @@
         });
       } else if (action.custom || action.uiCustom) {
         performAction();
+      } else if (args.action.listView) {
+        cloudStack.dialog.listView({
+          context: context,
+          listView: args.action.listView,
+          after: function(args) {
+            performAction(null, { context: args.context });
+          }
+        });
       } else {
         var addRow = args.action.addRow == "false" ? false : true;
         var isHeader = args.action.isHeader;
@@ -912,6 +949,10 @@
               .appendTo($tr);
         var content = dataItem[key];
 
+        if (field.truncate) {
+          $td.addClass('truncated');
+        }
+
         if (field.indicator) {
           $td.addClass('state').addClass(field.indicator[content]);
 
@@ -1187,6 +1228,10 @@
                       $quickViewTooltip.hide();
                     },
                     onActionComplete: function() {
+                      if (listViewArgs.onActionComplete) {
+                        listViewArgs.onActionComplete();
+                      }
+                      
                       $tr.removeClass('loading').find('td:last .loading').remove();
                       $quickViewTooltip.remove();
                     }
@@ -1285,6 +1330,12 @@
               detailView: options.detailView
             });
             $table.dataTable(null, { noSelect: uiCustom });
+
+            if(args.data &&
+               args.data.length < pageSize &&
+               options.setEndTable) {
+                options.setEndTable();
+            }
 
             setTimeout(function() {
               $table.dataTable('refresh');
@@ -1426,6 +1477,12 @@
     var page = 1;
     var actions = listViewData.actions;
     var reorder = listViewData.reorder;
+    var tableHeight = $table.height();
+    var endTable = false;
+    var setEndTable = function() {
+      endTable = true;
+    }
+
 
     var $switcher;
     if (args.sections) {
@@ -1531,7 +1588,8 @@
       {
         context: args.context,
         reorder: reorder,
-        detailView: listViewData.detailView
+        detailView: listViewData.detailView,
+        setEndTable: setEndTable
       }
     );
 
@@ -1584,7 +1642,8 @@
         {
           context: $listView.data('view-args').context,
           reorder: listViewData.reorder,
-          detailView: listViewData.detailView
+          detailView: listViewData.detailView,
+          setEndTable: setEndTable
         }
       );
     };
@@ -1634,7 +1693,8 @@
         {
           context: $listView.data('view-args').context,
           reorder: listViewData.reorder,
-          detailView: listViewData.detailView
+          detailView: listViewData.detailView,
+          setEndTable: setEndTable 
         }
       );
     };
@@ -1687,8 +1747,6 @@
       return false;
     });		
 				
-    var tableHeight = $table.height();
-    var endTable = false;
 
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
@@ -1726,7 +1784,8 @@
             filterBy: filterBy
           }, actions, {
             reorder: listViewData.reorder,
-            detailView: listViewData.detailView
+            detailView: listViewData.detailView,
+            setEndTable: setEndTable
           });
           $table.height() == tableHeight ? endTable = true : tableHeight = $table.height();
         }
@@ -1797,6 +1856,8 @@
             context: detailViewArgs.context
           });
         }
+
+        detailViewArgs.data.onActionComplete = listViewArgs.onActionComplete;
 
         createDetailView(
           detailViewArgs,
@@ -1873,7 +1934,7 @@
     if (!options) options = {};
 
     var viewArgs = listView.data('view-args');
-    var listViewArgs = viewArgs.listView ? viewArgs.listView : viewArgs;
+    var listViewArgs = $.isPlainObject(viewArgs.listView) ? viewArgs.listView : viewArgs;
     var targetArgs = listViewArgs.activeSection ? listViewArgs.sections[
       listViewArgs.activeSection
     ].listView : listViewArgs;
@@ -1903,7 +1964,7 @@
     var $newRow;
     var $listView = $row.closest('.list-view');
     var viewArgs = $listView.data('view-args');
-    var listViewArgs = viewArgs.listView ? viewArgs.listView : viewArgs;
+    var listViewArgs = $.isPlainObject(viewArgs.listView) ? viewArgs.listView : viewArgs;
     var targetArgs = listViewArgs.activeSection ? listViewArgs.sections[
       listViewArgs.activeSection
     ].listView : listViewArgs;

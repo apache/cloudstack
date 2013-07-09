@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -39,7 +40,6 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 
 
@@ -78,9 +78,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the availability zone ID")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN,
             description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
@@ -149,10 +146,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
@@ -218,8 +211,8 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.VirtualMachine;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.VirtualMachine;
     }
 
     @Override

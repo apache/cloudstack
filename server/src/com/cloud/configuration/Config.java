@@ -72,7 +72,10 @@ public enum Config {
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null, ConfigurationParameterScope.zone.toString()),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
-	MaxUploadVolumeSize("Storage",  ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),
+    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unsed data on cache storage (in days).", null),
+    StorageCacheReplacementEnabled("Storage", ManagementServer.class, Boolean.class, "storage.cache.replacement.enabled", "true", "enable or disable cache storage replacement algorithm.", null),
+    StorageCacheReplacementInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.interval", "86400", "time interval between cache replacement threads (in seconds).", null),
+    MaxUploadVolumeSize("Storage",  ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),
 	TotalRetries("Storage", AgentManager.class, Integer.class, "total.retries", "4", "The number of times each command sent to a host should be retried in case of failure.", null),
 	StoragePoolMaxWaitSeconds("Storage", ManagementServer.class, Integer.class, "storage.pool.max.waitseconds", "3600", "Timeout (in seconds) to synchronize storage pool operations.", null),
 	StorageTemplateCleanupEnabled("Storage", ManagementServer.class, Boolean.class, "storage.template.cleanup.enabled", "true", "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled", null),
@@ -141,7 +144,7 @@ public enum Config {
     SnapshotPollInterval("Snapshots", SnapshotManager.class, Integer.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     BackupSnapshotAferTakingSnapshot("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.backup.rightafter", "true", "backup snapshot right after snapshot is taken", null),
-    
+
 	// Advanced
     JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
     JobCancelThresholdMinutes("Advanced", ManagementServer.class, String.class, "job.cancel.threshold.minutes", "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", null),
@@ -172,7 +175,6 @@ public enum Config {
 	ExternalNetworkStatsInterval("Advanced", NetworkManager.class, Integer.class, "external.network.stats.interval", "300", "Interval (in seconds) to report external network statistics.", null),
 	RouterCheckInterval("Advanced", NetworkManager.class, Integer.class, "router.check.interval", "30", "Interval (in seconds) to report redundant router status.", null),
 	RouterCheckPoolSize("Advanced", NetworkManager.class, Integer.class, "router.check.poolsize", "10", "Numbers of threads using to check redundant router status.", null),
-	RouterTemplateId("Advanced", NetworkManager.class, Long.class, "router.template.id", "1", "Default ID for template.", null),
     RouterTemplateXen("Advanced", NetworkManager.class, String.class, "router.template.xen", "SystemVM Template (XenServer)", "Name of the default router template on Xenserver.", null, ConfigurationParameterScope.zone.toString()),
     RouterTemplateKVM("Advanced", NetworkManager.class, String.class, "router.template.kvm", "SystemVM Template (KVM)", "Name of the default router template on KVM.", null, ConfigurationParameterScope.zone.toString()),
     RouterTemplateVmware("Advanced", NetworkManager.class, String.class, "router.template.vmware", "SystemVM Template (vSphere)", "Name of the default router template on Vmware.", null, ConfigurationParameterScope.zone.toString()),
@@ -180,7 +182,8 @@ public enum Config {
     RouterTemplateLXC("Advanced", NetworkManager.class, String.class, "router.template.lxc", "SystemVM Template (LXC)", "Name of the default router template on LXC.", null, ConfigurationParameterScope.zone.toString()),
     RouterExtraPublicNics("Advanced", NetworkManager.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
 	StartRetry("Advanced", AgentManager.class, Integer.class, "start.retry", "10", "Number of times to retry create and start commands", null),
-    ScaleRetry("Advanced", AgentManager.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
+    EnableDynamicallyScaleVm("Advanced", ManagementServer.class, Boolean.class, "enable.dynamic.scale.vm", "false", "Enables/Diables dynamically scaling a vm", null, ConfigurationParameterScope.zone.toString()),
+    ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     StopRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "stop.retry.interval", "600", "Time in seconds between retries to stop or destroy a vm" , null),
 	StorageCleanupInterval("Advanced", StorageManager.class, Integer.class, "storage.cleanup.interval", "86400", "The interval (in seconds) to wait before running the storage cleanup thread.", null),
 	StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
@@ -199,7 +202,7 @@ public enum Config {
 	CPUOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "cpu.overprovisioning.factor", "1", "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", null, ConfigurationParameterScope.cluster.toString()),
 	MemOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "mem.overprovisioning.factor", "1", "Used for memory overprovisioning calculation", null, ConfigurationParameterScope.cluster.toString()),
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
-	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC, "The list of hypervisors that this deployment will use.", "hypervisorList"),
+	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC, "The list of hypervisors that this deployment will use.", "hypervisorList"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "15", "Events older than specified number days will be purged. Set this value to 0 to never delete events", null),
@@ -215,7 +218,14 @@ public enum Config {
     AlertPurgeInterval("Advanced", ManagementServer.class, Integer.class, "alert.purge.interval", "86400", "The interval (in seconds) to wait before running the alert purge thread", null),
     AlertPurgeDelay("Advanced", ManagementServer.class, Integer.class, "alert.purge.delay", "0", "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", null),
     HostReservationReleasePeriod("Advanced", ManagementServer.class, Integer.class, "host.reservation.release.period", "300000", "The interval in milliseconds between host reservation release checks", null),
-    
+    UseSystemPublicIps("Advanced", ManagementServer.class, Boolean.class, "use.system.public.ips", "true",
+            "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been" +
+            " consumed ips will be acquired from the system pool",
+            null, ConfigurationParameterScope.account.toString()),
+    UseSystemGuestVlans("Advanced", ManagementServer.class, Boolean.class, "use.system.guest.vlans", "true",
+                "If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been" +
+                " consumed vlans will be allocated from the system pool",
+                null, ConfigurationParameterScope.account.toString()),
 
     // LB HealthCheck Interval.
     LBHealthCheck("Advanced", ManagementServer.class, String.class, "healthcheck.update.interval", "600",
@@ -228,8 +238,13 @@ public enum Config {
 	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	CapacitySkipcountingHours("Advanced", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "3600", "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state", null),
 	VmStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.stats.interval", "60000", "The interval (in milliseconds) when vm stats are retrieved from agents.", null),
+	VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
+        VmDiskThrottlingIopsReadRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_read_rate", "0", "Default disk I/O read rate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingIopsWriteRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_write_rate", "0", "Default disk I/O writerate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesReadRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_read_rate", "0", "Default disk I/O read rate in bytes per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesWriteRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_write_rate", "0", "Default disk I/O writerate in bytes per second allowed in User vm's disk.", null),
 
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
@@ -393,7 +408,7 @@ public enum Config {
 	NetworkIPv6SearchRetryMax("Network", ManagementServer.class, Integer.class, "network.ipv6.search.retry.max", "10000", "The maximum number of retrying times to search for an available IPv6 address in the table", null),
 
 	ExternalBaremetalSystemUrl("Advanced", ManagementServer.class, String.class, "external.baremetal.system.url", null, "url of external baremetal system that CloudStack will talk to", null),
-	ExternalBaremetalResourceClassName("Advanced", ManagementServer.class, String.class, "external,baremetal.resource.classname", null, "class name for handling external baremetal resource", null),
+	ExternalBaremetalResourceClassName("Advanced", ManagementServer.class, String.class, "external.baremetal.resource.classname", null, "class name for handling external baremetal resource", null),
 	EnableBaremetalSecurityGroupAgentEcho("Advanced", ManagementServer.class, Boolean.class, "enable.baremetal.securitygroup.agent.echo", "false", "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully", null),
 	IntervalToEchoBaremetalSecurityGroupAgent("Advanced", ManagementServer.class, Integer.class, "interval.baremetal.securitygroup.agent.echo", "10", "Interval to echo baremetal security group agent, in seconds", null),
 	TimeoutToEchoBaremetalSecurityGroupAgent("Advanced", ManagementServer.class, Integer.class, "timeout.baremetal.securitygroup.agent.echo", "3600", "Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure", null),
@@ -403,19 +418,23 @@ public enum Config {
     ApiLimitMax("Advanced", ManagementServer.class, Integer.class, "api.throttling.max", "25", "Max allowed number of APIs within fixed interval", null),
     ApiLimitCacheSize("Advanced", ManagementServer.class, Integer.class, "api.throttling.cachesize", "50000", "Account based API count cache size", null),
 
-	
+    // object store
+    S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
+
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
-    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null),
-	
+    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
+
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
 	           "routes", ConfigurationParameterScope.zone.toString()),
 	
-    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null);
- 
-    
+    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, String.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
+    ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyVolumeCommand, CreateCommand will be synchronized on the agent side." +
+    		" If set to false, these commands become asynchronous. Default value is false.", null),
+    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." + 
+            " If set to false, these commands become asynchronous. Default value is false.", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;

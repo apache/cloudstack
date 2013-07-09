@@ -112,7 +112,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
             Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
-                ex.addProxyObject(project, project.getId(), "projectId");
+                ex.addProxyObject(project.getUuid(), "projectId");
                 throw ex;
             }
         } else if (account.getState() == Account.State.disabled) {

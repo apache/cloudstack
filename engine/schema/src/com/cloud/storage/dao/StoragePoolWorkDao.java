@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.cloud.storage.StoragePoolWorkVO;
 import com.cloud.utils.db.GenericDao;
+
 /**
  * Data Access Object for storage_pool table
  */
@@ -34,5 +35,5 @@ public interface StoragePoolWorkDao extends GenericDao<StoragePoolWorkVO, Long> 
     void removePendingJobsOnMsRestart(long msId, long poolId);
 
     List<Long> searchForPoolIdsForPendingWorkJobs(long msId);
-        
+
 }

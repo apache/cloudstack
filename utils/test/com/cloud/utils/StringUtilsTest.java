@@ -103,4 +103,9 @@ public class StringUtilsTest {
         assertEquals(result, expected);
     }
 
+    @Test
+    public void testJoin() {
+        assertEquals("a-b-c", StringUtils.join("-", "a", "b", "c"));
+        assertEquals("", StringUtils.join("-"));
+    }
 }

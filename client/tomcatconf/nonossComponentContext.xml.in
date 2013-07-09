@@ -77,6 +77,9 @@
   </bean>
   <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
   <bean id="vmwareContextFactory" class="com.cloud.hypervisor.vmware.resource.VmwareContextFactory" />
+  <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
+  <bean id="VmwareDatacenterZoneMapDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDaoImpl" />
+  <bean id="LegacyZoneDaoImpl" class="com.cloud.hypervisor.vmware.dao.LegacyZoneDaoImpl" />
 
   <!--
     Nicira support components
@@ -166,13 +169,53 @@
   </bean>
 
 
+  <!--
+    UCS support components
+  -->
+  <bean id="ucsBladeDaoImpl" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
+  <bean id="ucsManagerDaoImpl" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
+  
 <!--
 
   Deployment configurations of various adapters
     
   It determines whether or not a adapter is activated or how it is loaded in order in its managing provider,
      
---> 
+-->
+
+  <!--Motion Strategies-->
+  <bean id="vmwareStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.VmwareStorageMotionStrategy" />
+  <bean id="dataMotionServiceImpl" class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl">
+    <property name="strategies">
+      <list>
+        <ref bean="ancientDataMotionStrategy"/>
+        <ref bean="xenserverStorageMotionStrategy"/>
+        <ref local="vmwareStorageMotionStrategy"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="cloudStackImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl"/>
+  <bean id="s3ImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl"/>
+  <bean id="swiftImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl"/>
+  <bean id="solidFireDataStoreProvider"
+        class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider"/>
+
+  <!--Storage Providers-->
+  <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+    <property name="providers">
+      <list merge="true">
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="cloudStackImageStoreProviderImpl"/>
+        <ref bean="s3ImageStoreProviderImpl"/>
+        <ref bean="solidFireDataStoreProvider"/>
+      </list>
+    </property>
+  </bean>
 
   <!-- Security adapters -->
   <bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList">
@@ -211,9 +254,7 @@
           <ref bean="XcpServerDiscoverer"/>
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
-<!--          
           <ref bean="BareMetalDiscoverer"/>
--->
           <ref bean="OvmDiscoverer"/>
           <ref bean="vmwareServerDiscoverer"/>
       </list>
@@ -251,10 +292,8 @@
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
-          
-<!--
+          <ref bean="ImplicitDedicationPlanner" />
           <ref bean="BareMetalPlanner" />
--->
       </list>
     </property>
   </bean>
@@ -304,9 +343,7 @@
       <list>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
-<!--          
           <ref bean="BareMetalDhcp"/>
--->    
       </list>
     </property>
   </bean>
@@ -345,11 +382,9 @@
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
           <ref bean="InternalLbVm"/>
-<!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
--->    
       </list>
     </property>
   </bean>
@@ -366,8 +401,19 @@
     <property name="Adapters">
       <list>
           <ref bean="HostAntiAffinityProcessor" />
+          <ref bean="ExplicitDedicationProcessor"/>
       </list>
     </property>
+  </bean>
+
+  <!--
+    Dedicated Resources components
+  -->
+
+  <bean id="DedicatedResourceManagerImpl" class="org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl"/>
+  <bean id="ExplicitDedicationProcessor" class="org.apache.cloudstack.affinity.ExplicitDedicationProcessor">
+    <property name="name" value="ExplicitDedicationProcessor"/>
+    <property name="type" value="ExplicitDedication"/>
   </bean>
 
 </beans>

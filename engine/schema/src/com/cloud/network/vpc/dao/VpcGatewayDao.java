@@ -30,4 +30,6 @@ public interface VpcGatewayDao extends GenericDao<VpcGatewayVO, Long>{
     Long getNetworkAclIdForPrivateIp(long vpcId, long networkId, String ipaddr);
 
     List<VpcGatewayVO> listByVpcIdAndType(long vpcId, VpcGateway.Type type);
+
+    List<VpcGatewayVO> listByAclIdAndType(long aclId, VpcGateway.Type type);
 }

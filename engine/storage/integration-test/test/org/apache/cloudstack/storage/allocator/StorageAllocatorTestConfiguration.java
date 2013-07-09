@@ -39,35 +39,28 @@ import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.vm.UserVmManager;
 
-
 @Configuration
-@ComponentScan(basePackageClasses={
-		StoragePoolDetailsDaoImpl.class,
-		PrimaryDataStoreDaoImpl.class,
-		VMTemplateDaoImpl.class,
-		HostDaoImpl.class,
-		DomainDaoImpl.class,
-		DataCenterDaoImpl.class},
-        includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
-        useDefaultFilters=false
-        )
+@ComponentScan(basePackageClasses = { StoragePoolDetailsDaoImpl.class, PrimaryDataStoreDaoImpl.class,
+        VMTemplateDaoImpl.class, HostDaoImpl.class, DomainDaoImpl.class, DataCenterDaoImpl.class },
+        includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
 public class StorageAllocatorTestConfiguration {
-	@Bean
-	public UserVmManager UserVmManager() {
-		return Mockito.mock(UserVmManager.class);
-	}
-	@Bean
-	public StorageManager StorageManager() {
-		return Mockito.mock(StorageManager.class);
-	}
+    @Bean
+    public UserVmManager UserVmManager() {
+        return Mockito.mock(UserVmManager.class);
+    }
 
-	public static class Library implements TypeFilter {
+    @Bean
+    public StorageManager StorageManager() {
+        return Mockito.mock(StorageManager.class);
+    }
 
-		@Override
-		public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
-			mdr.getClassMetadata().getClassName();
-			ComponentScan cs = StorageAllocatorTestConfiguration.class.getAnnotation(ComponentScan.class);
-			return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
-		}
-	}
+    public static class Library implements TypeFilter {
+
+        @Override
+        public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
+            mdr.getClassMetadata().getClassName();
+            ComponentScan cs = StorageAllocatorTestConfiguration.class.getAnnotation(ComponentScan.class);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+        }
+    }
 }

@@ -129,7 +129,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     private String _instance;
     private String _mgmtHost;
     private String _mgmtCidr;
-    private long _internalLbVmOfferingId;
+    private long _internalLbVmOfferingId = 0L;
     
     @Inject VirtualMachineManager _itMgr;
     @Inject DomainRouterDao _internalLbVmDao;
@@ -394,10 +394,19 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         _mgmtHost = configs.get("host");
         _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
         
-        String offIdStr = configs.get(Config.InternalLbVmServiceOfferingId.key());
-        if (offIdStr != null && !offIdStr.isEmpty()) {
-            _internalLbVmOfferingId = Long.parseLong(offIdStr);
-        } else {
+        String offUUID = configs.get(Config.InternalLbVmServiceOfferingId.key());
+        if (offUUID != null && !offUUID.isEmpty()) {
+            //get the id by offering UUID
+            ServiceOfferingVO off = _serviceOfferingDao.findByUuid(offUUID);
+            if (off != null) {
+                _internalLbVmOfferingId = off.getId();
+            } else {
+                s_logger.warn("Invalid offering UUID is passed in " + Config.InternalLbVmServiceOfferingId.key() + "; the default offering will be used instead");
+            }
+        }
+        
+        //if offering wasn't set, try to get the default one
+        if (_internalLbVmOfferingId == 0L) {
             boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
             ServiceOfferingVO newOff = new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null,
                     null, true, null, useLocalStorage, true, null, true, VirtualMachine.Type.InternalLoadBalancerVm, true);
@@ -743,10 +752,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
         
-        long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating the internal lb vm " + id + " in datacenter "  + dest.getDataCenter());
-        }
+       
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
@@ -760,8 +766,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         for (Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             HypervisorType hType = iter.next();
             try {
-                s_logger.debug("Allocating the Internal lb with the hypervisor type " + hType);
-                String templateName = null;
+                long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Creating the internal lb vm " + id + " in datacenter "  + dest.getDataCenter() + " with hypervisor type " + hType);
+                }                String templateName = null;
                 switch (hType) {
                     case XenServer:
                         templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());

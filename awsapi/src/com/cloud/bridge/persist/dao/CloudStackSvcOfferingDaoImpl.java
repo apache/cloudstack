@@ -50,6 +50,7 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
             return findOneBy(sc);
         
         }finally {
+            txn.commit();
             txn.close();
         }
 
@@ -58,16 +59,17 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
 	@Override
     public CloudStackServiceOfferingVO getSvcOfferingById( String id ){
         SearchBuilder <CloudStackServiceOfferingVO> searchByID = createSearchBuilder();
-        searchByID.and("id", searchByID.entity().getName(), SearchCriteria.Op.EQ);
+        searchByID.and("uuid", searchByID.entity().getUuid(), SearchCriteria.Op.EQ);
         searchByID.done();
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         try {
             txn.start();
             SearchCriteria<CloudStackServiceOfferingVO> sc = searchByID.create();
-            sc.setParameters("id", id);
+            sc.setParameters("uuid", id);
             return findOneBy(sc);
         
         }finally {
+            txn.commit();
             txn.close();
         }
 

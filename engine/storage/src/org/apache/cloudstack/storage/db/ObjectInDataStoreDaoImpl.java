@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.storage.db;
+
 import java.util.Date;
 import java.util.Map;
 
@@ -36,10 +37,11 @@ import com.cloud.utils.db.UpdateBuilder;
 public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO, Long> implements ObjectInDataStoreDao {
     private static final Logger s_logger = Logger.getLogger(ObjectInDataStoreDaoImpl.class);
     private SearchBuilder<ObjectInDataStoreVO> updateStateSearch;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name, params);
-    	
+        super.configure(name, params);
+
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
@@ -47,14 +49,13 @@ public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO
         updateStateSearch.done();
         return true;
     }
+
     @Override
-    public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore dataObj, Object data) {
-        ObjectInDataStoreVO vo = (ObjectInDataStoreVO)dataObj;
+    public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore dataObj, Object data) {
+        ObjectInDataStoreVO vo = (ObjectInDataStoreVO) dataObj;
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();
-    
-        
+
         SearchCriteria<ObjectInDataStoreVO> sc = updateStateSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
@@ -66,19 +67,23 @@ public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO
         builder.set(vo, "state", nextState);
         builder.set(vo, "updated", new Date());
 
-        int rows = update((ObjectInDataStoreVO) vo, sc);
+        int rows = update(vo, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
             ObjectInDataStoreVO dbVol = findByIdIncludingRemoved(vo.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
+                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
                         .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount())
+                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState)
+                        .append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount())
                         .append("; updatedTime=").append(vo.getUpdated());
-                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState)
+                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
                         .append("; updatedTime=").append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + vo.getId() + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + vo.getId()
+                        + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -30,7 +31,6 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
@@ -55,7 +55,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
             description="the domain ID associated with the disk offering. If used with the account parameter" +
-                    " returns the disk volume associated with the account for the specified domain.")
+            " returns the disk volume associated with the account for the specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = false, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
@@ -68,6 +68,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size")
     private Long size;
 
+    @Parameter(name=ApiConstants.MIN_IOPS, type=CommandType.LONG, description="min iops")
+    private Long minIops;
+
+    @Parameter(name=ApiConstants.MAX_IOPS, type=CommandType.LONG, description="max iops")
+    private Long maxIops;
+
     @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.UUID, entityType=SnapshotResponse.class,
             description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
@@ -79,7 +85,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.DISPLAY_VOLUME, type=CommandType.BOOLEAN, description="an optional field, whether to display the volume to the end user or not.")
     private Boolean displayVolume;
 
-/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -102,6 +108,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     public Long getSize() {
         return size;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
     }
 
     public Long getSnapshotId() {
@@ -132,8 +146,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         return "volume";
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Volume;
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Volume;
     }
 
     @Override
@@ -179,12 +194,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
                 Snapshot snap = _entityMgr.findById(Snapshot.class, getSnapshotId());
                 if (snap != null) {
                     response.setSnapshotId(snap.getUuid()); // if the volume was
-                                                            // created from a
-                                                            // snapshot,
-                                                            // snapshotId will
-                                                            // be set so we pass
-                                                            // it back in the
-                                                            // response
+                    // created from a
+                    // snapshot,
+                    // snapshotId will
+                    // be set so we pass
+                    // it back in the
+                    // response
                 }
             }
             response.setResponseName(getCommandName());

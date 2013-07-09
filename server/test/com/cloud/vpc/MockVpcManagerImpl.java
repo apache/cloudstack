@@ -373,7 +373,7 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     }
 
     @Override
-    public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner) {
+    public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId) {
         // TODO Auto-generated method stub
         
     }

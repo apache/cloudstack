@@ -66,9 +66,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the network belongs to")
     private String zoneName;
-    
-    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description="the networktype of the zone the network belongs to")
-    private String zoneType;
 
     @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
     private String networkOfferingId;
@@ -165,6 +162,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     @SerializedName(ApiConstants.DISPLAY_NETWORK) @Param(description="an optional field, whether to the display the network to the end user or not.")
     private Boolean displayNetwork;
+
+    @SerializedName(ApiConstants.ACL_ID) @Param(description="ACL Id associated with the VPC network")
+    private String aclId;
+
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -305,10 +306,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.zoneName = zoneName;
     }
 
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
-    }
-    
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
@@ -352,4 +349,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
+
+    public String getAclId() {
+        return aclId;
+    }
+
+    public void setAclId(String aclId) {
+        this.aclId = aclId;
+    }
 }

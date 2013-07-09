@@ -75,6 +75,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name="limit_cpu_use")
     private boolean limitCpuUse;
 
+    @Column(name="is_volatile")
+    private boolean volatileVm;
+
     @Column(name="host_tag")
     private String hostTag;
 
@@ -87,6 +90,17 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name="sort_key")
     int sortKey;
 
+    @Column(name="bytes_read_rate")
+    Long bytesReadRate;
+
+    @Column(name="bytes_write_rate")
+    Long bytesWriteRate;
+
+    @Column(name="iops_read_rate")
+    Long iopsReadRate;
+
+    @Column(name="iops_write_rate")
+    Long iopsWriteRate;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
@@ -318,5 +332,43 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         this.deploymentPlanner = deploymentPlanner;
     }
 
+    public boolean getVolatileVm() {
+        return volatileVm;
+    }
 
+    public void setVolatileVm(boolean volatileVm) {
+        this.volatileVm = volatileVm;
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
 }

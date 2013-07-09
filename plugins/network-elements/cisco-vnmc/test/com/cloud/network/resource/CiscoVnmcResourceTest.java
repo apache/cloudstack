@@ -163,13 +163,13 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclPolicySet(anyString(), anyBoolean())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
-        when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCIngressAclRule(
-                anyString(), anyString(), anyString(),
+                anyString(), anyLong(), anyString(),
                 anyString(), anyString(), anyString(),
                 anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCEgressAclRule(
-                anyString(), anyString(), anyString(),
+                anyString(), anyLong(), anyString(),
                 anyString(), anyString(), anyString(),
                 anyString(), anyString())).thenReturn(true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
@@ -201,13 +201,13 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCDNatPolicyRef(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
-        when(_connection.deleteTenantVDCDNatRule(anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.deleteTenantVDCDNatRule(anyString(), anyLong(), anyString())).thenReturn(true);
+        when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCDNatIpPool(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCDNatRule(anyString(),
-                anyString(), anyString(), anyString())).thenReturn(true);
+                anyLong(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclRuleForDNat(anyString(),
-                anyString(), anyString(), anyString())).thenReturn(true);
+                anyLong(), anyString(), anyString())).thenReturn(true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);
@@ -237,15 +237,15 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCPFPolicyRef(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
-        when(_connection.deleteTenantVDCPFRule(anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.deleteTenantVDCAclRule(anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.deleteTenantVDCPFRule(anyString(), anyLong(), anyString())).thenReturn(true);
+        when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCPFIpPool(anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCPFPortPool(anyString(), anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCPFRule(anyString(),
-                anyString(), anyString(), anyString(),
+                anyLong(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclRuleForPF(anyString(),
-                anyString(), anyString(), anyString(),
+                anyLong(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 

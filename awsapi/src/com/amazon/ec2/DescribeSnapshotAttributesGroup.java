@@ -19,7 +19,7 @@
  * DescribeSnapshotAttributesGroup.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +33,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = DescribeSnapshotAttributesGroup
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -52,6 +52,8 @@
             private void clearAllSettingTrackers() {
             
                    localCreateVolumePermissionTracker = false;
+                
+                   localProductCodesTracker = false;
                 
             }
         
@@ -97,6 +99,52 @@
                                        }
                                    
                                             this.localCreateVolumePermission=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for ProductCodes
+                        */
+
+                        
+                                    protected com.amazon.ec2.EmptyElementType localProductCodes ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localProductCodesTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.EmptyElementType
+                           */
+                           public  com.amazon.ec2.EmptyElementType getProductCodes(){
+                               return localProductCodes;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param ProductCodes
+                               */
+                               public void setProductCodes(com.amazon.ec2.EmptyElementType param){
+                            
+                                clearAllSettingTrackers();
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localProductCodesTracker = true;
+                                       } else {
+                                          localProductCodesTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localProductCodes=param;
                                     
 
                                }
@@ -164,7 +212,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":DescribeSnapshotAttributesGroup",
@@ -181,7 +229,13 @@
                                             if (localCreateVolumePermission==null){
                                                  throw new org.apache.axis2.databinding.ADBException("createVolumePermission cannot be null!!");
                                             }
-                                           localCreateVolumePermission.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","createVolumePermission"),
+                                           localCreateVolumePermission.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","createVolumePermission"),
+                                               factory,xmlWriter);
+                                        } if (localProductCodesTracker){
+                                            if (localProductCodes==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("productCodes cannot be null!!");
+                                            }
+                                           localProductCodes.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","productCodes"),
                                                factory,xmlWriter);
                                         }
 
@@ -344,7 +398,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                  if (localCreateVolumePermissionTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "createVolumePermission"));
                             
                             
@@ -352,6 +406,15 @@
                                          throw new org.apache.axis2.databinding.ADBException("createVolumePermission cannot be null!!");
                                     }
                                     elementList.add(localCreateVolumePermission);
+                                } if (localProductCodesTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "productCodes"));
+                            
+                            
+                                    if (localProductCodes==null){
+                                         throw new org.apache.axis2.databinding.ADBException("productCodes cannot be null!!");
+                                    }
+                                    elementList.add(localProductCodes);
                                 }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
@@ -399,9 +462,19 @@
                 
 
                  
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","createVolumePermission").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","createVolumePermission").equals(reader.getName())){
                                 
                                                 object.setCreateVolumePermission(com.amazon.ec2.EmptyElementType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                        else
+                                    
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","productCodes").equals(reader.getName())){
+                                
+                                                object.setProductCodes(com.amazon.ec2.EmptyElementType.Factory.parse(reader));
                                               
                                         reader.next();
                                     

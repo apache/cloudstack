@@ -183,60 +183,70 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		if (scriptPath == null) {
 			throw new ConfigurationException("Cannot find ping script " + scriptPath);
 		}
-		_pingCommand = new Script2(scriptPath, s_logger);
+		String pythonPath = "/usr/bin/python";
+		_pingCommand = new Script2(pythonPath, s_logger);
+		_pingCommand.add(scriptPath);
 		_pingCommand.add("ping");
 		_pingCommand.add("hostname=" + _ip);
 		_pingCommand.add("usrname=" + _username);
 		_pingCommand.add("password=" + _password, ParamType.PASSWORD);
 
-		_setPxeBootCommand = new Script2(scriptPath, s_logger);
+		_setPxeBootCommand = new Script2(pythonPath, s_logger);
+		_setPxeBootCommand.add(scriptPath);
 		_setPxeBootCommand.add("boot_dev");
 		_setPxeBootCommand.add("hostname=" + _ip);
 		_setPxeBootCommand.add("usrname=" + _username);
 		_setPxeBootCommand.add("password=" + _password, ParamType.PASSWORD);
 		_setPxeBootCommand.add("dev=pxe");
 
-		_setDiskBootCommand = new Script2(scriptPath, s_logger);
+		_setDiskBootCommand = new Script2(pythonPath, s_logger);
+		_setDiskBootCommand.add(scriptPath);
 		_setDiskBootCommand.add("boot_dev");
 		_setDiskBootCommand.add("hostname=" + _ip);
 		_setDiskBootCommand.add("usrname=" + _username);
 		_setDiskBootCommand.add("password=" + _password, ParamType.PASSWORD);
 		_setDiskBootCommand.add("dev=disk");
 
-		_rebootCommand = new Script2(scriptPath, s_logger);
+		_rebootCommand = new Script2(pythonPath, s_logger);
+		_rebootCommand.add(scriptPath);
 		_rebootCommand.add("reboot");
 		_rebootCommand.add("hostname=" + _ip);
 		_rebootCommand.add("usrname=" + _username);
 		_rebootCommand.add("password=" + _password, ParamType.PASSWORD);
 
-		_getStatusCommand = new Script2(scriptPath, s_logger);
+		_getStatusCommand = new Script2(pythonPath, s_logger);
+		_getStatusCommand.add(scriptPath);
 		_getStatusCommand.add("ping");
 		_getStatusCommand.add("hostname=" + _ip);
 		_getStatusCommand.add("usrname=" + _username);
 		_getStatusCommand.add("password=" + _password, ParamType.PASSWORD);
 
-		_powerOnCommand = new Script2(scriptPath, s_logger);
+		_powerOnCommand = new Script2(pythonPath, s_logger);
+		_powerOnCommand.add(scriptPath);
 		_powerOnCommand.add("power");
 		_powerOnCommand.add("hostname=" + _ip);
 		_powerOnCommand.add("usrname=" + _username);
 		_powerOnCommand.add("password=" + _password, ParamType.PASSWORD);
 		_powerOnCommand.add("action=on");
 
-		_powerOffCommand = new Script2(scriptPath, s_logger);
+		_powerOffCommand = new Script2(pythonPath, s_logger);
+		_powerOffCommand.add(scriptPath);
 		_powerOffCommand.add("power");
 		_powerOffCommand.add("hostname=" + _ip);
 		_powerOffCommand.add("usrname=" + _username);
 		_powerOffCommand.add("password=" + _password, ParamType.PASSWORD);
 		_powerOffCommand.add("action=soft");
 
-		_forcePowerOffCommand = new Script2(scriptPath, s_logger);
+		_forcePowerOffCommand = new Script2(pythonPath, s_logger);
+		_forcePowerOffCommand.add(scriptPath);
 		_forcePowerOffCommand.add("power");
 		_forcePowerOffCommand.add("hostname=" + _ip);
 		_forcePowerOffCommand.add("usrname=" + _username);
 		_forcePowerOffCommand.add("password=" + _password, ParamType.PASSWORD);
 		_forcePowerOffCommand.add("action=off");
 
-		_bootOrRebootCommand = new Script2(scriptPath, s_logger);
+		_bootOrRebootCommand = new Script2(pythonPath, s_logger);
+		_bootOrRebootCommand.add(scriptPath);
 		_bootOrRebootCommand.add("boot_or_reboot");
 		_bootOrRebootCommand.add("hostname=" + _ip);
 		_bootOrRebootCommand.add("usrname=" + _username);

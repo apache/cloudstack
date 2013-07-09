@@ -79,9 +79,6 @@ class Services:
                     "name": "Cent OS Template",
                     "passwordenabled": True,
                 },
-            "diskdevice": '/dev/xvdd',
-            # Disk device where ISO is attached to instance
-            "mount_dir": "/mnt/tmp",
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
@@ -178,8 +175,6 @@ class TestStorageMotion(cloudstackTestCase):
         # Migrate to a host that requires storage motion
         hosts[:] = [host for host in hosts if host.requiresStorageMotion]
 
-        self.assert_(hosts is not None, msg="No valid hosts for storage motion")
-        self.assert_(len(hosts)>0, msg="No valid hosts for storage motion. Skipping")
         if hosts is None or len(hosts) == 0:
             self.skipTest("No valid hosts for storage motion. Skipping")
 

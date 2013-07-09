@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class RootDisk extends VolumeTypeBase {
-	public RootDisk() {
-		this.type = "Root";
-	}
+    public RootDisk() {
+        this.type = "Root";
+    }
 }

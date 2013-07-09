@@ -435,6 +435,9 @@
             ],
             dataProvider: function(args) {
               var domainObj = args.context.domains[0];
+              var totalVMs=0;
+              var totalVolumes=0;       
+              
               $.ajax({
                 url: createURL("listAccounts&domainid=" + domainObj.id),
                 async: false,
@@ -443,26 +446,39 @@
 								},
                 success: function(json) {
                   var items = json.listaccountsresponse.account;
-                  var total;
-                  if (items != null)
-                    total = items.length;
-                  else
-                    total = 0;
-                  domainObj["accountTotal"] = total;
-                  var itemsAcc;
-                  var totalVMs=0;
-                  var totalVolumes=0;
-                  for(var i=0;i<total;i++) {
-                        itemsAcc = json.listaccountsresponse.account[i];
-                        totalVMs = totalVMs + itemsAcc.vmtotal;
-                        totalVolumes = totalVolumes + itemsAcc.volumetotal;
+                  if(items != null) {
+                    domainObj["accountTotal"] = items.length;
+                    for(var i = 0; i < items.length; i++) {
+                      totalVMs += items[i].vmtotal;
+                      totalVolumes += items[i].volumetotal;
+                    }                    
                   }
-                  domainObj["vmTotal"] = totalVMs;
-                  domainObj["volumeTotal"] = totalVolumes;
-
+                  else {
+                    domainObj["accountTotal"] = 0;
+                  }   
                 }
               });
 
+              $.ajax({
+                url: createURL("listProjects&domainid=" + domainObj.id),
+                async: false,
+                data: {
+                  details: 'min'
+                },
+                success: function(json) {
+                  var items = json.listprojectsresponse.project;
+                  if(items != null) {                    
+                    for(var i = 0; i < items.length; i++) {
+                      totalVMs += items[i].vmtotal;
+                      totalVolumes += items[i].volumetotal;
+                    }                    
+                  }                  
+                }
+              });
+              
+              domainObj["vmTotal"] = totalVMs;
+              domainObj["volumeTotal"] = totalVolumes;
+              
               /* $.ajax({
                 url: createURL("listVirtualMachines&details=min&domainid=" + domainObj.id),
                 async: false,

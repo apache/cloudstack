@@ -27,7 +27,9 @@ public class CreatePrivateTemplateAnswer extends Answer {
     private String _uniqueName;
     private ImageFormat _format;
 
-    public CreatePrivateTemplateAnswer() {}
+    public CreatePrivateTemplateAnswer() {
+        super();
+    }
 
     public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result, String path, long virtualSize,
             long physicalSize, String uniqueName, ImageFormat format) {

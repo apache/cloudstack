@@ -58,12 +58,11 @@
       listView: function(targetID, context) {
         return function(args) {
           var $elem = args.$panel;
-          var listViewArgs = cloudStack.sections.system.subsections[targetID].listView;
+          var listView = cloudStack.sections.system.subsections[targetID];
 
-          $elem.listView({
-            context: context,
-            listView: listViewArgs
-          });
+          $elem.listView($.extend(true, {}, listView, {
+            context: context
+          }));
         };
       },
 

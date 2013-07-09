@@ -69,8 +69,8 @@ import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.snapshot.SnapshotService;
-import com.cloud.template.TemplateService;
+import com.cloud.storage.snapshot.SnapshotApiService;
+import com.cloud.template.TemplateApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
@@ -116,9 +116,9 @@ public abstract class BaseCmd {
     @Inject public VolumeApiService _volumeService;
     @Inject public ResourceService _resourceService;
     @Inject public NetworkService _networkService;
-    @Inject public TemplateService _templateService;
+    @Inject public TemplateApiService _templateService;
     @Inject public SecurityGroupService _securityGroupService;
-    @Inject public SnapshotService _snapshotService;
+    @Inject public SnapshotApiService _snapshotService;
     @Inject public VpcVirtualNetworkApplianceService _routerService;
     @Inject public ResponseGenerator _responseGenerator;
     @Inject public EntityManager _entityMgr;
@@ -521,7 +521,7 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                     PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");
+                    ex.addProxyObject(project.getUuid(), "projectId");
                     throw ex;
                 }
             } else {

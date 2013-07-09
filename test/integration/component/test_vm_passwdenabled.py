@@ -69,7 +69,6 @@ class Services:
             # CentOS 5.3 (64-bit)
         }
 
-@unittest.skip("Additional test")
 class TestVMPasswordEnabled(cloudstackTestCase):
 
     @classmethod
@@ -90,8 +89,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             cls.services["ostype"]
         )
         # Set Zones and disk offerings
-        cls.services["small"]["zoneid"] = zone.id
-        cls.services["small"]["template"] = template.id
+        cls.services["service_offerings"]["small"]["zoneid"] = zone.id
+        cls.services["service_offerings"]["small"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(

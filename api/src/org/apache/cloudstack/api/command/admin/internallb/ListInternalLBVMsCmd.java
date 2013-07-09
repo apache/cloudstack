@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.internallb;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -30,7 +31,6 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.network.router.VirtualRouter.Role;
 
 @APICommand(name = "listInternalLoadBalancerVMs", description="List internal LB VMs.", responseObject=DomainRouterResponse.class)
@@ -75,10 +75,7 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
 
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC Internal LB VMs")
     private Boolean forVpc;
-    
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
+     
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -123,10 +120,7 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     public String getRole() {
         return Role.INTERNAL_LB_VM.toString();
     }
-    
-    public String getZoneType() {
-        return zoneType;
-    }
+  
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -138,8 +132,8 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DomainRouter;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.DomainRouter;
     }
 
     @Override

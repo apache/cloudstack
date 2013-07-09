@@ -112,19 +112,14 @@ under the License.
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
-            <!--
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
-            -->
-            <adapter name="SCVMMServer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer"/>            
 			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
             <adapter name="UserDispersing" class="com.cloud.deploy.UserDispersingPlanner"/>
             <adapter name="UserConcentratedPod" class="com.cloud.deploy.UserConcentratedPodPlanner"/>
-            <!--
             <adapter name="BareMetal Fit" class="com.cloud.deploy.BareMetalPlanner"/>
-            -->
         </adapters>
         <adapters key="com.cloud.alert.AlertAdapter">
             <adapter name="ClusterAlert" class="com.cloud.alert.ClusterAlertAdapter"/>
@@ -138,9 +133,7 @@ under the License.
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
             <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
             <adapter name="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement"/>
-            <!-- 
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
-            -->
             <adapter name="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement"/>
             <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
             <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
@@ -152,10 +145,7 @@ under the License.
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
             <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
-            <!--
             <adapter name="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru"/>
-            -->
-            <adapter name="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru"/>            
             <adapter name="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru" />
         </adapters>
         <adapters key="com.cloud.agent.StartupCommandProcessor">

@@ -22,11 +22,14 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeManager;
@@ -43,9 +46,6 @@ import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
 import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -54,16 +54,12 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -73,12 +69,9 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.VirtualMachine.Event;
@@ -95,7 +88,6 @@ import org.mockito.Spy;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -154,12 +146,19 @@ public class VirtualMachineManagerImplTest {
         List<VolumeVO> _rootVols;
         @Mock
         ItWorkVO _work;
+        @Mock
+        ConfigurationServer _configServer;
+        @Mock
+        HostVO hostVO;
+        @Mock
+        UserVmDetailVO _vmDetailVO;
 
         @Mock ClusterDao _clusterDao;
         @Mock HostPodDao _podDao;
         @Mock DataCenterDao _dcDao;
         @Mock DiskOfferingDao _diskOfferingDao;
         @Mock PrimaryDataStoreDao _storagePoolDao;
+        @Mock UserVmDetailsDao _vmDetailsDao;
         @Mock StoragePoolHostDao _poolHostDao;
         @Mock NetworkManager _networkMgr;
         @Mock HypervisorGuruManager _hvGuruMgr;
@@ -199,6 +198,8 @@ public class VirtualMachineManagerImplTest {
             _vmMgr._hvGuruMgr = _hvGuruMgr;
             _vmMgr._vmSnapshotMgr = _vmSnapshotMgr;
             _vmMgr._vmDao = _vmInstanceDao;
+            _vmMgr._configServer = _configServer;
+            _vmMgr._uservmDetailsDao = _vmDetailsDao;
 
             when(_vmMock.getId()).thenReturn(314l);
             when(_vmInstance.getId()).thenReturn(1L);
@@ -237,10 +238,20 @@ public class VirtualMachineManagerImplTest {
         DeployDestination dest = new DeployDestination(null, null, null, _host);
         long l = 1L;
 
+        doReturn(3L).when(_vmInstance).getId();
+        when(_vmDetailsDao.findDetail(3L, VirtualMachine.IsDynamicScalingEnabled)).thenReturn(_vmDetailVO);
+        doReturn("true").when(_vmDetailVO).getValue();
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         ServiceOfferingVO newServiceOffering = getSvcoffering(512);
+        doReturn(1L).when(_vmInstance).getHostId();
+        doReturn(hostVO).when(_hostDao).findById(1L);
+        doReturn(1L).when(_vmInstance).getDataCenterId();
+        doReturn(1L).when(hostVO).getClusterId();
+        when(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), 1L)).thenReturn("true");
+        when(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
+        when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
-                newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse(), true);
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);
@@ -260,7 +271,8 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstance.getHostId()).thenReturn(null);
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
-        _vmMgr.findHostAndMigrate(VirtualMachine.Type.User, _vmInstance, 2l);
+        DeploymentPlanner.ExcludeList excludeHostList = new DeploymentPlanner.ExcludeList();
+        _vmMgr.findHostAndMigrate(VirtualMachine.Type.User, _vmInstance, 2l, excludeHostList);
 
     }
 

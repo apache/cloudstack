@@ -13,7 +13,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-developer</artifactId>
-  <name>Apache CloudStack Developer Tools</name>
+  <name>Apache CloudStack Developer Mode</name>
   <packaging>pom</packaging>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
@@ -55,6 +55,12 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-image-simulator</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
@@ -156,6 +162,7 @@
                 <argument>${basedir}/target/db/cloudbridge_offering_alter.sql</argument>
                 <!-- Seed the database -->
                 <argument>${basedir}/developer-prefill.sql</argument>
+                <argument>${basedir}/developer-prefill.sql.override</argument>
                 <!-- Do database upgrade-->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
                 <argument>--database=cloud,usage,awsapi</argument>

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.bridge.service.exception.EC2ServiceException;
+import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 
 
 public class EC2GroupFilterSet {
@@ -44,6 +45,8 @@ public class EC2GroupFilterSet {
         filterTypes.put( "ip-permission.group-name","string" );
         filterTypes.put( "ip-permission.user-id",   "string" );
 		filterTypes.put( "owner-id",                "string" );
+        filterTypes.put( "tag-key",                 "string" );
+        filterTypes.put( "tag-value",               "string" );
 	}
 
 
@@ -52,11 +55,9 @@ public class EC2GroupFilterSet {
 		String filterName = param.getName();
 		String value = (String) filterTypes.get( filterName );
 
-		if (null == value)
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 1", 501 );
-
-		if (null != value && value.equalsIgnoreCase( "null" ))
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 2", 501 );
+        if ( value == null || value.equalsIgnoreCase("null")) {
+            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+        }
 
 		// ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
 		filterSet.add( param );
@@ -120,6 +121,42 @@ public class EC2GroupFilterSet {
 			String owner = new String( sg.getDomainId() + ":" + sg.getAccountName()); 
 			return containsString( owner, valueSet );	
 		}
+        else if (filterName.equalsIgnoreCase("tag-key"))
+        {
+            EC2TagKeyValue[] tagSet = sg.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet)
+                if (containsString(tag.getKey(), valueSet)) return true;
+            return false;
+        }
+        else if (filterName.equalsIgnoreCase("tag-value"))
+        {
+            EC2TagKeyValue[] tagSet = sg.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet){
+                if (tag.getValue() == null) {
+                    if (containsEmptyValue(valueSet)) return true;
+                }
+                else {
+                    if (containsString(tag.getValue(), valueSet)) return true;
+                }
+            }
+            return false;
+        }
+        else if (filterName.startsWith("tag:"))
+        {
+            String key = filterName.split(":")[1];
+            EC2TagKeyValue[] tagSet = sg.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet){
+                if (tag.getKey().equalsIgnoreCase(key)) {
+                    if (tag.getValue() == null) {
+                        if (containsEmptyValue(valueSet)) return true;
+                    }
+                    else {
+                        if (containsString(tag.getValue(), valueSet)) return true;
+                    }
+                }
+            }
+            return false;
+        }
 		else return false;
 	}
 
@@ -182,5 +219,11 @@ public class EC2GroupFilterSet {
 		}
 		return false;
 	}
+
+    private boolean containsEmptyValue( String[] set ) {
+        for( int i=0; i < set.length; i++ )
+            if (set[i].isEmpty()) return true;
+        return false;
+    }
 
 }

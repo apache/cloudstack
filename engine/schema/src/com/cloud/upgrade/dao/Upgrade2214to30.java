@@ -462,7 +462,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         ResultSet rs = null;
         try {
         	int numRows = 0;
-        	pstmt = conn.prepareStatement("select count(id) from `cloud`.`vm_instance` where removed is null");
+        	pstmt = conn.prepareStatement("select count(id) from `cloud`.`vm_instance`");
             rs = pstmt.executeQuery();
             if(rs.next()){
             	numRows = rs.getInt(1);
@@ -471,7 +471,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             pstmt.close();
             int offset = 0;
             while(offset < numRows){
-            	pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance` where removed is null limit "+offset+", 500");
+            	pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance` limit "+offset+", 500");
             	rs = pstmt.executeQuery();
             	while (rs.next()) {
             		long id = rs.getLong(1);

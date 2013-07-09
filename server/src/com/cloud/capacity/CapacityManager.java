@@ -18,7 +18,7 @@ package com.cloud.capacity;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
@@ -41,11 +41,11 @@ public interface CapacityManager extends Manager {
      */
     boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio, boolean considerReservedCapacity);
 
-	void updateCapacityForHost(HostVO host);
+	void updateCapacityForHost(Host host);
     
 	/**
      * @param pool storage pool
-     * @param templateForVmCreation template that will be used for vm creation 
+     * @param templateForVmCreation template that will be used for vm creation
      * @return total allocated capacity for the storage pool
      */
     long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation);
@@ -55,5 +55,5 @@ public interface CapacityManager extends Manager {
      * @param host the host to be checked
      * @return true if the count of host's running VMs >= hypervisor limit
      */
-    boolean checkIfHostReachMaxGuestLimit(HostVO host);
+    boolean checkIfHostReachMaxGuestLimit(Host host);
 }

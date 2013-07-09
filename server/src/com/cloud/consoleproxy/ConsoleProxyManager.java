@@ -41,5 +41,4 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 	public boolean stopProxy(long proxyVmId);
 	public boolean rebootProxy(long proxyVmId);
 	public boolean destroyProxy(long proxyVmId);
-	
 }

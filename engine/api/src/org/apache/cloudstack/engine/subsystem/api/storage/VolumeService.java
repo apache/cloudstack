@@ -19,24 +19,30 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.CommandResult;
+
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.host.Host;
 
 public interface VolumeService {
-    
-    public class VolumeApiResult extends CommandResult {
+    class VolumeApiResult extends CommandResult {
         private final VolumeInfo volume;
+
         public VolumeApiResult(VolumeInfo volume) {
+            super();
             this.volume = volume;
         }
-        
+
         public VolumeInfo getVolume() {
             return this.volume;
         }
     }
+
+    ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore);
 
     /**
      * Creates the volume based on the given criteria
@@ -57,27 +63,35 @@ public interface VolumeService {
     AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume);
 
     /**
-     * 
+     *
      */
     boolean cloneVolume(long volumeId, long baseVolId);
 
     /**
-     * 
+     *
      */
-    AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(VolumeInfo volume, DataStore store,  SnapshotInfo snapshot);
-
+    AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(VolumeInfo volume, DataStore store, SnapshotInfo snapshot);
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template);
+    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId,
+            TemplateInfo template);
+
     AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore);
+
     AsyncCallFuture<VolumeApiResult> migrateVolume(VolumeInfo srcVolume, DataStore destStore);
-    AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost);
+
+    AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo,
+            Host srcHost, Host destHost);
 
     boolean destroyVolume(long volumeId) throws ConcurrentOperationException;
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
-    
+
     AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
+
+    void handleVolumeSync(DataStore store);
+
+    SnapshotInfo takeSnapshot(VolumeInfo volume);
 
 }

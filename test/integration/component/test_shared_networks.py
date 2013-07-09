@@ -19,6 +19,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
@@ -235,6 +236,7 @@ class TestSharedNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during network cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "advancedns"])
     def test_sharedNetworkOffering_01(self):
         """  Test shared network Offering 01 """
         
@@ -269,7 +271,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.account.account.id,
+                                        id=self.account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -372,6 +374,7 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         self.debug("NetworkOffering created and enabled: %s" % self.shared_network_offering.id)
 
+    @attr(tags=["advanced", "advancedns"])
     def test_sharedNetworkOffering_02(self):
         """ Test Shared Network Offering 02 """
         
@@ -404,7 +407,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.account.account.id,
+                                        id=self.account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -459,6 +462,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.debug("Network Offering creation failed with vlan as False in advance mode and shared guest type.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_sharedNetworkOffering_03(self):
         """ Test Shared Network Offering 03 """
         
@@ -492,7 +496,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.account.account.id,
+                                        id=self.account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -547,6 +551,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.debug("Network Offering creation failed with vlan as true and ip ranges as False in advance mode and with shared guest type.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_All(self):
         """ Test Shared Network ALL  """
         
@@ -593,7 +598,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -627,7 +632,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.user_account.account.id,
+                                        id=self.user_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -803,7 +808,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.user_account.name,
-                                                       domainid=self.user_account.account.domainid,
+                                                       domainid=self.user_account.domainid,
                                                        serviceofferingid=self.service_offering.id,
                                                        networkids=self.network.id
                                                        )
@@ -829,6 +834,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_accountSpecific(self):
         """ Test Shared Networm with scope account """
         
@@ -875,7 +881,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -909,7 +915,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.user_account.account.id,
+                                        id=self.user_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1022,7 +1028,7 @@ class TestSharedNetworks(cloudstackTestCase):
                          self.api_client,
                          self.services["network"],
                          accountid=self.user_account.name,
-                         domainid=self.user_account.account.domainid,
+                         domainid=self.user_account.domainid,
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id
                          )
@@ -1056,7 +1062,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                            self.api_client,
                                                            self.services["virtual_machine"],
                                                            accountid=self.admin_account.name,
-                                                           domainid=self.admin_account.account.domainid,
+                                                           domainid=self.admin_account.domainid,
                                                            networkids=self.network.id,
                                                            serviceofferingid=self.service_offering.id
                                                            )
@@ -1068,7 +1074,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.user_account.name,
-                                                       domainid=self.user_account.account.domainid,
+                                                       domainid=self.user_account.domainid,
                                                        networkids=self.network.id,
                                                        serviceofferingid=self.service_offering.id
                                                        )
@@ -1092,6 +1098,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_domainSpecific(self):
         """ Test Shared Network with scope domain """
         
@@ -1140,7 +1147,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1159,7 +1166,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )
         
-        self.debug("Admin type account created: %s" % self.admin_account.account.id)
+        self.debug("Admin type account created: %s" % self.admin_account.id)
         
         #create domain
         self.dom_domain = Domain.create(
@@ -1200,7 +1207,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.domain_admin_account.account.id,
+                                        id=self.domain_admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1219,7 +1226,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The domain admin account created is not enabled."
             )
         
-        self.debug("Domain admin account created: %s" % self.domain_admin_account.account.id)
+        self.debug("Domain admin account created: %s" % self.domain_admin_account.id)
         
         #Create an user account
         self.domain_user_account = Account.create(
@@ -1234,7 +1241,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.domain_user_account.account.id,
+                                        id=self.domain_user_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1253,7 +1260,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The domain user account created is not enabled."
             )
         
-        self.debug("Domain user account created: %s" % self.domain_user_account.account.id)
+        self.debug("Domain user account created: %s" % self.domain_user_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -1382,7 +1389,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                            self.api_client,
                                                            self.services["virtual_machine"],
                                                            accountid=self.admin_account.name,
-                                                           domainid=self.admin_account.account.domainid,
+                                                           domainid=self.admin_account.domainid,
                                                            networkids=self.network.id,
                                                            serviceofferingid=self.service_offering.id
                                                            )
@@ -1394,7 +1401,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.domain_user_account.name,
-                                                       domainid=self.domain_user_account.account.domainid,
+                                                       domainid=self.domain_user_account.domainid,
                                                        networkids=self.network.id,
                                                        serviceofferingid=self.service_offering.id
                                                        )
@@ -1422,7 +1429,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.domain_admin_account.name,
-                                                       domainid=self.domain_admin_account.account.domainid,
+                                                       domainid=self.domain_admin_account.domainid,
                                                        networkids=self.network.id,
                                                        serviceofferingid=self.service_offering.id
                                                        )
@@ -1446,6 +1453,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_projectSpecific(self):
         """ Test Shared Network with scope project  """
         
@@ -1493,7 +1501,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1512,7 +1520,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )
         
-        self.debug("Admin account created: %s" % self.admin_account.account.id)
+        self.debug("Admin account created: %s" % self.admin_account.id)
         
         self.services["project"]["name"] = "proj-SADJKS"
         self.services["project"]["displaytext"] = "proj-SADJKS"
@@ -1521,7 +1529,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                  self.api_client,
                                  self.services["project"],
                                  account=self.admin_account.name,
-                                 domainid=self.admin_account.account.domainid
+                                 domainid=self.admin_account.domainid
                                  )
         
         self.cleanup_projects.append(self.project1)
@@ -1551,7 +1559,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                  self.api_client,
                                  self.services["project"],
                                  account=self.admin_account.name,
-                                 domainid=self.admin_account.account.domainid
+                                 domainid=self.admin_account.domainid
                                  )
         
         self.cleanup_projects.append(self.project2)
@@ -1667,7 +1675,7 @@ class TestSharedNetworks(cloudstackTestCase):
                          self.api_client,
                          self.services["network"],
                          projectid=self.project1.id,
-                         domainid=self.admin_account.account.domainid,
+                         domainid=self.admin_account.domainid,
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id
                          )
@@ -1702,7 +1710,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                            self.api_client,
                                                            self.services["virtual_machine"],
                                                            accountid=self.admin_account.name,
-                                                           domainid=self.admin_account.account.domainid,
+                                                           domainid=self.admin_account.domainid,
                                                            networkids=self.network.id,
                                                            projectid=self.project2.id,
                                                            serviceofferingid=self.service_offering.id
@@ -1715,7 +1723,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.admin_account.name,
-                                                       domainid=self.admin_account.account.domainid,
+                                                       domainid=self.admin_account.domainid,
                                                        networkids=self.network.id,
                                                        projectid=self.project1.id,
                                                        serviceofferingid=self.service_offering.id
@@ -1740,6 +1748,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 		
+    @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_usedVlan(self):
         """ Test Shared Network with used vlan 01 """
         
@@ -1776,7 +1785,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1795,7 +1804,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )
         
-        self.debug("Domain admin account created: %s" % self.admin_account.account.id)
+        self.debug("Domain admin account created: %s" % self.admin_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -1898,6 +1907,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because the valn id being used by another network.")
     
+    @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_usedVlan2(self):
         """ Test Shared Network with used vlan 02 """
         
@@ -1935,7 +1945,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -1954,7 +1964,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )
         
-        self.debug("Admin account created: %s" % self.admin_account.account.id)
+        self.debug("Admin account created: %s" % self.admin_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -2088,11 +2098,12 @@ class TestSharedNetworks(cloudstackTestCase):
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id,
                          )
-	    self.cleanup_networks.append(self.network1)
+            self.cleanup_networks.append(self.network1)
             self.fail("Network got created with used vlan id, which is invalid")
         except Exception as e:
             self.debug("Network creation failed because the valn id being used by another network.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_deployVM_multipleSharedNetwork(self):
         """ Test Vm deployment with multiple shared networks """
         
@@ -2119,7 +2130,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -2138,7 +2149,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )
         
-        self.debug("Admin account created: %s" % self.admin_account.account.id)
+        self.debug("Admin account created: %s" % self.admin_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -2299,7 +2310,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.admin_account.name,
-                                                       domainid=self.admin_account.account.domainid,
+                                                       domainid=self.admin_account.domainid,
                                                        networkids=self.network.id,
 						       serviceofferingid=self.service_offering.id
                                                        )
@@ -2327,7 +2338,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        self.api_client,
                                                        self.services["virtual_machine"],
                                                        accountid=self.admin_account.name,
-                                                       domainid=self.admin_account.account.domainid,
+                                                       domainid=self.admin_account.domainid,
                                                        networkids=self.network1.id,
                                                        serviceofferingid=self.service_offering.id
                                                        )
@@ -2350,6 +2361,7 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.assertTrue(self.network1_admin_account_virtual_machine.nic[0].ipaddress is not None, "ip should be assigned to running virtual machine")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_deployVM_isolatedAndShared(self):
         """ Test VM deployment in shared and isolated networks """
         
@@ -2381,7 +2393,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         liistall=True
                                         )
         self.assertEqual(
@@ -2529,7 +2541,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.shared_network = Network.create(
                          self.api_client,
                          self.services["network"],
-                         domainid=self.admin_account.account.domainid,
+                         domainid=self.admin_account.domainid,
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id
                          )
@@ -2562,7 +2574,7 @@ class TestSharedNetworks(cloudstackTestCase):
                          self.api_client,
                          self.services["isolated_network"],
 		accountid=self.admin_account.name,
-                         domainid=self.admin_account.account.domainid,
+                         domainid=self.admin_account.domainid,
                          networkofferingid=self.isolated_network_offering.id,
                          zoneid=self.zone.id
                          )
@@ -2590,7 +2602,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                                      self.api_client,
                                                                      self.services["virtual_machine"],
                                                                      accountid=self.admin_account.name,
-                                                                     domainid=self.admin_account.account.domainid,
+                                                                     domainid=self.admin_account.domainid,
                                                                      networkids=self.shared_network.id,
 								     serviceofferingid=self.service_offering.id
                                                                      )
@@ -2617,7 +2629,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                                        self.api_client,
                                                                        self.services["virtual_machine"],
                                                                        accountid=self.admin_account.name,
-                                                                       domainid=self.admin_account.account.domainid,
+                                                                       domainid=self.admin_account.domainid,
                                                                        networkids=self.isolated_network.id,
 								       serviceofferingid=self.service_offering.id
                                                                        )
@@ -2646,7 +2658,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                     self.api_client,
                                     accountid=self.admin_account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.admin_account.account.domainid,
+                                    domainid=self.admin_account.domainid,
                                     networkid=self.isolated_network.id
                                     )
 
@@ -2697,6 +2709,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % (self.isolated_network_admin_account_virtual_machine.ipaddress, e))
 
+    @attr(tags=["advanced", "advancedns"])
     def test_networkWithsubdomainaccessTrue(self):
         """ Test Shared Network with subdomainaccess=True """
         
@@ -2718,7 +2731,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -2737,7 +2750,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )        
         
-        self.debug("Admin type account created: %s" % self.admin_account.account.id)
+        self.debug("Admin type account created: %s" % self.admin_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -2833,7 +2846,7 @@ class TestSharedNetworks(cloudstackTestCase):
                              self.api_client,
                              self.services["network"],
                              accountid=self.admin_account.name,
-                             domainid=self.admin_account.account.domainid,
+                             domainid=self.admin_account.domainid,
                              networkofferingid=self.shared_network_offering.id,
                              zoneid=self.zone.id
                              )
@@ -2841,6 +2854,7 @@ class TestSharedNetworks(cloudstackTestCase):
         except:
             self.debug("Network creation failed because subdomainaccess parameter was passed when scope was account.")
 
+    @attr(tags=["advanced", "advancedns"])
     def test_networkWithsubdomainaccessFalse(self):
         """ Test shared Network with subdomainaccess=False """
         
@@ -2862,7 +2876,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -2881,7 +2895,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "The admin account created is not enabled."
             )        
         
-        self.debug("Admin type account created: %s" % self.admin_account.account.id)
+        self.debug("Admin type account created: %s" % self.admin_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -2977,7 +2991,7 @@ class TestSharedNetworks(cloudstackTestCase):
                              self.api_client,
                              self.services["network"],
                              accountid=self.admin_account.name,
-                             domainid=self.admin_account.account.domainid,
+                             domainid=self.admin_account.domainid,
                              networkofferingid=self.shared_network_offering.id,
                              zoneid=self.zone.id
                              )

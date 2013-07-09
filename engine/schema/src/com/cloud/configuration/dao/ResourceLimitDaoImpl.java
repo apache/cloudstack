@@ -97,4 +97,18 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
             return null;
         }
     }
+
+    @Override
+    public long removeEntriesByOwner(Long ownerId, ResourceOwnerType ownerType) {
+        SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+
+        if (ownerType == ResourceOwnerType.Account) {
+            sc.setParameters("accountId", ownerId);
+            return remove(sc);
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            sc.setParameters("domainId", ownerId);
+            return remove(sc);
+        }
+        return 0;
+    }
 }

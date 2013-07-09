@@ -104,7 +104,7 @@ class Services:
                                             "UserData": 'VirtualRouter',
                                             "StaticNat": 'VirtualRouter',
                                     },
-                                    "servicecapabilitylist": {
+                                    "serviceCapabilityList": {
                                         "SourceNat": {
                                             "SupportedSourceNatTypes": "peraccount"
                                         },
@@ -730,9 +730,9 @@ class TestNetScalerDedicated(cloudstackTestCase):
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
-	self.debug("Deploying an instance in account: %s" % self.account_2.account.name)
+        self.debug("Deploying an instance in account: %s" % self.account_2.account.name)
         with self.assertRaises(Exception):
-        	VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_2.account.name,
@@ -740,7 +740,7 @@ class TestNetScalerDedicated(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
-	self.debug("Deply instacne in dedicated Network offering mode failed")
+        self.debug("Deply instance in dedicated Network offering mode failed")
         return
 
 
@@ -1285,7 +1285,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                                  )
         if isinstance(physical_networks, list):
             physical_network = physical_networks[0]
-	cls.services["netscaler"]["lbdevicecapacity"] = 2
+        cls.services["netscaler"]["lbdevicecapacity"] = 2
         cls.netscaler = NetScaler.add(
                                   cls.api_client,
                                   cls.services["netscaler"],
@@ -2135,7 +2135,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
@@ -2145,7 +2145,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -2153,7 +2153,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
@@ -2161,7 +2161,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
         cls.lb_rule = LoadBalancerRule.create(
@@ -2658,7 +2658,7 @@ class TestServiceProvider(cloudstackTestCase):
                             self.apiclient,
                             self.services["network"],
                             accountid=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                             )
@@ -2691,7 +2691,7 @@ class TestServiceProvider(cloudstackTestCase):
                             self.apiclient,
                             self.services["network"],
                             accountid=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                             )
@@ -2721,7 +2721,7 @@ class TestServiceProvider(cloudstackTestCase):
                             self.apiclient,
                             self.services["network"],
                             accountid=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                             )
@@ -2734,7 +2734,7 @@ class TestServiceProvider(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -2766,7 +2766,7 @@ class TestServiceProvider(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=self.network.id
                                 )
         self.debug(
@@ -2813,7 +2813,7 @@ class TestServiceProvider(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )

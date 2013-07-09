@@ -32,19 +32,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.script.Script;
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseState;
@@ -57,7 +51,6 @@ import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.OvfFile;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
-import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
@@ -82,6 +75,7 @@ import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineCloneSpec;
 import com.vmware.vim25.VirtualMachineConfigInfo;
+import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineFileInfo;
@@ -96,6 +90,14 @@ import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualPCIController;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
+
+import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.script.Script;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -206,7 +208,7 @@ public class VirtualMachineMO extends BaseMO {
 
 		if(isVMwareToolsRunning()) {
 			try {
-				String vmName = this.getName();
+				String vmName = getName();
 
 				s_logger.info("Try gracefully shut down VM " + vmName);
 				shutdown();
@@ -316,7 +318,7 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public boolean isTemplate() throws Exception {
-		VirtualMachineConfigInfo configInfo = this.getConfigInfo();
+		VirtualMachineConfigInfo configInfo = getConfigInfo();
 		return configInfo.isTemplate();
 	}
 
@@ -334,6 +336,30 @@ public class VirtualMachineMO extends BaseMO {
 
 		return false;
 	}
+
+    public boolean changeDatastore(VirtualMachineRelocateSpec relocateSpec) throws Exception {
+        ManagedObjectReference morTask = _context.getVimClient().getService().relocateVMTask(_mor, relocateSpec, VirtualMachineMovePriority.DEFAULT_PRIORITY);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if(result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware RelocateVM_Task to change datastore failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+        return false;
+    }
+
+    public boolean changeHost(VirtualMachineRelocateSpec relocateSpec) throws Exception {
+        ManagedObjectReference morTask = _context.getService().relocateVMTask(_mor, relocateSpec, VirtualMachineMovePriority.DEFAULT_PRIORITY);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware RelocateVM_Task to change host failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+        return false;
+    }
 
 	public boolean relocate(ManagedObjectReference morTargetHost) throws Exception {
 	    VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
@@ -641,7 +667,8 @@ public class VirtualMachineMO extends BaseMO {
 			_mor, "config.files");
 	}
 
-	public ManagedObjectReference getParentMor() throws Exception {
+	@Override
+    public ManagedObjectReference getParentMor() throws Exception {
 		return (ManagedObjectReference)_context.getVimClient().getDynamicProperty(
 			_mor, "parent");
 	}
@@ -1567,6 +1594,21 @@ public class VirtualMachineMO extends BaseMO {
 		}
 	}
 
+    public GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception {
+        GuestOsDescriptor guestOsDescriptor = null;
+        ManagedObjectReference vmEnvironmentBrowser =
+                _context.getVimClient().getMoRefProp(_mor, "environmentBrowser");
+        VirtualMachineConfigOption  vmConfigOption = _context.getService().queryConfigOption(vmEnvironmentBrowser, null, null);
+        List<GuestOsDescriptor> guestDescriptors = vmConfigOption.getGuestOSDescriptor();
+        for (GuestOsDescriptor descriptor : guestDescriptors) {
+            if (guestOsId != null && guestOsId.equalsIgnoreCase(descriptor.getId())) {
+                guestOsDescriptor = descriptor;
+                break;
+            }
+        }
+        return guestOsDescriptor;
+    }
+
 	public void plugDevice(VirtualDevice device) throws Exception {
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
         //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
@@ -1617,7 +1659,7 @@ public class VirtualMachineMO extends BaseMO {
 		DatacenterMO dcMo = getOwnerDatacenter().first();
 		if(disks != null) {
 			for(VirtualDevice disk : disks) {
-				List<Pair<String, ManagedObjectReference>> vmdkFiles = this.getDiskDatastorePathChain((VirtualDisk)disk, followDiskChain);
+				List<Pair<String, ManagedObjectReference>> vmdkFiles = getDiskDatastorePathChain((VirtualDisk)disk, followDiskChain);
 				for(Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
 					DatastoreMO srcDsMo = new DatastoreMO(_context, fileItem.second());
 
@@ -1653,7 +1695,7 @@ public class VirtualMachineMO extends BaseMO {
 		DatacenterMO dcMo = getOwnerDatacenter().first();
 		if(disks != null) {
 			for(VirtualDevice disk : disks) {
-				List<Pair<String, ManagedObjectReference>> vmdkFiles = this.getDiskDatastorePathChain((VirtualDisk)disk, followDiskChain);
+				List<Pair<String, ManagedObjectReference>> vmdkFiles = getDiskDatastorePathChain((VirtualDisk)disk, followDiskChain);
 				for(Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
 					DatastoreMO srcDsMo = new DatastoreMO(_context, fileItem.second());
 
@@ -2067,8 +2109,8 @@ public class VirtualMachineMO extends BaseMO {
 
     public String getDvPortGroupName(VirtualEthernetCard nic) throws Exception {
         VirtualEthernetCardDistributedVirtualPortBackingInfo dvpBackingInfo =
-                (VirtualEthernetCardDistributedVirtualPortBackingInfo) ((VirtualEthernetCard) nic).getBacking();
-        DistributedVirtualSwitchPortConnection dvsPort = (DistributedVirtualSwitchPortConnection) dvpBackingInfo.getPort();
+                (VirtualEthernetCardDistributedVirtualPortBackingInfo) nic.getBacking();
+        DistributedVirtualSwitchPortConnection dvsPort = dvpBackingInfo.getPort();
         String dvPortGroupKey = dvsPort.getPortgroupKey();
         ManagedObjectReference dvPortGroupMor = new ManagedObjectReference();
         dvPortGroupMor.setValue(dvPortGroupKey);
@@ -2140,5 +2182,12 @@ public class VirtualMachineMO extends BaseMO {
 			}
 		}
 	}
-}
 
+    public long getHotAddMemoryIncrementSizeInMb() throws Exception {
+        return (Long)_context.getVimClient().getDynamicProperty(_mor, "config.hotPlugMemoryIncrementSize");
+    }
+
+    public long getHotAddMemoryLimitInMb() throws Exception {
+        return (Long)_context.getVimClient().getDynamicProperty(_mor, "config.hotPlugMemoryLimit");
+    }
+}
