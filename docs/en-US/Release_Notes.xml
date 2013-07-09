@@ -5299,15 +5299,15 @@ under the License.
                                     </thead>
                                     <tbody>
                                         <row>
-                                            <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
+                                            <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
                                             <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
                                         </row>
                                         <row>
-                                            <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
+                                            <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
                                             <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
                                         </row>
                                         <row>
-                                            <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
+                                            <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
                                             <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
                                         </row>
                                     </tbody>
@@ -5916,15 +5916,15 @@ under the License.
                                     </thead>
                                     <tbody>
                                         <row>
-                                            <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename></para></entry>
+                                            <entry><para><filename>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename></para></entry>
                                             <entry><para><filename>/opt/xensource/sm/NFSSR.py</filename></para></entry>
                                         </row>
                                         <row>
-                                            <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename></para></entry>
+                                            <entry><para><filename>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename></para></entry>
                                             <entry><para><filename>/opt/xensource/bin/setupxenserver.sh</filename></para></entry>
                                         </row>
                                         <row>
-                                            <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename></para></entry>
+                                            <entry><para><filename>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename></para></entry>
                                             <entry><para><filename>/opt/xensource/bin/make_migratable.sh</filename></para></entry>
                                         </row>
                                     </tbody>

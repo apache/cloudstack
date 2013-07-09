@@ -38,8 +38,8 @@
                     <para>
                         Install the &PRODUCT; management server packages by
                         issuing one of the following commands as appropriate: 
-                        <programlisting><prompt>#</prompt> <command>yum</command> install cloud-client</programlisting>
-                        <programlisting><prompt>#</prompt> <command>apt-get</command> install cloud-client</programlisting>
+                        <programlisting><prompt>#</prompt> <command>yum</command> install cloudstack-management</programlisting>
+                        <programlisting><prompt>#</prompt> <command>apt-get</command> install cloudstack-management</programlisting>
                     </para>
                 </listitem>          
                 <listitem>
