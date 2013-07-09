@@ -124,6 +124,10 @@ public class UsageEventUtils {
         Account account = _accountDao.findById(accountId);
         DataCenterVO dc = _dcDao.findById(zoneId);
 
+        // if account has been deleted, this might be called during cleanup of resources and results in null pointer
+        if (account == null)
+            return;
+
         Event event = new Event(ManagementServer.Name, EventCategory.USAGE_EVENT.getName(), usageEventType,
                 resourceType, resourceUUID);
 
