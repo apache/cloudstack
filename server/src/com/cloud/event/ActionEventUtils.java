@@ -161,6 +161,11 @@ public class ActionEventUtils {
         Map<String, String> eventDescription = new HashMap<String, String>();
         Account account = _accountDao.findById(accountId);
         User user = _userDao.findById(userId);
+        // if account has been deleted, this might be called during cleanup of resources and results in null pointer
+        if (account == null)
+            return;
+        if (user == null)
+            return;
         eventDescription.put("user", user.getUuid());
         eventDescription.put("account", account.getUuid());
         eventDescription.put("event", eventType);
