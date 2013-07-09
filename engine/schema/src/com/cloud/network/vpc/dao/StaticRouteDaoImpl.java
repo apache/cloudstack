@@ -58,7 +58,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         AllFieldsSearch.done();
         
         NotRevokedSearch = createSearchBuilder();
-        NotRevokedSearch.and("gatewayId", NotRevokedSearch.entity().getVpcGatewayId(), Op.EQ);
+        NotRevokedSearch.and("vpcId", NotRevokedSearch.entity().getVpcId(), Op.EQ);
         NotRevokedSearch.and("state", NotRevokedSearch.entity().getState(), Op.NEQ);
         NotRevokedSearch.done();
         
@@ -82,9 +82,9 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
 
 
     @Override
-    public List<? extends StaticRoute> listByGatewayIdAndNotRevoked(long gatewayId) {
+    public List<? extends StaticRoute> listByVpcIdAndNotRevoked(long vpcId) {
         SearchCriteria<StaticRouteVO> sc = NotRevokedSearch.create();
-        sc.setParameters("gatewayId", gatewayId);
+        sc.setParameters("vpcId", vpcId);
         sc.setParameters("state", StaticRoute.State.Revoke);
         return listBy(sc);
     }
