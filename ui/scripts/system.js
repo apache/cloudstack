@@ -13038,21 +13038,18 @@
                     name: args.data.name
                   });
                 }
-                /*
+                               
                 $.ajax({
                   url: createURL('addUcsManager'),
                   data: data,                 
-                  success: function(json) {
-                    
+                  success: function(json) { //e.g. json == { "addUcsManagerResponse" :  { "ucsmanager" : {"id":"11","name":"ucsmanager","url":"10.223.184.2","zoneid":"2"} }  }
+                    var item = json.addUcsManagerResponse.ucsmanager;
+                    args.response.success({ data: item });
                   },
                   error: function(data) {
                     args.response.error(parseXMLHttpResponse(data));
                   }
-                });
-                */
-                
-                args.response.success({data:  { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', name: 'UCS Manager 3', url: '10.196.72.3' }});
-                
+                });   
               },
 
               notification: {
