@@ -12989,8 +12989,8 @@
             
             args.response.success({
               data: [
-                { id: '73695389-13ba-48e4-b661-a5e56966f577', name: 'UCS Manager 1', url: '10.196.72.1' },
-                { id: '32588a3e-9d70-4a23-9117-42da48fa8c10', name: 'UCS Manager 2', url: '10.196.72.2' }
+                { id: '11', name: 'UCS Manager 1', url: '10.196.72.1' },
+                { id: '11', name: 'UCS Manager 2', url: '10.196.72.2' }
               ]
             });
           },
@@ -13118,27 +13118,35 @@
                             label: 'Select Profile',
                             select: function(args) {
                               var items = [];     
-                              
-                              /*
+                                                            
                               $.ajax({
                                 url: createURL('listUcsProfile'),
                                 data: {
                                   ucsmanagerid: args.context.ucsManagers[0].id
                                 },
-                                success: function(json) {
+                                success: function(json) { //e.g. json == { "listucsprofileresponse" : { "count":1 ,"ucsprofile" : [  {"ucsdn":"org-root/ls-testProfile"} ] } }
+                                  var ucsprofiles = json.listucsprofileresponse.ucsprofile;
+                                  if(ucsprofiles != null) {
+                                    for(var i = 0; i < ucsprofiles.length; i++) {
+                                      items.push({ id: ucsprofiles[i].ucsdn, description: ucsprofiles[i].ucsdn });                                      
+                                    }
+                                  }
                                   
+                                  //for testing only (begin)
+                                  /*
+                                  items.push({id: 'Service_Profile_Demo1', description: 'Service_Profile_Demo1'});
+                                  items.push({id: 'Service_Profile_Demo2', description: 'Service_Profile_Demo2'});
+                                  items.push({id: 'Service_Profile_Demo3', description: 'Service_Profile_Demo3'});
+                                  items.push({id: 'Service_Profile_Demo4', description: 'Service_Profile_Demo4'});
+                                  items.push({id: 'Service_Profile_Demo5', description: 'Service_Profile_Demo5'});
+                                  items.push({id: 'Service_Profile_Demo6', description: 'Service_Profile_Demo6'});
+                                  items.push({id: 'Service_Profile_Demo7', description: 'Service_Profile_Demo7'});
+                                  */
+                                  //for testing only (end)
+                                  
+                                  args.response.success({ data: items });
                                 }
                               });
-                              */
-                              
-                              items.push({id: 'Service_Profile_Demo1', description: 'Service_Profile_Demo1'});
-                              items.push({id: 'Service_Profile_Demo2', description: 'Service_Profile_Demo2'});
-                              items.push({id: 'Service_Profile_Demo3', description: 'Service_Profile_Demo3'});
-                              items.push({id: 'Service_Profile_Demo4', description: 'Service_Profile_Demo4'});
-                              items.push({id: 'Service_Profile_Demo5', description: 'Service_Profile_Demo5'});
-                              items.push({id: 'Service_Profile_Demo6', description: 'Service_Profile_Demo6'});
-                              items.push({id: 'Service_Profile_Demo7', description: 'Service_Profile_Demo7'});
-                              args.response.success({data: items});
                             },
                             validation: { required: true }
                           }
