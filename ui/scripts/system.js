@@ -6927,6 +6927,7 @@
 
               return listView;
             },
+
             secondaryStorage: function() {
               var listView = $.extend(
                 true, {},
@@ -12963,6 +12964,286 @@
           }
         }
       },
+
+      ucs: {
+        title: 'UCS',
+        id: 'ucs',
+        listView: {
+          id: 'ucsManagers',
+          fields: {
+            name: { label: 'label.name' },
+            url: { label: 'label.url' }
+          },
+          dataProvider: function(args) {
+            /*
+            $.ajax({
+              url: createURL('listUcsManager'),
+              data: {
+                zoneid: args.context.physicalResources[0].id
+              },
+              success: function(json) {
+                
+              }
+            });
+            */
+            
+            args.response.success({
+              data: [
+                { id: '73695389-13ba-48e4-b661-a5e56966f577', name: 'UCS Manager 1', url: '10.196.72.1' },
+                { id: '32588a3e-9d70-4a23-9117-42da48fa8c10', name: 'UCS Manager 2', url: '10.196.72.2' }
+              ]
+            });
+          },
+          actions: {            
+            add: {
+              label: 'Add UCS Manager',
+
+              messages: {               
+                notification: function(args) {
+                  return 'Add UCS Manager';
+                }
+              },
+
+              createForm: {
+                title: 'Add UCS Manager',
+                fields: {
+                  name: {
+                    label: 'label.name',                    
+                    validation: { required: false }
+                  },
+                  url: {
+                    label: 'label.url',
+                    validation: { required: true }
+                  },
+                  username: {
+                    label: 'label.username',
+                    validation: { required: true }
+                  },
+                  password: {
+                    label: 'label.password',
+                    validation: { required: true }
+                  }                  
+                }
+              },
+
+              action: function(args) {                
+                var data = {
+                  zoneid: args.context.physicalResources[0].id,
+                  url: args.data.url,
+                  username: args.data.username,
+                  password: args.data.password
+                };    
+                if(args.data.name != null && args.data.name.length > 0) {
+                  $.extend(data, {
+                    name: args.data.name
+                  });
+                }
+                /*
+                $.ajax({
+                  url: createURL('addUcsManager'),
+                  data: data,                 
+                  success: function(json) {
+                    
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
+                  }
+                });
+                */
+                
+                args.response.success({data:  { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', name: 'UCS Manager 3', url: '10.196.72.3' }});
+                
+              },
+
+              notification: {
+                poll: function(args) {
+                  args.complete();
+                }
+              }
+            }            
+          },
+          
+          detailView: {
+            isMaximized: true,
+            noCompact: true,
+            tabs: {
+              blades: {
+                title: 'Blades',
+                listView: {
+                  fields: {
+                    //dn: { label: 'Distinguished Name' },
+                    chassis: { label: 'Chassis' }, 
+                    bladeid: { label: 'Blade ID' },
+                    associatedProfileDn: { label: 'Associated Profile' }
+                  },
+                  dataProvider: function(args) {                    
+                    /*
+                    $.ajax({
+                      url: createURL('listUcsBlade'),
+                      data: {
+                        ucsmanagerid: args.context.ucsManagers[0].id
+                      },
+                      success: function(json) {
+                        
+                      }                      
+                    });
+                    */         
+
+                    var data =  [
+                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: '' },
+                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: '' },                        
+                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-3/blade-3', associatedProfileDn: '' }
+                    ];
+                               
+                    for(var i = 0; i < data.length; i++) {
+                      var array1 = data[i].dn.split('/');                      
+                      data[i].chassis = array1[1];
+                      data[i].bladeid = array1[2];
+                    }
+
+                    args.response.success({
+                      data: data
+                    });                  
+                  },                  
+                  actions: {                      
+                    associateProfileToBlade: {
+                      label: 'Associate Profile to Blade',
+                      addRow: 'false',
+                      messages: {
+                        notification: function(args) {
+                          return 'Associate Profile to Blade';
+                        }
+                      },
+                      createForm: {
+                        title: 'Associate Profile to Blade',
+                        fields: {
+                          profiledn: {
+                            label: 'Select Profile',
+                            select: function(args) {
+                              var items = [];     
+                              
+                              /*
+                              $.ajax({
+                                url: createURL('listUcsProfile'),
+                                data: {
+                                  ucsmanagerid: args.context.ucsManagers[0].id
+                                },
+                                success: function(json) {
+                                  
+                                }
+                              });
+                              */
+                              
+                              items.push({id: 'Service_Profile_Demo1', description: 'Service_Profile_Demo1'});
+                              items.push({id: 'Service_Profile_Demo2', description: 'Service_Profile_Demo2'});
+                              items.push({id: 'Service_Profile_Demo3', description: 'Service_Profile_Demo3'});
+                              items.push({id: 'Service_Profile_Demo4', description: 'Service_Profile_Demo4'});
+                              items.push({id: 'Service_Profile_Demo5', description: 'Service_Profile_Demo5'});
+                              items.push({id: 'Service_Profile_Demo6', description: 'Service_Profile_Demo6'});
+                              items.push({id: 'Service_Profile_Demo7', description: 'Service_Profile_Demo7'});
+                              args.response.success({data: items});
+                            },
+                            validation: { required: true }
+                          }
+                        }
+                      },
+                      action: function(args) {
+                        /*
+                        $.ajax({
+                          url: createURL('associatesUscProfileToBlade'),
+                          data: {
+                            ucsmanagerid: args.context.ucsManagers[0].id,
+                            profiledn: args.data.profiledn, 
+                            bladeid: '1234567890' //to change later
+                          },
+                          success: function(json) {
+                            
+                          }
+                        });
+                        */
+                        args.response.success({data: { associatedProfileDn: args.data.profiledn }});
+                      },
+                      notification: {
+                        poll: function(args) {
+                          args.complete();
+                        }
+                      }
+                    }                      
+                  }
+                  
+                  /*,                                                     
+                  detailView: {
+                    name: 'blade details',
+                    noCompact: true,
+                    actions: {                      
+                      associateProfileToBlade: {
+                        label: 'Associate Profile to Blade',
+                        messages: {
+                          notification: function(args) {
+                            return 'Associate Profile to Blade';
+                          }
+                        },
+                        createForm: {
+                          title: 'Associate Profile to Blade',
+                          fields: {
+                            profiledn: {
+                              label: 'profile',
+                              select: function(args) {
+                                var items = [];     
+                                
+                                items.push({id: 'profile_1', description: 'profile_1'});
+                                items.push({id: 'profile_2', description: 'profile_2'});
+                                items.push({id: 'profile_3', description: 'profile_3'});
+                                args.response.success({data: items});
+                              },
+                              validation: { required: true }
+                            }
+                          }
+                        },
+                        action: function(args) {                          
+                          args.response.success();
+                        },
+                        notification: {
+                          poll: function(args) {
+                            args.complete();
+                          }
+                        }
+                      }                      
+                    },                    
+                    tabs: {
+                      details: {
+                        title: 'label.details',
+
+                        fields: [
+                          {
+                            fieldA: { label: 'fieldA' }
+                          },
+                          {
+                            fieldB: { label: 'fieldB' }
+                          }
+                        ],
+
+                        dataProvider: function(args) { 
+                          args.response.success(
+                            {                              
+                              data: {
+                                fieldA: 'fieldAAA',
+                                fieldB: 'fieldBBB'
+                              }
+                            }
+                          );
+                        }
+                      }
+                    }                   
+                  } 
+                  */
+                                    
+                }
+              }
+            }
+          }
+        }
+      },      
 
       'secondary-storage': {
         title: 'label.secondary.storage',
