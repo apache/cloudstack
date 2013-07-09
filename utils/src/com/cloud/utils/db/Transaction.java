@@ -1103,12 +1103,13 @@ public class Transaction {
             final int usagePort = Integer.parseInt(dbProps.getProperty("db.usage.port"));
             final String usageDbName = dbProps.getProperty("db.usage.name");
             final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
+            final String usageUrl = dbProps.getProperty("db.usage.url.params");
 
             final GenericObjectPool usageConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     usageMaxWait, usageMaxIdle);
 
             final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + ":" + usagePort + "/" + usageDbName +
-                    "?autoReconnect=" + usageAutoReconnect, usageUsername, usagePassword);
+                    "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : ""), usageUsername, usagePassword);
 
             final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
