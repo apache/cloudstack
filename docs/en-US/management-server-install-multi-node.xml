@@ -35,10 +35,8 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
       <para>This step is required only for installations where XenServer is installed on the hypervisor hosts.</para>
       <para>Download vhd-util from <ulink
           url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink></para>
-      <para>If the Management Server is RHEL or CentOS, copy vhd-util to
-        /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
-      <para>If the Management Server is Ubuntu, copy vhd-util to
-        /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util.</para>
+      <para>Copy vhd-util to
+        /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver.</para>
     </listitem>
     <listitem>
       <para> Ensure that necessary services are started and set to start on boot.

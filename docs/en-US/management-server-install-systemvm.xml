@@ -59,7 +59,7 @@
         </listitem>
       </itemizedlist>
       <para>On Ubuntu, use the following path instead:</para>
-      <programlisting># /usr/lib/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</programlisting>
+      <programlisting># /usr/share/cloudstack-common/scripts/storage/secondary/cloud-install-sys-tmplt</programlisting>
     </listitem>
     <listitem>
       <para>If you are using a separate NFS server, perform this step. If you are using the
