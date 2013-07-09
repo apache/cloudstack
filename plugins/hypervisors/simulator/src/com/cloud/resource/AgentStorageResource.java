@@ -50,7 +50,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     public AgentStorageResource() {
-        setType(Host.Type.SecondaryStorage);
+        setType(Type.SecondaryStorageVM);
     }
 
     @Override
