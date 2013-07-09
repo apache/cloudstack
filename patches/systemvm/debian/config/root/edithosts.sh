@@ -96,7 +96,7 @@ wait_for_dnsmasq () {
   return 1
 }
 
-if [ $no_dhcp_release -eq 0 ]
+if [ "$ipv4" != '' -a $no_dhcp_release -eq 0 ]
 then
   #release previous dhcp lease if present
   logger -t cloud "edithosts: releasing $ipv4"
