@@ -153,6 +153,17 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean replaceNetworkACLForPrivateGw(NetworkACL acl, PrivateGateway gateway) throws ResourceUnavailableException {
         VpcGatewayVO vpcGatewayVo = _vpcGatewayDao.findById(gateway.getId());
+        List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
+        if (aclItems == null || aclItems.isEmpty()) {
+            //Revoke ACL Items of the existing ACL if the new network acl is empty
+            //Other wise existing rules will not be removed on the router elelment
+            s_logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
+            if(!revokeACLItemsForPrivateGw (gateway)){
+                throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL " +
+                        "items for privatewa gateway: "+ gateway.getId());
+            }
+        }
+
         vpcGatewayVo.setNetworkACLId(acl.getId());
         if (_vpcGatewayDao.update(vpcGatewayVo.getId(),vpcGatewayVo)) {
             return applyACLToPrivateGw(gateway);
@@ -318,7 +329,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             }
         }
 
-        boolean success = applyACLItemsToPrivateGw(gateway, aclItems);
+        boolean success = applyACLToPrivateGw(gateway, aclItems);
 
         if (s_logger.isDebugEnabled() && success) {
             s_logger.debug("Successfully released Network ACLs for private gateway id=" + gateway.getId() + " and # of rules now = "
@@ -345,11 +356,11 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean applyACLToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException {
         VpcGatewayVO vpcGatewayVO = _vpcGatewayDao.findById(gateway.getId());
-        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(vpcGatewayVO.getNetworkACLId());
-        return applyACLItemsToPrivateGw(gateway, rules);
+        List<? extends NetworkACLItem> rules = _networkACLItemDao.listByACL(vpcGatewayVO.getNetworkACLId());
+        return applyACLToPrivateGw(gateway, rules);
     }
 
-    private boolean applyACLItemsToPrivateGw(PrivateGateway gateway, List<NetworkACLItemVO> rules) throws ResourceUnavailableException {
+    private boolean applyACLToPrivateGw(PrivateGateway gateway, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         List<VpcProvider> vpcElements = null;
         vpcElements = new ArrayList<VpcProvider>();
         vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName()));
@@ -359,7 +370,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         }
 
         for (VpcProvider provider: vpcElements){
-            return provider.applyACLItemsToPrivateGw(gateway);
+            return provider.applyACLItemsToPrivateGw(gateway, rules);
             }
         return false;
     }
