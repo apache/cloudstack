@@ -368,6 +368,33 @@
           </execution>
 		</executions>
 	  </plugin>
+         <plugin>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-aar-maven-plugin</artifactId>
+            <version>1.6.2</version>
+            <extensions>true</extensions>
+            <configuration>
+              <includeDependencies>false</includeDependencies>
+              <aarName>cloud-ec2</aarName>
+              <outputDirectory>${project.build.directory}/WEB-INF/services</outputDirectory>
+              <fileSets>
+                <fileSet>
+                  <directory>resource/AmazonEC2</directory>
+                  <outputDirectory>META-INF</outputDirectory>
+                  <includes>
+                    <include>services.xml</include>
+                  </includes>
+                </fileSet>
+              </fileSets>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>aar</goal>
+                </goals>
+              </execution>
+            </executions>
+         </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
