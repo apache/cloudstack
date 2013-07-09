@@ -1858,7 +1858,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
     
     protected void detectRoutesConflict(StaticRoute newRoute) throws NetworkRuleConflictException {
-        List<? extends StaticRoute> routes = _staticRouteDao.listByGatewayIdAndNotRevoked(newRoute.getVpcGatewayId());
+        //Multiple private gateways can exist within Vpc. Check for conflicts for all static routes in Vpc
+        //and not just the gateway
+        List<? extends StaticRoute> routes = _staticRouteDao.listByVpcIdAndNotRevoked(newRoute.getVpcId());
         assert (routes.size() >= 1) : "For static routes, we now always first persist the route and then check for " +
                 "network conflicts so we should at least have one rule at this point.";
         
