@@ -396,6 +396,7 @@
 									  firstOption = "KVM";
 										nonSupportedHypervisors["VMware"] = 1;
 										nonSupportedHypervisors["BareMetal"] = 1;
+										nonSupportedHypervisors["Hyperv"] = 1;
 										nonSupportedHypervisors["Ovm"] = 1;
 										nonSupportedHypervisors["LXC"] = 1;
 									}
