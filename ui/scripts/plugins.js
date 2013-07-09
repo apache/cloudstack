@@ -65,6 +65,9 @@
     show: cloudStack.uiCustom.pluginListing
   };
 
+  var loadedPlugins = 0;
+  var pluginTotal = cloudStack.plugins.length + cloudStack.modules.length;
+
   // Load
   $(['modules', 'plugins']).each(function() {
     var type = this;
@@ -96,6 +99,13 @@
               }
             })
           );
+
+          loadedPlugins = loadedPlugins + 1;
+
+          if (loadedPlugins === pluginTotal) {
+            $(window).trigger('cloudStack.pluginReady');
+          }
+
           loadCSS(css);
         });
       }
