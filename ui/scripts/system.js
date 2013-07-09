@@ -13073,34 +13073,52 @@
                     bladeid: { label: 'Blade ID' },
                     associatedProfileDn: { label: 'Associated Profile' }
                   },
-                  dataProvider: function(args) {                    
-                    /*
+                  dataProvider: function(args) {     
                     $.ajax({
                       url: createURL('listUcsBlade'),
                       data: {
                         ucsmanagerid: args.context.ucsManagers[0].id
                       },
                       success: function(json) {
+                        var data = json.listucsbladeresponse.ucsblade? json.listucsbladeresponse.ucsblade: [];
                         
-                      }                      
-                    });
-                    */         
+                        for(var i = 0; i < data.length; i++) {
+                          var array1 = data[i].bladedn.split('/');                      
+                          data[i].chassis = array1[1];
+                          data[i].bladeid = array1[2];
+                        }
 
-                    var data =  [
-                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: '' },
-                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: '' },                        
-                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-3/blade-3', associatedProfileDn: '' }
-                    ];
+                        args.response.success({
+                          data: data
+                        });      
+                      }                      
+                    });                           
+
+                    /*
+                    var data = [
+                      {
+                        "id": "58c84a1d-6e46-44e3-b7ec-abaa876d1be3",
+                        "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
+                        "bladedn": "sys/chassis-1/blade-1"
+                      },
+                      {
+                        "id": "de5abadf-f294-4014-9fed-7ee37a9b8724",
+                        "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
+                        "bladedn": "sys/chassis-1/blade-2"
+                      }
+                    ];                    
                                
                     for(var i = 0; i < data.length; i++) {
-                      var array1 = data[i].dn.split('/');                      
+                      var array1 = data[i].bladedn.split('/');                      
                       data[i].chassis = array1[1];
                       data[i].bladeid = array1[2];
                     }
 
                     args.response.success({
                       data: data
-                    });                  
+                    });      
+                    */
+                    
                   },                  
                   actions: {                      
                     associateProfileToBlade: {
