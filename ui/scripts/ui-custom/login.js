@@ -31,6 +31,7 @@
       complete({
         user: bypass.user
       });
+      $(window).trigger('cloudStack.init');
 
       return;
     }
@@ -140,5 +141,7 @@
         )
       ));
     }
+
+    $(window).trigger('cloudStack.init');
   };
 })(jQuery, cloudStack);
