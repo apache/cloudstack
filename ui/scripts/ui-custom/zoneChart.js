@@ -140,6 +140,13 @@
             }
           },
 
+          ucs: {
+            label: 'UCS',
+            viewAll: {
+              action: actions.listView('ucs', context)
+            }
+          },
+
           secondaryStorage: {
             label: 'Secondary Storage',
             viewAll: {
