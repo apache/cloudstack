@@ -555,7 +555,7 @@ master-password=[your password]</programlisting>
         <orderedlist>
           <listitem>
             <para>Copy the script from the Management Server in
-              /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the
+              /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the
               master host and ensure it is executable.</para>
           </listitem>
           <listitem>
@@ -614,7 +614,7 @@ master-password=[your password]</programlisting>
             <para>Restart the Management Server and Usage Server. You only need to do this once for
               all clusters.</para>
             <programlisting># service cloudstack-management start
-# service cloud-usage start</programlisting>
+# service cloudstack-usage start</programlisting>
           </listitem>
         </orderedlist>
       </listitem>
@@ -679,19 +679,19 @@ vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)</programlisting>
                 </thead>
                 <tbody>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
                     <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
                   </row>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
                     <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
                   </row>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
                     <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
                   </row>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh</para></entry>
                     <entry><para>/opt/xensource/bin/cloud-clean-vlan.sh</para></entry>
                   </row>
                 </tbody>

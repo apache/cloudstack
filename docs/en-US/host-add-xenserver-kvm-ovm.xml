@@ -62,7 +62,7 @@
       <orderedlist>
         <listitem>
           <para>Copy the script from the Management Server in
-            /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the
+            /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the
             master host and ensure it is executable.</para>
         </listitem>
         <listitem>
