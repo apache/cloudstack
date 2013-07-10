@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.cloud.agent.api.Command;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -37,7 +36,6 @@ import com.google.gson.JsonSerializer;
 public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerializer<T[]> {
 
     protected Gson              _gson = null;
-
 
     public ArrayTypeAdaptor() {
     }
