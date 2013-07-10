@@ -250,11 +250,6 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-plugin-storage-volume-default</artifactId>
         <version>${project.version}</version>
@@ -273,11 +268,6 @@
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-plugin-storage-image-swift</artifactId>
         <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-storage-image-simulator</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -613,7 +603,7 @@
   </build>
   <profiles>
     <profile>
-      <id>developer</id>
+      <id>simulator</id>
       <activation>
         <property>
           <name>simulator</name>

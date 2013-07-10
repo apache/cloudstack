@@ -46,7 +46,6 @@
     <module>hypervisors/xen</module>
     <module>hypervisors/kvm</module>
     <module>event-bus/rabbitmq</module>
-    <module>hypervisors/simulator</module>
     <module>hypervisors/baremetal</module>
     <module>hypervisors/ucs</module>
     <module>network-elements/elastic-loadbalancer</module>
