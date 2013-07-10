@@ -483,9 +483,11 @@
     cloudStack.uiCustom.login(loginArgs);
 
     // Localization
-    cloudStack.localizationFn = function(str) {
-      return dictionary[str];
-    };
+    if (!$.isFunction(cloudStack.localizationFn)) { // i.e., localize is overridden by a plugin/module
+      cloudStack.localizationFn = function(str) {
+        return dictionary[str];
+      };
+    }
 
     document.title = _l('label.app.name');
   });
