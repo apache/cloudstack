@@ -433,7 +433,8 @@
 									  name: args.data.name,
 										displaytext: args.data.displaytext,
 										ostypeid: args.data.ostypeid,
-										passwordenabled: (args.data.passwordenabled=="on")										
+										passwordenabled: (args.data.passwordenabled=="on"),
+										isdynamicallyscalable: (args.data.isdynamicallyscalable=="on")
 									};	   
                   $.ajax({
                     url: createURL('updateTemplate'),
@@ -727,6 +728,12 @@
                       isEditable: true,
                       converter:cloudStack.converters.toBooleanText
                     },
+                    isdynamicallyscalable: {
+                      label: 'Dynamically Scalable',
+                      isBoolean: true,
+                      isEditable: true,
+                      converter:cloudStack.converters.toBooleanText
+                    },    
                     ispublic: {
                       label: 'label.public',
                       isBoolean: true,
