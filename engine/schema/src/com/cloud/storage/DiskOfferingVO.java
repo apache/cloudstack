@@ -98,10 +98,10 @@ public class DiskOfferingVO implements DiskOffering {
     private Boolean customizedIops;
 
     @Column(name="min_iops")
-    Long minIops;
+    private Long minIops;
 
     @Column(name="max_iops")
-    Long maxIops;
+    private Long maxIops;
 
     @Column(name = "sort_key")
     int sortKey;

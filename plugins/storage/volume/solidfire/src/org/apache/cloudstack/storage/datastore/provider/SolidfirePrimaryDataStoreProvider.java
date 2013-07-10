@@ -35,12 +35,11 @@ import com.cloud.utils.component.ComponentContext;
 
 @Component
 public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvider {
-    protected DataStoreLifeCycle lifecycle;
-    protected PrimaryDataStoreDriver driver;
-    protected HypervisorHostListener listener;
+    private DataStoreLifeCycle lifecycle;
+    private PrimaryDataStoreDriver driver;
+    private HypervisorHostListener listener;
 
     SolidfirePrimaryDataStoreProvider() {
-
     }
 
     @Override

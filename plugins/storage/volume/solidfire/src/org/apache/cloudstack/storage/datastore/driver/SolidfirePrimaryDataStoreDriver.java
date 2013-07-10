@@ -36,6 +36,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
@@ -120,21 +121,16 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private SolidFireUtil.SolidFireAccount createSolidFireAccount(String sfAccountName,
             SolidFireConnection sfConnection) {
-        try {
-            String mVip = sfConnection.getManagementVip();
-            int mPort = sfConnection.getManagementPort();
-            String clusterAdminUsername = sfConnection.getClusterAdminUsername();
-            String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+        String mVip = sfConnection.getManagementVip();
+        int mPort = sfConnection.getManagementPort();
+        String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+        String clusterAdminPassword = sfConnection.getClusterAdminPassword();
 
-            long accountNumber = SolidFireUtil.createSolidFireAccount(mVip, mPort,
-                clusterAdminUsername, clusterAdminPassword, sfAccountName);
+        long accountNumber = SolidFireUtil.createSolidFireAccount(mVip, mPort,
+            clusterAdminUsername, clusterAdminPassword, sfAccountName);
 
-            return SolidFireUtil.getSolidFireAccountById(mVip, mPort,
-                clusterAdminUsername, clusterAdminPassword, accountNumber);
-        }
-        catch (Exception ex) {
-            throw new IllegalArgumentException(ex.getMessage());
-        }
+        return SolidFireUtil.getSolidFireAccountById(mVip, mPort,
+            clusterAdminUsername, clusterAdminPassword, accountNumber);
     }
 
     private void updateCsDbWithAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount) {
@@ -225,7 +221,6 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private SolidFireUtil.SolidFireVolume createSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
-            throws StorageUnavailableException, Exception
     {
         String mVip = sfConnection.getManagementVip();
         int mPort = sfConnection.getManagementPort();
@@ -248,11 +243,11 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops());
         }
 
-    	long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
-    	        volumeInfo.getName(), sfAccountId, volumeInfo.getSize(), true,
-    	        iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
+        long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
+                volumeInfo.getName(), sfAccountId, volumeInfo.getSize(), true,
+                iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
 
-    	return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
+        return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
     }
 
     private static class Iops
@@ -261,14 +256,14 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     	private final long _maxIops;
     	private final long _burstIops;
 
-    	public Iops(long minIops, long maxIops) throws Exception
+    	public Iops(long minIops, long maxIops) throws IllegalArgumentException
     	{
     	    if (minIops <= 0 || maxIops <= 0) {
-    	        throw new Exception("The 'Min IOPS' and 'Max IOPS' values must be greater than 0.");
+    	        throw new IllegalArgumentException("The 'Min IOPS' and 'Max IOPS' values must be greater than 0.");
     	    }
 
             if (minIops > maxIops) {
-                throw new Exception("The 'Min IOPS' value cannot exceed the 'Max IOPS' value.");
+                throw new IllegalArgumentException("The 'Min IOPS' value cannot exceed the 'Max IOPS' value.");
             }
 
             _minIops = minIops;
@@ -299,7 +294,6 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private void deleteSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
-            throws StorageUnavailableException, Exception
     {
         Long storagePoolId = volumeInfo.getPoolId();
 
@@ -318,15 +312,10 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private String getSfAccountName(String csAccountUuid, long csAccountId) {
-        return "CloudStack_" + csAccountUuid + "_" + getRandomNumber() + "_" + csAccountId;
+        return "CloudStack_" + csAccountUuid + "_" + csAccountId;
     }
 
-    private static long getRandomNumber()
-    {
-        return Math.round(Math.random() * 1000000000);
-    }
-
-    private boolean sfAccountExists(String sfAccountName, SolidFireConnection sfConnection) throws Exception {
+    private boolean sfAccountExists(String sfAccountName, SolidFireConnection sfConnection) {
         String mVip = sfConnection.getManagementVip();
         int mPort = sfConnection.getManagementPort();
         String clusterAdminUsername = sfConnection.getClusterAdminUsername();
@@ -349,55 +338,43 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String errMsg = null;
 
         if (dataObject.getType() == DataObjectType.VOLUME) {
-            try {
-                VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-                AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
-                String sfAccountName = getSfAccountName(account.getUuid(), account.getAccountId());
+            VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+            AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
+            String sfAccountName = getSfAccountName(account.getUuid(), account.getAccountId());
 
-                long storagePoolId = dataStore.getId();
-                SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
+            long storagePoolId = dataStore.getId();
+            SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
 
-                if (!sfAccountExists(sfAccountName, sfConnection)) {
-                    SolidFireUtil.SolidFireAccount sfAccount = createSolidFireAccount(sfAccountName,
-                            sfConnection);
+            if (!sfAccountExists(sfAccountName, sfConnection)) {
+                SolidFireUtil.SolidFireAccount sfAccount = createSolidFireAccount(sfAccountName,
+                        sfConnection);
 
-                    updateCsDbWithAccountInfo(account.getId(), sfAccount);
-                }
-
-                SolidFireUtil.SolidFireVolume sfVolume = createSolidFireVolume(volumeInfo, sfConnection);
-
-                iqn = sfVolume.getIqn();
-
-                VolumeVO volume = this._volumeDao.findById(volumeInfo.getId());
-
-                volume.set_iScsiName(iqn);
-                volume.setFolder(String.valueOf(sfVolume.getId()));
-                volume.setPoolType(StoragePoolType.IscsiLUN);
-                volume.setPoolId(storagePoolId);
-
-                _volumeDao.update(volume.getId(), volume);
-
-                StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
-
-                long capacityBytes = storagePool.getCapacityBytes();
-                long usedBytes = storagePool.getUsedBytes();
-
-                usedBytes += volumeInfo.getSize();
-
-                if (usedBytes > capacityBytes) {
-                    usedBytes = capacityBytes;
-                }
-
-                storagePool.setUsedBytes(usedBytes);
-
-                _storagePoolDao.update(storagePoolId, storagePool);
-            } catch (StorageUnavailableException e) {
-                s_logger.error("Failed to create volume (StorageUnavailableException)", e);
-                errMsg = e.toString();
-            } catch (Exception e) {
-                s_logger.error("Failed to create volume (Exception)", e);
-                errMsg = e.toString();
+                updateCsDbWithAccountInfo(account.getId(), sfAccount);
             }
+
+            SolidFireUtil.SolidFireVolume sfVolume = createSolidFireVolume(volumeInfo, sfConnection);
+
+            iqn = sfVolume.getIqn();
+
+            VolumeVO volume = this._volumeDao.findById(volumeInfo.getId());
+
+            volume.set_iScsiName(iqn);
+            volume.setFolder(String.valueOf(sfVolume.getId()));
+            volume.setPoolType(StoragePoolType.IscsiLUN);
+            volume.setPoolId(storagePoolId);
+
+            _volumeDao.update(volume.getId(), volume);
+
+            StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
+
+            long capacityBytes = storagePool.getCapacityBytes();
+            long usedBytes = storagePool.getUsedBytes();
+
+            usedBytes += volumeInfo.getSize();
+
+            storagePool.setUsedBytes(usedBytes > capacityBytes ? capacityBytes : usedBytes);
+
+            _storagePoolDao.update(storagePoolId, storagePool);
         }
         else {
             errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
@@ -412,7 +389,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(result);
     }
 
-    private void deleteSolidFireAccount(long sfAccountId, SolidFireConnection sfConnection) throws Exception {
+    private void deleteSolidFireAccount(long sfAccountId, SolidFireConnection sfConnection) {
         String mVip = sfConnection.getManagementVip();
         int mPort = sfConnection.getManagementPort();
         String clusterAdminUsername = sfConnection.getClusterAdminUsername();
@@ -433,7 +410,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         SolidFireUtil.deleteSolidFireAccount(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfAccountId);
     }
 
-    private boolean sfAccountHasVolume(long sfAccountId, SolidFireConnection sfConnection) throws Exception {
+    private boolean sfAccountHasVolume(long sfAccountId, SolidFireConnection sfConnection) {
         String mVip = sfConnection.getManagementVip();
         int mPort = sfConnection.getManagementPort();
         String clusterAdminUsername = sfConnection.getClusterAdminUsername();
@@ -459,48 +436,36 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String errMsg = null;
 
         if (dataObject.getType() == DataObjectType.VOLUME) {
-            try {
-                VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-                AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
-                AccountDetailVO accountDetails = _accountDetailsDao.findDetail(account.getAccountId(), SolidFireUtil.ACCOUNT_ID);
-                long sfAccountId = Long.parseLong(accountDetails.getValue());
+            VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+            AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
+            AccountDetailVO accountDetails = _accountDetailsDao.findDetail(account.getAccountId(), SolidFireUtil.ACCOUNT_ID);
+            long sfAccountId = Long.parseLong(accountDetails.getValue());
 
-                long storagePoolId = dataStore.getId();
-                SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
+            long storagePoolId = dataStore.getId();
+            SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
 
-                deleteSolidFireVolume(volumeInfo, sfConnection);
+            deleteSolidFireVolume(volumeInfo, sfConnection);
 
-                _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
+            _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
 
-                if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
-                    // delete the account from the SolidFire SAN
-                    deleteSolidFireAccount(sfAccountId, sfConnection);
+            if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
+                // delete the account from the SolidFire SAN
+                deleteSolidFireAccount(sfAccountId, sfConnection);
 
-                    // delete the info in the account_details table
-                    // that's related to the SolidFire account
-                    _accountDetailsDao.deleteDetails(account.getAccountId());
-                }
-
-                StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
-
-                long usedBytes = storagePool.getUsedBytes();
-
-                usedBytes -= volumeInfo.getSize();
-
-                if (usedBytes < 0) {
-                    usedBytes = 0;
-                }
-
-                storagePool.setUsedBytes(usedBytes);
-
-                _storagePoolDao.update(storagePoolId, storagePool);
-            } catch (StorageUnavailableException e) {
-                s_logger.error("Failed to create volume (StorageUnavailableException)", e);
-                errMsg = e.toString();
-            } catch (Exception e) {
-                s_logger.error("Failed to create volume (Exception)", e);
-                errMsg = e.toString();
+                // delete the info in the account_details table
+                // that's related to the SolidFire account
+                _accountDetailsDao.deleteDetails(account.getAccountId());
             }
+
+            StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+
+            long usedBytes = storagePool.getUsedBytes();
+
+            usedBytes -= volumeInfo.getSize();
+
+            storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
+
+            _storagePoolDao.update(storagePoolId, storagePool);
         }
         else {
             errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to deleteAsync";
@@ -515,6 +480,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -524,13 +490,16 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -3972,7 +3972,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     throw new Exception("Unable to create a dummy VM for volume creation");
                 }
 
-                vmMo.createDisk(volumeDatastorePath, (int)(dsMo.getSummary().getFreeSpace() / (1024L * 1024L)),
+                vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dsMo.getSummary().getFreeSpace()),
                 		morDs, vmMo.getScsiDeviceControllerKey());
                 vmMo.detachDisk(volumeDatastorePath, false);
         	}
@@ -5054,7 +5054,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         synchronized (this) {
                             s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
                             VmwareHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
-                            vmMo.createDisk(volumeDatastorePath, (int) (dskch.getSize() / (1024L * 1024L)), morDatastore, -1);
+                            vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, -1);
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
 
@@ -5113,7 +5113,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
                         VmwareHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
 
-                        vmMo.createDisk(volumeDatastorePath, (int) (dskch.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                        vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, vmMo.getScsiDeviceControllerKey());
                         vmMo.detachDisk(volumeDatastorePath, false);
                     }
 
@@ -5135,6 +5135,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error(msg, e);
             return new CreateAnswer(cmd, new Exception(e));
         }
+    }
+
+    private static int getMBsFromBytes(long bytes) {
+        return (int)(bytes / (1024L * 1024L));
     }
 
     protected VirtualMachineMO prepareVolumeHostDummyVm(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {

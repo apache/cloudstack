@@ -19,57 +19,57 @@ package com.cloud.agent.api;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class AttachVolumeCommand extends Command {
-	private boolean attach;
-	private boolean _managed;
-	private String vmName;
-	private StoragePoolType pooltype;
-	private String volumePath;
-	private String volumeName;
-	private Long deviceId;
-	private String chainInfo;
-	private String poolUuid;
-	private String _storageHost;
-	private int _storagePort;
-	private String _iScsiName;
-	private String _chapInitiatorUsername;
-	private String _chapInitiatorPassword;
-	private String _chapTargetUsername;
-	private String _chapTargetPassword;
-	private Long bytesReadRate;
-	private Long bytesWriteRate;
-	private Long iopsReadRate;
-	private Long iopsWriteRate;
+    private boolean attach;
+    private boolean _managed;
+    private String vmName;
+    private StoragePoolType pooltype;
+    private String volumePath;
+    private String volumeName;
+    private Long deviceId;
+    private String chainInfo;
+    private String poolUuid;
+    private String _storageHost;
+    private int _storagePort;
+    private String _iScsiName;
+    private String _chapInitiatorUsername;
+    private String _chapInitiatorPassword;
+    private String _chapTargetUsername;
+    private String _chapTargetPassword;
+    private Long bytesReadRate;
+    private Long bytesWriteRate;
+    private Long iopsReadRate;
+    private Long iopsWriteRate;
 
-	protected AttachVolumeCommand() {
-	}
+    protected AttachVolumeCommand() {
+    }
 
     public AttachVolumeCommand(boolean attach, boolean managed, String vmName,
             StoragePoolType pooltype, String volumePath, String volumeName,
             Long deviceId, String chainInfo) {
-		this.attach = attach;
-		this._managed = managed;
-		this.vmName = vmName;
-		this.pooltype = pooltype;
-		this.volumePath = volumePath;
-		this.volumeName = volumeName;
-		this.deviceId = deviceId;
-		this.chainInfo = chainInfo;
-	}
+        this.attach = attach;
+        this._managed = managed;
+        this.vmName = vmName;
+        this.pooltype = pooltype;
+        this.volumePath = volumePath;
+        this.volumeName = volumeName;
+        this.deviceId = deviceId;
+        this.chainInfo = chainInfo;
+    }
 
-	@Override
+    @Override
     public boolean executeInSequence() {
         return true;
     }
 
-	public boolean getAttach() {
-	    return attach;
-	}
+    public boolean getAttach() {
+        return attach;
+    }
 
-	public String getVmName() {
-		return vmName;
-	}
+    public String getVmName() {
+        return vmName;
+    }
 
-	public StoragePoolType getPooltype() {
+    public StoragePoolType getPooltype() {
         return pooltype;
     }
 
@@ -77,13 +77,13 @@ public class AttachVolumeCommand extends Command {
         this.pooltype = pooltype;
     }
 
-	public String getVolumePath() {
-		return volumePath;
-	}
+    public String getVolumePath() {
+        return volumePath;
+    }
 
-	public String getVolumeName() {
+    public String getVolumeName() {
 	    return volumeName;
-	}
+    }
 
     public Long getDeviceId() {
         return deviceId;
@@ -109,61 +109,61 @@ public class AttachVolumeCommand extends Command {
         _storageHost = storageHost;
     }
 
-	public String getStorageHost() {
-	    return _storageHost;
-	}
+    public String getStorageHost() {
+        return _storageHost;
+    }
 
-	public void setStoragePort(int storagePort) {
-	    _storagePort = storagePort;
-	}
+    public void setStoragePort(int storagePort) {
+        _storagePort = storagePort;
+    }
 
-	public int getStoragePort() {
-	    return _storagePort;
-	}
+    public int getStoragePort() {
+        return _storagePort;
+    }
 
-	public boolean isManaged() {
+    public boolean isManaged() {
         return _managed;
     }
 
-	public void set_iScsiName(String iScsiName) {
-	    this._iScsiName = iScsiName;
-	}
+    public void set_iScsiName(String iScsiName) {
+        this._iScsiName = iScsiName;
+    }
 
-	public String get_iScsiName() {
-	    return _iScsiName;
-	}
+    public String get_iScsiName() {
+        return _iScsiName;
+    }
 
-	public void setChapInitiatorUsername(String chapInitiatorUsername) {
-	    _chapInitiatorUsername = chapInitiatorUsername;
-	}
+    public void setChapInitiatorUsername(String chapInitiatorUsername) {
+        _chapInitiatorUsername = chapInitiatorUsername;
+    }
 
-	public String getChapInitiatorUsername() {
-	    return _chapInitiatorUsername;
-	}
+    public String getChapInitiatorUsername() {
+        return _chapInitiatorUsername;
+    }
 
-	public void setChapInitiatorPassword(String chapInitiatorPassword) {
-	    _chapInitiatorPassword = chapInitiatorPassword;
-	}
+    public void setChapInitiatorPassword(String chapInitiatorPassword) {
+        _chapInitiatorPassword = chapInitiatorPassword;
+    }
 
-	public String getChapInitiatorPassword() {
-	    return _chapInitiatorPassword;
-	}
+    public String getChapInitiatorPassword() {
+        return _chapInitiatorPassword;
+    }
 
-	public void setChapTargetUsername(String chapTargetUsername) {
-	    _chapTargetUsername = chapTargetUsername;
-	}
+    public void setChapTargetUsername(String chapTargetUsername) {
+        _chapTargetUsername = chapTargetUsername;
+    }
 
-	public String getChapTargetUsername() {
-	    return _chapTargetUsername;
-	}
+    public String getChapTargetUsername() {
+        return _chapTargetUsername;
+    }
 
-	public void setChapTargetPassword(String chapTargetPassword) {
-	    _chapTargetPassword = chapTargetPassword;
-	}
+    public void setChapTargetPassword(String chapTargetPassword) {
+        _chapTargetPassword = chapTargetPassword;
+    }
 
-	public String getChapTargetPassword() {
-	    return _chapTargetPassword;
-	}
+    public String getChapTargetPassword() {
+        return _chapTargetPassword;
+    }
 
     public void setBytesReadRate(Long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;

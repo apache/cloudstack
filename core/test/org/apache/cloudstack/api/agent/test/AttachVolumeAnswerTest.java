@@ -33,7 +33,7 @@ public class AttachVolumeAnswerTest {
     String results = "";
     AttachVolumeAnswer ava2 = new AttachVolumeAnswer(avc, results);
     Long deviceId = 10L;
-    AttachVolumeAnswer ava3 = new AttachVolumeAnswer(avc, deviceId, "");
+    AttachVolumeAnswer ava3 = new AttachVolumeAnswer(avc, deviceId);
 
     @Test
     public void testGetDeviceId() {
