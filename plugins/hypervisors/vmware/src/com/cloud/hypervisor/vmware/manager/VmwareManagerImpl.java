@@ -36,9 +36,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.HostConnectSpec;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -69,6 +76,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
+import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
@@ -110,10 +118,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
-import com.google.gson.Gson;
-import com.vmware.vim25.AboutInfo;
-import com.vmware.vim25.HostConnectSpec;
-import com.vmware.vim25.ManagedObjectReference;
 
 
 @Local(value = {VmwareManager.class, VmwareDatacenterService.class})
@@ -470,8 +474,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getManagementPortGroupByHost(HostMO hostMo) throws Exception {
         if(hostMo.getHostType() == VmwareHostType.ESXi)
-            return  this._managemetPortGroupName;
-        return this._serviceConsoleName;
+            return  _managemetPortGroupName;
+        return _serviceConsoleName;
     }
 
     @Override
@@ -553,7 +557,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public String getSystemVMDefaultNicAdapterType() {
-        return this._defaultSystemVmNicAdapterType;
+        return _defaultSystemVmNicAdapterType;
     }
 
     private File getSystemVMPatchIsoFile() {
@@ -856,7 +860,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public int getRouterExtraPublicNics() {
-        return this._routerExtraPublicNics;
+        return _routerExtraPublicNics;
     }
 
     @Override
@@ -897,6 +901,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(AddVmwareDcCmd.class);
         cmdList.add(RemoveVmwareDcCmd.class);
+        cmdList.add(ListVmwareDcsCmd.class);
         return cmdList;
     }
 
@@ -1126,7 +1131,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return true;
     }
 
-    private void validateZone(Long zoneId) throws ResourceInUseException {
+    private void validateZone(Long zoneId) throws InvalidParameterValueException {
         // Check if zone with specified id exists
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
@@ -1158,5 +1163,31 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             isLegacyZone = true;
         }
         return isLegacyZone;
+    }
+
+    @Override
+    public List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws CloudRuntimeException, InvalidParameterValueException {
+        Long zoneId = cmd.getZoneId();
+        List<VmwareDatacenterVO> vmwareDcList = new ArrayList<VmwareDatacenterVO>();
+        VmwareDatacenterZoneMapVO vmwareDcZoneMap;
+        VmwareDatacenterVO vmwareDatacenter;
+        long vmwareDcId;
+
+        // Validate if zone id parameter passed to API is valid
+        validateZone(zoneId);
+
+        // Check if zone is associated with VMware DC
+        vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        if (vmwareDcZoneMap == null) {
+            return null;
+        }
+        // Retrieve details of VMware DC associated with zone.
+        vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+        vmwareDatacenter = _vmwareDcDao.findById(vmwareDcId);
+        vmwareDcList.add(vmwareDatacenter);
+
+        // Currently a zone can have only 1 VMware DC associated with.
+        // Returning list of VmwareDatacenterVO objects, in-line with future requirements, if any, like participation of multiple VMware DCs in a zone.
+        return vmwareDcList;
     }
 }

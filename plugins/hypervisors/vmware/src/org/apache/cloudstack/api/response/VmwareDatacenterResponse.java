@@ -17,32 +17,57 @@
 
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VmwareDatacenter.class)
 public class VmwareDatacenterResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="The VMware Datacenter ID")
     private String id;
 
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the Zone ID associated with this VMware Datacenter")
+    private Long zoneId;
+
     @SerializedName(ApiConstants.NAME) @Param(description="The VMware Datacenter name")
     private String name;
 
+    @SerializedName(ApiConstants.VCENTER)
+    @Param(description = "The VMware vCenter name/ip")
+    private String vCenter;
+
     public String getName() {
         return name;
+    }
+
+    public String getVcenter() {
+        return vCenter;
     }
 
     public String getId() {
         return id;
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setVcenter(String vCenter) {
+        this.vCenter = vCenter;
     }
 
     public void setId(String id) {
