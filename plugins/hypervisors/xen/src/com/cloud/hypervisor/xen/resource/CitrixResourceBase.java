@@ -4112,6 +4112,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                     try {
                         if (vm.getPowerState(conn) == VmPowerState.HALTED) {
+                            Map<String, String> platform = vm.getPlatform(conn);
+                            Integer timeoffset = null;
+                            try {
+                                if (platform.containsKey("timeoffset")) {
+                                    timeoffset = Integer.valueOf(platform.get("timeoffset"));
+                                }
+                            } catch (NumberFormatException e) {
+                                s_logger.error("Error while reading the platform:timeoffset field of the instance", e);
+                            }
+
                             Set<VIF> vifs = vm.getVIFs(conn);
                             List<Network> networks = new ArrayList<Network>();
                             for (VIF vif : vifs) {
@@ -4132,7 +4142,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                     // network might be destroyed by other host
                                 }
                             }
-                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, true);
+                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, timeoffset, true);
                         }
                     } catch (XenAPIException e) {
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.toString();

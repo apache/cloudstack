@@ -193,6 +193,13 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             vmr.VCPUsMax = 32L;
         }
 
+        String timeoffset = details.get("timeoffset");
+        if (timeoffset != null) {
+            Map<String, String> platform = vmr.platform;
+            platform.put("timeoffset", timeoffset);
+            vmr.platform = platform;
+        }
+
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
 

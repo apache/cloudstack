@@ -1184,6 +1184,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             stopped = answer.getResult();
             if (!stopped) {
                 throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
+            } else {
+                Integer timeoffset = answer.getTimeOffset();
+                if (timeoffset != null) {
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        UserVmVO userVm = _userVmDao.findById(vm.getId());
+                        _userVmDao.loadDetails(userVm);
+                        userVm.setDetail("timeoffset", timeoffset.toString());
+                        _userVmDao.saveDetails(userVm);
+                    }
+                }
             }
             vmGuru.finalizeStop(profile, answer);
 
