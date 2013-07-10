@@ -47,7 +47,7 @@ public class SpringUtils {
      *     useDefaultFilters=true.  See the following example.
      *
      * <pre>
-     *     @ComponentScan(basePackageClasses={AffinityGroupServiceImpl.class, EventUtils.class},
+     *     @ComponentScan(basePackageClasses={AffinityGroupServiceImpl.class, ActionEventUtils.class},
      *     includeFilters={@Filter(value=TestConfiguration.Library.class, type=FilterType.CUSTOM)},
      *     useDefaultFilters=false)
      * </pre>

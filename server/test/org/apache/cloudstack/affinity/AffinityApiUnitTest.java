@@ -53,7 +53,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.event.EventUtils;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -70,6 +70,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.user.dao.UserDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -98,7 +99,7 @@ public class AffinityApiUnitTest {
     AffinityGroupDao _affinityGroupDao;
 
     @Inject
-    EventUtils _eventUtils;
+    ActionEventUtils _eventUtils;
 
     @Inject
     AccountDao _accountDao;
@@ -195,7 +196,7 @@ public class AffinityApiUnitTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {AffinityGroupServiceImpl.class, EventUtils.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {AffinityGroupServiceImpl.class, ActionEventUtils.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
@@ -241,6 +242,11 @@ public class AffinityApiUnitTest {
         @Bean
         public UserVmDao userVMDao() {
             return Mockito.mock(UserVmDao.class);
+        }
+
+        @Bean
+        public UserDao userDao() {
+            return Mockito.mock(UserDao.class);
         }
 
         public static class Library implements TypeFilter {
