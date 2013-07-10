@@ -3016,9 +3016,23 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     public class NetworkGarbageCollector implements Runnable {
-
         @Override
         public void run() {
+            GlobalLock gcLock = GlobalLock.getInternLock("Network.GC.Lock");
+            try {
+                if(gcLock.lock(3)) {
+                    try {
+                        reallyRun();
+                    } finally {
+                        gcLock.unlock();
+                    }
+                }
+            } finally {
+                gcLock.releaseRef();
+            }
+        }
+        
+        public void reallyRun() {
             try {
                 List<Long> shutdownList = new ArrayList<Long>();
                 long currentTime = System.currentTimeMillis() / 1000 ;
