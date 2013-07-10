@@ -59,11 +59,18 @@ public interface HypervisorGuru extends Adapter {
      * @return
      */
     NicTO toNicTO(NicProfile profile);
-    
+
     /**
      * Give hypervisor guru opportunity to decide if certain command needs to be done after expunge VM from DB
      * @param vm
      * @return a list of Commands
      */
     List<Command> finalizeExpunge(VirtualMachine vm);
+
+    /**
+     * Give the hypervisor guru the opportinity to decide if additional clean is
+     * required for nics before expunging the VM
+     * 
+     */
+    List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics);
 }

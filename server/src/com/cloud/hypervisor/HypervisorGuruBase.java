@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -22,17 +22,13 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.configuration.Config;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -41,12 +37,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
-	
-	@Inject VMTemplateDetailsDao _templateDetailsDao;
+
+    @Inject VMTemplateDetailsDao _templateDetailsDao;
     @Inject NicDao _nicDao;
     @Inject VMInstanceDao _virtualMachineDao;
     @Inject NicSecondaryIpDao _nicSecIpDao;
@@ -74,7 +69,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNetworkRateMbps(profile.getNetworkRate());
         to.setName(profile.getName());
         to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
-        
+
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         NicVO nicVO = _nicDao.findById(profile.getId());
         to.setUuid(nicVO.getUuid());
@@ -92,7 +87,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     protected <T extends VirtualMachine> VirtualMachineTO  toVirtualMachineTO(VirtualMachineProfile<T> vmProfile) {
 
-        ServiceOffering offering = vmProfile.getServiceOffering();  
+        ServiceOffering offering = vmProfile.getServiceOffering();
         VirtualMachine vm = vmProfile.getVirtualMachine();
         Long minMemory = (long) (offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
         int minspeed = (int) (offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
@@ -116,13 +111,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         } else {
             to.setArch("x86_64");
         }
-        
+
         long templateId = vm.getTemplateId();
         Map<String, String> details = _templateDetailsDao.findDetails(templateId);
         assert(details != null);
         Map<String, String> detailsInVm = vm.getDetails();
         if(detailsInVm != null) {
-        	details.putAll(detailsInVm);
+            details.putAll(detailsInVm);
         }
         if (details.get(VirtualMachine.IsDynamicScalingEnabled) == null || details.get(VirtualMachine.IsDynamicScalingEnabled).isEmpty()) {
             to. setEnableDynamicallyScaleVm(false);
@@ -134,7 +129,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
         to.setUuid(vmInstance.getUuid());
-        
+
         //
         return to;
     }
@@ -143,9 +138,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     public long getCommandHostDelegation(long hostId, Command cmd) {
         return hostId;
     }
-    
+
     @Override
     public List<Command> finalizeExpunge(VirtualMachine vm) {
+        return null;
+    }
+
+    @Override
+    public List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics) {
         return null;
     }
 }
