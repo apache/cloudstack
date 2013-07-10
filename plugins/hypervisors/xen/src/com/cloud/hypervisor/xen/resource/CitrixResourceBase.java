@@ -6627,7 +6627,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VDI handleSrAndVdiAttach(String iqn, String storageHostName,
-            String chapInitiatorName, String chapInitiatorPassword) throws Exception {
+            String chapInitiatorName, String chapInitiatorPassword) throws Types.XenAPIException, XmlRpcException, CloudRuntimeException {
         VDI vdi = null;
 
         Connection conn = getConnection();
@@ -6648,7 +6648,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vdir.virtualSize = sr.getPhysicalSize(conn) - sr.getPhysicalUtilisation(conn) - getMetadata(sr.getPhysicalSize(conn));
 
             if (vdir.virtualSize < 0) {
-            	throw new Exception("VDI virtual size cannot be less than 0.");
+            	throw new CloudRuntimeException("VDI virtual size cannot be less than 0.");
             }
 
             vdi = VDI.create(conn, vdir);

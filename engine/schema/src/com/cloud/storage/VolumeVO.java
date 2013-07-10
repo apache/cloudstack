@@ -71,10 +71,10 @@ public class VolumeVO implements Volume {
     Long size;
 
     @Column(name = "min_iops")
-    Long minIops;
+    private Long minIops;
 
     @Column(name = "max_iops")
-    Long maxIops;
+    private Long maxIops;
 
     @Column(name = "folder")
     String folder;
@@ -155,8 +155,9 @@ public class VolumeVO implements Volume {
     String reservationId;
 
     // Real Constructor
-    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size,
-    		Long minIops, Long maxIops, String iScsiName) {
+    public VolumeVO(Type type, String name, long dcId, long domainId,
+            long accountId, long diskOfferingId, long size,
+            Long minIops, Long maxIops, String iScsiName) {
         this.volumeType = type;
         this.name = name;
         this.dataCenterId = dcId;
@@ -171,8 +172,10 @@ public class VolumeVO implements Volume {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path,
-    		long size, Long minIops, Long maxIops, String iScsiName, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path,
+            long size, Long minIops, Long maxIops, String iScsiName,
+            Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -183,6 +186,27 @@ public class VolumeVO implements Volume {
         this.minIops = minIops;
         this.maxIops = maxIops;
         this._iScsiName = iScsiName;
+        this.podId = podId;
+        this.dataCenterId = dcId;
+        this.volumeType = vType;
+        this.state = Volume.State.Allocated;
+        this.recreatable = false;
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public VolumeVO(String name, long dcId, long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path,
+            long size, Volume.Type vType) {
+        this.name = name;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.instanceId = instanceId;
+        this.folder = folder;
+        this.path = path;
+        this.size = size;
+        this.minIops = null;
+        this.maxIops = null;
+        this._iScsiName = null;
         this.podId = podId;
         this.dataCenterId = dcId;
         this.volumeType = vType;

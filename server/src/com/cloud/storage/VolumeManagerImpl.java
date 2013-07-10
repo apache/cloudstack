@@ -743,7 +743,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         txn.start();
 
         VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1,
-                new Long(-1), null, null, 0, null, null, null, Volume.Type.DATADISK);
+                new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
@@ -1015,7 +1015,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         txn.start();
 
         VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1,
-                new Long(-1), null, null, 0, null, null, null, Volume.Type.DATADISK);
+                new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);

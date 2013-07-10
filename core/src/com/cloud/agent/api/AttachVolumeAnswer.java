@@ -27,6 +27,12 @@ public class AttachVolumeAnswer extends Answer {
         this.deviceId = null;
     }
 
+    public AttachVolumeAnswer(AttachVolumeCommand cmd, Long deviceId) {
+        super(cmd);
+        this.deviceId = deviceId;
+        this.vdiUuid = "";
+    }
+
     public AttachVolumeAnswer(AttachVolumeCommand cmd, Long deviceId, String vdiUuid) {
         super(cmd);
         this.deviceId = deviceId;
