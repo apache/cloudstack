@@ -95,3 +95,26 @@ unlock_exit() {
     exit $1
 }
 
+# calcuate the ip & network mask
+rangecalc(){
+    local IFS='.'
+    local -a oct mask ip
+
+    read -ra oct <<<"$1"
+    read -ra mask <<<"$2"
+    for i in {0..3}
+    do
+        ip+=( "$(( oct[i] & mask[i] ))" )
+    done
+    echo "${ip[*]}"
+}
+
+#get cidr of the nic
+getcidr(){
+    local dev=$1
+    local mask=`ifconfig $dev|grep "Mask"|cut -d ":" -f 4`
+    local cidrsize=`ip addr show $dev|grep inet|head -n 1|awk '{print $2}'|cut -d '/' -f 2`
+    local ipaddr=`ip addr show $dev|grep inet|head -n 1|awk '{print $2}'|cut -d '/' -f 1`
+    local base=$(rangecalc $ipaddr $mask)
+    echo $base/$cidrsize
+}
