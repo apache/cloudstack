@@ -593,7 +593,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (vpcId != null) {
             Vpc vpc = _vpcDao.findById(vpcId);
-            if (vpc != null) {
+            if (vpc == null) {
                 throw new InvalidParameterValueException("Invalid vpc id is given");
             }
         }
