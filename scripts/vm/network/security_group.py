@@ -499,18 +499,18 @@ def cleanup_rules():
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
                 
-                cmd = "virsh list |grep " + vm_name 
+                cmd = "virsh list |grep " + vm_name + "|awk '{print $3}'"
                 try:
-                    result = execute(cmd)
+                    result = execute(cmd).strip()
                 except:
                     result = None
 
                 if result == None or len(result) == 0:
-                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up")
+                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up iptable rules")
                     cleanup.append(vm_name)
                     continue
-                if result.find("running") == -1:
-                    logging.debug("vm " + vm_name + " is not running, cleaning up")
+                if not (result == "running" or result == "paused"):
+                    logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
                     cleanup.append(vm_name)
         
         chainscmd = "ebtables-save |grep :i |awk '{print $1}' |sed -e 's/\-in//g' |sed -e 's/\-out//g' |sed -e 's/^://g'"
@@ -519,18 +519,18 @@ def cleanup_rules():
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
     
-                cmd = "virsh list |grep " + vm_name
+                cmd = "virsh list |grep " + vm_name + "|awk '{print $3}'"
                 try:
-                    result = execute(cmd)
+                    result = execute(cmd).strip()
                 except:
                     result = None
 
                 if result == None or len(result) == 0:
-                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up")
+                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up ebtable rules")
                     cleanup.append(vm_name)
                     continue
-                if result.find("running") == -1:
-                    logging.debug("vm " + vm_name + " is not running, cleaning up")
+                if not (result == "running" or result == "paused"):
+                    logging.debug("vm " + vm_name + " is not running or paused, cleaning up ebtable rules")
                     cleanup.append(vm_name)
 
         for vmname in cleanup:
