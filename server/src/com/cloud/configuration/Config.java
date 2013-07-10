@@ -356,6 +356,7 @@ public enum Config {
 
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
 	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
+    DirectAgentScanInterval("Advanced", ManagementServer.class, Integer.class, "direct.agent.scan.interval", "90", "Time interval (in seconds) to run the direct agent scan task", null),
 
 	//disabling lb as cluster sync does not work with distributed cluster
 	AgentLbEnable("Advanced", ManagementServer.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
