@@ -60,7 +60,7 @@ public class UcsCommands {
     }
 
     public static String associateProfileToBlade(String cookie, String profileDn, String bladeDn) {
-        XmlObject cmd = new XmlObject("configConfMos").putElement("inHierarchical", "true").putElement(
+        XmlObject cmd = new XmlObject("configConfMos").putElement("cookie", cookie).putElement("inHierarchical", "true").putElement(
                 "inConfigs", new XmlObject("inConfigs").putElement(
                         "pair", new XmlObject("pair").putElement("key", profileDn).putElement(
                                 "lsServer", new XmlObject("lsServer")
