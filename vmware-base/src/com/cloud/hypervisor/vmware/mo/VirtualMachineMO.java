@@ -71,6 +71,7 @@ import com.vmware.vim25.VirtualDiskSparseVer2BackingInfo;
 import com.vmware.vim25.VirtualDiskType;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
+import com.vmware.vim25.VirtualHardwareOption;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineCloneSpec;
@@ -103,6 +104,7 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
+    private ManagedObjectReference _vmEnvironmentBrowser = null;
 
 	public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
 		super(context, morVm);
@@ -2189,5 +2191,75 @@ public class VirtualMachineMO extends BaseMO {
 
     public long getHotAddMemoryLimitInMb() throws Exception {
         return (Long)_context.getVimClient().getDynamicProperty(_mor, "config.hotPlugMemoryLimit");
+    }
+
+    public int getCoresPerSocket() throws Exception {
+        return (Integer)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.numCoresPerSocket");
+    }
+
+    public int getVirtualHardwareVersion() throws Exception {
+        VirtualHardwareOption vhOption = getVirtualHardwareOption();
+        return vhOption.getHwVersion();
+    }
+
+    public VirtualHardwareOption getVirtualHardwareOption() throws Exception {
+        VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
+        return vmConfigOption.getHardwareOptions();
+    }
+
+    private ManagedObjectReference getEnvironmentBrowser() throws Exception {
+        if (_vmEnvironmentBrowser == null) {
+            _vmEnvironmentBrowser = _context.getVimClient().getMoRefProp(_mor, "environmentBrowser");
+        }
+        return _vmEnvironmentBrowser;
+    }
+
+    public boolean isCpuHotAddSupported(String guestOsId) throws Exception {
+        boolean guestOsSupportsCpuHotAdd = false;
+        boolean virtualHardwareSupportsCpuHotAdd = false;
+        GuestOsDescriptor guestOsDescriptor;
+        int virtualHardwareVersion;
+        int numCoresPerSocket;
+
+        guestOsDescriptor = getGuestOsDescriptor(guestOsId);
+        virtualHardwareVersion = getVirtualHardwareVersion();
+
+        // Check if guest operating system supports cpu hotadd
+        if (guestOsDescriptor.isSupportsCpuHotAdd()) {
+            guestOsSupportsCpuHotAdd = true;
+        }
+
+        // Check if virtual machine is using hardware version 8 or later.
+        // If hardware version is 7, then only 1 core per socket is supported. Hot adding multi-core vcpus is not allowed if hardware version is 7.
+        if (virtualHardwareVersion >= 8) {
+            virtualHardwareSupportsCpuHotAdd = true;
+        } else if (virtualHardwareVersion == 7) {
+            // Check if virtual machine has only 1 core per socket.
+            numCoresPerSocket = getCoresPerSocket();
+            if (numCoresPerSocket == 1) {
+                virtualHardwareSupportsCpuHotAdd = true;
+            }
+        }
+        return guestOsSupportsCpuHotAdd && virtualHardwareSupportsCpuHotAdd;
+    }
+
+    public boolean isMemoryHotAddSupported(String guestOsId) throws Exception {
+        boolean guestOsSupportsMemoryHotAdd = false;
+        boolean virtualHardwareSupportsMemoryHotAdd = false;
+        GuestOsDescriptor guestOsDescriptor;
+        int virtualHardwareVersion;
+
+        guestOsDescriptor = getGuestOsDescriptor(guestOsId);
+        virtualHardwareVersion = getVirtualHardwareVersion();
+
+        // Check if guest operating system supports memory hotadd
+        if (guestOsDescriptor.isSupportsMemoryHotAdd()) {
+            guestOsSupportsMemoryHotAdd = true;
+        }
+        // Check if virtual machine is using hardware version 7 or later.
+        if (virtualHardwareVersion >= 7) {
+            virtualHardwareSupportsMemoryHotAdd = true;
+        }
+        return guestOsSupportsMemoryHotAdd && virtualHardwareSupportsMemoryHotAdd;
     }
 }
