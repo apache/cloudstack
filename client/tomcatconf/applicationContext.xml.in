@@ -826,7 +826,6 @@
   <bean id="dataDisk" class="org.apache.cloudstack.engine.subsystem.api.storage.type.DataDisk" />
 
 
-  <bean id="eventUtils" class="com.cloud.event.EventUtils" />
   <bean id="podRestService" class="org.apache.cloudstack.engine.rest.service.api.PodRestService" />
   <bean id="iso" class="org.apache.cloudstack.engine.subsystem.api.storage.type.Iso" />
   <bean id="networkRestService" class="org.apache.cloudstack.engine.rest.service.api.NetworkRestService" />

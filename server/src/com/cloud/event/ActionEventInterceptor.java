@@ -44,7 +44,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
                 if(ctx.getEventDetails() != null){
                     eventDescription += ". "+ctx.getEventDetails();
                 }
-                EventUtils.saveStartedEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
+                ActionEventUtils.onStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
             }
         }
         return event;
@@ -64,10 +64,10 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
             }            
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
-                startEventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
+                startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
             }
         }
     }
@@ -85,10 +85,10 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
                 eventDescription += ". "+ctx.getEventDetails();
             }
             if(actionEvent.create()){
-                long eventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+eventDescription);
+                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+eventDescription, startEventId);
             }
         }
     }
