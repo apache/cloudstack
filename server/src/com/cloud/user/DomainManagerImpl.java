@@ -46,6 +46,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
@@ -63,6 +65,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
 
 @Component
 @Local(value = { DomainManager.class, DomainService.class })
@@ -91,6 +95,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ResourceLimitDao _resourceLimitDao;
     @Inject
     private DedicatedResourceDao _dedicatedDao;
+    @Inject
+    private NetworkManager _networkMgr;
+    @Inject
+    private NetworkDomainDao _networkDomainDao;
 
     @Override
     public Domain getDomain(long domainId) {
@@ -229,13 +237,16 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             long ownerId = domain.getAccountId();
             if ((cleanup != null) && cleanup.booleanValue()) {
                 if (!cleanupDomain(domain.getId(), ownerId)) {
+                    rollBackState=true;
                     CloudRuntimeException e = new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
                     e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
             } else {
+                //don't delete the domain if there are accounts set for cleanup, or non-removed networks exist
+                List<Long> networkIds = _networkDomainDao.listNetworkIdsByDomain(domain.getId());
                 List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domain.getId());
-                if (accountsForCleanup.isEmpty()) {
+                if (accountsForCleanup.isEmpty() && networkIds.isEmpty()) {
                     if (!_domainDao.remove(domain.getId())) {
                         rollBackState = true;
                         CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() + "); Please make sure all users and sub domains have been removed from the domain before deleting");
@@ -255,7 +266,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     }
                 } else {
                     rollBackState = true;
-                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+                    String msg = null;
+                    if (!accountsForCleanup.isEmpty()) {
+                        msg = accountsForCleanup.size() + " accounts to cleanup";
+                    } else if (!networkIds.isEmpty()) {
+                        msg = networkIds.size() + " non-removed networks";
+                    }
+                    
+                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + msg);
                     e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
@@ -330,18 +348,43 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         for (AccountVO account : accounts) {
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
-                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
-                if (!success) {
+                boolean deleteAccount = _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller());
+                if (!deleteAccount) {
                     s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
                 }
+                success = (success && deleteAccount);    
             } else {
                 ProjectVO project = _projectDao.findByProjectAccountId(account.getId());
                 s_logger.debug("Deleting project " + project + " as a part of domain id=" + domainId + " cleanup");
-                success = (success && _projectMgr.deleteProject(UserContext.current().getCaller(), UserContext.current().getCallerUserId(), project));
-                if (!success) {
+                boolean deleteProject = _projectMgr.deleteProject(UserContext.current().getCaller(), UserContext.current().getCallerUserId(), project);
+                if (!deleteProject) {
                     s_logger.warn("Failed to cleanup project " + project + " as a part of domain cleanup");
                 }
+                success = (success && deleteProject);
             }
+        }
+        
+        //delete the domain shared networks
+        boolean networksDeleted = true;
+        s_logger.debug("Deleting networks for domain id=" + domainId);
+        List<Long> networkIds = _networkDomainDao.listNetworkIdsByDomain(domainId);
+        UserContext ctx = UserContext.current();
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallerUserId()), ctx.getCaller());
+        for (Long networkId : networkIds) {
+            s_logger.debug("Deleting network id=" + networkId + " as a part of domain id=" + domainId + " cleanup");
+            
+            if (!_networkMgr.destroyNetwork(networkId, context)) {
+                s_logger.warn("Unable to destroy network id=" + networkId + " as a part of domain id=" + domainId + " cleanup.");
+                networksDeleted = false;
+            } else {
+                s_logger.debug("Network " + networkId + " successfully deleted as a part of domain id=" + domainId + " cleanup.");
+            }
+        }
+        
+        //don't proceed if networks failed to cleanup. The cleanup will be performed for inactive domain once again
+        if (!networksDeleted) {
+            s_logger.debug("Failed to delete the shared networks as a part of domain id=" + domainId + " clenaup");
+            return false;
         }
 
         // don't remove the domain if there are accounts required cleanup
@@ -366,6 +409,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             _resourceLimitDao.removeEntriesByOwner(domainId, ResourceOwnerType.Domain);
         } else {
             s_logger.debug("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+            return false;
         }
 
         return success && deleteDomainSuccess;
