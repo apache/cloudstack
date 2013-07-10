@@ -275,6 +275,11 @@
                     isBoolean: true
                   },
 
+                  isdynamicallyscalable: {
+                    label: "Dynamically Scalable",                   
+                    isBoolean: true
+                  },
+                  
                   isPublic: {
                     label: "label.public",
                     docID: 'helpRegisterTemplatePublic',
@@ -300,6 +305,7 @@
 									format: args.data.format,
 									isextractable: (args.data.isExtractable=="on"),
 									passwordEnabled: (args.data.isPasswordEnabled=="on"),
+									isdynamicallyscalable: (args.data.isdynamicallyscalable=="on"),
 									osTypeId: args.data.osTypeId,
 									hypervisor: args.data.hypervisor
 								};		
