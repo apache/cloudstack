@@ -726,6 +726,7 @@
 						  var data = {
 							  id: args.context.instances[0].id,
 							  group: args.data.group,
+							  isdynamicallyscalable: (args.data.isdynamicallyscalable=="on"),
 								ostypeid: args.data.guestosid
 							};
 						  
@@ -1366,9 +1367,16 @@
 										});	
                     return toClearInterval;										
 									}								
-								},                       
-                hypervisor: { label: 'label.hypervisor' },
+								},        
                 templatename: { label: 'label.template' },
+                
+                isdynamicallyscalable: {
+                  label: 'Dynamically Scalable',
+                  isBoolean: true,
+                  isEditable: true,
+                  converter:cloudStack.converters.toBooleanText
+                },    
+                
                 guestosid: {
                   label: 'label.os.type',
                   isEditable: true,
@@ -1388,7 +1396,9 @@
                     });
                   }
                 },              
-                                
+                 
+                hypervisor: { label: 'label.hypervisor' },
+                
                 /*
 								isoid: {
                   label: 'label.attached.iso',
