@@ -197,22 +197,15 @@ public abstract class AgentHookBase implements AgentHook {
     @Override
     public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
         StartConsoleProxyAgentHttpHandlerCommand cmd = null;
-        if (_configDao.isPremium()) {
-            String storePassword = String.valueOf(_random.nextLong());
-            byte[] ksBits =
-                    _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME,
-                            storePassword);
+        String storePassword = String.valueOf(_random.nextLong());
+        byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
 
-            assert (ksBits != null);
-            if (ksBits == null) {
-                s_logger.error("Could not find and construct a valid SSL certificate");
-            }
-            cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
-            cmd.setEncryptorPassword(getEncryptorPassword());
-        } else {
-            cmd = new StartConsoleProxyAgentHttpHandlerCommand();
-            cmd.setEncryptorPassword(getEncryptorPassword());
+        assert (ksBits != null);
+        if (ksBits == null) {
+            s_logger.error("Could not find and construct a valid SSL certificate");
         }
+        cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
+        cmd.setEncryptorPassword(getEncryptorPassword());
 
         try {
 
