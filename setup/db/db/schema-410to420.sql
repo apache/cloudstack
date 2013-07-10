@@ -2163,15 +2163,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'interval.baremetal.securitygroup.agent.echo', 10, 'Interval to echo baremetal security group agent, in seconds');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'timeout.baremetal.securitygroup.agent.echo', 3600, 'Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure');
 
-ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
-
-ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
-
 alter table `cloud`.`network_offerings` add column egress_default_policy boolean default false;
 
 -- Add stratospher ssp tables
