@@ -99,6 +99,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public final static long SCAN_INTERVAL = 90000; // 90 seconds, it takes 60 sec for xenserver to fail login
     public final static int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     public long _loadSize = 100;
+    protected int _directAgentScanInterval = 90; // 90 seconds
     protected Set<Long> _agentToTransferIds = new HashSet<Long>();
 
     @Inject
@@ -134,6 +135,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         String value = params.get(Config.DirectAgentLoadSize.key());
         _loadSize = NumbersUtil.parseInt(value, 16);
 
+        value = params.get(Config.DirectAgentScanInterval.key());
+        _directAgentScanInterval = NumbersUtil.parseInt(value, 90); // defaulted to 90 seconds
+
         ClusteredAgentAttache.initialize(this);
 
         _clusterMgr.registerListener(this);
@@ -146,7 +150,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (!super.start()) {
             return false;
         }
-        _timer.schedule(new DirectAgentScanTimerTask(), STARTUP_DELAY, SCAN_INTERVAL);
+        _timer.schedule(new DirectAgentScanTimerTask(), STARTUP_DELAY, _directAgentScanInterval * 1000);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Scheduled direct agent scan task to run at an interval of " + _directAgentScanInterval + " seconds");
+        }
 
         // schedule transfer scan executor - if agent LB is enabled
         if (_clusterMgr.isAgentRebalanceEnabled()) {
