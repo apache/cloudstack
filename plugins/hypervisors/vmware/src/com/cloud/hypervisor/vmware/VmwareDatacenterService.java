@@ -17,16 +17,22 @@
 
 package com.cloud.hypervisor.vmware;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface VmwareDatacenterService extends PluggableService {
 
     public VmwareDatacenterVO addVmwareDatacenter(AddVmwareDcCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException;
 
     public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws IllegalArgumentException, ResourceInUseException;
+
+    public List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws IllegalArgumentException, CloudRuntimeException;
 }
