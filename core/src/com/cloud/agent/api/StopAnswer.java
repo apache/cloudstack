@@ -18,19 +18,27 @@ package com.cloud.agent.api;
 
 public class StopAnswer extends RebootAnswer {
     Integer vncPort;
+    Integer timeOffset;
 
     protected StopAnswer() {
+    }
+
+    public StopAnswer(StopCommand cmd, String details, Integer vncPort, Integer timeOffset, boolean success) {
+        super(cmd,  details, success);
+        this.vncPort = vncPort;
+        this.timeOffset = timeOffset;
     }
 
     public StopAnswer(StopCommand cmd, String details, Integer vncPort, boolean success) {
         super(cmd,  details, success);
         this.vncPort = vncPort;
+        this.timeOffset = null;
     }
 
     public StopAnswer(StopCommand cmd, String details, boolean success) {
         super(cmd, details, success);
         vncPort = null;
-
+        timeOffset = null;
     }
 
     public StopAnswer(StopCommand cmd, Exception e) {
@@ -42,4 +50,7 @@ public class StopAnswer extends RebootAnswer {
         return vncPort;
     }
 
+    public Integer getTimeOffset() {
+        return timeOffset;
+    }
 }
