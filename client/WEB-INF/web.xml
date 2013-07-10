@@ -45,11 +45,13 @@
     <servlet>
         <servlet-name>apiServlet</servlet-name>
         <servlet-class>com.cloud.api.ApiServlet</servlet-class>
+        <load-on-startup>5</load-on-startup>
     </servlet>
     
     <servlet>
         <servlet-name>consoleServlet</servlet-name>
         <servlet-class>com.cloud.servlet.ConsoleProxyServlet</servlet-class>
+        <load-on-startup>6</load-on-startup>
     </servlet>
 	
 	<servlet>
