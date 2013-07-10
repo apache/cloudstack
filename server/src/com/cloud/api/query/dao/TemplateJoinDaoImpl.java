@@ -144,6 +144,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setFeatured(template.isFeatured());
         templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
         templateResponse.setPasswordEnabled(template.isEnablePassword());
+        templateResponse.setDynamicallyScalable(template.isDynamicallyScalable());
         templateResponse.setSshKeyEnabled(template.isEnableSshKey());
         templateResponse.setCrossZones(template.isCrossZones());
         templateResponse.setFormat(template.getFormat());

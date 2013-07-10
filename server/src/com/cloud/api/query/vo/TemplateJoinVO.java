@@ -95,6 +95,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="enable_password")
     private boolean enablePassword;
 
+    @Column(name="dynamically_scalable")
+    private boolean dynamicallyScalable;
+    
     @Column(name="guest_os_id")
     private long guestOSId;
 
@@ -748,7 +751,17 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.enablePassword = enablePassword;
     }
 
+    
+    
+    public boolean isDynamicallyScalable() {
+        return dynamicallyScalable;
+    }
 
+    public void setDynamicallyScalable(boolean dynamicallyScalable) {
+        this.dynamicallyScalable = dynamicallyScalable;
+    }
+       
+    
 
     public long getGuestOSId() {
         return guestOSId;
