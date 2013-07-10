@@ -185,7 +185,7 @@
                 $icmpFields.hide();
                 $otherFields.hide();
                 $protocolFields.show().addClass('required');
-                $portFields.show();
+                $inputs.filter('[name=startport],[name=endport]').show().attr('disabled', false);
               } else if ($(this).val() == 'icmp') {
                 $icmpFields.show();
                 $icmpFields.attr('disabled', false);
@@ -292,25 +292,27 @@
       action: function(args) {
         var $multi = args.$multi;
         //Support for Protocol Number between 0 to 255
-        if(args.data.protocol == 'protocolnumber'){
+        if (args.data.protocol === 'protocolnumber'){
           $.extend(args.data,{protocol:args.data.protocolnumber});
           delete args.data.protocolnumber;
-        }
-        else
+          delete args.data.startport;
+          delete args.data.endport;
+          delete args.data.icmptype;
+          delete args.data.icmpcode;
+        } else {
           delete args.data.protocolnumber;
+        }
 
-
-        
-        if((args.data.protocol == 'tcp' || args.data.protocol == 'udp') && (args.data.startport=="" || args.data.startport == undefined)){
+        if ((args.data.protocol == 'tcp' || args.data.protocol == 'udp') && (args.data.startport=="" || args.data.startport == undefined)){
           cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
           $(window).trigger('cloudStack.fullRefresh');
         }
-        else if((args.data.protocol == 'tcp' || args.data.protocol == 'udp')  && (args.data.endport=="" || args.data.endport == undefined)){
+        else if ((args.data.protocol == 'tcp' || args.data.protocol == 'udp')  && (args.data.endport=="" || args.data.endport == undefined)){
           cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
           $(window).trigger('cloudStack.fullRefresh');
         }
 
-        else{       
+        else {
           $.ajax({
             url: createURL('createNetworkACL'),
             data: $.extend(args.data, {
