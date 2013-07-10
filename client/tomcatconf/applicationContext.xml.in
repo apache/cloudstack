@@ -716,7 +716,6 @@
   <bean id="defaultImageMotionStrategy" class="org.apache.cloudstack.storage.image.motion.DefaultImageMotionStrategy" />
   <bean id="defaultPrimaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.DefaultPrimaryDataStoreProviderManagerImpl" />
   <bean id="defaultPrimaryDatastoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.DefaultPrimaryDatastoreProviderImpl" />
-  <bean id="eventUtils" class="com.cloud.event.EventUtils" />
   <bean id="hypervisorBasedSnapshot" class="org.apache.cloudstack.storage.snapshot.strategy.HypervisorBasedSnapshot" />
   <bean id="hypervsiorHostEndPointRpcServer" class="org.apache.cloudstack.storage.HypervsiorHostEndPointRpcServer" />
   <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
