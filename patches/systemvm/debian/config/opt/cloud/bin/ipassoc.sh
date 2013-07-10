@@ -106,8 +106,8 @@ remove_routing() {
   local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
 
   local tableName="Table_$ethDev"
-  local ethMask=$(ip route list scope link dev $ethDev | awk '{print $1}')
-  if [ "$ethMask" == "" ]
+  local remainip=`ip addr show $ethDev | grep "inet "`
+  if [ "$remainip" == "" ]
   then
 # rules and routes will be deleted for the last ip of the interface.
      sudo ip rule delete fwmark $tableNo table $tableName
@@ -125,7 +125,7 @@ copy_routes_from_main() {
 #get the network masks from the main table
   local eth0Mask=$(ip route list scope link dev eth0 | awk '{print $1}')
   local eth1Mask=$(ip route list scope link dev eth1 | awk '{print $1}')
-  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
+  local ethMask=$(getcidr $ethDev)
 
 # eth0,eth1 and other know routes will be skipped, so as main routing table will decide the route. This will be useful if the interface is down and up.  
   sudo ip route add throw $eth0Mask table $tableName proto static 
@@ -164,7 +164,7 @@ add_routing() {
   sudo ip route add default via $defaultGwIP table $tableName proto static
   sudo ip route flush cache
 
-  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
+  local ethMask=$(getcidr $ethDev)
   local rulePresent=$(ip rule show | grep $ethMask)
   if [ "$rulePresent" == "" ]
   then
