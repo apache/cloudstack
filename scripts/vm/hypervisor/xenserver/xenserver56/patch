@@ -66,3 +66,6 @@ swiftxen=..,0755,/etc/xapi.d/plugins
 s3xen=..,0755,/etc/xapi.d/plugins
 add_to_vcpus_params_live.sh=..,0755,/opt/cloud/bin
 
+###add cloudstack plugin script for XCP
+cloudstack_plugins.conf=..,0644,/etc/xensource
+cloudstack_pluginlib.py=..,0755,/etc/xapi.d/plugins
