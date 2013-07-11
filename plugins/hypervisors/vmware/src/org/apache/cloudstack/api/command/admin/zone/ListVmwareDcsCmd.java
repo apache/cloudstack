@@ -48,7 +48,7 @@ public class ListVmwareDcsCmd extends BaseListCmd {
 
     @Inject public VmwareDatacenterService _vmwareDatacenterService;
 
-    public static final Logger s_logger = Logger.getLogger(AddVmwareDcCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVmwareDcsCmd.class.getName());
 
     private static final String s_name = "listvmwaredcsresponse";
 

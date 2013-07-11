@@ -19,26 +19,19 @@ package org.apache.cloudstack.api.command.admin.zone;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -47,7 +40,7 @@ public class RemoveVmwareDcCmd extends BaseCmd {
 
     @Inject public VmwareDatacenterService _vmwareDatacenterService;
 
-    public static final Logger s_logger = Logger.getLogger(AddVmwareDcCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(RemoveVmwareDcCmd.class.getName());
 
     private static final String s_name = "removevmwaredcresponse";
 
@@ -67,7 +60,7 @@ public class RemoveVmwareDcCmd extends BaseCmd {
             boolean result = _vmwareDatacenterService.removeVmwareDatacenter(this);
             if (result) {
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VMware datacenter from zone");
             }
