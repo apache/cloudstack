@@ -687,7 +687,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
-    private KeystoreManager _ksMgr;
+    @Inject private KeystoreManager _ksMgr;
 
     private Map<String, String> _configs;
 
