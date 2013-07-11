@@ -863,13 +863,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // Perform account permission check on network
-        if (network.getGuestType() != Network.GuestType.Shared) {
-            // Check account permissions
-            List<NetworkVO> networkMap = _networkDao.listBy(caller.getId(), network.getId());
-            if ((networkMap == null || networkMap.isEmpty() ) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                throw new PermissionDeniedException("Unable to modify a vm using network with id " + network.getId() + ", permission denied");
-            }
-        }
+        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
 
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterId()) {
@@ -940,13 +934,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // Perform account permission check on network
-        if (network.getGuestType() != Network.GuestType.Shared) {
-            // Check account permissions
-            List<NetworkVO> networkMap = _networkDao.listBy(caller.getId(), network.getId());
-            if ((networkMap == null || networkMap.isEmpty() ) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                throw new PermissionDeniedException("Unable to modify a vm using network with id " + network.getId() + ", permission denied");
-            }
-        }
+        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
 
         boolean nicremoved = false;
 
