@@ -184,6 +184,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
         txn.commit();
+        UserContext.current().setEntityDetails(Domain.class, domain.getUuid());
         return domain;
     }
 
@@ -280,6 +281,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
 
             cleanupDomainOfferings(domain.getId());
+            UserContext.current().setEntityDetails(Domain.class, domain.getUuid());
             return true;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
@@ -604,7 +606,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
         }
         _domainDao.update(domainId, domain);
-
+        UserContext.current().setEntityDetails(Domain.class, domain.getUuid());
         txn.commit();
 
         return _domainDao.findById(domainId);
