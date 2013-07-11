@@ -24,8 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface LegacyZoneDao extends GenericDao<LegacyZoneVO, Long> {
     /**
-     * @param id of zone
-     * @return zone id of legacy zone
+     * @param zoneId - id of zone
+     * @return Object of legacy zone (LegacyZoneVO) identified by zoneId
      */
     LegacyZoneVO findByZoneId(String zoneId);
 
