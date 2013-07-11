@@ -10176,13 +10176,11 @@
                   },
                   vCenterUsername: {
                     label: 'label.vcenter.username',
-                    docID: 'helpClustervCenterUsername',
-                    validation: { required: true }
+                    docID: 'helpClustervCenterUsername'
                   },
                   vCenterPassword: {
                     label: 'label.vcenter.password',
                     docID: 'helpClustervCenterPassword',
-                    validation: { required: true },
                     isPassword: true
                   },
                   vCenterDatacenter: {

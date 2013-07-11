@@ -886,12 +886,10 @@
             validation: { required: true }
           },
           vCenterUsername: {
-            label: 'label.vcenter.username',
-            validation: { required: true }
+            label: 'label.vcenter.username'
           },
           vCenterPassword: {
             label: 'label.vcenter.password',
-            validation: { required: true },
             isPassword: true
           },
           vCenterDatacenter: {
