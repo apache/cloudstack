@@ -818,6 +818,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (currentMemory - newMemory));
         }
 
+        // Generate usage event for VM upgrade
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_UPGRADE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), vmInstance.getHostName(),
+                vmInstance.getServiceOfferingId(), vmInstance.getTemplateId(), vmInstance.getHypervisorType().toString(), VirtualMachine.class.getName(), vmInstance.getUuid());
+
         return _vmDao.findById(vmInstance.getId());
 
     }
