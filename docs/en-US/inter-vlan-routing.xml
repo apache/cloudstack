@@ -19,16 +19,16 @@
     under the License.
 -->
 <section id="inter-vlan-routing">
-  <title>About Inter-VLAN Routing</title>
-  <para>Inter-VLAN Routing is the capability to route network traffic between VLANs. This feature
-    enables you to build Virtual Private Clouds (VPC), an isolated segment of your cloud, that can
-    hold multi-tier applications. These tiers are deployed on different VLANs that can communicate
-    with each other. You provision VLANs to the tiers your create, and VMs can be deployed on
-    different tiers. The VLANs are connected to a virtual router, which facilitates communication
-    between the VMs. In effect, you can segment VMs by means of VLANs into different networks that
-    can host multi-tier applications, such as Web, Application, or Database. Such segmentation by
-    means of VLANs logically separate application VMs for higher security and lower broadcasts,
-    while remaining physically connected to the same device.</para>
+  <title>About Inter-VLAN Routing (nTier Apps)</title>
+  <para>Inter-VLAN Routing (nTier Apps) is the capability to route network traffic between VLANs.
+    This feature enables you to build Virtual Private Clouds (VPC), an isolated segment of your
+    cloud, that can hold multi-tier applications. These tiers are deployed on different VLANs that
+    can communicate with each other. You provision VLANs to the tiers your create, and VMs can be
+    deployed on different tiers. The VLANs are connected to a virtual router, which facilitates
+    communication between the VMs. In effect, you can segment VMs by means of VLANs into different
+    networks that can host multi-tier applications, such as Web, Application, or Database. Such
+    segmentation by means of VLANs logically separate application VMs for higher security and lower
+    broadcasts, while remaining physically connected to the same device.</para>
   <para>This feature is supported on XenServer, KVM, and VMware hypervisors.</para>
   <para>The major advantages are:</para>
   <itemizedlist>
@@ -88,10 +88,10 @@
       </itemizedlist>
     </listitem>
     <listitem>
-      <para>The administrator can define Access Control List (ACL) on the virtual router to filter
-        the traffic among the VLANs or between the Internet and a VLAN. You can define ACL based on
-        CIDR, port range, protocol, type code (if ICMP protocol is selected) and Ingress/Egress
-        type.</para>
+      <para>The administrator can define Network Access Control List (ACL) on the virtual router to
+        filter the traffic among the VLANs or between the Internet and a VLAN. You can define ACL
+        based on CIDR, port range, protocol, type code (if ICMP protocol is selected) and
+        Ingress/Egress type.</para>
     </listitem>
   </itemizedlist>
   <para>The following figure shows the possible deployment scenarios of a Inter-VLAN setup:</para>

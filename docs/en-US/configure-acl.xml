@@ -19,7 +19,7 @@
     under the License.
 -->
 <section id="configure-acl">
-  <title>Configuring Access Control List</title>
+  <title>Configuring Network Access Control List</title>
   <para>Define Network Access Control List (ACL) on the VPC virtual router to control incoming
     (ingress) and outgoing (egress) traffic between the VPC tiers, and the tiers and Internet. By
     default, all incoming and outgoing traffic to the guest networks is blocked. To open the ports,

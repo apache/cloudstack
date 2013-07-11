@@ -75,6 +75,12 @@
         Translation for instances to access the Internet via the public gateway. For more
         information, see <xref linkend="enable-disable-static-nat-vpc"/>.</para>
     </listitem>
+    <listitem>
+      <para><emphasis role="bold">Network ACL</emphasis>:  Network ACL is a group of Network ACL
+        items. Network ACL items are nothing but numbered rules that are evaluated in order,
+        starting with the lowest numbered rule. These rules determine whether traffic is allowed in
+        or out of any tier associated with the network ACL. For more information, see <xref linkend="configure-acl"/>.</para>
+    </listitem>
   </itemizedlist>
   <formalpara>
     <title>Network Architecture in a VPC</title>
