@@ -90,6 +90,9 @@ customPrivCert=$(dirname $0)/certs/realhostip.crt
 customCertChain=
 publicIp=
 hostName=
+keyStore=$(dirname $0)/certs/realhostip.keystore
+aliasName="CPVMCertificate"
+storepass="vmops.com"
 while getopts 'i:h:k:p:t:c' OPTION
 do
   case $OPTION in
@@ -160,6 +163,12 @@ if [ $? -ne 0 ]
 then
   echo "Failed to copy certificates"
   exit 2
+fi
+
+if [ -f "$customPrivCert" ]
+then
+  keytool -delete -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt
+  keytool -import -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt -file $customPrivCert
 fi
 
 if [ -d /etc/apache2 ]
