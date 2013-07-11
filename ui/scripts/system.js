@@ -6152,14 +6152,15 @@
 												  converter:cloudStack.converters.toBooleanText
                         }
                       },
-
-                       {
-
-                       isdedicated:{label:'Dedicated'},
-                       domainid:{label:'Domain ID'}
-
+                      {
+                       isdedicated: {label:'Dedicated'},
+                       domainid: {label:'Domain ID'}
+                      },
+                      {
+                        vmwaredcName: { label: 'VMware datacenter Name' },
+                        vmwaredcVcenter: { label: 'VMware datacenter vcenter' },
+                        vmwaredcId: { label: 'VMware datacenter Id' }
                       }
-
                     ],
                     dataProvider: function(args) {
                       $.ajax({
@@ -6169,30 +6170,51 @@
                         },
                         success: function(json) {
                           selectedZoneObj = json.listzonesresponse.zone[0];
-                             $.ajax({
-                                                    url:createURL("listDedicatedZones&zoneid=" +args.context.physicalResources[0].id),
-                                                    dataType:"json",
-                                                    async:false,
-                                                    success:function(json){
-                                                        if(json.listdedicatedzonesresponse.dedicatedzone != undefined){
-                                                          var zoneItem = json.listdedicatedzonesresponse.dedicatedzone[0];
-                                                            if (zoneItem.domainid != null) {
-                                                            $.extend(selectedZoneObj, zoneItem , { isdedicated: 'Yes' });
-                                                          }
-                                                        }
-                                                        else
-                                                            $.extend(selectedZoneObj,{ isdedicated: 'No' })
-
-                                                    },
-                                                  error:function(json){
-                                                       args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                                                  }
-                                              });
-                          args.response.success({
-                                                actionFilter: zoneActionfilter,
-                                                data: selectedZoneObj
+                          $.ajax({
+                            url: createURL("listDedicatedZones&zoneid=" +args.context.physicalResources[0].id),
+                            dataType: "json",
+                            async: false,
+                            success: function(json){
+                              if(json.listdedicatedzonesresponse.dedicatedzone != undefined) {
+                                var zoneItem = json.listdedicatedzonesresponse.dedicatedzone[0];
+                                if (zoneItem.domainid != null) {
+                                  $.extend(selectedZoneObj, zoneItem , { isdedicated: 'Yes' });
+                                }
+                              }
+                              else {
+                                $.extend(selectedZoneObj, { isdedicated: 'No' })
+                              }
+                            }
                           });
-
+                           
+                          $.ajax({
+                            url: createURL('listVmwareDcs'),
+                            data: {
+                              zoneid: args.context.physicalResources[0].id
+                            },
+                            async: false,
+                            success: function(json) { //e.g. json == { "listvmwaredcsresponse" { "count":1 ,"VMwareDC" [ {"id":"c3c2562d-65e9-4fc7-92e2-773c2efe8f37","zoneid":1,"name":"datacenter","vcenter":"10.10.20.20"} ] } } 
+                              var vmwaredcs = json.listvmwaredcsresponse.VMwareDC;
+                              if(vmwaredcs != null) {
+                                selectedZoneObj.vmwaredcName = vmwaredcs[0].name;
+                                selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
+                                selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
+                              }                              
+                            }                         
+                          });                            
+                           
+                          // for testing only (begin)
+                          /*
+                          selectedZoneObj.vmwaredcName = "datacenter";
+                          selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
+                          selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
+                          */
+                          // for testing only (end)
+                          
+                          args.response.success({
+                            actionFilter: zoneActionfilter,
+                            data: selectedZoneObj
+                          });
                         }
                       });
                     }
@@ -14945,19 +14967,23 @@
     var jsonObj = args.context.item;
     var allowedActions = ['enableSwift'];
 
-    allowedActions.push('addVmwareDc');
-    allowedActions.push('removeVmwareDc');
+    if(jsonObj.vmwaredcId == null)
+      allowedActions.push('addVmwareDc');
+    else
+      allowedActions.push('removeVmwareDc');
     
-     if(jsonObj.domainid != null)
+    if(jsonObj.domainid != null)
       allowedActions.push("releaseDedicatedZone");
     else
-    allowedActions.push("dedicateZone");
+      allowedActions.push("dedicateZone");
 
     allowedActions.push("edit");
+    
     if(jsonObj.allocationstate == "Disabled")
       allowedActions.push("enable");
     else if(jsonObj.allocationstate == "Enabled")
       allowedActions.push("disable");
+    
     allowedActions.push("remove");
     return allowedActions;
   }
