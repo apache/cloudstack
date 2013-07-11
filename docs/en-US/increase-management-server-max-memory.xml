@@ -26,7 +26,7 @@
     <title>Increase Management Server Maximum Memory</title>
     <para>If the Management Server is subject to high demand, the default maximum JVM memory allocation can be insufficient. To increase the memory:</para>
     <orderedlist>
-        <listitem><para>Edit the Tomcat configuration file:</para><programlisting>/etc/cloud/management/tomcat6.conf</programlisting></listitem>
+        <listitem><para>Edit the Tomcat configuration file:</para><programlisting>/etc/cloudstack/management/tomcat6.conf</programlisting></listitem>
         <listitem><para>Change the command-line parameter -XmxNNNm to a higher value of N.</para><para>For example, if the current value is -Xmx128m, change it to -Xmx1024m or higher.</para></listitem>
         <listitem><para>To put the new setting into effect, restart the Management Server.</para><programlisting># service cloudstack-management restart</programlisting></listitem>
       </orderedlist>
