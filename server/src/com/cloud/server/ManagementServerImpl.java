@@ -397,7 +397,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     S3Manager _s3Mgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
-    private KeystoreManager _ksMgr;
+    @Inject private KeystoreManager _ksMgr;
 
     private Map<String, String> _configs;
 
