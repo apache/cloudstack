@@ -97,11 +97,13 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
@@ -117,6 +119,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.events.SubscriptionMgr;
@@ -233,6 +236,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected IPAddressDao _ipAddressDao = null;
     @Inject
     protected RulesManager _rulesMgr;
+    @Inject
+    UploadDao _uploadDao;
     
     @Inject
     KeystoreManager _keystoreMgr;
@@ -664,6 +669,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             if (_allocLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 try {
                     secStorageVm = startNew(dataCenterId, role);
+                    for (UploadVO upload :_uploadDao.listAll())
+                        _uploadDao.expunge(upload.getId());
                 } finally {
                     _allocLock.unlock();
                 }
