@@ -174,7 +174,7 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                  var jid = json.reverttosnapshotresponse.jobid;
+                  var jid = json.reverttovmsnapshotresponse.jobid;
                   args.response.success({
                     _custom: {
                       jobId: jid
