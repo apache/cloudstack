@@ -82,6 +82,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.TemplateManager;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
@@ -325,7 +326,9 @@ public class TemplateServiceImpl implements TemplateService {
                         tmlpt.setSize(tmpltInfo.getSize());
                         _templateDao.update(tmplt.getId(), tmlpt);
 
-                        if (tmpltInfo.getSize() > 0 && tmplt.getUrl() != null) {
+                        // Skipping limit checks for SYSTEM Account and for the templates created from volumes or snapshots
+                        // which already got checked and incremented during createTemplate API call.
+                        if (tmpltInfo.getSize() > 0 && tmplt.getAccountId() != Account.ACCOUNT_ID_SYSTEM && tmplt.getUrl() != null) {
                             long accountId = tmplt.getAccountId();
                             try {
                                 _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
