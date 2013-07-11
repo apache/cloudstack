@@ -10375,7 +10375,24 @@
 
                   var hostname = args.data.vCenterHost;
                   var dcName = args.data.vCenterDatacenter;
-
+                 
+                  if(hostname.length == 0 && dcName.length == 0) {
+                    $.ajax({
+                      url: createURL('listVmwareDcs'),
+                      data: {
+                        zoneid: args.data.zoneid
+                      },
+                      async: false,
+                      success: function(json) { //e.g. json == { "listvmwaredcsresponse" { "count":1 ,"VMwareDC" [ {"id":"c3c2562d-65e9-4fc7-92e2-773c2efe8f37","zoneid":1,"name":"datacenter","vcenter":"10.10.20.20"} ] } } 
+                        var vmwaredcs = json.listvmwaredcsresponse.VMwareDC;                        
+                        if(vmwaredcs != null) {
+                          hostname = vmwaredcs[0].vcenter;
+                          dcName = vmwaredcs[0].name;
+                        }                              
+                      }                         
+                    });    
+                  }                              
+                  
                   var url;
                   if(hostname.indexOf("http://") == -1)
                     url = "http://" + hostname;
