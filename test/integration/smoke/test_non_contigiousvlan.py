@@ -26,8 +26,8 @@ class Services():
     def __init__(self):
         self.services = {
             "vlan": {
-                "part": ["4090-4091", "4092-4096"],
-                "full": "4090-4096",
+                "part": ["4090-4091", "4092-4095"],
+                "full": "4090-4095",
             }
         }
 
