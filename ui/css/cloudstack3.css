@@ -11992,7 +11992,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate .icon,
 .enableSwift .icon,
 .addVM .icon,
-.dedicateZone .icon {
+.dedicateZone .icon,
+.dedicate .icon {
   background-position: -69px -63px;
 }
 
