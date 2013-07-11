@@ -95,8 +95,8 @@
         <note>
             <para>(Optional) The AWS API listens for requests on port 7080. If you prefer AWS API to listen on another port, you can change it as follows:</para>
             <orderedlist numeration="loweralpha">
-                <listitem><para>Edit the files /etc/cloud/management/server.xml, /etc/cloud/management/server-nonssl.xml,
-                          and /etc/cloud/management/server-ssl.xml.</para></listitem>
+                <listitem><para>Edit the files /etc/cloudstack/management/server.xml, /etc/cloudstack/management/server-nonssl.xml,
+                          and /etc/cloudstack/management/server-ssl.xml.</para></listitem>
                 <listitem><para>In each file, find the tag &lt;Service name="Catalina7080"&gt;. Under this tag,
                           locate &lt;Connector executor="tomcatThreadPool-internal" port= ....&lt;.</para></listitem>
                 <listitem><para>Change the port to whatever port you want to use, then save the files.</para></listitem>
