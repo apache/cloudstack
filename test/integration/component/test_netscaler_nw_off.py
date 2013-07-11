@@ -529,7 +529,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         physical_networks = PhysicalNetwork.list(
@@ -1086,7 +1086,7 @@ class TestNwOffDedicatedNetscaler(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         physical_networks = PhysicalNetwork.list(
@@ -1253,7 +1253,7 @@ class TestNwOffNetscaler(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         physical_networks = PhysicalNetwork.list(
@@ -1563,7 +1563,7 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         physical_networks = PhysicalNetwork.list(
@@ -1980,7 +1980,7 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         physical_networks = PhysicalNetwork.list(
