@@ -859,6 +859,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
 
+        if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
+            throw new CloudRuntimeException("Host " + host.getUuid() + " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
+        }
         /*
          * TODO: check current agent status and updateAgentStatus to removed. If
          * it was already removed, that means someone is deleting host
