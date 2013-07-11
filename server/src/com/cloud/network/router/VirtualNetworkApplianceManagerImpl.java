@@ -1446,7 +1446,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             List<DeployDestination> destinations = new ArrayList<DeployDestination>();
 
-            if (dest.getDataCenter().getNetworkType() == NetworkType.Basic) {
+            // for basic zone, if 'dest' has pod set to null then this is network restart scenario otherwise it is a vm deployment scenario
+            if (dest.getDataCenter().getNetworkType() == NetworkType.Basic && dest.getPod() == null) {
                 // Find all pods in the data center with running or starting user vms
                 long dcId = dest.getDataCenter().getId();
                 List<HostPodVO> pods = listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
