@@ -2628,11 +2628,11 @@
                               validation: { required: true },
                               select: function(args) {
                                 $.ajax({
-                                  url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
+                                  url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.routers[0].id),
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
-                                    var hostObjs = json.listhostsresponse.host;
+                                    var hostObjs = json.findhostsformigrationresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
                                       items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
@@ -3072,11 +3072,11 @@
                               validation: { required: true },
                               select: function(args) {
                                 $.ajax({
-                                  url: createURL("listHosts&VirtualMachineId=" + args.context.internallbinstances[0].id),
+                                  url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.internallbinstances[0].id),
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
-                                    var hostObjs = json.listhostsresponse.host;
+                                    var hostObjs = json.findhostsformigrationresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
                                       items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
@@ -3645,11 +3645,11 @@
                               validation: { required: true },
                               select: function(args) {
                                 $.ajax({
-                                  url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
+                                  url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.routers[0].id),
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
-                                    var hostObjs = json.listhostsresponse.host;
+                                    var hostObjs = json.findhostsformigrationresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
                                       items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
@@ -6497,12 +6497,12 @@
                                       dataType: "json",
                                       async: true,
                                       success: function(json) {
-                                        var hostObjs = json.listhostsresponse.host;
+                                        var hostObjs = json.findhostsformigrationresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
                                           if(this.requiresStorageMotion == false){
-                                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
-                                           }
+                                            items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                                          }
                                         });
                                         args.response.success({data: items});
                                       }
@@ -7437,11 +7437,11 @@
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
-                          url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
+                          url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.routers[0].id),
                           dataType: "json",
                           async: true,
                           success: function(json) {
-                            var hostObjs = json.listhostsresponse.host;
+                            var hostObjs = json.findhostsformigrationresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
                               items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
@@ -7985,11 +7985,11 @@
                           dataType: "json",
                           async: true,
                           success: function(json) {
-                            var hostObjs = json.listhostsresponse.host;
+                            var hostObjs = json.findhostsformigrationresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
                               if(this.requiresStorageMotion == false){
-                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                                items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                               }
                             });
                             args.response.success({data: items});
