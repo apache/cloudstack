@@ -23,20 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
+
 import org.apache.cloudstack.api.ApiConstants;
-import org.springframework.beans.NullValueInNestedPathException;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -67,7 +68,6 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.element.CiscoNexusVSMElement;
-import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -80,9 +80,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.UriUtils;
-
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
 
 
 @Local(value = Discoverer.class)
@@ -150,13 +147,40 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 
         Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
         boolean legacyZone = _vmwareMgr.isLegacyZone(dcId);
+        boolean usernameNotProvided = (username == null || username.isEmpty());
+        boolean passwordNotProvided = (password == null || password.isEmpty());
         //Check if NOT a legacy zone.
         if (!legacyZone) {
-            String updatedInventoryPath = validateCluster(dcId, url, username, password);
+            // Retrieve VMware DC associated with specified zone
+            VmwareDatacenterVO vmwareDc = fetchVmwareDatacenterByZone(dcId);
+            // Ensure username & password provided.
+            // If either or both not provided, try to retrieve & use the credentials from database, which are provided earlier while adding VMware DC to zone.
+            if (usernameNotProvided || passwordNotProvided) {
+                // Retrieve credentials associated with VMware DC
+                s_logger.info("Username and/or Password not provided while adding cluster to cloudstack zone. " +
+                        "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
+                username = vmwareDc.getUser();
+                password = vmwareDc.getPassword();
+                clusterDetails.put("username", username);
+                clusterDetails.put("password", password);
+                _clusterDetailsDao.persist(clusterId, clusterDetails);
+            }
+            String updatedInventoryPath = validateCluster(url, vmwareDc);
             if (url.getPath() != updatedInventoryPath) {
-                // If url from API doesn't specifiy DC then update url in database with DC assocaited with this zone.
+                // If url from API doesn't specify DC then update url in database with DC associated with this zone.
                 clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
+            }
+        } else {
+            // For legacy zones insist on the old model of asking for credentials for each cluster being added.
+            if (usernameNotProvided) {
+                if (passwordNotProvided) {
+                    throw new InvalidParameterValueException("Please provide username & password to add this cluster to zone");
+                } else {
+                    throw new InvalidParameterValueException("Please provide username to add this cluster to zone");
+                }
+            } else if (passwordNotProvided) {
+                throw new InvalidParameterValueException("Please provide password to add this cluster to zone");
             }
         }
 
@@ -414,21 +438,17 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		}
 	}
 
-    private String validateCluster(Long dcId, URI url, String username, String password) throws DiscoveryException {
-        String msg;
-        long vmwareDcId;
+    private VmwareDatacenterVO fetchVmwareDatacenterByZone(Long dcId) throws DiscoveryException {
         VmwareDatacenterVO vmwareDc;
-        String vmwareDcNameFromDb;
-        String vmwareDcNameFromApi;
-        String vCenterHost;
-        String updatedInventoryPath = url.getPath();
-        String clusterName = null;
+        VmwareDatacenterZoneMapVO vmwareDcZone;
+        long vmwareDcId;
+        String msg;
 
         // Check if zone is associated with DC
-        VmwareDatacenterZoneMapVO vmwareDcZone = _vmwareDcZoneMapDao.findByZoneId(dcId);
+        vmwareDcZone = _vmwareDcZoneMapDao.findByZoneId(dcId);
         if (vmwareDcZone == null) {
             msg = "Zone " + dcId + " is not associated with any VMware DC yet. "
-                        + "Please add VMware DC to this zone first and then try to add clusters.";
+                    + "Please add VMware DC to this zone first and then try to add clusters.";
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         }
@@ -436,6 +456,18 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         // Retrieve DC added to this zone from database
         vmwareDcId = vmwareDcZone.getVmwareDcId();
         vmwareDc = _vmwareDcDao.findById(vmwareDcId);
+
+        return vmwareDc;
+    }
+
+    private String validateCluster(URI url, VmwareDatacenterVO vmwareDc) throws DiscoveryException {
+        String msg;
+        String vmwareDcNameFromDb;
+        String vmwareDcNameFromApi;
+        String vCenterHost;
+        String updatedInventoryPath = url.getPath();
+        String clusterName = null;
+
         vmwareDcNameFromApi = vmwareDcNameFromDb = vmwareDc.getVmwareDatacenterName();
         vCenterHost = vmwareDc.getVcenterHost();
         String inventoryPath = url.getPath();
