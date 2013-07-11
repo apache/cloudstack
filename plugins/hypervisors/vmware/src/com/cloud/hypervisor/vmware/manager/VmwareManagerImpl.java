@@ -36,18 +36,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
-
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -68,10 +62,10 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
-import com.cloud.host.Host;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -121,6 +115,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 
 
 @Local(value = {VmwareManager.class, VmwareDatacenterService.class})
@@ -459,7 +459,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getSecondaryStorageStoreUrl(long dcId) {
 
-        DataStore secStore = this._dataStoreMgr.getImageStore(dcId);
+        DataStore secStore = _dataStoreMgr.getImageStore(dcId);
         if(secStore != null)
             return secStore.getUri();
 
