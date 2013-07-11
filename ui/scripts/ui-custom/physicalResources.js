@@ -80,10 +80,11 @@
             var $loading = $('<div>').addClass('loading-overlay');
             $('.system-dashboard-view:visible').prepend($loading);
             $.ajax({
+              type: "POST",
               url: createURL('uploadCustomCertificate'),
               data: {
-                certificate: args.data.certificate,
-                privatekey: args.data.privatekey,
+                certificate: encodeURIComponent(args.data.certificate),
+                privatekey: encodeURIComponent(args.data.privatekey),
                 domainsuffix: args.data.domainsuffix
               },
               dataType: 'json',

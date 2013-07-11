@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.server;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.net.URLDecoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -3301,18 +3303,32 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        if (cmd.getPrivateKey() != null && !_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
+        String certificate = cmd.getCertificate();
+        String key = cmd.getPrivateKey();
+        try {
+            if (certificate != null)
+                certificate = URLDecoder.decode(certificate, "UTF-8");
+            if (key != null)
+                key = URLDecoder.decode(key, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+        } finally {
+        }
+
+        if (cmd.getPrivateKey() != null && !_ksMgr.validateCertificate(certificate, key, cmd.getDomainSuffix())) {
             throw new InvalidParameterValueException("Failed to pass certificate validation check");
         }
 
         if (cmd.getPrivateKey() != null) {
-            _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix());
+            _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, certificate, key, cmd.getDomainSuffix());
         } else {
-            _ksMgr.saveCertificate(cmd.getAlias(), cmd.getCertificate(), cmd.getCertIndex(), cmd.getDomainSuffix());
+            _ksMgr.saveCertificate(cmd.getAlias(), certificate, cmd.getCertIndex(), cmd.getDomainSuffix());
         }
 
         _consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
-        return "Certificate has been updated, we will stop all running console proxy VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
+        List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, State.Running, State.Migrating, State.Starting);
+        for (SecondaryStorageVmVO ssVmVm : alreadyRunning)
+            _secStorageVmMgr.rebootSecStorageVm(ssVmVm.getId());
+        return "Certificate has been updated, we will stop all running console proxy VMs and secondary storage VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
     }
 
     @Override
