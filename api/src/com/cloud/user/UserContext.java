@@ -29,6 +29,8 @@ public class UserContext {
     private long accountId;
     private String eventDetails;
     private boolean apiServer;
+    private Class entityType;
+    private String entityUUID;
 
     @Inject private AccountService _accountMgr = null;
 
@@ -136,5 +138,26 @@ public class UserContext {
 
     public String getEventDetails() {
         return eventDetails;
+    }
+
+    public void setEntityDetails(Class entityType, String uuid) {
+        this.entityType = entityType;
+        this.entityUUID = uuid;
+    }
+
+    public String getEntityType() {
+        return (entityType != null) ? entityType.getName() : null;
+    }
+
+    public void setEntityType(Class entityType) {
+        this.entityType = entityType;
+    }
+
+    public String getEntityUUID() {
+        return entityUUID;
+    }
+
+    public void setEntityUUID(String entityUUID) {
+        this.entityUUID = entityUUID;
     }
 }

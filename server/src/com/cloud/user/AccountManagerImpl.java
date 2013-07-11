@@ -910,6 +910,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         txn.commit();
 
+        UserContext.current().setEntityDetails(Account.class, account.getUuid());
+
         //check success
         return _userAccountDao.findById(user.getId());
     }
@@ -1070,6 +1072,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.error("error updating user", th);
             throw new CloudRuntimeException("Unable to update user " + id);
         }
+
+        UserContext.current().setEntityDetails(User.class, user.getUuid());
+
         return _userAccountDao.findById(id);
     }
 
@@ -1100,6 +1105,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         boolean success = doSetUserStatus(userId, State.disabled);
         if (success) {
+
+            UserContext.current().setEntityDetails(User.class, user.getUuid());
+
             // user successfully disabled
             return _userAccountDao.findById(userId);
         } else {
@@ -1146,6 +1154,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (success) {
             // whenever the user is successfully enabled, reset the login attempts to zero
             updateLoginAttempts(userId, 0, false);
+
+            UserContext.current().setEntityDetails(User.class, user.getUuid());
+
             return _userAccountDao.findById(userId);
         } else {
             throw new CloudRuntimeException("Unable to enable user " + userId);
@@ -1207,6 +1218,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (success) {
+
+            UserContext.current().setEntityDetails(User.class, user.getUuid());
+
             return _userAccountDao.findById(userId);
         } else {
             throw new CloudRuntimeException("Unable to lock user " + userId);
@@ -1252,6 +1266,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
         }
+
+        UserContext.current().setEntityDetails(Account.class, account.getUuid());
+
         return deleteAccount(account, callerUserId, caller);
     }
 
@@ -1281,6 +1298,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         boolean success = enableAccount(account.getId());
         if (success) {
+
+            UserContext.current().setEntityDetails(Account.class, account.getUuid());
+
             return _accountDao.findById(account.getId());
         } else {
             throw new CloudRuntimeException("Unable to enable account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
@@ -1310,6 +1330,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccess(caller, null, true, account);
 
         if (lockAccount(account.getId())) {
+            UserContext.current().setEntityDetails(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
             throw new CloudRuntimeException("Unable to lock account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
@@ -1339,6 +1360,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccess(caller, null, true, account);
 
         if (disableAccount(account.getId())) {
+            UserContext.current().setEntityDetails(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
             throw new CloudRuntimeException("Unable to update account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
@@ -1421,6 +1443,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         txn.commit();
 
         if (success) {
+            UserContext.current().setEntityDetails(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
             throw new CloudRuntimeException("Unable to update account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
@@ -1451,6 +1474,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkAccess(UserContext.current().getCaller(), null, true, account);
+        UserContext.current().setEntityDetails(User.class, user.getUuid());
         return _userDao.remove(id);
     }
 
@@ -1769,7 +1793,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             userUUID =  UUID.randomUUID().toString();
         }
         UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID));
-
+        UserContext.current().setEntityDetails(User.class, user.getUuid());
         return user;
     }
 
