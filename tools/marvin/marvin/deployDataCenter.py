@@ -84,8 +84,9 @@ specify a valid config file" % cfgFile)
             clusterresponse = self.apiClient.addCluster(clustercmd)
             clusterId = clusterresponse[0].id
 
-            self.addHosts(cluster.hosts, zoneId, podId, clusterId,
-                          cluster.hypervisor)
+            if cluster.hypervisor.lower() != "vmware":
+                self.addHosts(cluster.hosts, zoneId, podId, clusterId,
+                              cluster.hypervisor)
             self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId,
                                        clusterId)
 
