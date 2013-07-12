@@ -590,7 +590,7 @@ def network_rules_for_rebooted_vm(vmName):
     return True
 
 def get_rule_logs_for_vms():
-    cmd = "virsh list|grep running |awk '{print $2}'"
+    cmd = "virsh list|awk '/running/ {print $2}'"
     vms = bash("-c", cmd).stdout.split("\n")
     
     result = []
@@ -621,7 +621,7 @@ def cleanup_rules():
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
                 
-                cmd = "virsh list |grep " + vm_name + "|awk '{print $3}'"
+                cmd = "virsh list |awk '/" + vm_name + "/ {print $3}'"
                 try:
                     result = execute(cmd).strip()
                 except:
@@ -641,7 +641,7 @@ def cleanup_rules():
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
     
-                cmd = "virsh list |grep " + vm_name + "|awk '{print $3}'"
+                cmd = "virsh list |awk '/" + vm_name + "/ {print $3}'"
                 try:
                     result = execute(cmd).strip()
                 except:
@@ -869,7 +869,7 @@ def getBridges(vmName):
     return list(set(bridges))
 
 def getvmId(vmName):
-    cmd = "virsh list |grep " + vmName + " | awk '{print $1}'"
+    cmd = "virsh list |awk '/" + vmName + "/ {print $1}'"
     return bash("-c", cmd).stdout.strip()
     
 def addFWFramework(brname):
