@@ -93,10 +93,6 @@ public class VirtualMachineName {
         return Long.parseLong(vmName.substring(begin + 1, end));
     }
     
-    public static String getVnet(String vmName) {
-        return vmName.substring(vmName.lastIndexOf(SEPARATOR) + SEPARATOR.length());
-    }
-    
     public static String getRouterName(long routerId, String instance) {
         StringBuilder builder = new StringBuilder("r");
         builder.append(SEPARATOR).append(routerId).append(SEPARATOR).append(instance);
