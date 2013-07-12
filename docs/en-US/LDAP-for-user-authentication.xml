@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="LDAP-for-user-authentication">
+    <title>Using an LDAP Server for User Authentication</title>
+    <para>You can use an external LDAP server such as Microsoft Active Directory or OpenLDAP to authenticate &PRODUCT; end-users.</para>
+    <para>To set up LDAP authentication in &PRODUCT;, open the global settings page and set:</para>
+    <itemizedlist>
+        <listitem><para>ldap.basedn - The base directory you want to search within for uses</para></listitem>
+        <listitem><para>ldap.bind.password - The password you wish to use to bind, this can be blank if the server supports anonymous binding</para></listitem>
+        <listitem><para>ldap.bind.principal - The account you wish to use to bind, this can be blank if the server supports anonymous binding</para></listitem>
+        <listitem><para>ldap.email.attribute - The attribute within your LDAP server that holds a value for users email address</para></listitem>
+        <listitem><para>ldap.realname.attribute - The attribute within your LDAP server that holds a value users realname</para></listitem>
+        <listitem><para>ldap.user.object - The object class that identifies a user</para></listitem>
+        <listitem><para>ldap.username.attribute - The attribute within your LDAP server that has a value that will match the cloudstack accounts username field</para></listitem>
+    </itemizedlist>
+    <para>Finally you can add LDAP servers from Global Settings -> Select View -> LDAP Configuration. This requires a hostname and port</para>
+    <xi:include href="example-activedirectory-configuration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="example-openldap-configuration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <!-- Support for SSL has been removed but will be back shortly. -->
+    <!-- <xi:include href="SSL-keystore-path-and-password.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> -->
+    </section>
