@@ -99,7 +99,7 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-ipc</artifactId>
       <version>${project.version}</version>
-    </dependency>	
+    </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-events</artifactId>
@@ -108,8 +108,6 @@
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
     <resources>
       <resource>
         <directory>resources</directory>
