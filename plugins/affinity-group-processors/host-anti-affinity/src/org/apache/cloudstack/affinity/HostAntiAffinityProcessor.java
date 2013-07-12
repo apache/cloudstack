@@ -25,16 +25,21 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -57,6 +62,9 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     @Inject 
     protected ConfigurationDao _configDao;
     
+    @Inject
+    protected VMReservationDao _reservationDao;
+
     @Override
     public void process(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
             ExcludeList avoid)
@@ -106,6 +114,49 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()),3600);
+        return true;
+    }
+
+    @DB
+    @Override
+    public boolean check(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination plannedDestination)
+            throws AffinityConflictException {
+
+        if (plannedDestination.getHost() == null) {
+            return true;
+        }
+        long plannedHostId = plannedDestination.getHost().getId();
+
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+
+        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
+
+        for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
+            final Transaction txn = Transaction.currentTxn();
+            try {
+                txn.start();
+                // lock the group
+                AffinityGroupVO group = _affinityGroupDao.lockRow(vmGroupMapping.getAffinityGroupId(), true);
+                // if more than 1 VM's are present in the group then check for
+                // conflict due to parallel deployment
+                List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(vmGroupMapping
+                        .getAffinityGroupId());
+                groupVMIds.remove(vm.getId());
+
+                for (Long groupVMId : groupVMIds) {
+                    VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
+                    if (vmReservation.getHostId() != null && vmReservation.getHostId().equals(plannedHostId)) {
+                        return false;
+                    }
+                }
+
+                return true;
+
+            } finally {
+                txn.commit();
+            }
+        }
+
         return true;
     }
 

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -181,38 +180,49 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
         }
 
-        DeployDestination dest;
-        try {
-            dest = _dpMgr.planDeployment(vmProfile, plan, exclude);
-        } catch (AffinityConflictException e) {
-            throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
-        }
-
-        if (dest != null) {
-           //save destination with VMEntityVO
-            VMReservationVO vmReservation = new VMReservationVO(vm.getId(), dest.getDataCenter().getId(), dest.getPod().getId(), dest.getCluster().getId(), dest.getHost().getId());
-            Map<Long,Long> volumeReservationMap = new HashMap<Long,Long>();
-
-            if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                for(Volume vo : dest.getStorageForDisks().keySet()){
-                    volumeReservationMap.put(vo.getId(), dest.getStorageForDisks().get(vo).getId());
-                }
-                vmReservation.setVolumeReservation(volumeReservationMap);
+        while (true) {
+            DeployDestination dest = null;
+            try {
+                dest = _dpMgr.planDeployment(vmProfile, plan, exclude);
+            } catch (AffinityConflictException e) {
+                throw new CloudRuntimeException(
+                        "Unable to create deployment, affinity rules associted to the VM conflict");
             }
 
-            vmEntityVO.setVmReservation(vmReservation);
-            _vmEntityDao.persist(vmEntityVO);
+            if (dest != null) {
+                if (_dpMgr.finalizeReservation(dest, vmProfile, plan, exclude)) {
+                    // save destination with VMEntityVO
+                    VMReservationVO vmReservation = new VMReservationVO(vm.getId(), dest.getDataCenter().getId(), dest
+                            .getPod().getId(), dest.getCluster().getId(), dest.getHost().getId());
+                    Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
 
-            return vmReservation.getUuid();
-        } else if (planChangedByReadyVolume) {
-            // we could not reserve in the Volume's cluster - let the deploy
-            // call retry it.
-            return UUID.randomUUID().toString();
-        }else{
-            throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile,
-                    DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
+                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                        for (Volume vo : dest.getStorageForDisks().keySet()) {
+                            volumeReservationMap.put(vo.getId(), dest.getStorageForDisks().get(vo).getId());
+                        }
+                        vmReservation.setVolumeReservation(volumeReservationMap);
+                    }
+
+                    vmEntityVO.setVmReservation(vmReservation);
+                    _vmEntityDao.persist(vmEntityVO);
+
+                    return vmReservation.getUuid();
+                } else {
+                    try {
+                        Thread.sleep(10000);
+                    } catch (final InterruptedException e) {
+                    }
+                    continue;
+                }
+            } else if (planChangedByReadyVolume) {
+                // we could not reserve in the Volume's cluster - let the deploy
+                // call retry it.
+                return UUID.randomUUID().toString();
+            } else {
+                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile,
+                        DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
+            }
         }
-
     }
 
     @Override

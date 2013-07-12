@@ -1181,4 +1181,26 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
         return false;
     }
+
+    @Override
+    public boolean finalizeReservation(DeployDestination plannedDestination,
+            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids)
+            throws InsufficientServerCapacityException, AffinityConflictException {
+
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+
+        if (vmGroupCount > 0) {
+            // uses affinity groups. For every group check if processor flags
+            // that the destination is ok
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                if (!processor.check(vmProfile, plannedDestination)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 }
