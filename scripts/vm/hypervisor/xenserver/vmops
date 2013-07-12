@@ -82,7 +82,7 @@ def getvncport(session, args):
         path1 = "/local/domain/" + domid + "/qemu-pid"
         path2 = "/local/domain/" + domid + "/console/vnc-port"
     else:
-        if version[:3] == '6.0':
+        if version[:3] == '6.0' or version[:3] == '6.1' or version[:3] == '6.2':
             path1 = "/local/domain/" + domid + "/vncterm-pid"
             path2 = "/local/domain/" + domid + "/console/vnc-port"
         else:
