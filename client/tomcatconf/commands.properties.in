@@ -275,6 +275,7 @@ releaseHostReservation=1
 #### VmWare DC
 addVmwareDc=1
 removeVmwareDc=1
+listVmwareDcs=1
 
 #### volume commands
 attachVolume=15
