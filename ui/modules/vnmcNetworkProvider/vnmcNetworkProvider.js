@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-  cloudStack.modules.vnmcNetworkProvider = function(module) {    
+  cloudStack.modules.vnmcNetworkProvider = function(module) {
     var vnmcDeviceViewAll = window._m = [
       {
         label: 'VNMC Devices',
@@ -28,26 +28,26 @@
       fields: {
         resourcename: { label: 'Resource Name' },
         provider: { label: 'Provider' }
-      },      
-      dataProvider: function(args) {        
+      },
+      dataProvider: function(args) {
         $.ajax({
           url: createURL('listCiscoVnmcResources'),
           data: {
             physicalnetworkid: args.context.physicalNetworks[0].id
           },
-          success: function(json){   
-            var items = json.listCiscoVnmcResources.CiscoVnmcResource; 
+          success: function(json){
+            var items = json.listCiscoVnmcResources.CiscoVnmcResource;
             args.response.success({
               data: items
-            });            
+            });
           }
-        });  
-      },    
+        });
+      },
       actions: {
         add: {
           label: 'Add VNMC device',
 
-          messages: {           
+          messages: {
             notification: function(args) {
               return 'Add VNMC device';
             }
@@ -57,66 +57,66 @@
             title: 'Add VNMC device',
             fields: {
               hostname: {
-                label: 'label.host',                
+                label: 'label.host',
                 validation: { required: true }
               },
               username: {
-                label: 'label.username',                
+                label: 'label.username',
                 validation: { required: true }
               },
               password: {
-                label: 'label.password', 
+                label: 'label.password',
                 isPassword: true,
                 validation: { required: true }
-              }            
+              }
             }
           },
 
-          action: function(args) {            
+          action: function(args) {
             $.ajax({
               url: createURL('listNetworkServiceProviders'),
               data: {
                 name: 'CiscoVnmc',
-                physicalnetworkid: args.context.physicalNetworks[0].id      
+                physicalnetworkid: args.context.physicalNetworks[0].id
               },
-              success: function(json){                
+              success: function(json){
                 var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                 if(items != null && items.length > 0) {
                   var ciscoVnmcProvider = items[0];
                   if(ciscoVnmcProvider.state == 'Enabled') {
-                    addCiscoVnmcResourceFn();                    
+                    addCiscoVnmcResourceFn();
                   }
-                  else {                    
-                    enableCiscoVnmcProviderFn(ciscoVnmcProvider);                    
-                  }                  
-                }   
-                else {                  
+                  else {
+                    enableCiscoVnmcProviderFn(ciscoVnmcProvider);
+                  }
+                }
+                else {
                   $.ajax({
                     url: createURL("addNetworkServiceProvider"),
                     data: {
                       name: 'CiscoVnmc',
-                      physicalnetworkid: args.context.physicalNetworks[0].id                
-                    },              
+                      physicalnetworkid: args.context.physicalNetworks[0].id
+                    },
                     success: function(json) {
-                      var jobId = json.addnetworkserviceproviderresponse.jobid;                        
-                      var addVnmcProviderIntervalID = setInterval(function() {  
+                      var jobId = json.addnetworkserviceproviderresponse.jobid;
+                      var addVnmcProviderIntervalID = setInterval(function() {
                         $.ajax({
                           url: createURL("queryAsyncJobResult&jobId="+jobId),
                           dataType: "json",
                           success: function(json) {
-                            var result = json.queryasyncjobresultresponse;                            
+                            var result = json.queryasyncjobresultresponse;
                             if (result.jobstatus == 0) {
                               return; //Job has not completed
                             }
                             else {
-                              clearInterval(addVnmcProviderIntervalID ); 
+                              clearInterval(addVnmcProviderIntervalID );
                               if (result.jobstatus == 1) {
                                 //nspMap["CiscoVnmc"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                                var ciscoVnmcProvider = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;  
-                                enableCiscoVnmcProviderFn(ciscoVnmcProvider);    
+                                var ciscoVnmcProvider = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                enableCiscoVnmcProviderFn(ciscoVnmcProvider);
                               }
                               else if (result.jobstatus == 2) {
-                                args.response.error(_s(result.jobresult.errortext));                          
+                                args.response.error(_s(result.jobresult.errortext));
                               }
                             }
                           },
@@ -124,14 +124,14 @@
                             args.response.error(parseXMLHttpResponse(data));
                           }
                         });
-                      }, g_queryAsyncJobResultInterval);    
+                      }, g_queryAsyncJobResultInterval);
                     }
-                  });                   
+                  });
                 }
               }
             });
-                       
-            var enableCiscoVnmcProviderFn = function(ciscoVnmcProvider){              
+
+            var enableCiscoVnmcProviderFn = function(ciscoVnmcProvider){
               $.ajax({
                 url: createURL('updateNetworkServiceProvider'),
                 data: {
@@ -155,30 +155,30 @@
                           clearInterval(enableVnmcProviderIntervalID);
                           if (result.jobstatus == 1) {
                             addCiscoVnmcResourceFn();
-                          }                                      
+                          }
                           else if (result.jobstatus == 2) {
-                            args.response.error(_s(result.jobresult.errortext));                          
-                          }                                      
+                            args.response.error(_s(result.jobresult.errortext));
+                          }
                         }
                       }
-                    });                                
-                  }, g_queryAsyncJobResultInterval);                               
+                    });
+                  }, g_queryAsyncJobResultInterval);
                 }
-              });              
-            }                        
-            
-            var addCiscoVnmcResourceFn = function(){              
+              });
+            };
+
+            var addCiscoVnmcResourceFn = function(){
               var data = {
                 physicalnetworkid: args.context.physicalNetworks[0].id,
                 hostname: args.data.hostname,
                 username: args.data.username,
                 password: args.data.password
-              };                             
-             
+              };
+
               $.ajax({
                 url: createURL('addCiscoVnmcResource'),
-                data: data,                 
-                success: function(json) {    
+                data: data,
+                success: function(json) {
                   var item = json.addCiscoVnmcResource.CiscoVnmcResource;
                   args.response.success({data: item});
                 },
@@ -196,10 +196,10 @@
           }
         }
       },
-      
+
       detailView: {
         name: 'CiscoVNMC resource details',
-        actions: {    
+        actions: {
           remove: {
             label: 'delete CiscoVNMC resource',
             messages: {
@@ -210,12 +210,12 @@
                 return 'delete CiscoVNMC resource';
               }
             },
-            action: function(args) {                               
+            action: function(args) {
               $.ajax({
                 url: createURL('deleteCiscoVnmcResource'),
                 data: {
                   resourceid: args.context.vnmcDevices[0].resourceid
-                },                   
+                },
                 success: function(json) {
                   args.response.success();
                 },
@@ -234,38 +234,232 @@
 
         tabs: {
           details: {
-            title: 'label.details',            
+            title: 'label.details',
             fields: [
              {
                resourcename: { label: 'Resource Name' }
              },
-             {   
+             {
                resourceid: { label: 'Resource ID'},
                provider: { label: 'Provider' },
                RESOURCE_NAME: { label: 'Resource Name'}
              }
            ],
-           dataProvider: function(args) {   
+           dataProvider: function(args) {
              $.ajax({
                url: createURL('listCiscoVnmcResources'),
                data: {
                  resourceid: args.context.vnmcDevices[0].resourceid
                },
-               success: function(json){                    
-                 var item = json.listCiscoVnmcResources.CiscoVnmcResource[0]; 
-                 args.response.success({ data: item });            
+               success: function(json){
+                 var item = json.listCiscoVnmcResources.CiscoVnmcResource[0];
+                 args.response.success({
+                   data: item
+                 });
                }
-             });   
-            }    
+             });
+            }
           }
         }
-      }       
+      }
     };
 
     var vnmcProviderDetailView = {
       id: 'vnmcProvider',
       label: 'VNMC',
       viewAll: vnmcDeviceViewAll,
+      actions: {
+        enable: {
+          label: 'Enable VNMC provider',
+
+          messages: {
+            confirm: function(args) {
+              return 'Please confirm you would like to enable the VNMC provider.';
+            },
+            notification: function(args) {
+              return 'Enable VNMC device';
+            }
+          },
+
+          action: function(args) {
+            $.ajax({
+              url: createURL('listNetworkServiceProviders'),
+              data: {
+                name: 'CiscoVnmc',
+                physicalnetworkid: args.context.physicalNetworks[0].id
+              },
+              success: function(json){
+                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                if(items != null && items.length > 0) {
+                  var ciscoVnmcProvider = items[0];
+
+                  enableCiscoVnmcProviderFn(ciscoVnmcProvider);
+                } else {
+                  args.response.error('VNMC is not available from provider list.');
+                }
+              }
+            });
+
+            var enableCiscoVnmcProviderFn = function(ciscoVnmcProvider){
+              $.ajax({
+                url: createURL('updateNetworkServiceProvider'),
+                data: {
+                  id: ciscoVnmcProvider.id,
+                  state: 'Enabled'
+                },
+                success: function(json) {
+                  var jid = json.updatenetworkserviceproviderresponse.jobid;
+                  var enableVnmcProviderIntervalID = setInterval(function(){
+                    $.ajax({
+                      url: createURL('queryAsyncJobResult'),
+                      data: {
+                        jobid: jid
+                      },
+                      success: function(json){
+                        var result = json.queryasyncjobresultresponse;
+                        if (result.jobstatus == 0) {
+                          return; //Job has not completed
+                        }
+                        else {
+                          if (result.jobstatus == 1) {
+                            args.response.success({ data: { state: 'Enabled' } });
+                          }
+                          else if (result.jobstatus == 2) {
+                            args.response.error(_s(result.jobresult.errortext));
+                          }
+                        }
+                      }
+                    });
+                  }, g_queryAsyncJobResultInterval);
+                }
+              });
+            }
+
+            var addCiscoVnmcResourceFn = function(){
+              var data = {
+                physicalnetworkid: args.context.physicalNetworks[0].id,
+                hostname: args.data.hostname,
+                username: args.data.username,
+                password: args.data.password
+              };
+
+              $.ajax({
+                url: createURL('addCiscoVnmcResource'),
+                data: data,
+                success: function(json) {
+                  var item = json.addCiscoVnmcResource.CiscoVnmcResource;
+                  args.response.success({data: item});
+                },
+                error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
+                }
+              });
+            }
+          },
+
+          notification: {
+            poll: function(args) {
+              args.complete();
+            }
+          }
+        },
+
+        disable: {
+          label: 'Disable VNMC provider',
+
+          messages: {
+            confirm: function(args) {
+              return 'Please confirm you would like to disable the VNMC provider.';
+            },
+            notification: function(args) {
+              return 'Disable VNMC device';
+            }
+          },
+
+          action: function(args) {
+            $.ajax({
+              url: createURL('listNetworkServiceProviders'),
+              data: {
+                name: 'CiscoVnmc',
+                physicalnetworkid: args.context.physicalNetworks[0].id
+              },
+              success: function(json){
+                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                if(items != null && items.length > 0) {
+                  var ciscoVnmcProvider = items[0];
+
+                  disableCiscoVnmcProviderFn(ciscoVnmcProvider);
+                } else {
+                  args.response.error('VNMC is not available from provider list.');
+                }
+              }
+            });
+
+            var disableCiscoVnmcProviderFn = function(ciscoVnmcProvider){
+              $.ajax({
+                url: createURL('updateNetworkServiceProvider'),
+                data: {
+                  id: ciscoVnmcProvider.id,
+                  state: 'Disabled'
+                },
+                success: function(json) {
+                  var jid = json.updatenetworkserviceproviderresponse.jobid;
+                  var disableVnmcProviderIntervalID = setInterval(function(){
+                    $.ajax({
+                      url: createURL('queryAsyncJobResult'),
+                      data: {
+                        jobid: jid
+                      },
+                      success: function(json){
+                        var result = json.queryasyncjobresultresponse;
+                        if (result.jobstatus == 0) {
+                          return; //Job has not completed
+                        }
+                        else {
+                          clearInterval(disableVnmcProviderIntervalID);
+                          if (result.jobstatus == 1) {
+                            args.response.success({ data: { state: 'Disabled' } });
+                          }
+                          else if (result.jobstatus == 2) {
+                            args.response.error(_s(result.jobresult.errortext));
+                          }
+                        }
+                      }
+                    });
+                  }, g_queryAsyncJobResultInterval);
+                }
+              });
+            };
+
+            var addCiscoVnmcResourceFn = function(){
+              var data = {
+                physicalnetworkid: args.context.physicalNetworks[0].id,
+                hostname: args.data.hostname,
+                username: args.data.username,
+                password: args.data.password
+              };
+
+              $.ajax({
+                url: createURL('addCiscoVnmcResource'),
+                data: data,
+                success: function(json) {
+                  var item = json.addCiscoVnmcResource.CiscoVnmcResource;
+                  args.response.success({data: item});
+                },
+                error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
+                }
+              });
+            }
+          },
+
+          notification: {
+            poll: function(args) {
+              args.complete();
+            }
+          }
+        }
+      },
       tabs: {
         details: {
           title: 'label.details',
@@ -274,12 +468,12 @@
               name: { label: 'label.name' }
             },
             {
-              state: { label: 'label.state' }, 
+              state: { label: 'label.state' },
               id: { label: 'label.id' },
               servicelist: {
                 label: 'Services',
-                converter: function(args){  
-                  if(args)                  
+                converter: function(args){
+                  if(args)
                     return args.join(', ');
                   else
                     return '';
@@ -287,40 +481,66 @@
               }
             }
           ],
-          dataProvider: function(args) {            
+          dataProvider: function(args) {
             $.ajax({
               url: createURL('listNetworkServiceProviders'),
               data: {
                 name: 'CiscoVnmc',
-                physicalnetworkid: args.context.physicalNetworks[0].id   
-              },              
-              success: function(json){                  
+                physicalnetworkid: args.context.physicalNetworks[0].id
+              },
+              success: function(json){
                 var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-                if(items != null && items.length > 0) {   
-                  args.response.success({ data: items[0] });                  
+                if(items != null && items.length > 0) {
+                  args.response.success({ data: items[0] });
                 }
                 else {
-                  args.response.success({ 
+                  args.response.success({
                     data: {
                       name: 'CiscoVnmc',
                       state: 'Disabled'
-                    }
-                  })
+                    },
+                    actionFilter: vnmcActionFilter
+                  });
                 }
               }
-            });                 
+            });
           }
         }
       }
     };
-   
+
+    var vnmcActionFilter = function(args) {
+      var enabledActions = ['enable'];
+      
+      $.ajax({
+        url: createURL('listNetworkServiceProviders'),
+        async: false,
+        data: {
+          name: 'CiscoVnmc',
+          physicalnetworkid: args.context.physicalNetworks[0].id
+        },
+        success: function(json){
+          var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+          if(items != null && items.length > 0) {
+            var ciscoVnmcProvider = items[0];
+
+            if (ciscoVnmcProvider.state === 'Enabled') {
+              enabledActions = ['disable'];
+            }
+          }
+        }
+      });
+
+      return enabledActions;
+    };
+
     module.pluginAPI.extend({
       addDevice: function(device) {
         cloudStack.sections.system.subsections[device.id] = device;
         vnmcDeviceViewAll.push({ label: device.title, path: '_zone.' + device.id });
       }
     });
-    
+
     module.infrastructure.networkServiceProvider({
       id: 'CiscoVnmc',
       name: 'Cisco VNMC',
