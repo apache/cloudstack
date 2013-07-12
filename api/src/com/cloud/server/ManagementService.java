@@ -371,4 +371,6 @@ public interface ManagementService {
     List<String> listDeploymentPlanners();
 
     VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException;
+    
+    boolean getExecuteInSequence();
 }
