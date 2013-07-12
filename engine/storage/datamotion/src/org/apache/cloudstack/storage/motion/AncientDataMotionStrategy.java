@@ -59,6 +59,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -113,6 +114,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     VolumeManager volumeMgr;
     @Inject
     StorageCacheManager cacheMgr;
+    @Inject
+    ManagementService _mgmtServer;
 
     @Override
     public boolean canHandle(DataObject srcData, DataObject destData) {
@@ -184,7 +187,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
-            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), destData.getTO(), _primaryStorageDownloadWait, _mgmtServer.getExecuteInSequence());
             EndPoint ep = selector.select(srcForCopy, destData);
             answer = ep.sendMessage(cmd);
 
@@ -242,7 +245,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             int _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value,
                     Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
 
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait);
+            CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait, _mgmtServer.getExecuteInSequence());
             EndPoint ep = selector.select(snapObj, volObj);
             Answer answer = ep.sendMessage(cmd);
 
@@ -258,7 +261,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer cloneVolume(DataObject template, DataObject volume) {
-        CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0);
+        CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0, _mgmtServer.getExecuteInSequence());
         try {
             EndPoint ep = selector.select(volume.getDataStore());
             Answer answer = ep.sendMessage(cmd);
@@ -301,7 +304,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
             objOnImageStore.processEvent(Event.CopyingRequested);
 
-            CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), destData.getTO(), _copyvolumewait);
+            CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), destData.getTO(), _copyvolumewait, _mgmtServer.getExecuteInSequence());
             EndPoint ep = selector.select(objOnImageStore, destData);
             answer = ep.sendMessage(cmd);
 
@@ -319,7 +322,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             return answer;
         } else {
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
-            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
+            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait, _mgmtServer.getExecuteInSequence());
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = ep.sendMessage(cmd);
             return answer;
@@ -376,7 +379,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             srcData = cacheSnapshotChain(snapshot);
         }
 
-        CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait);
+        CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, _mgmtServer.getExecuteInSequence());
         EndPoint ep = selector.select(srcData, destData);
         Answer answer = ep.sendMessage(cmd);
         return answer;
@@ -393,12 +396,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (needCacheStorage(srcData, destData)) {
                 cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
 
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, _mgmtServer.getExecuteInSequence());
                 cmd.setCacheTO(cacheData.getTO());
                 EndPoint ep = selector.select(srcData, destData);
                 answer = ep.sendMessage(cmd);
             } else {
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, _mgmtServer.getExecuteInSequence());
                 EndPoint ep = selector.select(srcData, destData);
                 answer = ep.sendMessage(cmd);
             }
