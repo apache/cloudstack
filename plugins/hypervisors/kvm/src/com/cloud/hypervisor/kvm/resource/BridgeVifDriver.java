@@ -33,6 +33,8 @@ import org.libvirt.LibvirtException;
 import javax.naming.ConfigurationException;
 import java.net.URI;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.File;
 
 public class BridgeVifDriver extends VifDriverBase {
@@ -40,6 +42,8 @@ public class BridgeVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger
             .getLogger(BridgeVifDriver.class);
     private int _timeout;
+    
+    private static final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
 
     @Override
@@ -136,7 +140,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface) {
-        // Nothing needed as libvirt cleans up tap interface from bridge.
+        deleteVnetBr(iface.getBrName());
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
@@ -161,16 +165,64 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private void createVnet(String vnetId, String pif, String brName)
             throws InternalErrorException {
-        final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
-        command.add("-v", vnetId);
-        command.add("-p", pif);
-        command.add("-b", brName);
-        command.add("-o", "add");
-
-        final String result = command.execute();
-        if (result != null) {
-            throw new InternalErrorException("Failed to create vnet " + vnetId
-                    + ": " + result);
+        synchronized (_vnetBridgeMonitor) {
+            final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
+            command.add("-v", vnetId);
+            command.add("-p", pif);
+            command.add("-b", brName);
+            command.add("-o", "add");
+            
+            final String result = command.execute();
+            if (result != null) {
+                throw new InternalErrorException("Failed to create vnet " + vnetId
+                        + ": " + result);
+            }
+        }
+    }
+    
+    private void deleteVnetBr(String brName){
+        synchronized (_vnetBridgeMonitor) {
+            String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName + "/brif | grep vnet");
+            if (cmdout != null && cmdout.contains("vnet")) {
+                // Active VM remains on that bridge
+                return;
+            }
+            
+            Pattern oldStyleBrNameRegex = Pattern.compile("^cloudVirBr(\\d+)$");
+            Pattern brNameRegex = Pattern.compile("^br(\\S+)-(\\d+)$");
+            Matcher oldStyleBrNameMatcher = oldStyleBrNameRegex.matcher(brName);
+            Matcher brNameMatcher = brNameRegex.matcher(brName);
+            
+            String pName = null;
+            String vNetId = null;
+            if (oldStyleBrNameMatcher.find()) {
+                // Actually modifyvlan.sh doesn't require pif name when deleting its bridge so far.
+                pName = "undefined";
+                vNetId = oldStyleBrNameMatcher.group(1);
+            } else if (brNameMatcher.find()) {
+                if(brNameMatcher.group(1) != null || !brNameMatcher.group(1).isEmpty()) {
+                    pName = brNameMatcher.group(1);
+                } else {
+                    pName = "undefined";
+                }
+                vNetId = brNameMatcher.group(2);
+            }
+            
+            if (vNetId == null || vNetId.isEmpty()) {
+                s_logger.debug("unable to get a vNet ID from name "+ brName);
+                return;
+            }
+            
+            final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
+            command.add("-o", "delete");
+            command.add("-v", vNetId);
+            command.add("-p", pName);
+            command.add("-b", brName);
+            
+            final String result = command.execute();
+            if (result != null) {
+                s_logger.debug("Delete bridge " + brName + " failed: " + result);
+            }
         }
     }
 

@@ -38,7 +38,6 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
-    private String _modifyVlanPath;
     
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -52,11 +51,6 @@ public class OvsVifDriver extends VifDriverBase {
         String value = (String) params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
-        _modifyVlanPath = Script.findScript(networkScriptsDir, "modifyvlan.sh");
-        if (_modifyVlanPath == null) {
-            throw new ConfigurationException("Unable to find modifyvlan.sh");
-        }       
-        
         createControlNetwork(_bridges.get("linklocal"));
     }
 
