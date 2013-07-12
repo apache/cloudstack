@@ -734,16 +734,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             int vlansReleased = _accountGuestVlanMapDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Released " + vlansReleased + " dedicated guest vlan ranges from account " + accountId);
 
-            // Update resource count for this account and for parent domains.
-            List<ResourceCountVO> resourceCounts = _resourceCountDao.listByOwnerId(accountId, ResourceOwnerType.Account);
-            for (ResourceCountVO resourceCount : resourceCounts) {
-                _resourceLimitMgr.decrementResourceCount(accountId, resourceCount.getType(), resourceCount.getCount());
-            }
-
-            // Delete resource count and resource limits entries set for this account (if there are any).
-            _resourceCountDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
-            _resourceLimitDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
-
             // release account specific acquired portable IP's. Since all the portable IP's must have been already
             // disassociated with VPC/guest network (due to deletion), so just mark portable IP as free.
             List<? extends IpAddress> portableIpsToRelease = _ipAddressDao.listByAccount(accountId);
@@ -761,6 +751,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     }
                 }
             }
+
+            // Updating and deleting the resourceLimit and resourceCount should be the last step in cleanupAccount process.
+            // Update resource count for this account and for parent domains.
+            List<ResourceCountVO> resourceCounts = _resourceCountDao.listByOwnerId(accountId, ResourceOwnerType.Account);
+            for (ResourceCountVO resourceCount : resourceCounts) {
+                _resourceLimitMgr.decrementResourceCount(accountId, resourceCount.getType(), resourceCount.getCount());
+            }
+
+            // Delete resource count and resource limits entries set for this account (if there are any).
+            _resourceCountDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
+            _resourceLimitDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
