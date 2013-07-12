@@ -1279,9 +1279,11 @@ public class ApiDBUtils {
     }
 
     public static String findJobInstanceUuid(AsyncJob job){
-        if ( job == null )
+        if ( job == null || job.getInstanceId() == null)
             return null;
+
         String jobInstanceId = null;
+
         if (job.getInstanceType() == AsyncJob.Type.Volume) {
             VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
             if (volume != null) {
