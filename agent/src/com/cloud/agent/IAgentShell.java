@@ -50,7 +50,5 @@ public interface IAgentShell {
 
     public int getPingRetries();
 
-    public void upgradeAgent(final String url);
-
     public String getVersion();
 }

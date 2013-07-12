@@ -214,27 +214,6 @@ public class Agent implements HandlerFactory, IAgentControl {
         return _resource.getClass().getSimpleName();
     }
 
-    public void upgradeAgent(final String url, boolean protocol) {
-        // shell needs to take care of synchronization when multiple-instances demand upgrade
-        // at the same time
-        _shell.upgradeAgent(url);
-
-        // To stop agent after it has been upgraded, as shell executor may prematurely time out
-        // tasks if agent is in shutting down process
-        if (protocol) {
-            if (_connection != null) {
-                _connection.stop();
-                _connection = null;
-            }
-            if (_resource != null) {
-                _resource.stop();
-                _resource = null;
-            }
-        } else {
-            stop(ShutdownCommand.Update, null);
-        }
-    }
-
     public void start() {
         if (!_resource.start()) {
             s_logger.error("Unable to start the resource: " + _resource.getName());

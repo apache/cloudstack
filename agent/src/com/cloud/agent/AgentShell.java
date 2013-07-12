@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -171,91 +170,6 @@ public class AgentShell implements IAgentShell, Daemon {
             _storage.persist(prefix + "." + name, value);
         else
             _storage.persist(name, value);
-    }
-
-    @Override
-    public void upgradeAgent(final String url) {
-        s_logger.info("Updating agent with binary from " + url);
-        synchronized (this) {
-            final Class<?> c = this.getClass();
-            String path = c.getResource(c.getSimpleName() + ".class")
-                    .toExternalForm();
-            final int begin = path.indexOf(File.separator);
-            int end = path.lastIndexOf("!");
-            end = path.lastIndexOf(File.separator, end);
-            path = path.substring(begin, end);
-
-            s_logger.debug("Current binaries reside at " + path);
-
-            File file = null;
-            try {
-                file = File.createTempFile("agent-",
-                        "-" + Long.toString(new Date().getTime()));
-                wget(url, file);
-            } catch (final IOException e) {
-                s_logger.warn(
-                        "Exception while downloading agent update package, ", e);
-                throw new CloudRuntimeException("Unable to update from " + url
-                        + ", exception:" + e.getMessage(), e);
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unzipping " + file.getAbsolutePath() + " to "
-                        + path);
-            }
-
-            final Script unzip = new Script("unzip", 120000, s_logger);
-            unzip.add("-o", "-q"); // overwrite and quiet
-            unzip.add(file.getAbsolutePath());
-            unzip.add("-d", path);
-
-            final String result = unzip.execute();
-            if (result != null) {
-                throw new CloudRuntimeException(
-                        "Unable to unzip the retrieved file: " + result);
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Closing the connection to the management server");
-            }
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Exiting to start the new agent.");
-        }
-        System.exit(ExitStatus.Upgrade.value());
-    }
-
-    public static void wget(String url, File file) throws IOException {
-        final HttpClient client = new HttpClient(s_httpClientManager);
-        final GetMethod method = new GetMethod(url);
-        int response;
-        response = client.executeMethod(method);
-        if (response != HttpURLConnection.HTTP_OK) {
-            method.releaseConnection();
-            s_logger.warn("Retrieving from " + url + " gives response code: "
-                    + response);
-            throw new CloudRuntimeException("Unable to download from " + url
-                    + ".  Response code is " + response);
-        }
-
-        final InputStream is = method.getResponseBodyAsStream();
-        s_logger.debug("Downloading content into " + file.getAbsolutePath());
-
-        final FileOutputStream fos = new FileOutputStream(file);
-        byte[] buffer = new byte[4096];
-        int len = 0;
-        while ((len = is.read(buffer)) > 0)
-            fos.write(buffer, 0, len);
-        fos.close();
-
-        try {
-            is.close();
-        } catch (IOException e) {
-            s_logger.warn("Exception while closing download stream from  "
-                    + url + ", ", e);
-        }
-        method.releaseConnection();
     }
 
     private void loadProperties() throws ConfigurationException {
