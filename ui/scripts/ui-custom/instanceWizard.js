@@ -489,7 +489,10 @@
           'affinity': function($step, formData) {
             return {
               response: {
-                success: function(args) {                  
+                success: function(args) {
+                  // Cleanup
+                  $step.find('.main-desc, p.no-affinity-groups').remove();
+                  
                   if (args.data.affinityGroups && args.data.affinityGroups.length) {
                     $step.prepend(
                       $('<div>').addClass('main-desc').append(
@@ -513,7 +516,9 @@
                       )
                     ); 
                   } else {
-                    $step.find('.select-container').append($('<p>').html(_l('message.no.affinity.groups')));
+                    $step.find('.select-container').append(
+                      $('<p>').addClass('no-affinity-groups').html(_l('message.no.affinity.groups'))
+                    );
                   }
                 }
               }
