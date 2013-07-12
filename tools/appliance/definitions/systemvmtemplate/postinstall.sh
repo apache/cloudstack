@@ -166,6 +166,7 @@ EOF
 
 fix_vhdutil() {
   wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
+  chmod a+x /bin/vhd-util
 }
 
 do_fixes() {
