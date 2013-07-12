@@ -604,19 +604,29 @@ public class HypervisorHostHelper {
     private static void setupPVlanPair(DistributedVirtualSwitchMO dvSwitchMo, ManagedObjectReference morDvSwitch, 
             Integer vid, Integer spvlanid) throws Exception {
         Map<Integer, HypervisorHostHelper.PvlanType> vlanmap = dvSwitchMo.retrieveVlanPvlan(vid, spvlanid, morDvSwitch);
-        if (vlanmap.size() != 0) {
-            // Then either vid or pvlanid or both are already being used.
-            if (vlanmap.containsKey(vid) && vlanmap.get(vid) != HypervisorHostHelper.PvlanType.promiscuous) {
+        if (!vlanmap.isEmpty()) {
+            // Then either vid or pvlanid or both are already being used. Check how.
+            // First the primary pvlan id.
+            if (vlanmap.containsKey(vid) && !vlanmap.get(vid).equals(HypervisorHostHelper.PvlanType.promiscuous)) {
                 // This VLAN ID is already setup as a non-promiscuous vlan id on the DVS. Throw an exception.
-                String msg = "VLAN ID " + vid + " is already in use as a " + vlanmap.get(vid).toString() + " VLAN on the DVSwitch";
+                String msg = "Specified primary PVLAN ID " + vid + " is already in use as a " + vlanmap.get(vid).toString() + " VLAN on the DVSwitch";
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
-            if ((vid != spvlanid) && vlanmap.containsKey(spvlanid) && vlanmap.get(spvlanid) != HypervisorHostHelper.PvlanType.isolated) {
-                // This PVLAN ID is already setup as a non-isolated vlan id on the DVS. Throw an exception.
-                String msg = "PVLAN ID " + spvlanid + " is already in use as a " + vlanmap.get(spvlanid).toString() + " VLAN in the DVSwitch";
-                s_logger.error(msg);
-                throw new Exception(msg);
+            // Next the secondary pvlan id.
+            if (spvlanid.equals(vid)) {
+                if (vlanmap.containsKey(spvlanid) && !vlanmap.get(spvlanid).equals(HypervisorHostHelper.PvlanType.promiscuous)) {
+                    String msg = "Specified secondary PVLAN ID " + spvlanid + " is already in use as a " + vlanmap.get(spvlanid).toString() + " VLAN in the DVSwitch";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            } else {
+                if (vlanmap.containsKey(spvlanid) && !vlanmap.get(spvlanid).equals(HypervisorHostHelper.PvlanType.isolated)) {
+                    // This PVLAN ID is already setup as a non-isolated vlan id on the DVS. Throw an exception.
+                    String msg = "Specified secondary PVLAN ID " + spvlanid + " is already in use as a " + vlanmap.get(spvlanid).toString() + " VLAN in the DVSwitch";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
             }
         }
 
