@@ -171,48 +171,28 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
     @DB
     public String getValueAndInitIfNotExist(String name, String category, String initValue) {
-    	Transaction txn = Transaction.currentTxn();
-    	PreparedStatement stmt = null;
-    	PreparedStatement stmtInsert = null;
-    	String returnValue = initValue;
-		try {
-			txn.start();
-			stmt = txn.prepareAutoCloseStatement("SELECT value FROM configuration WHERE name=?");
-			stmt.setString(1, name);
-			ResultSet rs = stmt.executeQuery();
-			if(rs != null && rs.next()) {
-				returnValue =  rs.getString(1);
-				if(returnValue != null) {
-					txn.commit();
-					if("Hidden".equals(category) || "Secure".equals(category)){
-						return DBEncryptionUtil.decrypt(returnValue);
-					} else {
-						return returnValue;
-					}
-				} else {
-					// restore init value
-					returnValue = initValue;
-				}
-			}
-			stmt.close();
+        String returnValue = initValue;
+        try {
+            ConfigurationVO config = findByName(name);
+            if (config != null) {
+                if (config.getValue() != null) {
+                    returnValue = config.getValue();
+                } else {
+                    update(name, category, initValue);
+                }
+            } else {
+                if (category.equals("Hidden") || category.equals("Secure")) {
+                    initValue = DBEncryptionUtil.encrypt(initValue);
+                }
+                ConfigurationVO newConfig = new ConfigurationVO(category, "DEFAULT", "management-server", name, initValue, "");
+                persist(newConfig);
+            }
+            return returnValue;
+        } catch (Exception e) {
+            s_logger.warn("Unable to update Configuration Value", e);
+            throw new CloudRuntimeException("Unable to initialize configuration variable: " + name);
 
-			if("Hidden".equals(category) || "Secure".equals(category)){
-				initValue = DBEncryptionUtil.encrypt(initValue);
-			}
-			stmtInsert = txn.prepareAutoCloseStatement(
-				"INSERT INTO configuration(instance, name, value, description) VALUES('DEFAULT', ?, ?, '') ON DUPLICATE KEY UPDATE value=?");
-			stmtInsert.setString(1, name);
-			stmtInsert.setString(2, initValue);
-			stmtInsert.setString(3, initValue);
-			if(stmtInsert.executeUpdate() < 1) {
-				throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
-			}
-			txn.commit();
-			return returnValue;
-		} catch (Exception e) {
-			s_logger.warn("Unable to update Configuration Value", e);
-			throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
-		}
+        }
     }
     
     @Override
