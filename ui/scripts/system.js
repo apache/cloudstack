@@ -13104,6 +13104,7 @@
               blades: {
                 title: 'Blades',
                 listView: {
+                  id: 'blades',
                   fields: {
                     //dn: { label: 'Distinguished Name' },
                     chassis: { label: 'Chassis' }, 
@@ -13125,37 +13126,35 @@
                           data[i].bladeid = array1[2];
                         }
 
+                        
+                        //for testing only (begin)   
+                        /*
+                        var data = [
+                          {
+                            "id": "58c84a1d-6e46-44e3-b7ec-abaa876d1be3",
+                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
+                            "bladedn": "sys/chassis-1/blade-1"
+                          },
+                          {
+                            "id": "de5abadf-f294-4014-9fed-7ee37a9b8724",
+                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
+                            "bladedn": "sys/chassis-1/blade-2"
+                          }
+                        ];         
+                        for(var i = 0; i < data.length; i++) {
+                          var array1 = data[i].bladedn.split('/');                      
+                          data[i].chassis = array1[1];
+                          data[i].bladeid = array1[2];
+                        }  
+                        */
+                        //for testing only (end)
+                        
+                        
                         args.response.success({
                           data: data
                         });      
                       }                      
-                    });                           
-
-                    /*
-                    var data = [
-                      {
-                        "id": "58c84a1d-6e46-44e3-b7ec-abaa876d1be3",
-                        "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
-                        "bladedn": "sys/chassis-1/blade-1"
-                      },
-                      {
-                        "id": "de5abadf-f294-4014-9fed-7ee37a9b8724",
-                        "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
-                        "bladedn": "sys/chassis-1/blade-2"
-                      }
-                    ];                    
-                               
-                    for(var i = 0; i < data.length; i++) {
-                      var array1 = data[i].bladedn.split('/');                      
-                      data[i].chassis = array1[1];
-                      data[i].bladeid = array1[2];
-                    }
-
-                    args.response.success({
-                      data: data
-                    });      
-                    */
-                    
+                    });  
                   },                  
                   actions: {                      
                     associateProfileToBlade: {
@@ -13179,49 +13178,51 @@
                                 data: {
                                   ucsmanagerid: args.context.ucsManagers[0].id
                                 },
+                                async: false,
                                 success: function(json) { //e.g. json == { "listucsprofileresponse" : { "count":1 ,"ucsprofile" : [  {"ucsdn":"org-root/ls-testProfile"} ] } }
                                   var ucsprofiles = json.listucsprofileresponse.ucsprofile;
                                   if(ucsprofiles != null) {
                                     for(var i = 0; i < ucsprofiles.length; i++) {
                                       items.push({ id: ucsprofiles[i].ucsdn, description: ucsprofiles[i].ucsdn });                                      
                                     }
-                                  }
-                                  
-                                  //for testing only (begin)
-                                  /*
-                                  items.push({id: 'Service_Profile_Demo1', description: 'Service_Profile_Demo1'});
-                                  items.push({id: 'Service_Profile_Demo2', description: 'Service_Profile_Demo2'});
-                                  items.push({id: 'Service_Profile_Demo3', description: 'Service_Profile_Demo3'});
-                                  items.push({id: 'Service_Profile_Demo4', description: 'Service_Profile_Demo4'});
-                                  items.push({id: 'Service_Profile_Demo5', description: 'Service_Profile_Demo5'});
-                                  items.push({id: 'Service_Profile_Demo6', description: 'Service_Profile_Demo6'});
-                                  items.push({id: 'Service_Profile_Demo7', description: 'Service_Profile_Demo7'});
-                                  */
-                                  //for testing only (end)
-                                  
-                                  args.response.success({ data: items });
+                                  }                                  
                                 }
-                              });
+                              });                              
+
+                              //for testing only (begin)     
+                              /*
+                              items.push({id: 'org-root/ls-testProfile1', description: 'org-root/ls-testProfile1'});
+                              items.push({id: 'org-root/ls-testProfile2', description: 'org-root/ls-testProfile2'});
+                              items.push({id: 'org-root/ls-testProfile3', description: 'org-root/ls-testProfile3'});
+                              items.push({id: 'org-root/ls-testProfile4', description: 'org-root/ls-testProfile4'});
+                              items.push({id: 'org-root/ls-testProfile5', description: 'org-root/ls-testProfile5'});
+                              items.push({id: 'org-root/ls-testProfile6', description: 'org-root/ls-testProfile6'});
+                              items.push({id: 'org-root/ls-testProfile7', description: 'org-root/ls-testProfile7'});    
+                              */                             
+                              //for testing only (end)                              
+                              
+                              args.response.success({ data: items });
+                              
                             },
                             validation: { required: true }
                           }
                         }
                       },
-                      action: function(args) {
-                        /*
+                      action: function(args) {                        
                         $.ajax({
-                          url: createURL('associatesUscProfileToBlade'),
+                          url: createURL('associatesUcsProfileToBlade'),
                           data: {
                             ucsmanagerid: args.context.ucsManagers[0].id,
                             profiledn: args.data.profiledn, 
-                            bladeid: '1234567890' //to change later
+                            bladeid: args.context.blades[0].id
                           },
                           success: function(json) {
-                            
+                            //json.associateucsprofiletobladeresponse.ucsblade
+                            args.response.success({data: { associatedProfileDn: args.data.profiledn }});
                           }
                         });
-                        */
-                        args.response.success({data: { associatedProfileDn: args.data.profiledn }});
+                        
+                        //args.response.success({data: { associatedProfileDn: args.data.profiledn }}); //for testing only
                       },
                       notification: {
                         poll: function(args) {
