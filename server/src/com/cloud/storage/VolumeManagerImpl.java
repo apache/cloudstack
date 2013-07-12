@@ -1648,10 +1648,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
                 if (volumeToAttachStoragePool.isManaged() &&
-                	volumeToAttach.getPath() == null) {
-                	volumeToAttach.setPath(answer.getDisk().getVdiUuid());
+                    volumeToAttach.getPath() == null) {
+                    volumeToAttach.setPath(answer.getDisk().getVdiUuid());
 
-                	_volsDao.update(volumeToAttach.getId(), volumeToAttach);
+                    _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                 }
             } else {
                 _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);

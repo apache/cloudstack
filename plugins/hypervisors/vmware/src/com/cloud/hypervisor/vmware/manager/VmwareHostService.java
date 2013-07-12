@@ -19,11 +19,16 @@ package com.cloud.hypervisor.vmware.manager;
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.vmware.vim25.ManagedObjectReference;
 
 public interface VmwareHostService {
-	VmwareContext getServiceContext(Command cmd);
-	void invalidateServiceContext(VmwareContext context);
-	VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd);
+    VmwareContext getServiceContext(Command cmd);
+    void invalidateServiceContext(VmwareContext context);
+    VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd);
 
-	String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
+    String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
+
+    ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
+            String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception;
+    void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception;
 }
