@@ -1123,7 +1123,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         /* Only works for KVM/Xen for now */
         if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM
-                && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer) {
+                && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
+                && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware) {
             throw new InvalidParameterValueException(
                     "Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
         }
