@@ -268,7 +268,7 @@ def is_xcp(session, args):
                                'param-name=software-version',
                                'param-key=platform_name']
     platform = lib.do_cmd(platform_cmd).split('.')[0]
-    return platform                           
+    return platform
 
 def getLabel(session, args):
     pif_list_cmd = [lib.XE_PATH, 'pif-list', '--minimal']

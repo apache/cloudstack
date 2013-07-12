@@ -8741,7 +8741,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public void setRunLevel(int level) {
     }
-    
+
     private boolean is_xcp() {
     	Connection conn = getConnection();
     	String result = callHostPlugin(conn, "ovstunnel", "is_xcp");
@@ -8749,7 +8749,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     		return true;
     	return false;
     }
-    
+
     private String getLabel() {
     	Connection conn = getConnection();
     	String result = callHostPlugin(conn, "ovstunnel", "getLabel");
