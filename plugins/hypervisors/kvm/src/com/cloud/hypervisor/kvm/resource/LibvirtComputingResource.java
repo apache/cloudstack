@@ -3318,7 +3318,21 @@ ServerResource {
 
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                passCmdLine(vmName, vmSpec.getBootArgs() );
+                String unameKernelVersion = Script.runSimpleBashScript("uname -r");
+                String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
+                long kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
+                if ((kernelVersion < 2006034) && (conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
+                    for (int count = 0; count < 10; count ++) {
+                        passCmdLine(vmName, vmSpec.getBootArgs());
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            s_logger.trace("Ignoring InterruptedException.", e);
+                        }
+                    }
+                } else {
+                    passCmdLine(vmName, vmSpec.getBootArgs() );
+                }
             }
 
             state = State.Running;
