@@ -2043,7 +2043,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing createipAlias command: " + _gson.toJson(cmd));
         }
-        cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
         String args=routerIp+" ";
         for (IpAliasTO ipaliasto : ipAliasTOs) {
@@ -2079,7 +2079,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(final DeleteIpAliasCommand cmd) {
-        cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         if (s_logger.isInfoEnabled()) {
