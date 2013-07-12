@@ -175,12 +175,13 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured,
             boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId,
             String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
-            HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled) {
+            HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
         this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum,
                 displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
         this.uuid = UUID.randomUUID().toString();
         this.enableSshKey = sshKeyEnabled;
+        this.dynamicallyScalable = isDynamicallyScalable;
     }
 
 
