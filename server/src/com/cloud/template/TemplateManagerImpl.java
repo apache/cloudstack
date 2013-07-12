@@ -1686,6 +1686,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String format = cmd.getFormat();
         Long guestOSId = cmd.getOsTypeId();
         Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
+        Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.isBootable();
         Integer sortKey = cmd.getSortKey();
         Account account = UserContext.current().getCaller();
@@ -1707,9 +1709,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
+        if(cmd.isRoutingType() != null){
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
+            }
+        }
 
         boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null
-                && bootable == null && sortKey == null);
+                && bootable == null && sortKey == null && isDynamicallyScalable == null && isRoutingTemplate == null);
         if (!updateNeeded) {
             return template;
         }
@@ -1756,6 +1763,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (bootable != null) {
             template.setBootable(bootable);
+        }
+
+        if (isDynamicallyScalable != null) {
+            template.setDynamicallyScalable(isDynamicallyScalable);
+        }
+
+        if (isRoutingTemplate != null) {
+            if (isRoutingTemplate) {
+                template.setTemplateType(TemplateType.ROUTING);
+            } else {
+                template.setTemplateType(TemplateType.USER);
+            }
         }
 
         _tmpltDao.update(id, template);
