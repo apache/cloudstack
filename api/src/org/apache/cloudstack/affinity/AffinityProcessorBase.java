@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
@@ -40,5 +41,11 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
 
     public void setType(String type) {
         _type = type;
+    }
+
+    @Override
+    public boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination plannedDestination)
+            throws AffinityConflictException {
+        return true;
     }
 }

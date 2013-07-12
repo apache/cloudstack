@@ -42,4 +42,8 @@ public interface DeploymentPlanningManager extends Manager {
      */
     DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
             ExcludeList avoids) throws InsufficientServerCapacityException, AffinityConflictException;
+
+    boolean finalizeReservation(DeployDestination plannedDestination,
+            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids)
+            throws InsufficientServerCapacityException, AffinityConflictException;
 }

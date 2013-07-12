@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
@@ -46,4 +47,16 @@ public interface AffinityGroupProcessor extends Adapter {
      * @return String Affinity/Anti-affinity type
      */
     String getType();
+
+    /**
+     * check() is called to see if the planned destination fits the group
+     * requirements
+     *
+     * @param vm
+     *            virtual machine.
+     * @param plannedDestination
+     *            deployment destination where VM is planned to be deployed
+     */
+    boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination plannedDestination)
+            throws AffinityConflictException;
 }
