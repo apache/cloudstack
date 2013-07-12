@@ -18,6 +18,8 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
+import javax.naming.OperationNotSupportedException;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 import org.apache.log4j.Logger;
@@ -340,5 +342,14 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
         assert (false);
         return true;
+    }
+
+    public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
+            String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
+        throw new OperationNotSupportedException();
+    }
+
+    public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
+        throw new OperationNotSupportedException();
     }
 }
