@@ -19,7 +19,7 @@
     under the License.
 -->
 <section id="vnmc-cisco">
-  <title>Cisco VNMC Support</title>
+  <title>External Guest Firewall Integration for Cisco VNMC (Optional)</title>
   <para>Cisco Virtual Network Management Center (VNMC) provides centralized multi-device and
     policy management for Cisco Network Virtual Services. When Cisco VNMC is integrated with
     ASA 1000v Cloud Firewall and Cisco Nexus 1000v dvSwitch in &PRODUCT; you will be able to: </para>
@@ -303,4 +303,4 @@
         <para>The network offering is created.</para>
       </listitem>
     </orderedlist>
-  </section>
+  </section></section>
