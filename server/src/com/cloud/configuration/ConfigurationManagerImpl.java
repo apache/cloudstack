@@ -172,12 +172,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.S3Dao;
-import com.cloud.storage.dao.SwiftDao;
-import com.cloud.storage.s3.S3Manager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailVO;
@@ -227,8 +223,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     DomainDao _domainDao;
     @Inject
-    SwiftDao _swiftDao;
-    @Inject
     S3Dao _s3Dao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
@@ -276,10 +270,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
-    @Inject
-    SwiftManager _swiftMgr;
-    @Inject
-    S3Manager _s3Mgr;
     @Inject
     PhysicalNetworkTrafficTypeDao _trafficTypeDao;
     @Inject
@@ -719,24 +709,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (!(value.equals("true") || value.equals("false"))) {
                 s_logger.error("Configuration variable " + name + " is expecting true or false in stead of " + value);
                 return "Please enter either 'true' or 'false'.";
-            }
-            if (Config.SwiftEnable.key().equals(name)) {
-                List<DataStore> stores = this._dataStoreMgr.listImageStores();
-                if (stores != null && stores.size() > 0) {
-                    return " can not change " + Config.SwiftEnable.key() + " after you have added secondary storage";
-                }
-                SwiftVO swift = _swiftDao.findById(1L);
-                if (swift != null) {
-                    return " can not change " + Config.SwiftEnable.key() + " after you have added Swift";
-                }
-                if (this._s3Mgr.isS3Enabled()) {
-                    return String.format("Swift is not supported when S3 is enabled.");
-                }
-            }
-            if (Config.S3Enable.key().equals(name)) {
-                if (this._swiftMgr.isSwiftEnabled()) {
-                    return String.format("S3-backed Secondary Storage is not supported when Swift is enabled.");
-                }
             }
             return null;
         }
@@ -1980,9 +1952,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             // Create default system networks
             createDefaultSystemNetworks(zone.getId());
-
-            _swiftMgr.propagateSwiftTmplteOnZone(zone.getId());
-            _s3Mgr.propagateTemplatesToZone(zone);
             txn.commit();
             return zone;
         } catch (Exception ex) {

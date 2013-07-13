@@ -43,10 +43,6 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
-import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
-import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
-import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -123,22 +119,17 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.S3;
-import com.cloud.storage.S3VO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
-import com.cloud.storage.Swift;
-import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -195,8 +186,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected CapacityDao _capacityDao;
     @Inject
     protected HostDao _hostDao;
-    @Inject
-    protected SwiftManager _swiftMgr;
     @Inject
     protected S3Manager _s3Mgr;
     @Inject
@@ -622,28 +611,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String url = cmd.getUrl();
         return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false);
     }
-
-    @Override
-    public Swift discoverSwift(AddSwiftCmd cmd) throws DiscoveryException {
-        return _swiftMgr.addSwift(cmd);
-    }
-
-    @Override
-    public Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd) {
-        Pair<List<SwiftVO>, Integer> swifts = _swiftMgr.listSwifts(cmd);
-        return new Pair<List<? extends Swift>, Integer>(swifts.first(), swifts.second());
-    }
-
-    @Override
-    public S3 discoverS3(final AddS3Cmd cmd) throws DiscoveryException {
-        return _s3Mgr.addS3(cmd);
-    }
-
-    @Override
-    public List<S3VO> listS3s(final ListS3sCmd cmd) {
-        return _s3Mgr.listS3s(cmd);
-    }
-
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password,
             String hypervisorType, List<String> hostTags, Map<String, String> params, boolean deferAgentCreation) throws IllegalArgumentException,

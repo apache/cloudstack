@@ -25,15 +25,18 @@ public class SwiftTO implements DataStoreTO {
 
     String userName;
     String key;
+    String container;
 
     public SwiftTO() { }
 
-    public SwiftTO(Long id, String url, String account, String userName, String key) {
+    public SwiftTO(Long id, String url, String account, String userName, String key,
+                   String container) {
         this.id = id;
         this.url = url;
         this.account = account;
         this.userName = userName;
         this.key = key;
+        this.container = container;
     }
 
     public Long getId() {
@@ -61,6 +64,9 @@ public class SwiftTO implements DataStoreTO {
         return DataStoreRole.Image;
     }
 
+    public String getContainer() {
+        return this.container;
+    }
 
 
 }

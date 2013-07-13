@@ -99,7 +99,7 @@ public class SwiftVO implements Swift, InternalIdentity {
 
     @Override
     public SwiftTO toSwiftTO() {
-        return new SwiftTO(getId(), getUrl(), getAccount(), getUserName(), getKey());
+        return null;
     }
 
     @Override

@@ -70,7 +70,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -118,8 +117,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     ResourceManager _resourceMgr;
     @Inject
     StorageManager _storageMgr;
-    @Inject
-    SwiftManager _swiftMgr;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
