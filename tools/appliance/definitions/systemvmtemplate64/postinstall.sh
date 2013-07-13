@@ -165,12 +165,17 @@ EOF
   locale-gen en_US.UTF-8
 }
 
+fix_vhdutil() {
+  wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
+}
+
 do_fixes() {
   fix_nameserver
   fix_inittab
   fix_acpid
   fix_hostname
   fix_locale
+  fix_vhdutil
 }
 
 configure_apache2() {
