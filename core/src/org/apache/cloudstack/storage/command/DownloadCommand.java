@@ -45,6 +45,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 	private ResourceType resourceType = ResourceType.TEMPLATE;
 	private String installPath;
 	private DataStoreTO _store;
+    private DataStoreTO cacheStore;
 
 	protected DownloadCommand() {
 	}
@@ -178,7 +179,11 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         this.installPath = installPath;
     }
 
+    public void setCacheStore(DataStoreTO cacheStore) {
+        this.cacheStore = cacheStore;
+    }
 
-
-
+    public DataStoreTO getCacheStore() {
+        return this.cacheStore;
+    }
 }

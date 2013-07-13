@@ -139,7 +139,6 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -236,8 +235,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
-    @Inject
-    protected VMTemplateSwiftDao _vmTemplateSwiftDao = null;
     @Inject
     protected VMTemplateS3Dao _vmTemplateS3Dao;
     @Inject

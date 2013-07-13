@@ -236,7 +236,6 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateS3VO;
-import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
@@ -253,7 +252,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
@@ -336,7 +334,6 @@ public class ApiDBUtils {
     static PrimaryDataStoreDao _storagePoolDao;
     static VMTemplateDao _templateDao;
     static VMTemplateDetailsDao _templateDetailsDao;
-    static VMTemplateSwiftDao _templateSwiftDao;
     static VMTemplateS3Dao _templateS3Dao;
     static UploadDao _uploadDao;
     static UserDao _userDao;
@@ -445,7 +442,6 @@ public class ApiDBUtils {
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMTemplateDao templateDao;
     @Inject private VMTemplateDetailsDao templateDetailsDao;
-    @Inject private VMTemplateSwiftDao templateSwiftDao;
     @Inject private VMTemplateS3Dao templateS3Dao;
     @Inject private UploadDao uploadDao;
     @Inject private UserDao userDao;
@@ -554,7 +550,6 @@ public class ApiDBUtils {
         _storagePoolDao = storagePoolDao;
         _templateDao = templateDao;
         _templateDetailsDao = templateDetailsDao;
-        _templateSwiftDao = templateSwiftDao;
         _templateS3Dao = templateS3Dao;
         _uploadDao = uploadDao;
         _userDao = userDao;
@@ -892,10 +887,6 @@ public class ApiDBUtils {
                 template.setDetails(details);
         }
         return template;
-    }
-
-    public static VMTemplateSwiftVO findTemplateSwiftRef(long templateId) {
-        return _templateSwiftDao.findOneByTemplateId(templateId);
     }
 
     public static VMTemplateS3VO findTemplateS3Ref(long templateId) {

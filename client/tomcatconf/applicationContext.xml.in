@@ -316,7 +316,6 @@
   <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
   <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
-  <bean id="swiftDaoImpl" class="com.cloud.storage.dao.SwiftDaoImpl" />
   <bean id="syncQueueDaoImpl" class="com.cloud.async.dao.SyncQueueDaoImpl" />
   <bean id="syncQueueItemDaoImpl" class="com.cloud.async.dao.SyncQueueItemDaoImpl" />
   <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />
@@ -356,7 +355,6 @@
   <bean id="vMTemplateHostDaoImpl" class="com.cloud.storage.dao.VMTemplateHostDaoImpl" />
   <bean id="vMTemplatePoolDaoImpl" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
   <bean id="vMTemplateS3DaoImpl" class="com.cloud.storage.dao.VMTemplateS3DaoImpl" />
-  <bean id="vMTemplateSwiftDaoImpl" class="com.cloud.storage.dao.VMTemplateSwiftDaoImpl" />
   <bean id="vMTemplateZoneDaoImpl" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl" />
   <bean id="versionDaoImpl" class="com.cloud.upgrade.dao.VersionDaoImpl" />
   <bean id="virtualRouterProviderDaoImpl" class="com.cloud.network.dao.VirtualRouterProviderDaoImpl" />
@@ -793,7 +791,6 @@
   <bean id="snapshotManagerImpl" class="com.cloud.storage.snapshot.SnapshotManagerImpl" />
   <bean id="snapshotSchedulerImpl" class="com.cloud.storage.snapshot.SnapshotSchedulerImpl" />
   <bean id="storageNetworkManagerImpl" class="com.cloud.network.StorageNetworkManagerImpl" />
-  <bean id="swiftManagerImpl" class="com.cloud.storage.swift.SwiftManagerImpl" />
   <bean id="syncQueueManagerImpl" class="com.cloud.async.SyncQueueManagerImpl" />
   <bean id="taggedResourceManagerImpl" class="com.cloud.tags.TaggedResourceManagerImpl" />
   <bean id="resourceMetaDataManagerImpl" class="com.cloud.metadata.ResourceMetaDataManagerImpl" />

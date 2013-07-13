@@ -53,13 +53,15 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     ImageStoreDetailsDao _imageStoreDetailsDao;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    StorageCacheManager cacheManager;
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         ImageStoreImpl imgStore = (ImageStoreImpl) store;
         Map<String, String> details = _imageStoreDetailsDao.getDetails(imgStore.getId());
         return new SwiftTO(imgStore.getId(), imgStore.getUri(), details.get(ApiConstants.ACCOUNT),
-                details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY), details.get(ApiConstants.S3_BUCKET_NAME));
+                details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY));
     }
 
     @Override
@@ -71,7 +73,9 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
         VirtualMachineTemplate tmpl = _templateDao.findById(data.getId());
+        DataStore cacheStore = cacheManager.getCacheStorage(dataStore.getScope());
         DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(data.getTO()), maxTemplateSizeInBytes);
+        dcmd.setCacheStore(cacheStore.getTO());
         dcmd.setProxy(getHttpProxy());
 
         EndPoint ep = _epSelector.select(data);
