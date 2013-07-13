@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
-import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -77,66 +76,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
 
     @Override
     public Answer executeRequest(Command cmd) {
-        if (cmd instanceof DownloadSystemTemplateCommand) {
-            return execute((DownloadSystemTemplateCommand) cmd);
-        } else {
-            // return Answer.createUnsupportedCommandAnswer(cmd);
-            return super.executeRequest(cmd);
-        }
-    }
-
-    private Answer execute(DownloadSystemTemplateCommand cmd) {
-        DataStoreTO dstore = cmd.getDataStore();
-        if (dstore instanceof S3TO) {
-            // TODO: how to handle download progress for S3
-            S3TO s3 = (S3TO) cmd.getDataStore();
-            String url = cmd.getUrl();
-            String user = null;
-            String password = null;
-            if (cmd.getAuth() != null) {
-                user = cmd.getAuth().getUserName();
-                password = new String(cmd.getAuth().getPassword());
-            }
-            // get input stream from the given url
-            InputStream in = UriUtils.getInputStreamFromUrl(url, user, password);
-            URI uri;
-            URL urlObj;
-            try {
-                uri = new URI(url);
-                urlObj = new URL(url);
-            } catch (URISyntaxException e) {
-                throw new CloudRuntimeException("URI is incorrect: " + url);
-            } catch (MalformedURLException e) {
-                throw new CloudRuntimeException("URL is incorrect: " + url);
-            }
-
-            final String bucket = s3.getBucketName();
-            // convention is no / in the end for install path based on S3Utils
-            // implementation.
-            String path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
-            // template key is
-            // TEMPLATE_ROOT_DIR/account_id/template_id/template_name
-            String key = join(asList(path, urlObj.getFile()), S3Utils.SEPARATOR);
-            S3Utils.putObject(s3, in, bucket, key);
-            List<S3ObjectSummary> s3Obj = S3Utils.getDirectory(s3, bucket, path);
-            if (s3Obj == null || s3Obj.size() == 0) {
-                return new Answer(cmd, false, "Failed to download to S3 bucket: " + bucket + " with key: " + key);
-            } else {
-                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj
-                        .get(0).getETag());
-            }
-        } else if (dstore instanceof NfsTO) {
-            return new Answer(cmd, false, "Nfs needs to be pre-installed with system vm templates");
-        } else if (dstore instanceof SwiftTO) {
-            // TODO: need to move code from
-            // execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here,
-            // but we need to handle
-            // source is url, most likely we need to modify our existing
-            // swiftUpload python script.
-            return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
-        } else {
-            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
-        }
+         return super.executeRequest(cmd);
     }
 
     @Override

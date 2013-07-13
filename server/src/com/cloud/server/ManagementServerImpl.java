@@ -154,8 +154,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
-import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
@@ -503,7 +501,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -600,8 +597,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyManager _consoleProxyMgr;
     @Inject
     private SecondaryStorageVmManager _secStorageVmMgr;
-    @Inject
-    private SwiftManager _swiftMgr;
     @Inject
     private ServiceOfferingDao _offeringsDao;
     @Inject
@@ -2531,8 +2526,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
-        cmdList.add(AddSwiftCmd.class);
-        cmdList.add(ListSwiftsCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
         cmdList.add(MigrateSystemVMCmd.class);

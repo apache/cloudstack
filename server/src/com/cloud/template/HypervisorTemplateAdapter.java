@@ -160,8 +160,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
-            this.imageService
-            .createTemplateAsync(tmpl, imageStore, caller);
+            this.imageService.createTemplateAsync(tmpl, imageStore, caller);
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 

@@ -519,6 +519,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    protected Answer registerTemplateOnSwift(DownloadCommand cmd) {
+
+        return null;
+    }
     private Answer execute(DownloadCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
         if (dstore instanceof NfsTO || dstore instanceof S3TO) {
@@ -560,12 +564,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
          * s3Obj.get(0).getSize(), s3Obj .get(0).getETag()); } }
          */
         else if (dstore instanceof SwiftTO) {
-            // TODO: need to move code from
-            // execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here,
-            // but we need to handle
-            // source is url, most likely we need to modify our existing
-            // swiftUpload python script.
-            return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
+            return registerTemplateOnSwift(cmd);
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }

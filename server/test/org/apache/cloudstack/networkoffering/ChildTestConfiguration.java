@@ -100,11 +100,8 @@ import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.S3DaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
-import com.cloud.storage.dao.SwiftDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountManager;
@@ -126,7 +123,6 @@ import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
         VolumeDaoImpl.class,
         HostPodDaoImpl.class,
         DomainDaoImpl.class,
-        SwiftDaoImpl.class,
         ServiceOfferingDaoImpl.class,
         ServiceOfferingDetailsDaoImpl.class,
         VlanDaoImpl.class,
@@ -222,16 +218,6 @@ public class ChildTestConfiguration {
     @Bean
     public SecondaryStorageVmManager ssvmMgr() {
         return Mockito.mock(SecondaryStorageVmManager.class);
-    }
-
-    @Bean
-    public SwiftManager swiftMgr() {
-        return Mockito.mock(SwiftManager.class);
-    }
-
-    @Bean
-    public S3Manager s3Mgr() {
-        return Mockito.mock(S3Manager.class);
     }
 
     @Bean

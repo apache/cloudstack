@@ -99,7 +99,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -178,8 +177,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     protected ClusterDao _clusterDao;
     @Inject
     private ResourceLimitService _resourceLimitMgr;
-    @Inject
-    private SwiftManager _swiftMgr;
     @Inject
     private S3Manager _s3Mgr;
     @Inject

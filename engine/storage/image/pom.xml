@@ -36,6 +36,7 @@
       <artifactId>mockito-all</artifactId>
       <version>1.9.5</version>
     </dependency>
+
     <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
