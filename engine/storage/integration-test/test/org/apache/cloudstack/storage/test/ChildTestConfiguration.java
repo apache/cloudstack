@@ -79,7 +79,6 @@ import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.AccountManager;
@@ -175,11 +174,6 @@ public class ChildTestConfiguration extends TestConfiguration {
     @Bean
     public VolumeManager volumeMgr() {
         return Mockito.mock(VolumeManager.class);
-    }
-
-    @Bean
-    public SwiftManager switfMgr() {
-        return Mockito.mock(SwiftManager.class);
     }
 
     @Bean

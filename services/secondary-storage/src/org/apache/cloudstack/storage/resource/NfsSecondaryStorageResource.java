@@ -23,12 +23,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URI;
@@ -43,6 +38,10 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.storage.*;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.*;
+import com.cloud.utils.SwiftUtil;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -56,7 +55,13 @@ import org.apache.cloudstack.storage.template.UploadManagerImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -84,13 +89,6 @@ import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToSwiftFromSecondaryStorageCommand;
-import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.ListTemplateAnswer;
-import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.agent.api.storage.ListVolumeAnswer;
-import com.cloud.agent.api.storage.ListVolumeCommand;
-import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -105,11 +103,7 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.VhdProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
@@ -219,6 +213,86 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+
+    protected CopyCmdAnswer postProcessing(File destFile, String downloadPath, String destPath, DataTO srcData, DataTO destData) throws ConfigurationException {
+        // do post processing to unzip the file if it is compressed
+        String scriptsDir = "scripts/storage/secondary";
+        String createTmpltScr = Script.findScript(scriptsDir, "createtmplt.sh");
+        if (createTmpltScr == null) {
+            throw new ConfigurationException("Unable to find createtmplt.sh");
+        }
+        s_logger.info("createtmplt.sh found in " + createTmpltScr);
+        String createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
+        if (createVolScr == null) {
+            throw new ConfigurationException("Unable to find createvolume.sh");
+        }
+        s_logger.info("createvolume.sh found in " + createVolScr);
+        String script = srcData.getObjectType() == DataObjectType.TEMPLATE ? createTmpltScr : createVolScr;
+
+        int installTimeoutPerGig = 180 * 60 * 1000;
+        int imgSizeGigs = (int) Math.ceil(destFile.length() * 1.0d / (1024 * 1024 * 1024));
+        imgSizeGigs++; // add one just in case
+        long timeout = imgSizeGigs * installTimeoutPerGig;
+
+        String origPath = destFile.getAbsolutePath();
+        String extension = null;
+        if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
+            extension = ((TemplateObjectTO) srcData).getFormat().getFileExtension();
+        } else {
+            extension = ((VolumeObjectTO) srcData).getFormat().getFileExtension();
+        }
+
+        String templateName = UUID.randomUUID().toString();
+        String templateFilename = templateName + "." + extension;
+        Script scr = new Script(script, timeout, s_logger);
+        scr.add("-s", Integer.toString(imgSizeGigs)); // not used for now
+        scr.add("-n", templateFilename);
+
+        scr.add("-t", downloadPath);
+        scr.add("-f", origPath); // this is the temporary
+        // template file downloaded
+        String result;
+        result = scr.execute();
+
+        if (result != null) {
+            // script execution failure
+            throw new CloudRuntimeException("Failed to run script " + script);
+        }
+
+        String finalFileName = templateFilename;
+        String finalDownloadPath = destPath + File.separator + templateFilename;
+        // compute the size of
+        long size = this._storage.getSize(downloadPath + File.separator + templateFilename);
+
+        DataTO newDestTO = null;
+
+        if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+            TemplateObjectTO newTemplTO = new TemplateObjectTO();
+            newTemplTO.setPath(finalDownloadPath);
+            newTemplTO.setName(finalFileName);
+            newTemplTO.setSize(size);
+            newDestTO = newTemplTO;
+        } else {
+            return new CopyCmdAnswer("not implemented yet");
+        }
+
+        return new CopyCmdAnswer(newDestTO);
+    }
+    protected Answer copyFromSwiftToNfs(CopyCommand cmd, DataTO srcData, SwiftTO swiftTO, DataTO destData, NfsTO destImageStore) {
+        final String storagePath = destImageStore.getUrl();
+        final String destPath = destData.getPath();
+        try {
+            String downloadPath = determineStorageTemplatePath(storagePath, destPath);
+            final File downloadDirectory = _storage.getFile(downloadPath);
+            downloadDirectory.mkdirs();
+            File destFile = SwiftUtil.getObject(swiftTO, downloadDirectory, srcData.getPath());
+            return postProcessing(destFile,downloadPath,destPath,srcData,destData);
+        } catch (Exception e) {
+            s_logger.debug("Failed to copy swift to nfs", e);
+            return new CopyCmdAnswer(e.toString());
+        }
+    }
+
     protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3, DataTO destData, NfsTO destImageStore) {
         final String storagePath = destImageStore.getUrl();
         final String destPath = destData.getPath();
@@ -249,68 +323,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new CopyCmdAnswer("Can't find template");
             }
 
-            // do post processing to unzip the file if it is compressed
-            String scriptsDir = "scripts/storage/secondary";
-            String createTmpltScr = Script.findScript(scriptsDir, "createtmplt.sh");
-            if (createTmpltScr == null) {
-                throw new ConfigurationException("Unable to find createtmplt.sh");
-            }
-            s_logger.info("createtmplt.sh found in " + createTmpltScr);
-            String createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
-            if (createVolScr == null) {
-                throw new ConfigurationException("Unable to find createvolume.sh");
-            }
-            s_logger.info("createvolume.sh found in " + createVolScr);
-            String script = srcData.getObjectType() == DataObjectType.TEMPLATE ? createTmpltScr : createVolScr;
-
-            int installTimeoutPerGig = 180 * 60 * 1000;
-            int imgSizeGigs = (int) Math.ceil(destFile.length() * 1.0d / (1024 * 1024 * 1024));
-            imgSizeGigs++; // add one just in case
-            long timeout = imgSizeGigs * installTimeoutPerGig;
-
-            String origPath = destFile.getAbsolutePath();
-            String extension = null;
-            if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
-                extension = ((TemplateObjectTO) srcData).getFormat().getFileExtension();
-            } else {
-                extension = ((VolumeObjectTO) srcData).getFormat().getFileExtension();
-            }
-
-            String templateName = UUID.randomUUID().toString();
-            String templateFilename = templateName + "." + extension;
-            Script scr = new Script(script, timeout, s_logger);
-            scr.add("-s", Integer.toString(imgSizeGigs)); // not used for now
-            scr.add("-n", templateFilename);
-
-            scr.add("-t", downloadPath);
-            scr.add("-f", origPath); // this is the temporary
-                                     // template file downloaded
-            String result;
-            result = scr.execute();
-
-            if (result != null) {
-                // script execution failure
-                throw new CloudRuntimeException("Failed to run script " + script);
-            }
-
-            String finalFileName = templateFilename;
-            String finalDownloadPath = destPath + File.separator + templateFilename;
-            // compute the size of
-            long size = this._storage.getSize(downloadPath + File.separator + templateFilename);
-
-            DataTO newDestTO = null;
-
-            if (destData.getObjectType() == DataObjectType.TEMPLATE) {
-                TemplateObjectTO newTemplTO = new TemplateObjectTO();
-                newTemplTO.setPath(finalDownloadPath);
-                newTemplTO.setName(finalFileName);
-                newTemplTO.setSize(size);
-                newDestTO = newTemplTO;
-            } else {
-                return new CopyCmdAnswer("not implemented yet");
-            }
-
-            return new CopyCmdAnswer(newDestTO);
+            return postProcessing(destFile,downloadPath,destPath,srcData,destData);
         } catch (Exception e) {
 
             final String errMsg = format("Failed to download" + "due to $2%s", e.getMessage());
@@ -432,11 +445,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return createTemplateFromSnapshot(cmd);
         }
 
-        if (srcDataStore instanceof S3TO && destDataStore instanceof NfsTO
+        if (destDataStore instanceof NfsTO
                 && destDataStore.getRole() == DataStoreRole.ImageCache) {
-            S3TO s3 = (S3TO) srcDataStore;
             NfsTO destImageStore = (NfsTO) destDataStore;
-            return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
+            if (srcDataStore instanceof S3TO) {
+                S3TO s3 = (S3TO) srcDataStore;
+                return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
+            } else if (srcDataStore instanceof SwiftTO) {
+                return copyFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore, destData, destImageStore);
+            }
         }
 
         if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
@@ -519,51 +536,62 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    protected Answer registerTemplateOnSwift(DownloadCommand cmd) {
+    protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path) {
+        HttpClient client = new DefaultHttpClient();
+        HttpGet get = new HttpGet(url);
+        try {
+            HttpResponse response =  client.execute(get);
+            HttpEntity entity = response.getEntity();
+            if (entity == null) {
+                s_logger.debug("Faled to get entity");
+                throw new CloudRuntimeException("Failed to get url: " + url);
+            }
 
-        return null;
+            String nfsMountPath = getRootDir(nfs.getUrl());
+            String filePath = nfsMountPath + File.separator + path;
+            FileOutputStream outputStream = new FileOutputStream(filePath);
+            entity.writeTo(outputStream);
+            return new File(filePath);
+        } catch (IOException e) {
+            s_logger.debug("Faild to get url:"+ url + ", due to " + e.toString());
+            throw new CloudRuntimeException(e);
+        }
     }
+    protected Answer registerTemplateOnSwift(DownloadCommand cmd) {
+        SwiftTO swiftTO = (SwiftTO)cmd.getDataStore();
+        String path = cmd.getInstallPath();
+        DataStoreTO cacheStore = cmd.getCacheStore();
+        if (cacheStore == null || !(cacheStore instanceof NfsTO)) {
+            return new DownloadAnswer("cache store can't be null", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+        }
+
+        try {
+            NfsTO nfsCacheStore = (NfsTO)cacheStore;
+            File file = downloadFromUrlToNfs(cmd.getUrl(), nfsCacheStore, path);
+            String swiftPath = SwiftUtil.putObject(swiftTO, file, "T-" + cmd.getId());
+            String md5sum = null;
+            try {
+                md5sum = DigestUtils.md5Hex(new FileInputStream(file));
+            } catch (IOException e) {
+                s_logger.debug("Failed to get md5sum: " + file.getAbsoluteFile());
+            }
+
+            file.delete();
+
+            return new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+                    swiftPath, swiftPath, file.length(), file.length(), md5sum
+            );
+        } catch (Exception e) {
+             s_logger.debug("Failed to register template into swift", e);
+            return new DownloadAnswer(e.toString(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+        }
+    }
+
     private Answer execute(DownloadCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
         if (dstore instanceof NfsTO || dstore instanceof S3TO) {
             return _dlMgr.handleDownloadCommand(this, cmd);
-        }
-        /*
-         * else if (dstore instanceof S3TO) { // TODO: start download job to
-         * handle this // TODO: how to handle download progress for S3 S3TO s3 =
-         * (S3TO) cmd.getDataStore(); String url = cmd.getUrl(); String user =
-         * null; String password = null; if (cmd.getAuth() != null) { user =
-         * cmd.getAuth().getUserName(); password = new
-         * String(cmd.getAuth().getPassword()); } // get input stream from the
-         * given url InputStream in = UriUtils.getInputStreamFromUrl(url, user,
-         * password); URI uri; URL urlObj; try { uri = new URI(url); urlObj =
-         * new URL(url); } catch (URISyntaxException e) { throw new
-         * CloudRuntimeException("URI is incorrect: " + url); } catch
-         * (MalformedURLException e) { throw new
-         * CloudRuntimeException("URL is incorrect: " + url); }
-         * 
-         * final String bucket = s3.getBucketName(); String path = null; if
-         * (cmd.getResourceType() == ResourceType.TEMPLATE) { // convention is
-         * no / in the end for install path based on // S3Utils implementation.
-         * // template key is //
-         * TEMPLATE_ROOT_DIR/account_id/template_id/template_name, by // adding
-         * template_name in the key, I can avoid generating a //
-         * template.properties file // for listTemplateCommand. path =
-         * determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(),
-         * cmd.getName()); } else { path =
-         * determineS3VolumeDirectory(cmd.getAccountId(), cmd.getResourceId());
-         * }
-         * 
-         * String key = join(asList(path, urlObj.getFile()), S3Utils.SEPARATOR);
-         * S3Utils.putObject(s3, in, bucket, key); List<S3ObjectSummary> s3Obj =
-         * S3Utils.getDirectory(s3, bucket, path); if (s3Obj == null ||
-         * s3Obj.size() == 0) { return new Answer(cmd, false,
-         * "Failed to download to S3 bucket: " + bucket + " with key: " + key);
-         * } else { return new DownloadAnswer(null, 100, null,
-         * Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(),
-         * s3Obj.get(0).getSize(), s3Obj .get(0).getETag()); } }
-         */
-        else if (dstore instanceof SwiftTO) {
+        } else if (dstore instanceof SwiftTO) {
             return registerTemplateOnSwift(cmd);
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
