@@ -133,6 +133,7 @@ Requires: java >= 1.6.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Group: System Environment/Libraries
 Obsoletes: cloud-usage < 4.1.0
 Provides: cloud-usage 
 %description usage
