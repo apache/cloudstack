@@ -63,6 +63,10 @@ public class SolidFireUtil
     public static final String CLUSTER_ADMIN_USERNAME = "clusterAdminUsername";
     public static final String CLUSTER_ADMIN_PASSWORD = "clusterAdminPassword";
 
+    public static final String CLUSTER_DEFAULT_MIN_IOPS = "clusterDefaultMinIops";
+    public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
+    public static final String CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS = "clusterDefaultBurstIopsPercentOfMaxIops";
+
     public static final String ACCOUNT_ID = "accountId";
 
     public static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";
