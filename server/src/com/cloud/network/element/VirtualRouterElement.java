@@ -614,7 +614,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         capabilities.put(Service.Dns, dnsCapabilities);
 
         capabilities.put(Service.UserData, null);
-        capabilities.put(Service.Dhcp, null);
+
+        Map<Capability, String> dhcpCapabilities = new HashMap<Capability, String>();
+        dhcpCapabilities.put(Capability.DhcpAccrossMultipleSubnets, "true");
+        capabilities.put(Service.Dhcp, dhcpCapabilities);
 
         capabilities.put(Service.Gateway, null);
 
@@ -873,24 +876,18 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean removeDhcpSupportForSubnet(Network network) {
+    public boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException{
         if (canHandle(network, Service.Dhcp)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-           try {
-               if ((routers == null) || (routers.size() == 0)) {
+            if ((routers == null) || (routers.size() == 0)) {
                    throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
-               }
-           }
-           catch (ResourceUnavailableException e) {
-               s_logger.debug("could not find any router on this network");
-           }
+            }
            try {
                 return _routerMgr.removeDhcpSupportForSubnet(network, routers);
            }
            catch (ResourceUnavailableException e) {
                 s_logger.debug("Router resource unavailable ");
            }
-
         }
         return false;
     }

@@ -20,6 +20,15 @@ usage() {
   printf "Usage: %s:  <path to new dnsmasq config file>\n" $(basename $0) >&2
 }
 
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 set -x
 #backup the old config file
 cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
@@ -37,7 +46,7 @@ then
    echo "reverting to the old config"
    cp /etc/dnsmasq.config.bak /etc/dnsmasq.conf
    service dnsmasq restart
-   exit 2
+   unlock_exit $? $lock $locked
 fi
 rm $1
-echo "success"
+unlock_exit $? $lock $locked

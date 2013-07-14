@@ -2738,9 +2738,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        if (sameSubnet == null || sameSubnet.first() == false) {
+        if ((sameSubnet == null || sameSubnet.first() == false) && (network.getTrafficType()== TrafficType.Guest) && (network.getGuestType() == GuestType.Shared) && (_vlanDao.listVlansByNetworkId(networkId) != null)) {
+            Map<Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(network.getNetworkOfferingId()), Service.Dhcp);
+            String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
+            if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
+                       throw new  InvalidParameterValueException("The Dhcp serivice provider for this network dose not support the dhcp  across multiple subnets");
+            }
             s_logger.info("adding a new subnet to the network " + network.getId());
-        } else {
+        } else if (sameSubnet != null)  {
             // if it is same subnet the user might not send the vlan and the
             // netmask details. so we are
             // figuring out while validation and setting them here.
@@ -2757,7 +2762,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return vlan;
     }
 
-    public int checkIfSubsetOrSuperset(String newVlanGateway, String newVlanNetmask, VlanVO vlan, String startIP,
+    public NetUtils.supersetOrSubset checkIfSubsetOrSuperset(String newVlanGateway, String newVlanNetmask, VlanVO vlan, String startIP,
             String endIP) {
         if (newVlanGateway == null && newVlanNetmask == null) {
             newVlanGateway = vlan.getVlanGateway();
@@ -2765,10 +2770,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // this means he is trying to add to the existing subnet.
             if (NetUtils.sameSubnet(startIP, newVlanGateway, newVlanNetmask)) {
                 if (NetUtils.sameSubnet(endIP, newVlanGateway, newVlanNetmask)) {
-                    return 3;
+                    return NetUtils.supersetOrSubset.sameSubnet;
                 }
             }
-            return 0;
+            return NetUtils.supersetOrSubset.neitherSubetNorSuperset;
         } else if (newVlanGateway == null || newVlanGateway == null) {
             throw new InvalidParameterValueException(
                     "either both netmask and gateway should be passed or both should me omited.");
@@ -2798,25 +2803,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     vlanGateway = vlan.getVlanGateway();
                     vlanNetmask = vlan.getVlanNetmask();
                     // check if subset or super set or neither.
-                    int val = checkIfSubsetOrSuperset(newVlanGateway, newVlanNetmask, vlan, startIP, endIP);
-                    if (val == 1) {
+                    NetUtils.supersetOrSubset val = checkIfSubsetOrSuperset(newVlanGateway, newVlanNetmask, vlan, startIP, endIP);
+                    if (val == NetUtils.supersetOrSubset.isSuperset) {
                         // this means that new cidr is a superset of the
                         // existing subnet.
                         throw new InvalidParameterValueException(
                                 "The subnet you are trying to add is a superset of the existing subnet having gateway"
                                         + vlan.getVlanGateway() + " and netmask  " + vlan.getVlanNetmask());
-                    } else if (val == 0) {
+                    } else if (val == NetUtils.supersetOrSubset.neitherSubetNorSuperset) {
                         // this implies the user is trying to add a new subnet
                         // which is not a superset or subset of this subnet.
                         // checking with the other subnets.
                         continue;
-                    } else if (val == 2) {
+                    } else if (val == NetUtils.supersetOrSubset.isSubset) {
                         // this means he is trying to add to the same subnet.
                         throw new InvalidParameterValueException(
                                 "The subnet you are trying to add is a subset of the existing subnet having gateway"
                                         + vlan.getVlanGateway() + " and netmask  " + vlan.getVlanNetmask());
-                    } else if (val == 3) {
+                    } else if (val == NetUtils.supersetOrSubset.sameSubnet) {
                         sameSubnet = true;
+                        //check if the gateway provided by the user is same as that of the subnet.
+                        if (newVlanGateway != null && !newVlanGateway.equals(vlanGateway)) {
+                             throw new InvalidParameterValueException("The gateway of the subnet should be unique. The subnet alreaddy has a gateway "+ vlanGateway);
+                        }
+                        break;
                     }
                 }
                 if (ipv6) {
@@ -3021,7 +3031,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (otherVlanGateway == null) {
                     continue;
                 }
-                String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
+                 String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
                 String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
                 String otherVlanStartIP = otherVlanIpRange[0];
                 String otherVlanEndIP = null;
@@ -3149,15 +3159,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return vlan;
     }
 
-    @DB
-    public void deleteVLANFromDb(long vlanDbId) throws SQLException {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        _publicIpAddressDao.deletePublicIPRange(vlanDbId);
-        _vlanDao.expunge(vlanDbId);
-        txn.commit();
-    }
-
     @Override
     @DB
     public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
@@ -3222,102 +3223,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId
                                 + " removal");
                     }
+                    else {
+                        for (IPAddressVO ip : ips) {
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getId(), ip
+                                    .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlanRange
+                                    .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                        }
+                    }
                 } finally {
                     _vlanDao.releaseFromLockTable(vlanDbId);
                 }
             }
+            else {   // !isAccountSpecific
+                NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(vlanRange.getVlanGateway(), vlanRange.getNetworkId(), NicIpAlias.state.active);
+                //check if the ipalias belongs to the vlan range being deleted.
+                if (ipAlias != null && vlanDbId == _publicIpAddressDao.findByIpAndSourceNetworkId(vlanRange.getNetworkId(), ipAlias.getIp4Address()).getVlanId()) {
+                    throw new InvalidParameterValueException("Cannot delete vlan range "+vlanDbId+" as "+ipAlias.getIp4Address() +
+                            "is being used for providing dhcp service in this subnet. Delete all VMs in this subnet and try again");
+                }
+                allocIpCount = _publicIpAddressDao.countIPs(vlanRange.getDataCenterId(), vlanDbId, true);
+                if (allocIpCount > 0) {
+                    throw new InvalidParameterValueException(allocIpCount + "  Ips are in use. Cannot delete this vlan");
+                }
+            }
         }
 
-        if (success) {
-            // Delete all public IPs in the VLAN
-            // if ip range is dedicated to an account generate usage events for
-            // release of every ip in the range
-            if (isAccountSpecific) {
-                for (IPAddressVO ip : ips) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getId(), ip
-                            .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlanRange
-                            .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
-                }
-            }
-            try {
-                if (_networkModel.areServicesSupportedInNetwork(vlanRange.getNetworkId(), Service.Dhcp)) {
-                    Network network = _networkDao.findById(vlanRange.getNetworkId());
-                    DhcpServiceProvider dhcpServiceProvider = _networkMgr.getDhcpServiceProvider(network);
-                    if (!dhcpServiceProvider.getProvider().getName().equalsIgnoreCase(Provider.VirtualRouter.getName())) {
-                        deleteVLANFromDb(vlanDbId);
-                    } else {
-                        return  handleIpAliasDeletion(vlanRange, vlanDbId, dhcpServiceProvider, network);
-                    }
-                }
 
-                else {
-                    deleteVLANFromDb(vlanDbId);
-                }
-            }
-            catch ( SQLException e) {
-               throw  new CloudRuntimeException(e.getMessage());
-            }
-
-        }
-        return true;
-    }
-
-    @DB
-    private boolean handleIpAliasDeletion(VlanVO vlanRange, long vlanDbId, DhcpServiceProvider dhcpServiceProvider, Network network) throws SQLException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        IPAddressVO ip = null;
-        NicIpAliasVO ipAlias = null;
-        try{
-            Integer allocIpCount=0;
-            //search if the vlan has any allocated ips.
-            allocIpCount = _publicIpAddressDao.countIPs(vlanRange.getDataCenterId(), vlanDbId, true);
-            if (allocIpCount > 1) {
-                throw  new InvalidParameterValueException ("Cannot delete this range as some of the vlans are in use.");
-            }
-            else if (allocIpCount == 0){
-                deleteVLANFromDb(vlanDbId);
-            }
-            else {
-                ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(vlanRange.getVlanGateway(), vlanRange.getNetworkId(),  NicIpAlias.state.active);
-                if (ipAlias == null) {
-                    throw  new InvalidParameterValueException ("Cannot delete this range as some of the Ips are in use.");
-                }
-
-                //check if this ip belongs to this vlan and is allocated.
-                ip = _publicIpAddressDao.findByIpAndVlanId(ipAlias.getIp4Address(), vlanDbId);
-                if (ip != null && ip.getState() == IpAddress.State.Allocated) {
-                    //check if there any other vlan ranges in the same subnet having free ips
-                    List<VlanVO> vlanRanges = _vlanDao.listVlansByNetworkIdAndGateway(vlanRange.getNetworkId(), vlanRange.getVlanGateway());
-                    //if there is no other vlanrage in this subnet. free the ip and delete the vlan.
-                    if (vlanRanges.size() == 1) {
-                        ipAlias.setState(NicIpAlias.state.revoked);
-                        _nicIpAliasDao.update(ipAlias.getId(), ipAlias);
-                        if (!dhcpServiceProvider.removeDhcpSupportForSubnet(network)) {
-                            s_logger.debug("Failed to delete the vlan range as we could not free the ip used to provide the dhcp service.");
-                            //setting the state back to active
-                            ipAlias.setState(NicIpAlias.state.active);
-                            _nicIpAliasDao.update(ipAlias.getId(), ipAlias);
-                        }
-                        else {
-                            _publicIpAddressDao.unassignIpAddress(ip.getId());
-                            deleteVLANFromDb(vlanDbId);
-                        }
-                    } else {
-                        // if there are more vlans in the subnet, free all the ips in the range except the ip alias.
-                        s_logger.info("vlan Range"+vlanRange.getId()+" id being deleted, one of the Ips in this range is used to provide the dhcp service, will free the rest of the IPs in range.");
-                        _publicIpAddressDao.deletePublicIPRangeExceptAliasIP(vlanDbId, ipAlias.getIp4Address());
-                        VlanVO vlan = _vlanDao.findById(vlanDbId);
-                        vlan.setIpRange(ipAlias.getIp4Address()+"-"+ipAlias.getIp4Address());
-                        _vlanDao.update(vlan.getId(), vlan);
-                    }
-                }
-            }
-        } catch (CloudRuntimeException e) {
-            txn.rollback();
-            throw e;
-        }
+        _publicIpAddressDao.deletePublicIPRange(vlanDbId);
+        _vlanDao.expunge(vlanDbId);
         txn.commit();
+
         return true;
     }
 

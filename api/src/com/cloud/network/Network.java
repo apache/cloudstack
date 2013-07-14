@@ -180,6 +180,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability SupportedEgressProtocols = new Capability("SupportedEgressProtocols");
         public static final Capability HealthCheckPolicy = new Capability("HealthCheckPolicy");
         public static final Capability LbSchemes = new Capability("LbSchemes");
+        public static final Capability DhcpAccrossMultipleSubnets = new Capability("DhcpAccrossMultipleSubnets");
 
         private String name;
 
