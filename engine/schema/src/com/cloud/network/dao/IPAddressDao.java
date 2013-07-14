@@ -75,7 +75,9 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
     long countFreeIpsInVlan(long vlanDbId);
 
-    boolean deletePublicIPRangeExceptAliasIP(long vlanDbId, String aliasIp) throws SQLException;
+    void deletePublicIPRangeExceptAliasIP(long vlanDbId, String aliasIp);
 
-    boolean deletePublicIPRange(long vlanDbId) throws SQLException;
+    boolean deletePublicIPRange(long vlanDbId) ;
+
+    void lockRange(long vlandbId);
 }

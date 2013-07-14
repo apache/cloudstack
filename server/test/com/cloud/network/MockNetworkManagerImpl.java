@@ -908,6 +908,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
+    public Map<Network.Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc,
             Pod pod, Account caller, String requestedIp)
             throws InsufficientAddressCapacityException {

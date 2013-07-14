@@ -20,7 +20,15 @@ usage() {
   printf " %s   <alias_count:ip:netmask;alias_count2:ip2:netmask2;....> \n" $(basename $0) >&2
 }
 
-set -x
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 var="$1"
 cert="/root/.ssh/id_rsa.cloud"
 
@@ -32,12 +40,8 @@ do
  var=$( echo $var | sed "s/${var1}-//" )
 done
 
-#recreating the active ip aliases
-sh /root/createIpAlias.sh $2
-result=$?
-if [  "$result" -ne "0" ]
-then
- exit $result
-fi
+releaseLockFile $lock $locked
 
-exit 0
+#recreating the active ip aliases
+/root/createIpAlias.sh $2
+unlock_exit $? $lock $locked

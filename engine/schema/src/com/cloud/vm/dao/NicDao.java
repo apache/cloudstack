@@ -20,6 +20,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 
+import java.net.URI;
 import java.util.List;
 
 public interface NicDao extends GenericDao<NicVO, Long> {
@@ -68,4 +69,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listPlaceholderNicsByNetworkIdAndVmType(long networkId, VirtualMachine.Type vmType);
 
     NicVO findByInstanceIdAndIpAddressAndVmtype(long instanceId, String ipaddress, VirtualMachine.Type type);
+
+    List<NicVO> listByNetworkIdTypeAndGatewayAndBroadcastUri(long networkId, VirtualMachine.Type vmType, String gateway, URI broadcastUri);
 }

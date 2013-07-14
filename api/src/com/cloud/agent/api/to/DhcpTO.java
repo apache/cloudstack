@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-public class DnsmasqTO {
+public class DhcpTO {
     String routerIp;
     String gateway;
     String netmask;
     String startIpOfSubnet;
 
-    public DnsmasqTO(String routerIp, String gateway, String netmask, String StartIpOfSubnet) {
+    public DhcpTO(String routerIp, String gateway, String netmask, String StartIpOfSubnet) {
         this.routerIp = routerIp;
         this.startIpOfSubnet = StartIpOfSubnet;
         this.gateway = gateway;

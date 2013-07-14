@@ -19,8 +19,16 @@
 usage() {
   printf " %s   <alias_count:ip:netmask;alias_count2:ip2:netmask2;....> \n" $(basename $0) >&2
 }
+source /root/func.sh
 
-set -x
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
+
 var="$1"
 cert="/root/.ssh/id_rsa.cloud"
 
@@ -35,4 +43,4 @@ do
 done
 #restaring the password service to enable it on the ip aliases
 /etc/init.d/cloud-passwd-srvr restart
-exit $?
+unlock_exit $? $lock $locked

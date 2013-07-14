@@ -17,7 +17,7 @@
 package com.cloud.network;
 
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
-import com.cloud.agent.api.to.DnsmasqTO;
+import com.cloud.agent.api.to.DhcpTO;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
@@ -74,11 +74,10 @@ import java.util.List;
                                            "dhcp-option=6,router_ip,external_dns\n",
                                            "dhcp-optsfile=/etc/dhcpopts.txt\n",
 
-
          };
 
      public String[] generateConfiguration(DnsMasqConfigCommand dnsMasqconfigcmd) {
-         List<DnsmasqTO> dnsmasqTOs = dnsMasqconfigcmd.getIps();
+         List<DhcpTO> dhcpTOs = dnsMasqconfigcmd.getIps();
          List <String> dnsMasqconf = Arrays.asList(Dnsmasq_config);
          String range="";
          String gateway="";
@@ -95,15 +94,42 @@ import java.util.List;
          dns_external = dns_external + "*";
          dns_external = dns_external.replace(",*","");
          int i=0;
-         for (; i< dnsmasqTOs.size(); i++) {
-              range=range + "dhcp-range=set:range"+i+","+dnsmasqTOs.get(i).getStartIpOfSubnet()+",static\n";
-              gateway=gateway +"dhcp-option=tag:range"+i+",3,"+dnsmasqTOs.get(i).getGateway()+"\n";
-              netmask=netmask +"dhcp-option=tag:range"+i+",1,"+dnsmasqTOs.get(i).getNetmask()+"\n";
-              dnsServers=dnsServers+"dhcp-option=tag:range"+i+",6,"+dnsmasqTOs.get(i).getRouterIp()+","+dns_external+"\n";
+         for (; i< dhcpTOs.size(); i++) {
+              range=range + "dhcp-range=set:range"+i+","+ dhcpTOs.get(i).getStartIpOfSubnet()+",static\n";
+              gateway=gateway +"dhcp-option=tag:range"+i+",3,"+ dhcpTOs.get(i).getGateway()+"\n";
+              netmask=netmask +"dhcp-option=tag:range"+i+",1,"+ dhcpTOs.get(i).getNetmask()+"\n";
+              if (!dnsMasqconfigcmd.isDnsProvided()) {
+                  dnsServers = dnsServers+"dhcp-option=tag:range"+i+",6,"+dns_external+"\n";
+              }
+              else {
+                  dnsServers=dnsServers+"dhcp-option=tag:range"+i+",6,"+ dhcpTOs.get(i).getRouterIp()+","+dns_external+"\n";
+              }
+
          }
-         dnsMasqconf.set(12, "domain="+domain+"\n");
-         dnsMasqconf.set(14, "domain="+domain+"\n");
-         dnsMasqconf.set(16,"domain="+domain+"\n");
+         String domain_suffix= dnsMasqconfigcmd.getDomainSuffix();
+
+         if (domain != null) {
+             if (domain_suffix != null) {
+
+                 dnsMasqconf.get(5).replace(" local=/cs1cloud.internal/"," local=/"+domain+"/");
+                 dnsMasqconf.set(12, "domain="+domain_suffix+domain+"\n");
+                 dnsMasqconf.set(14, "domain="+domain_suffix+domain+"\n");
+                 dnsMasqconf.set(16,"domain="+domain_suffix+domain+"\n");
+             } else {
+                 dnsMasqconf.get(5).replace(" local=/cs1cloud.internal/"," local=/"+domain+"/");
+                 dnsMasqconf.set(12, "domain="+domain+"\n");
+                 dnsMasqconf.set(14, "domain="+domain+"\n");
+                 dnsMasqconf.set(16,"domain="+domain+"\n");
+             }
+         }
+         ///if no domain is specified. this happens when dns service is not provided by the virtualrouter.
+         else {
+             dnsMasqconf.get(5).replace(" local=/cs1cloud.internal/"," local=/"+domain+"/");
+             dnsMasqconf.set(12, "domain="+"cloudnine.internal\n");
+             dnsMasqconf.set(14, "domain="+"cloudnine.internal\n");
+             dnsMasqconf.set(16,"domain="+"cloudnine.internal\n");
+         }
+
          dnsMasqconf.set(18, range);
          dnsMasqconf.set(22, gateway);
          dnsMasqconf.set(23, netmask);

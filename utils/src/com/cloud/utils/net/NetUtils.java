@@ -797,13 +797,20 @@ public class NetUtils {
         return new Pair<String, Integer>(tokens[0], Integer.parseInt(tokens[1]));
     }
 
-    public static int isNetowrkASubsetOrSupersetOfNetworkB (String cidrA, String cidrB) {
+    public  static enum supersetOrSubset {
+        isSuperset,
+        isSubset,
+        neitherSubetNorSuperset,
+        sameSubnet,
+        errorInCidrFormat
+    }
+    public static supersetOrSubset isNetowrkASubsetOrSupersetOfNetworkB (String cidrA, String cidrB) {
         Long[] cidrALong = cidrToLong(cidrA);
         Long[] cidrBLong = cidrToLong(cidrB);
         long shift =0;
         if (cidrALong == null || cidrBLong == null) {
             //implies error in the cidr format
-            return -1;
+            return supersetOrSubset.errorInCidrFormat;
         }
         if (cidrALong[1] >= cidrBLong[1]) {
             shift = 32 - cidrBLong[1];
@@ -815,17 +822,17 @@ public class NetUtils {
         if (result == 0) {
             if (cidrALong[1] < cidrBLong[1]) {
                 //this implies cidrA is super set of cidrB
-                return 1;
+                return supersetOrSubset.isSuperset;
             }
             else if (cidrALong[1] == cidrBLong[1]) {
              //this implies both the cidrs are equal
-                return 3;
+                return supersetOrSubset.sameSubnet;
             }
             // implies cidrA is subset of cidrB
-            return 2;
+            return supersetOrSubset.isSubset;
         }
         //this implies no overlap.
-        return 0;
+        return supersetOrSubset.neitherSubetNorSuperset;
     }
 
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {

@@ -27,6 +27,7 @@ import java.util.TreeSet;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.configuration.ZoneConfig;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
-import com.cloud.agent.api.to.DnsmasqTO;
+import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -885,24 +886,29 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
         VpcVO vpc = _vpcDao.findById(router.getVpcId());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        List<DnsmasqTO> ipList = new ArrayList<DnsmasqTO>();
+        List<DhcpTO> ipList = new ArrayList<DhcpTO>();
 
         String cidr = vpc.getCidr();
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
         long cidrSize = Long.parseLong(cidrPair[1]);
         String startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
-        DnsmasqTO dnsmasqTO = new DnsmasqTO(router.getPrivateIpAddress(), router.getPublicIpAddress(), NetUtils.getCidrNetmask(cidrSize), startIpOfSubnet);
-        ipList.add(dnsmasqTO);
+        DhcpTO DhcpTO = new DhcpTO(router.getPrivateIpAddress(), router.getPublicIpAddress(), NetUtils.getCidrNetmask(cidrSize), startIpOfSubnet);
+        ipList.add(DhcpTO);
 
+        NicVO nic = _nicDao.findByIp4AddressAndVmId(_routerDao.findById(router.getId()).getPrivateIpAddress(), router.getId());
+        DataCenterVO dcvo = _dcDao.findById(router.getDataCenterId());
+        boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
+        String domain_suffix = dcvo.getDetail(ZoneConfig.DnsSearchOrder.getName());
         DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(vpc.getNetworkDomain(),ipList, dcVo.getDns1(), dcVo.getDns2(), dcVo.getInternalDns1(), dcVo.getInternalDns2());
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getPublicIpAddress());
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        dnsMasqConfigCmd.setDomainSuffix(domain_suffix);
+        dnsMasqConfigCmd.setIfDnsProvided(dnsProvided);
 
         cmds.addCommand("dnsMasqConfig" ,dnsMasqConfigCmd);
-        //To change body of created methods use File | Settings | File Templates.
     }
 
 

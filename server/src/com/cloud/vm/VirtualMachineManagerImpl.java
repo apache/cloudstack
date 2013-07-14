@@ -36,6 +36,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.network.Networks;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicIpAliasVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -267,6 +274,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ConfigurationServer _configServer;
     @Inject
     protected ManagementServer _mgmtServer;
+    @Inject
+    protected IPAddressDao _publicIpAddressDao;
+    @Inject
+    protected VlanDao _vlanDao;
+    @Inject
+    protected NicIpAliasDao _nicIpAliasDao;
 
     protected List<DeploymentPlanner> _planners;
     public List<DeploymentPlanner> getPlanners() {
@@ -460,6 +473,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Destroying vm " + vm);
         }
 
+        if (vm.getType() == VirtualMachine.Type.User) {
+              removeDhcpServiceInsubnet(vm);
+        }
+
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
 
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
@@ -515,6 +532,41 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     new Long(rootVol.get(0).getSize()));
         }
         return true;
+    }
+
+    @DB
+    private void removeDhcpServiceInsubnet(VirtualMachine vm) {
+        //list all the nics which belong to this vm and are the last nics  in the subnets.
+        //we are using the info in these nics to remove the dhcp sercvice for these subnets.
+        List<NicVO> nicList = listLastNicsInSubnet(vm);
+
+        if(nicList != null && nicList.size() != 0) {
+            for (NicVO nic : nicList) {
+                //free the ipalias on the routers corresponding to each of the nics.
+                Network network = _networkDao.findById(nic.getNetworkId());
+                DhcpServiceProvider dhcpServiceProvider = _networkMgr.getDhcpServiceProvider(network);
+                try {
+                    NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getGateway(), network.getId(), NicIpAlias.state.active);
+                    if (ipAlias != null) {
+                        ipAlias.setState(NicIpAlias.state.revoked);
+                        Transaction txn = Transaction.currentTxn();
+                        txn.start();
+                        _nicIpAliasDao.update(ipAlias.getId(),ipAlias);
+                        IPAddressVO aliasIpaddressVo = _publicIpAddressDao.findByIpAndSourceNetworkId(ipAlias.getNetworkId(), ipAlias.getIp4Address());
+                        _publicIpAddressDao.unassignIpAddress(aliasIpaddressVo.getId());
+                        txn.commit();
+                        if (!dhcpServiceProvider.removeDhcpSupportForSubnet(network)) {
+                            s_logger.warn("Failed to remove the ip alias on the router, marking it as removed in db and freed the allocated ip " + ipAlias.getIp4Address());
+                        }
+                    }
+                }
+                catch (ResourceUnavailableException e) {
+                    //failed to remove the dhcpconfig on the router.
+                    s_logger.info ("Unable to delete the ip alias due to unable to contact the virtualrouter.");
+                }
+
+            }
+        }
     }
 
     @Override
@@ -1335,6 +1387,28 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         return true;
+    }
+
+    //list all the nics which belong to this vm and are the last nics  in the subnets.
+    //we are using the info in these nics to remove the dhcp sercvice for these subnets.
+    private  List<NicVO> listLastNicsInSubnet(VirtualMachine vm) {
+        List<NicVO>  nicList  = _nicsDao.listByVmId(vm.getId());
+        List<NicVO>  copyOfnicList = new ArrayList<NicVO>(nicList);
+        for (NicVO nic : nicList) {
+            Network network = _networkDao.findById(nic.getNetworkId());
+            DhcpServiceProvider dhcpServiceProvider = _networkMgr.getDhcpServiceProvider(network);
+            Map <Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
+            String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
+            if ((supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets) && network.getTrafficType() == Networks.TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
+                //including the ip of the vm and the ipAlias
+                if (_nicsDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getGateway(), nic.getBroadcastUri()).size() > 1) {
+                    copyOfnicList.remove(nic);
+                }
+            } else {
+                copyOfnicList.remove(nic);
+            }
+        }
+        return copyOfnicList;
     }
 
     protected boolean checkVmOnHost(VirtualMachine vm, long hostId) throws AgentUnavailableException, OperationTimedoutException {

@@ -29,6 +29,7 @@ import com.cloud.vm.VirtualMachine;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
+import java.net.URI;
 import java.util.List;
 
 @Component
@@ -151,7 +152,17 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("gateway", gateway);
         return findOneBy(sc);
     }
-    
+
+    @Override
+    public List<NicVO> listByNetworkIdTypeAndGatewayAndBroadcastUri(long networkId, VirtualMachine.Type vmType, String gateway, URI broadcasturi) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("vmType", vmType);
+        sc.setParameters("gateway", gateway);
+        sc.setParameters("broadcastUri", broadcasturi);
+        return listBy(sc);
+    }
+
     @Override
     public NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();

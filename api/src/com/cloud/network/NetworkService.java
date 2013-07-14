@@ -17,7 +17,9 @@
 package com.cloud.network;
 
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
@@ -180,4 +182,5 @@ public interface NetworkService {
     /* lists the nic informaton */
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
 
+    Map<Network.Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
 }

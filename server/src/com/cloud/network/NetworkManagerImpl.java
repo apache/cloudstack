@@ -2002,9 +2002,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
-                    element instanceof DhcpServiceProvider) {
+                    element instanceof DhcpServiceProvider ) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
-                if (profile.getIp6Address() == null) {
+                Map <Capability, String> dhcpCapabilities = element.getCapabilities().get(Service.Dhcp);
+                String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
+                if ((supportsMultipleSubnets != null || Boolean.valueOf(supportsMultipleSubnets)) && profile.getIp6Address() == null) {
                     if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
                         return false;
                     }

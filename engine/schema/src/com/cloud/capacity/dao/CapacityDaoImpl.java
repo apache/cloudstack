@@ -387,7 +387,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             SummedCapacitySearch.and("clusterId", SummedCapacitySearch.entity().getClusterId(), Op.EQ);
         }
         if (capacityType != null){
-            SummedCapacitySearch.and("capacityType", SummedCapacitySearch.entity().getCapacityType(), Op.EQ);	
+            SummedCapacitySearch.and("capacityType", SummedCapacitySearch.entity().getCapacityType(), Op.EQ);
         }        
 
         SummedCapacitySearch.done();

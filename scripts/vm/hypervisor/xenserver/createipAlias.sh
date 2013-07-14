@@ -21,6 +21,5 @@ usage() {
   printf " %s  routerip  <alias_count:ip:netmask;alias_count2:ip2:netmask2;....> \n" $(basename $0) >&2
 }
 
-set -x
 cert="/root/.ssh/id_rsa.cloud"
 ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$1 "/root/createIpAlias.sh $2"
