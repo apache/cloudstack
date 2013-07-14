@@ -17,7 +17,6 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.List;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -29,15 +28,13 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -48,8 +45,6 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.dao.AccountDao;
 
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger s_logger = Logger.getLogger(SolidfirePrimaryDataStoreDriver.class);
-
     @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject private VolumeDao _volumeDao;
@@ -220,6 +215,32 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 chapTargetUsername, chapTargetSecret);
     }
 
+    private long getDefaultMinIops(long storagePoolId) {
+        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS);
+
+        String clusterDefaultMinIops = storagePoolDetail.getValue();
+
+        return Long.parseLong(clusterDefaultMinIops);
+    }
+
+    private long getDefaultMaxIops(long storagePoolId) {
+        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS);
+
+        String clusterDefaultMaxIops = storagePoolDetail.getValue();
+
+        return Long.parseLong(clusterDefaultMaxIops);
+    }
+
+    private long getDefaultBurstIops(long storagePoolId, long maxIops) {
+        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS);
+
+        String clusterDefaultBurstIopsPercentOfMaxIops = storagePoolDetail.getValue();
+
+        float fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
+
+        return (long)(maxIops * fClusterDefaultBurstIopsPercentOfMaxIops);
+    }
+
     private SolidFireUtil.SolidFireVolume createSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
     {
         String mVip = sfConnection.getManagementVip();
@@ -230,6 +251,8 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         AccountDetailVO accountDetail = _accountDetailsDao.findDetail(volumeInfo.getAccountId(), SolidFireUtil.ACCOUNT_ID);
         long sfAccountId = Long.parseLong(accountDetail.getValue());
 
+        long storagePoolId = volumeInfo.getDataStore().getId();
+
         final Iops iops;
 
         Long minIops = volumeInfo.getMinIops();
@@ -237,39 +260,63 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (minIops == null || minIops <= 0 ||
             maxIops == null || maxIops <= 0) {
-            iops = new Iops(100, 15000);
+            long defaultMaxIops = getDefaultMaxIops(storagePoolId);
+
+            iops = new Iops(getDefaultMinIops(storagePoolId), defaultMaxIops, getDefaultBurstIops(storagePoolId, defaultMaxIops));
         }
         else {
-            iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops());
+            iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops(), getDefaultBurstIops(storagePoolId, volumeInfo.getMaxIops()));
         }
 
         long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
-                volumeInfo.getName(), sfAccountId, volumeInfo.getSize(), true,
+                getSolidFireVolumeName(volumeInfo.getName()), sfAccountId, volumeInfo.getSize(), true,
                 iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
 
         return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
     }
 
+    private String getSolidFireVolumeName(String strCloudStackVolumeName) {
+        final String specialChar = "-";
+
+        StringBuilder strSolidFireVolumeName = new StringBuilder();
+
+        for (int i = 0; i < strCloudStackVolumeName.length(); i++) {
+            String strChar = strCloudStackVolumeName.substring(i, i + 1);
+
+            if (StringUtils.isAlphanumeric(strChar)) {
+                strSolidFireVolumeName.append(strChar);
+            }
+            else {
+                strSolidFireVolumeName.append(specialChar);
+            }
+        }
+
+        return strSolidFireVolumeName.toString();
+    }
+
     private static class Iops
     {
-    	private final long _minIops;
-    	private final long _maxIops;
-    	private final long _burstIops;
+        private final long _minIops;
+        private final long _maxIops;
+        private final long _burstIops;
 
-    	public Iops(long minIops, long maxIops) throws IllegalArgumentException
-    	{
-    	    if (minIops <= 0 || maxIops <= 0) {
-    	        throw new IllegalArgumentException("The 'Min IOPS' and 'Max IOPS' values must be greater than 0.");
-    	    }
+        public Iops(long minIops, long maxIops, long burstIops) throws IllegalArgumentException
+        {
+            if (minIops <= 0 || maxIops <= 0) {
+                throw new IllegalArgumentException("The 'Min IOPS' and 'Max IOPS' values must be greater than 0.");
+            }
 
             if (minIops > maxIops) {
                 throw new IllegalArgumentException("The 'Min IOPS' value cannot exceed the 'Max IOPS' value.");
             }
 
+            if (maxIops > burstIops) {
+                throw new IllegalArgumentException("The 'Max IOPS' value cannot exceed the 'Burst IOPS' value.");
+            }
+
             _minIops = minIops;
             _maxIops = maxIops;
-
-            _burstIops = getBurstIops(_maxIops);
+            _burstIops = burstIops;
     	}
 
     	public long getMinIops()
@@ -286,11 +333,6 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     	{
     		return _burstIops;
     	}
-
-        private static long getBurstIops(long maxIops)
-        {
-        	return (long)(maxIops * 1.5);
-        }
     }
 
     private void deleteSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
@@ -448,14 +490,14 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
 
-            if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
-                // delete the account from the SolidFire SAN
-                deleteSolidFireAccount(sfAccountId, sfConnection);
-
-                // delete the info in the account_details table
-                // that's related to the SolidFire account
-                _accountDetailsDao.deleteDetails(account.getAccountId());
-            }
+//            if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
+//                // delete the account from the SolidFire SAN
+//                deleteSolidFireAccount(sfAccountId, sfConnection);
+//
+//                // delete the info in the account_details table
+//                // that's related to the SolidFire account
+//                _accountDetailsDao.deleteDetails(account.getAccountId());
+//            }
 
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 

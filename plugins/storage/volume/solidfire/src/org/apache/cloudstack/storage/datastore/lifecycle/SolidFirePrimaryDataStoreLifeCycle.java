@@ -108,7 +108,55 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         
         details.put(SolidFireUtil.CLUSTER_ADMIN_USERNAME, clusterAdminUsername);
         details.put(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, clusterAdminPassword);
-        
+
+        long lClusterDefaultMinIops = 100;
+        long lClusterDefaultMaxIops = 15000;
+        float fClusterDefaultBurstIopsPercentOfMaxIops = 1.5f;
+
+        try {
+            String clusterDefaultMinIops = getValue(SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS, url);
+
+            if (clusterDefaultMinIops != null && clusterDefaultMinIops.trim().length() > 0) {
+                lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
+            }
+        }
+        catch (Exception ex) {
+        }
+
+        try {
+            String clusterDefaultMaxIops = getValue(SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS, url);
+
+            if (clusterDefaultMaxIops != null && clusterDefaultMaxIops.trim().length() > 0) {
+                lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
+            }
+        }
+        catch (Exception ex) {
+        }
+
+        try {
+            String clusterDefaultBurstIopsPercentOfMaxIops = getValue(SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS, url);
+
+            if (clusterDefaultBurstIopsPercentOfMaxIops != null && clusterDefaultBurstIopsPercentOfMaxIops.trim().length() > 0) {
+                fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
+            }
+        }
+        catch (Exception ex) {
+        }
+
+        if (lClusterDefaultMinIops > lClusterDefaultMaxIops) {
+            throw new CloudRuntimeException("The parameter '" + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS + "' must be less than " +
+                    "or equal to the parameter '" + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS + "'.");
+        }
+
+        if (Float.compare(fClusterDefaultBurstIopsPercentOfMaxIops, 1.0f) < 0) {
+            throw new CloudRuntimeException("The parameter '" + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
+                    "' must be greater than or equal to 1.");
+        }
+
+        details.put(SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS, String.valueOf(lClusterDefaultMinIops));
+        details.put(SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS, String.valueOf(lClusterDefaultMaxIops));
+        details.put(SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS, String.valueOf(fClusterDefaultBurstIopsPercentOfMaxIops));
+
         // this adds a row in the cloud.storage_pool table for this SolidFire cluster
     	return dataStoreHelper.createPrimaryDataStore(parameters);
     }
@@ -123,10 +171,10 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     	StringTokenizer st = new StringTokenizer(originalUrl, delimiter);
     	
     	while (st.hasMoreElements()) {
-			String token = st.nextElement().toString();
+			String token = st.nextElement().toString().toUpperCase();
 			
-			if (!token.startsWith(SolidFireUtil.CLUSTER_ADMIN_USERNAME) &&
-				!token.startsWith(SolidFireUtil.CLUSTER_ADMIN_PASSWORD)) {
+			if (token.startsWith(SolidFireUtil.MANAGEMENT_VIP.toUpperCase()) ||
+				token.startsWith(SolidFireUtil.STORAGE_VIP.toUpperCase())) {
 				sb.append(token).append(delimiter);
 			}
     	}
