@@ -191,6 +191,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -366,6 +367,8 @@ ServerResource {
     private boolean _can_bridge_firewall;
     protected String _localStoragePath;
     protected String _localStorageUUID;
+    protected String _guestCpuMode;
+    protected String _guestCpuModel;
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 
@@ -755,6 +758,18 @@ ServerResource {
             _hypervisorQemuVersion = conn.getVersion();
         } catch (LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
+        }
+
+        _guestCpuMode = (String) params.get("guest.cpu.mode");
+        if (_guestCpuMode != null) {
+            _guestCpuModel = (String) params.get("guest.cpu.model");
+
+            if(_hypervisorLibvirtVersion < (9 * 1000 + 10)) {
+                s_logger.warn("LibVirt version 0.9.10 required for guest cpu mode, but version " +
+                        prettyVersion(_hypervisorLibvirtVersion) + " detected, so it will be disabled");
+                _guestCpuMode = null;
+                _guestCpuModel = null;
+            }
         }
 
         String[] info = NetUtils.getNetworkParams(_privateNic);
@@ -3286,6 +3301,11 @@ ServerResource {
         grd.setVcpuNum(vmTO.getCpus());
         vm.addComp(grd);
 
+        CpuModeDef cmd = new CpuModeDef();
+        cmd.setMode(_guestCpuMode);
+        cmd.setModel(_guestCpuModel);
+        vm.addComp(cmd);
+
         CpuTuneDef ctd = new CpuTuneDef();
         /**
             A 4.0.X/4.1.X management server doesn't send the correct JSON
@@ -4948,6 +4968,13 @@ ServerResource {
         }
 
         return new Answer(cmd, success, "");
+    }
+
+    private String prettyVersion(long version) {
+        long major = version / 1000000;
+        long minor = version % 1000000 / 1000;
+        long release = version % 1000000 % 1000;
+        return major + "."  + minor + "." + release;
     }
 
 	@Override
