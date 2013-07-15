@@ -23,10 +23,9 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
@@ -44,13 +43,10 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenter;
@@ -66,7 +62,6 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -349,6 +344,7 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
         return null;
     }
 
+    @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
 	    HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
@@ -436,25 +432,6 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
         // TODO Auto-generated method stub
 
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.vm.VirtualMachineGuru#plugNic(com.cloud.network.Network, com.cloud.agent.api.to.NicTO, com.cloud.agent.api.to.VirtualMachineTO, com.cloud.vm.ReservationContext, com.cloud.deploy.DeployDestination)
-     */
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.vm.VirtualMachineGuru#unplugNic(com.cloud.network.Network, com.cloud.agent.api.to.NicTO, com.cloud.agent.api.to.VirtualMachineTO, com.cloud.vm.ReservationContext, com.cloud.deploy.DeployDestination)
-     */
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
     }
 
     @Override

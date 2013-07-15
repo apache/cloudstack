@@ -38,6 +38,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
@@ -52,6 +59,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -64,6 +73,8 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -173,13 +184,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
@@ -2858,7 +2862,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             boolean result = false;
             try{
-                result = vmGuru.plugNic(network, nicTO, vmTO, context, dest);
+                result = plugNic(network, nicTO, vmTO, context, dest);
                 if (result) {
                     s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
@@ -2932,7 +2936,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (vm.getState() == State.Running) {
             NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
             s_logger.debug("Un-plugging nic " + nic + " for vm " + vm + " from network " + network);
-            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            boolean result = unplugNic(network, nicTO, vmTO, context, dest);
             if (result) {
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
                 long isDefault = (nic.isDefaultNic()) ? 1 : 0;
@@ -3003,7 +3007,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (vm.getState() == State.Running) {
             NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
             s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
-            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            boolean result = unplugNic(network, nicTO, vmTO, context, dest);
             if (result) {
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
             } else {
@@ -3244,6 +3248,74 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _workDao.update(work.getId(), work);
         }
     }
+
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException,
+            ResourceUnavailableException,
+            InsufficientCapacityException {
+        boolean result = true;
+
+        VMInstanceVO router = _vmDao.findById(vm.getId());
+        if (router.getState() == State.Running) {
+            try {
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType());
+
+                Commands cmds = new Commands(OnError.Stop);
+                cmds.addCommand("plugnic", plugNicCmd);
+                _agentMgr.send(dest.getHost().getId(), cmds);
+                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
+                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to plug nic for vm " + vm.getName());
+                    result = false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network,
+                        dest.getHost().getId(), e);
+            }
+        } else {
+            s_logger.warn("Unable to apply PlugNic, vm " + router + " is not in the right state " + router.getState());
+
+            throw new ResourceUnavailableException("Unable to apply PlugNic on the backend," +
+                    " vm " + vm + " is not in the right state", DataCenter.class, router.getDataCenterId());
+        }
+
+        return result;
+    }
+
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+
+        boolean result = true;
+        VMInstanceVO router = _vmDao.findById(vm.getId());
+
+        if (router.getState() == State.Running) {
+            try {
+                Commands cmds = new Commands(OnError.Stop);
+                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
+                cmds.addCommand("unplugnic", unplugNicCmd);
+                _agentMgr.send(dest.getHost().getId(), cmds);
+
+                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
+                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to unplug nic from router " + router);
+                    result = false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network,
+                        dest.getHost().getId(), e);
+            }
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+            s_logger.debug("Vm " + router.getInstanceName() + " is in " + router.getState() +
+                    ", so not sending unplug nic command to the backend");
+        } else {
+            s_logger.warn("Unable to apply unplug nic, Vm " + router + " is not in the right state " + router.getState());
+
+            throw new ResourceUnavailableException("Unable to apply unplug nic on the backend," +
+                    " vm " + router + " is not in the right state", DataCenter.class, router.getDataCenterId());
+        }
+
+        return result;
+    }
+
     @Override
     public VMInstanceVO reConfigureVm(VMInstanceVO vm , ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
 

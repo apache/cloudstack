@@ -17,15 +17,9 @@
 package com.cloud.vm;
 
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 
 /**
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
@@ -79,36 +73,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     Long convertToId(String vmName);
     
-    /**
-     * Prepare for a nic to be plugged into the network.
-     * @param network
-     * @param nic
-     * @param vm
-     * @param context
-     * @param dest TODO
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     * @throws InsufficientNetworkCapacityException
-     */
-    boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, 
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, 
-            ResourceUnavailableException, InsufficientCapacityException;
-    
-    /**
-     * A nic is unplugged from this network.
-     * @param network
-     * @param nic
-     * @param vm
-     * @param context
-     * @param dest TODO
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     */
-    boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, 
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException;
-
     /**
      * Prepare Vm for Stop
      * @param profile

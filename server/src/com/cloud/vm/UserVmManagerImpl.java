@@ -35,7 +35,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
@@ -68,19 +67,14 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.DiskTO;
@@ -176,6 +170,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -2903,7 +2898,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         vm.setDetails(details);
 
         if (vm.getIsoId() != null) {
-            TemplateInfo template = this.templateMgr.prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            TemplateInfo template = templateMgr.prepareIso(vm.getIsoId(), vm.getDataCenterId());
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
                 throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
@@ -4622,64 +4617,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 + template.getUuid() + " done successfully");
         return vm;
 
-    }
-
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest)
-                    throws ConcurrentOperationException, ResourceUnavailableException,
-                    InsufficientCapacityException {
-        UserVmVO vmVO = _vmDao.findById(vm.getId());
-        if (vmVO.getState() == State.Running) {
-            try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName(), vm.getType());
-                Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("plugnic",plugNicCmd);
-                _agentMgr.send(dest.getHost().getId(),cmds);
-                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
-                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for " + vmVO + " due to: " + " due to: " + plugNicAnswer.getDetails());
-                    return false;
-                }
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to plug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
-            }
-        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
-            s_logger.warn(vmVO + " is Stopped, not sending PlugNicCommand.  Currently " + vmVO.getState());
-        } else {
-            s_logger.warn("Unable to plug nic, " + vmVO + " is not in the right state " + vmVO.getState());
-            throw new ResourceUnavailableException("Unable to plug nic on the backend," +
-                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterId());
-        }
-        return true;
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        UserVmVO vmVO = _vmDao.findById(vm.getId());
-        if (vmVO.getState() == State.Running) {
-            try {
-                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic,vm.getName());
-                Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("unplugnic",unplugNicCmd);
-                _agentMgr.send(dest.getHost().getId(),cmds);
-                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
-                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to unplug nic for " + vmVO + " due to: " + unplugNicAnswer.getDetails());
-                    return false;
-                }
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to unplug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
-            }
-        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
-            s_logger.warn(vmVO + " is Stopped, not sending UnPlugNicCommand.  Currently " + vmVO.getState());
-        } else {
-            s_logger.warn("Unable to unplug nic, " + vmVO + " is not in the right state " + vmVO.getState());
-            throw new ResourceUnavailableException("Unable to unplug nic on the backend," +
-                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterId());
-        }
-        return true;
     }
 
     @Override

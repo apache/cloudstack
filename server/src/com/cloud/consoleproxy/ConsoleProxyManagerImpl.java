@@ -28,11 +28,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -44,8 +48,6 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
@@ -79,7 +81,6 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreDao;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.keystore.KeystoreVO;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
@@ -139,8 +140,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 //
 // Possible console proxy state transition cases
@@ -809,7 +808,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                         return;
                     }
 
-                    final ConsoleProxyVO proxy = this._consoleProxyDao.findById(proxyVmId);
+                    final ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
                     if (proxy != null) {
 
                         // Disable this feature for now, as it conflicts with
@@ -938,7 +937,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            TemplateDataStoreVO templateHostRef = this._vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
+            TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
                     Status.DOWNLOADED);
 
             if (templateHostRef != null) {
@@ -1003,7 +1002,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             s_logger.info("Stop console proxy manager");
         }
 
-        this._loadScanner.stop();
+        _loadScanner.stop();
         _allocProxyLock.releaseRef();
         _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
@@ -1561,14 +1560,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         List<ConsoleProxyVO> runningProxies = _consoleProxyDao.getProxyListInStates(State.Running);
         for (ConsoleProxyVO proxy : runningProxies) {
             s_logger.info("Stop console proxy " + proxy.getId() + " because of we are currently in ResetSuspending management mode");
-            this.stopProxy(proxy.getId());
+            stopProxy(proxy.getId());
         }
 
         // check if it is time to resume
         List<ConsoleProxyVO> proxiesInTransition = _consoleProxyDao.getProxyListInStates(State.Running, State.Starting, State.Stopping);
         if (proxiesInTransition.size() == 0) {
             s_logger.info("All previous console proxy VMs in transition mode ceased the mode, we will now resume to last management state");
-            this.resumeLastManagementState();
+            resumeLastManagementState();
         }
     }
 
@@ -1637,12 +1636,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public Pair<AfterScanAction, Object> scanPool(Long pool) {
         long dataCenterId = pool.longValue();
 
-        ConsoleProxyLoadInfo proxyInfo = this._zoneProxyCountMap.get(dataCenterId);
+        ConsoleProxyLoadInfo proxyInfo = _zoneProxyCountMap.get(dataCenterId);
         if (proxyInfo == null) {
             return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
         }
 
-        ConsoleProxyLoadInfo vmInfo = this._zoneVmCountMap.get(dataCenterId);
+        ConsoleProxyLoadInfo vmInfo = _zoneVmCountMap.get(dataCenterId);
         if (vmInfo == null) {
             vmInfo = new ConsoleProxyLoadInfo();
         }
@@ -1700,22 +1699,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.ConsoleProxy);
         sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
         return sc.find();
-    }
-
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        //not supported
-        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
-    }
-
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        //not supported
-        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
 
     @Override

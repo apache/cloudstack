@@ -33,9 +33,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -46,8 +47,6 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -985,21 +984,6 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         return VirtualMachineName.getSystemVmId(vmName);
     }
     
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        //not supported
-        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        //not supported
-        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
-     }
-
     @Override
     public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
     } 

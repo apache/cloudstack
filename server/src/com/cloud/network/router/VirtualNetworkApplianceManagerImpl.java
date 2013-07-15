@@ -17,6 +17,34 @@
 
 package com.cloud.network.router;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
@@ -59,10 +87,8 @@ import com.cloud.agent.api.to.DnsmasqTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -168,10 +194,8 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
@@ -229,31 +253,6 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
@@ -371,7 +370,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     int _rvrStatusUpdatePoolSize = 10;
     protected ServiceOfferingVO _offering;
     private String _dnsBasicZoneUpdates = "all";
-    private Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
+    private final Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
 
     private boolean _disable_rp_filter = false;
     int _routerExtraPublicNics = 2;
@@ -3973,21 +3972,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
 
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        //not supported
-        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest)
-            throws ConcurrentOperationException, ResourceUnavailableException {
-      //not supported
-        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
-    }
-    
     @Override
     public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile){
         //Collect network usage before stopping Vm

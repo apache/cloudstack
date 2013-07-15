@@ -33,13 +33,10 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -51,19 +48,16 @@ import com.cloud.agent.api.to.DnsmasqTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.IpAddress;
@@ -337,75 +331,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         _vpcMgr.getSupportedVpcHypervisors());
         
         return router;
-    }
-    
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, 
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {     
-        boolean result = true;
-        
-        DomainRouterVO router = _routerDao.findById(vm.getId());
-        if (router.getState() == State.Running) {
-            try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType());
-                
-                Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("plugnic", plugNicCmd);                     
-                _agentMgr.send(dest.getHost().getId(), cmds);
-                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
-                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for vm " + vm.getName());
-                    result = false;
-                } 
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network,
-                        dest.getHost().getId(), e);
-            }
-        } else {
-            s_logger.warn("Unable to apply PlugNic, vm " + router + " is not in the right state " + router.getState());
-            
-            throw new ResourceUnavailableException("Unable to apply PlugNic on the backend," +
-                    " vm " + vm + " is not in the right state", DataCenter.class, router.getDataCenterId());
-        }
-        
-        return result;
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        
-        boolean result = true;
-        DomainRouterVO router = _routerDao.findById(vm.getId());
-        
-        if (router.getState() == State.Running) {
-            try {
-                Commands cmds = new Commands(OnError.Stop);
-                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
-                cmds.addCommand("unplugnic", unplugNicCmd);
-                _agentMgr.send(dest.getHost().getId(), cmds);
-                
-                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
-                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to unplug nic from router " + router);
-                    result = false;
-                }
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network,
-                        dest.getHost().getId(), e);
-            }
-        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            s_logger.debug("Vm " + router.getInstanceName() + " is in " + router.getState() + 
-                    ", so not sending unplug nic command to the backend");
-        } else {
-            s_logger.warn("Unable to apply unplug nic, Vm " + router + " is not in the right state " + router.getState());
-            
-            throw new ResourceUnavailableException("Unable to apply unplug nic on the backend," +
-                    " vm " + router +" is not in the right state", DataCenter.class, router.getDataCenterId());
-        }
-       
-        return result;
     }
     
     protected boolean setupVpcGuestNetwork(Network network, VirtualRouter router, boolean add, NicProfile guestNic) 
