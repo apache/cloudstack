@@ -44,7 +44,7 @@
       choose from this list when creating a network offering.</para>
   </formalpara>
   <informaltable>
-    <tgroup cols="6" align="left" colsep="1" rowsep="1">
+    <tgroup cols="7" align="left" colsep="1" rowsep="1">
       <colspec colnum="1" colname="c1" colwidth="1.64*"/>
       <colspec colnum="2" colname="c2" colwidth="1.48*"/>
       <colspec colnum="3" colname="c3" colwidth="1.11*"/>
