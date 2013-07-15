@@ -5,7 +5,7 @@
 # Required-Stop:     $local_fs
 # Should-Start:      
 # Should-Stop:       
-# Default-Start:     S
+# Default-Start:     
 # Default-Stop:      0 6
 # Short-Description: Web server that sends passwords to User VMs
 ### END INIT INFO
