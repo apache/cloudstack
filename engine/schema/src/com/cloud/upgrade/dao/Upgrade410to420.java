@@ -21,7 +21,6 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.log4j.Logger;
 import java.io.File;
@@ -32,19 +31,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import com.cloud.network.vpc.NetworkACL;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
 
-//	private Map<Long, Long> host_store_id_map = new HashMap<Long, Long>();
-//	private Map<Long, Long> s3_store_id_map = new HashMap<Long, Long>();
-//	private Map<Long, Long> swift_store_id_map = new HashMap<Long, Long>();
 
 	@Override
 	public String[] getUpgradableVersionRange() {
@@ -421,12 +414,12 @@ public class Upgrade410to420 implements DbUpgrade {
 	    PreparedStatement sql2 = null;
         try {
             sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
-            sql.setString(1, "ancient primary data store provider");
+            sql.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
             sql.setString(2, "HOST");
             sql.executeUpdate();
 
             sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
-            sql2.setString(1, "ancient primary data store provider");
+            sql2.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
             sql2.setString(2, "CLUSTER");
             sql2.executeUpdate();
         } catch (SQLException e) {
