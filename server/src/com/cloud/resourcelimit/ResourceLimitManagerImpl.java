@@ -812,7 +812,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         _resourceCountDao.lockRows(sc, null, true);
 
         ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
-        long oldCount = accountRC.getCount();
+        long oldCount = 0;
+        if (accountRC != null)
+            oldCount = accountRC.getCount();
 
         if (type == Resource.ResourceType.user_vm) {
             newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
