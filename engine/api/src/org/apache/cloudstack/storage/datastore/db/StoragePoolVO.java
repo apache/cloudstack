@@ -203,8 +203,8 @@ public class StoragePoolVO implements StoragePool {
         return capacityBytes;
     }
 
-    public void setUsedBytes(long available) {
-        usedBytes = available;
+    public void setUsedBytes(long usedBytes) {
+        this.usedBytes = usedBytes;
     }
 
     public void setCapacityBytes(long capacityBytes) {

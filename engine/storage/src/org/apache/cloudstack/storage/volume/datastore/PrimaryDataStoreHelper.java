@@ -113,7 +113,7 @@ public class PrimaryDataStoreHelper {
 
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
         pool.setScope(scope.getScopeType());
-        pool.setUsedBytes(existingInfo.getAvailableBytes());
+        pool.setUsedBytes(existingInfo.getCapacityBytes() - existingInfo.getAvailableBytes());
         pool.setCapacityBytes(existingInfo.getCapacityBytes());
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
