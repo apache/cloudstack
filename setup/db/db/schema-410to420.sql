@@ -26,9 +26,10 @@ ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_hosts_per_cluster`
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `storage_motion_supported` int(1) unsigned DEFAULT 0 COMMENT 'Is storage motion supported';
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_hosts_per_cluster`=32 WHERE `hypervisor_type`='VMware';
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.1.0', 50, 1, 13, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.2.0', 50, 1, 13, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_hosts_per_cluster) VALUES (UUID(), 'VMware', '5.1', 128, 0, 32);
-UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE id=16;
-UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE id=11;
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE `hypervisor_type`='VMware' AND `hypervisor_version`='5.1';
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE `hypervisor_type`='VMware' AND `hypervisor_version`='5.0';
 DELETE FROM `cloud`.`configuration` where name='vmware.percluster.host.max';
 DELETE FROM `cloud`.`configuration` where name='router.template.id';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'xen.nics.max', '7', 'Maximum allowed nics for Vms created on Xen');
