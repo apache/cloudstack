@@ -88,12 +88,16 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     @Override
     public Long getPageSizeVal() {
-        Long pageSizeVal = 500L;
-        Integer pageSize = getPageSize();
-        if (pageSize != null) {
-            pageSizeVal = pageSize.longValue();
+        Long defaultPageSize = 500L;
+        Integer pageSizeInt = getPageSize();
+        if (pageSizeInt != null) {
+            if (pageSizeInt.longValue() == PAGESIZE_UNLIMITED) {
+                defaultPageSize = null;
+            } else {
+                defaultPageSize = pageSizeInt.longValue();
+            }
         }
-        return pageSizeVal;
+        return defaultPageSize;
     }
 
     // ///////////////////////////////////////////////////
