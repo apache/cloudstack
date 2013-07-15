@@ -5067,6 +5067,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (!NetUtils.isValidVlan(vlanId)) {
                 throw new InvalidParameterValueException("Invalid vlan id " + vlanId);
             }
+
+            // check if there is zone vlan with same id
+            List<DataCenterVO> zones= _zoneDao.listAllZones();
+            if (zones != null && !zones.isEmpty()) {
+                for (DataCenterVO zone: zones) {
+                    if (_vlanDao.findByZoneAndVlanId(zone.getId(), vlanId) != null)
+                        throw new InvalidParameterValueException("Found a VLAN id " + vlanId + " already existing in"
+                                + " zone " + zone.getUuid() + " that conflicts with VLAN id of the portable ip range being configured");
+                }
+            }
+
         }
         GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
         portableIpLock.lock(5);
