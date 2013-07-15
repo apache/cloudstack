@@ -800,7 +800,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             portableIpLock.lock(5);
 
             txn.start();
-            //TODO: get the region ID corresponding to running management server
+
             List<PortableIpVO> portableIpVOs = _portableIpDao.listByRegionIdAndState(1, PortableIp.State.Free);
             if (portableIpVOs == null || portableIpVOs.isEmpty()) {
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException
@@ -816,9 +816,13 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             allocatedPortableIp.setState(PortableIp.State.Allocated);
             _portableIpDao.update(allocatedPortableIp.getId(), allocatedPortableIp);
 
-            // provision portable IP range VLAN
+            // To make portable IP available as a zone level resource we need to emulate portable IP's (which are
+            // provisioned at region level) as public IP provisioned in a zone. user_ip_address and vlan combo give the
+            // identity of a public IP in zone. Create entry for portable ip in these tables.
+
+            // provision portable IP range VLAN into the zone
             long physicalNetworkId = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public).getId();
-            Network network = _networkModel.getNetwork(physicalNetworkId);
+            Network network =_networkModel.getSystemNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
             String range = allocatedPortableIp.getAddress() + "-" + allocatedPortableIp.getAddress();
             VlanVO vlan = new VlanVO(VlanType.VirtualNetwork, allocatedPortableIp.getVlan(), allocatedPortableIp.getGateway(),
                     allocatedPortableIp.getNetmask(), dcId, range, network.getId(), network.getId(), null, null, null);
@@ -1124,30 +1128,36 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         assert(isPortableIpTransferableFromNetwork(ipAddrId, currentNetworkId));
 
+        // disassociate portable IP with current network/VPC network
         if (srcNetwork.getVpcId() != null) {
             _vpcMgr.unassignIPFromVpcNetwork(ipAddrId, currentNetworkId);
         } else {
             disassociatePortableIPToGuestNetwork(ipAddrId, currentNetworkId);
         }
 
+        // If portable IP need to be transferred across the zones, then mark the entry corresponding to portable ip
+        // in user_ip_address and vlan tables so as to emulate portable IP as provisioned in destination data center
         if (srcNetwork.getDataCenterId() != dstNetwork.getDataCenterId()) {
-            // portable IP need to be transferred across the zones, so mark the entry corresponding to portable ip
-            // in user_ip_address as provisioned in destination data center
             txn.start();
             ip.setDataCenterId(dstNetwork.getDataCenterId());
             ip.setPhysicalNetworkId(dstNetwork.getPhysicalNetworkId());
             _ipAddressDao.update(ipAddrId, ip);
 
+            long physicalNetworkId = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(
+                    dstNetwork.getDataCenterId(), TrafficType.Public).getId();
+            long publicNetworkId =_networkModel.getSystemNetworkByZoneAndTrafficType(
+                    dstNetwork.getDataCenterId(), TrafficType.Public).getId();
+
             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
-            vlan.setPhysicalNetworkId(dstNetwork.getPhysicalNetworkId());
-            vlan.setNetworkId(newNetworkId);
+            vlan.setPhysicalNetworkId(physicalNetworkId);
+            vlan.setNetworkId(publicNetworkId);
             vlan.setDataCenterId(dstNetwork.getDataCenterId());
             _vlanDao.update(ip.getVlanId(), vlan);
             txn.commit();
         }
 
+        // associate portable IP with new network/VPC network
         associatePortableIPToGuestNetwork(ipAddrId, newNetworkId, false);
-
 
         txn.start();
 
@@ -1160,6 +1170,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _ipAddressDao.update(ipAddrId, ip);
 
         txn.commit();
+
+        // trigger an action event for the transfer of portable IP across the networks, so that external entities
+        // monitoring for this event can initiate the route advertisement for the availability of IP from the zoe
         ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN,
                 EventTypes.EVENT_PORTABLE_IP_TRANSFER, "Portable IP associated is transferred from network "
                     + currentNetworkId + " to " + newNetworkId);
