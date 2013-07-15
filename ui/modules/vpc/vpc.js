@@ -30,6 +30,7 @@
         addAction.action({
           context: context,
           data: args.data,
+          $form: args.$form,
           response: {
             success: function(args) {
               cloudStack.ui.notifications.add(
