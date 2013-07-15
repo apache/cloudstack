@@ -20,9 +20,6 @@
 -->
 <section id="egress-firewall-rule">
   <title>Creating Egress Firewall Rules in an Advanced Zone</title>
-  <note>
-    <para>The egress firewall rules are supported only on virtual routers.</para>
-  </note>
   <para>The egress traffic originates from a private network to a public network, such as the
     Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed from a
     guest network to the Internet. However, you can control the egress traffic in an Advanced zone
