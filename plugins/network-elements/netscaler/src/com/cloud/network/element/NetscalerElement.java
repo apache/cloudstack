@@ -367,6 +367,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                 s_logger.debug(msg);
                 throw new InvalidParameterValueException(msg);
             }
+
+            if (dedicatedUse) {
+                throw new InvalidParameterValueException("NetScaler provisioned to be GSLB service provider can only be configured for shared usage.");
+            }
+
         }
 
         ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(),
