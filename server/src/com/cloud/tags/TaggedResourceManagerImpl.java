@@ -121,6 +121,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     VMSnapshotDao _vmSnapshotDao;
     @Inject
     NicDao _nicDao;
+    @Inject
     NetworkACLItemDao _networkACLItemDao;
 
 
@@ -139,7 +140,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(TaggedResourceType.PublicIpAddress, _publicIpDao);
         _daoMap.put(TaggedResourceType.Project, _projectDao);
         _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
-        _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
         _daoMap.put(TaggedResourceType.Nic, _nicDao);
         _daoMap.put(TaggedResourceType.NetworkACL, _networkACLItemDao);
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
