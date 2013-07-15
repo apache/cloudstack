@@ -2826,10 +2826,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
              */
             int nicNum = 0;
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
-                newVal = new OptionValue();
-                newVal.setKey("nvp.iface-id." + nicNum);
-                newVal.setValue(nicTo.getUuid());
-                extraOptions.add(newVal);
+                if (nicTo.getUuid() != null) {
+                    newVal = new OptionValue();
+                    newVal.setKey("nvp.iface-id." + nicNum);
+                    newVal.setValue(nicTo.getUuid());
+                    extraOptions.add(newVal);
+                }
                 nicNum++;
             }
 
@@ -4063,15 +4065,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    @Override
     public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
             String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
         ManagedObjectReference morDs = createVmfsDatastore(hyperHost, iqn,
-                    storageHost, storagePort, iqn,
-                    initiatorUsername, initiatorPassword,
-                    targetUsername, targetPassword);
+                storageHost, storagePort, iqn,
+                initiatorUsername, initiatorPassword,
+                targetUsername, targetPassword);
 
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
@@ -4094,6 +4097,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return morDs;
     }
 
+    @Override
     public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -4124,8 +4128,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             if (cmd.getAttach() && cmd.isManaged()) {
                 morDs = handleDatastoreAndVmdkAttach(cmd, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(),
-                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
-                            cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
+                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
+                        cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
