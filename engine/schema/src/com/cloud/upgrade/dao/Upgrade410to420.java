@@ -17,14 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.log4j.Logger;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.Date;
@@ -34,48 +26,52 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Set;
-import java.util.HashSet;
+import java.util.UUID;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
-	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
+    final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
 
-//	private Map<Long, Long> host_store_id_map = new HashMap<Long, Long>();
-//	private Map<Long, Long> s3_store_id_map = new HashMap<Long, Long>();
-//	private Map<Long, Long> swift_store_id_map = new HashMap<Long, Long>();
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[] { "4.1.0", "4.2.0" };
+    }
 
-	@Override
-	public String[] getUpgradableVersionRange() {
-		return new String[] { "4.1.0", "4.2.0" };
-	}
+    @Override
+    public String getUpgradedVersion() {
+        return "4.2.0";
+    }
 
-	@Override
-	public String getUpgradedVersion() {
-		return "4.2.0";
-	}
+    @Override
+    public boolean supportsRollingUpgrade() {
+        return false;
+    }
 
-	@Override
-	public boolean supportsRollingUpgrade() {
-		return false;
-	}
-
-	@Override
-	public File[] getPrepareScripts() {
-		String script = Script.findScript("", "db/schema-410to420.sql");
+    @Override
+    public File[] getPrepareScripts() {
+        String script = Script.findScript("", "db/schema-410to420.sql");
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-410to420.sql");
         }
 
         return new File[] { new File(script) };
-	}
+    }
 
-	@Override
-	public void performDataMigration(Connection conn) {
+    @Override
+    public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
         persistLegacyZones(conn);
         createPlaceHolderNics(conn);
@@ -111,12 +107,12 @@ public class Upgrade410to420 implements DbUpgrade {
         keys.add("fk_external_dhcp_devices_pod_id");
         keys.add("fk_external_dhcp_devices_physical_network_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "baremetal_dhcp_devices", keys, true);
-        
+
         keys.add("fk_external_pxe_devices_nsp_id");
         keys.add("fk_external_pxe_devices_host_id");
         keys.add("fk_external_pxe_devices_physical_network_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "baremetal_pxe_devices", keys, true);
-        
+
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
@@ -180,8 +176,8 @@ public class Upgrade410to420 implements DbUpgrade {
 
     }
 
-	private void updateSystemVmTemplates(Connection conn) {
-	    // TODO: system vm template migration after storage refactoring
+    private void updateSystemVmTemplates(Connection conn) {
+        // TODO: system vm template migration after storage refactoring
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         s_logger.debug("Updating System Vm template IDs");
@@ -193,16 +189,16 @@ public class Upgrade410to420 implements DbUpgrade {
                 rs = pstmt.executeQuery();
                 while(rs.next()){
                     switch (HypervisorType.getType(rs.getString(1))) {
-                        case XenServer: hypervisorsListInUse.add(HypervisorType.XenServer);
-                                        break;
-                        case KVM:       hypervisorsListInUse.add(HypervisorType.KVM);
-                                        break;
-                        case VMware:    hypervisorsListInUse.add(HypervisorType.VMware);
-                                        break;
-                        case Hyperv:    hypervisorsListInUse.add(HypervisorType.Hyperv);
-                                        break;
-                        case LXC:       hypervisorsListInUse.add(HypervisorType.LXC);
-                                        break;
+                    case XenServer: hypervisorsListInUse.add(HypervisorType.XenServer);
+                    break;
+                    case KVM:       hypervisorsListInUse.add(HypervisorType.KVM);
+                    break;
+                    case VMware:    hypervisorsListInUse.add(HypervisorType.VMware);
+                    break;
+                    case Hyperv:    hypervisorsListInUse.add(HypervisorType.Hyperv);
+                    break;
+                    case LXC:       hypervisorsListInUse.add(HypervisorType.LXC);
+                    break;
                     }
                 }
             } catch (SQLException e) {
@@ -211,19 +207,19 @@ public class Upgrade410to420 implements DbUpgrade {
 
             Map<HypervisorType, String> NewTemplateNameList = new HashMap<HypervisorType, String>(){
                 {   put(HypervisorType.XenServer, "systemvm-xenserver-4.2");
-                    put(HypervisorType.VMware, "systemvm-vmware-4.2");
-                    put(HypervisorType.KVM, "systemvm-kvm-4.2");
-                    put(HypervisorType.LXC, "systemvm-lxc-4.2");
-                    put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
+                put(HypervisorType.VMware, "systemvm-vmware-4.2");
+                put(HypervisorType.KVM, "systemvm-kvm-4.2");
+                put(HypervisorType.LXC, "systemvm-lxc-4.2");
+                put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
                 }
             };
 
             Map<HypervisorType, String> routerTemplateConfigurationNames = new HashMap<HypervisorType, String>(){
                 {   put(HypervisorType.XenServer, "router.template.xen");
-                    put(HypervisorType.VMware, "router.template.vmware");
-                    put(HypervisorType.KVM, "router.template.kvm");
-                    put(HypervisorType.LXC, "router.template.lxc");
-                    put(HypervisorType.Hyperv, "router.template.hyperv");
+                put(HypervisorType.VMware, "router.template.vmware");
+                put(HypervisorType.KVM, "router.template.kvm");
+                put(HypervisorType.LXC, "router.template.lxc");
+                put(HypervisorType.Hyperv, "router.template.hyperv");
                 }
             };
 
@@ -296,20 +292,20 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
-        */
-	}
+         */
+    }
 
-	private void updatePrimaryStore(Connection conn) {
-	    PreparedStatement sql = null;
-	    PreparedStatement sql2 = null;
+    private void updatePrimaryStore(Connection conn) {
+        PreparedStatement sql = null;
+        PreparedStatement sql2 = null;
         try {
             sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
-            sql.setString(1, "ancient primary data store provider");
+            sql.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
             sql.setString(2, "HOST");
             sql.executeUpdate();
 
             sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
-            sql2.setString(1, "ancient primary data store provider");
+            sql2.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
             sql2.setString(2, "CLUSTER");
             sql2.executeUpdate();
         } catch (SQLException e) {
@@ -329,7 +325,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
-	}
+    }
 
     //update the cluster_details table with default overcommit ratios.
     private void updateCluster_details(Connection conn) {
@@ -367,8 +363,8 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
 
-	@Override
-	public File[] getCleanupScripts() {
+    @Override
+    public File[] getCleanupScripts() {
         String script = Script.findScript("", "db/schema-410to420-cleanup.sql");
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-410to420-cleanup.sql");
@@ -632,18 +628,18 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt = conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
-                    Long networkId = rs.getLong(1);
-                    String gateway = rs.getString(2);
-                    String ip = rs.getString(3);
-                    String uuid = UUID.randomUUID().toString();
-                    //Insert placeholder nic for each Domain router nic in Shared network
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
-                    pstmt.setString(1, uuid);
-                    pstmt.setString(2, ip);
-                    pstmt.setString(3, gateway);
-                    pstmt.setLong(4, networkId);
-                    pstmt.executeUpdate();
-                    s_logger.debug("Created placeholder nic for the ipAddress " + ip);
+                Long networkId = rs.getLong(1);
+                String gateway = rs.getString(2);
+                String ip = rs.getString(3);
+                String uuid = UUID.randomUUID().toString();
+                //Insert placeholder nic for each Domain router nic in Shared network
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
+                pstmt.setString(1, uuid);
+                pstmt.setString(2, ip);
+                pstmt.setString(3, gateway);
+                pstmt.setLong(4, networkId);
+                pstmt.executeUpdate();
+                s_logger.debug("Created placeholder nic for the ipAddress " + ip);
 
             }
         } catch (SQLException e) {
@@ -671,14 +667,14 @@ public class Upgrade410to420 implements DbUpgrade {
             rs = pstmt.executeQuery();
             long id=1;
             while (rs.next()) {
-                    String uuid = UUID.randomUUID().toString();
-                    Long ipId = rs.getLong(1);
-                    pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
-                    pstmt.setString(1, uuid);
-                    pstmt.setLong(2, id);
-                    pstmt.setLong(3, ipId);
-                    pstmt.executeUpdate();
-                    id++;
+                String uuid = UUID.randomUUID().toString();
+                Long ipId = rs.getLong(1);
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
+                pstmt.setString(1, uuid);
+                pstmt.setLong(2, id);
+                pstmt.setLong(3, ipId);
+                pstmt.executeUpdate();
+                id++;
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
@@ -1035,15 +1031,15 @@ public class Upgrade410to420 implements DbUpgrade {
                 String uuid = UUID.randomUUID().toString();
                 //Add internal LB VM to the list of physical network service providers
                 pstmt = conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` " +
-                		"(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
-                		" VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
+                        "(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
+                        " VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
                 pstmt.setString(1, uuid);
                 pstmt.setLong(2, pNtwkId);
                 pstmt.executeUpdate();
 
                 //Add internal lb vm to the list of physical network elements
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
-                		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                        " WHERE physical_network_id=? AND provider_name='InternalLbVm'");
                 pstmt1.setLong(1, pNtwkId);
                 ResultSet rs1 = pstmt1.executeQuery();
                 while (rs1.next()) {
