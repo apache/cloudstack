@@ -3557,6 +3557,9 @@
             if(args.data.aclid !='')
                 $.extend(dataObj, {aclid:args.data.aclid});
 
+            if (args.$form.find('.form-item[rel=vlan]').is(':visible')) {
+              $.extend(dataObj, { vlan: args.data.vlan });
+            }
 
             $.ajax({
               url: createURL('createNetwork'),
