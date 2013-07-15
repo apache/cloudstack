@@ -883,18 +883,20 @@
  
           vCenterHost: {
             label: 'label.vcenter.host',
-            validation: { required: true }
+            validation: { required: true }  //required, for firing addVmwareDc API
           },
           vCenterUsername: {
-            label: 'label.vcenter.username'
+            label: 'label.vcenter.username',
+            validation: { required: true }  //required, for firing addVmwareDc API
           },
           vCenterPassword: {
             label: 'label.vcenter.password',
-            isPassword: true
+            isPassword: true,
+            validation: { required: true }  //required, for firing addVmwareDc API
           },
           vCenterDatacenter: {
             label: 'label.vcenter.datacenter',
-            validation: { required: true }
+            validation: { required: true }  //required, for firing addVmwareDc API
           },
 
          overridepublictraffic:{
