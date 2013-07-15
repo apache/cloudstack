@@ -26,7 +26,8 @@
     by creating egress firewall rules. When an egress firewall rule is applied, the traffic specific
     to the rule is allowed and the remaining traffic is blocked. When all the firewall rules are
     removed the default policy, Block, is applied.</para>
-  <note>
+  <para>Egress firewall rules are supported on Juniper SRX and virtual router.</para>
+    <note>
     <para>The egress firewall rules are not supported on shared networks.</para>
   </note>
   <para>Consider the following scenarios to apply egress firewall rules:</para>
