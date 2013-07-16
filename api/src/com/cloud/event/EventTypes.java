@@ -424,7 +424,7 @@ public class EventTypes {
     public static final String EVENT_AFFINITY_GROUP_ASSIGN = "AG.ASSIGN";
     public static final String EVENT_AFFINITY_GROUP_REMOVE = "AG.REMOVE";
     public static final String EVENT_VM_AFFINITY_GROUP_UPDATE = "VM.AG.UPDATE";
-    
+
     public static final String EVENT_INTERNAL_LB_VM_START = "INTERNALLBVM.START";
     public static final String EVENT_INTERNAL_LB_VM_STOP = "INTERNALLBVM.STOP";
 
@@ -441,6 +441,8 @@ public class EventTypes {
     // Dedicated Resources
     public static final String EVENT_DEDICATE_RESOURCE = "DEDICATE.RESOURCE";
     public static final String EVENT_DEDICATE_RESOURCE_RELEASE = "DEDICATE.RESOURCE.RELEASE";
+
+    public static final String EVENT_CLEANUP_VM_RESERVATION = "VM.RESERVATION.CLEANUP";
 
     static {
 

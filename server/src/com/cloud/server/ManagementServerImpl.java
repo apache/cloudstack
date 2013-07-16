@@ -126,6 +126,7 @@ import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.CleanVMReservationsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
@@ -442,6 +443,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -681,6 +683,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     VolumeDataFactory _volFactory;
     @Inject
     AccountService _accountService;
+
+    @Inject
+    DeploymentPlanningManager _dpMgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -2807,6 +2812,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListNetworkACLListsCmd.class);
         cmdList.add(ReplaceNetworkACLListCmd.class);
         cmdList.add(UpdateNetworkACLItemCmd.class);
+        cmdList.add(CleanVMReservationsCmd.class);
         return cmdList;
     }
 
@@ -3787,4 +3793,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return plannersAvailable;
     }
 
+    @Override
+    public void cleanupVMReservations() {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Processing cleanupVMReservations");
+        }
+
+        _dpMgr.cleanupVMReservations();
+    }
 }

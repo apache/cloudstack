@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +29,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -46,12 +46,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.org.Cluster;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -68,6 +66,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class VMEntityManagerImpl implements VMEntityManager {
+
+    private static final Logger s_logger = Logger.getLogger(VMEntityManagerImpl.class);
 
     @Inject
     protected VMInstanceDao _vmDao;
@@ -190,28 +190,15 @@ public class VMEntityManagerImpl implements VMEntityManager {
             }
 
             if (dest != null) {
-                if (_dpMgr.finalizeReservation(dest, vmProfile, plan, exclude)) {
-                    // save destination with VMEntityVO
-                    VMReservationVO vmReservation = new VMReservationVO(vm.getId(), dest.getDataCenter().getId(), dest
-                            .getPod().getId(), dest.getCluster().getId(), dest.getHost().getId());
-                    Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
-
-                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        for (Volume vo : dest.getStorageForDisks().keySet()) {
-                            volumeReservationMap.put(vo.getId(), dest.getStorageForDisks().get(vo).getId());
-                        }
-                        vmReservation.setVolumeReservation(volumeReservationMap);
-                    }
-
-                    vmEntityVO.setVmReservation(vmReservation);
-                    _vmEntityDao.persist(vmEntityVO);
-
-                    return vmReservation.getUuid();
+                String reservationId = _dpMgr.finalizeReservation(dest, vmProfile, plan, exclude);
+                if(reservationId != null){
+                    return reservationId;
                 } else {
-                    try {
-                        Thread.sleep(10000);
-                    } catch (final InterruptedException e) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
                     }
+
+                    exclude.addHost(dest.getHost().getId());
                     continue;
                 }
             } else if (planChangedByReadyVolume) {

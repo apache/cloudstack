@@ -31,9 +31,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -94,12 +97,17 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
@@ -116,7 +124,8 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 
 
 @Local(value = { DeploymentPlanningManager.class })
-public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener {
+public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
+        StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     private static final Logger s_logger = Logger.getLogger(DeploymentPlanningManagerImpl.class);
     @Inject
@@ -138,6 +147,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     MessageBus _messageBus;
     private Timer _timer = null;
     private long _hostReservationReleasePeriod = 60L * 60L * 1000L; // one hour by default
+    @Inject
+    protected VMReservationDao _reservationDao;
 
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
@@ -766,6 +777,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _agentMgr.registerForHostEvents(this, true, false, true);
+        VirtualMachine.State.getStateMachine().registerListener(this);
         _messageBus.subscribe("VM_ReservedCapacity_Free", new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
@@ -798,6 +810,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     public boolean start() {
         _timer.schedule(new HostReservationReleaseChecker(), INITIAL_RESERVATION_RELEASE_CHECKER_DELAY,
                 _hostReservationReleasePeriod);
+        cleanupVMReservations();
         return true;
     }
 
@@ -805,6 +818,26 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     public boolean stop() {
         _timer.cancel();
         return true;
+    }
+
+    @Override
+    public void cleanupVMReservations() {
+        List<VMReservationVO> reservations = _reservationDao.listAll();
+
+        for (VMReservationVO reserv : reservations) {
+            VMInstanceVO vm = _vmInstanceDao.findById(reserv.getVmId());
+            if (vm != null) {
+                if (vm.getState() == State.Starting || (vm.getState() == State.Stopped && vm.getLastHostId() == null)) {
+                    continue;
+                } else {
+                    // delete reservation
+                    _reservationDao.remove(reserv.getId());
+                }
+            } else {
+                // delete reservation
+                _reservationDao.remove(reserv.getId());
+            }
+        }
     }
 
     // /refactoring planner methods
@@ -1182,25 +1215,72 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return false;
     }
 
+    @DB
     @Override
-    public boolean finalizeReservation(DeployDestination plannedDestination,
+    public String finalizeReservation(DeployDestination plannedDestination,
             VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
         VirtualMachine vm = vmProfile.getVirtualMachine();
         long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
-        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 
-        if (vmGroupCount > 0) {
-            // uses affinity groups. For every group check if processor flags
-            // that the destination is ok
-            for (AffinityGroupProcessor processor : _affinityProcessors) {
-                if (!processor.check(vmProfile, plannedDestination)) {
-                    return false;
+        boolean saveReservation = true;
+        final Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            if (vmGroupCount > 0) {
+                List<Long> groupIds = _affinityGroupVMMapDao.listAffinityGroupIdsByVmId(vm.getId());
+                SearchCriteria<AffinityGroupVO> criteria = _affinityGroupDao.createSearchCriteria();
+                criteria.addAnd("id", SearchCriteria.Op.IN, groupIds.toArray(new Object[groupIds.size()]));
+                List<AffinityGroupVO> groups = _affinityGroupDao.lockRows(criteria, null, true);
+
+                for (AffinityGroupProcessor processor : _affinityProcessors) {
+                    if (!processor.check(vmProfile, plannedDestination)) {
+                        saveReservation = false;
+                        break;
+                    }
                 }
             }
-        }
 
+            if (saveReservation) {
+                VMReservationVO vmReservation = new VMReservationVO(vm.getId(), plannedDestination.getDataCenter()
+                        .getId(), plannedDestination.getPod().getId(), plannedDestination.getCluster().getId(),
+                        plannedDestination.getHost().getId());
+                Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
+
+                if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                    for (Volume vo : plannedDestination.getStorageForDisks().keySet()) {
+                        volumeReservationMap.put(vo.getId(), plannedDestination.getStorageForDisks().get(vo).getId());
+                    }
+                    vmReservation.setVolumeReservation(volumeReservationMap);
+                }
+                _reservationDao.persist(vmReservation);
+                return vmReservation.getUuid();
+            }
+        } finally {
+            txn.commit();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo,
+            boolean status, Object opaque) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo,
+            boolean status, Object opaque) {
+        if (!status) {
+            return false;
+        }
+        if ((oldState == State.Starting) && (newState != State.Starting)) {
+            // cleanup all VM reservation entries
+            SearchCriteria<VMReservationVO> sc = _reservationDao.createSearchCriteria();
+            sc.addAnd("vmId", SearchCriteria.Op.EQ, vo.getId());
+            _reservationDao.expunge(sc);
+        }
         return true;
     }
 }
