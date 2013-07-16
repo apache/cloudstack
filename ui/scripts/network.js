@@ -327,7 +327,7 @@
         listView: {
           actions: {
             add: { 
-              label: 'Add Isolated Guest Network with SourceNat',
+              label: 'Add Isolated Network',
 
               preFilter: function(args) { 
                 if(advZoneObjs != null && advZoneObjs.length > 0) {
