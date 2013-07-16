@@ -207,7 +207,7 @@ then
   fi
   [ "$routes" != "" ] && echo "$tag,121,$routes" >> $DHCP_OPTS
   #delete entry we just put in because we need a tag
-  sed -i  /$ipv4/d $DHCP_HOSTS 
+  sed -i  /$ipv4,/d $DHCP_HOSTS
   #put it back with a tag
   echo "$mac,set:$tag,$ipv4,$host,infinite" >>$DHCP_HOSTS
 fi
