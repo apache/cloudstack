@@ -1269,30 +1269,35 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO) dstore;
-            String relativeSnapshotPath = obj.getPath();
-            String parent = getRootDir(nfs.getUrl());
-
-            if (relativeSnapshotPath.startsWith(File.separator)) {
-                relativeSnapshotPath = relativeSnapshotPath.substring(1);
+            String snapshotPath = obj.getPath();
+            if (snapshotPath.startsWith(File.separator)) {
+                snapshotPath = snapshotPath.substring(1);
             }
+            int index = snapshotPath.lastIndexOf("/");
+            String snapshotName = snapshotPath.substring(index + 1);
+            snapshotPath = snapshotPath.substring(0, index);
 
+            String parent = getRootDir(nfs.getUrl());
             if (!parent.endsWith(File.separator)) {
                 parent += File.separator;
             }
-            String absoluteSnapshotPath = parent + relativeSnapshotPath;
-            File snapshot = new File(absoluteSnapshotPath);
+            String absoluteSnapshotPath = parent + snapshotPath;
+            // check if directory exists
+            File snapshotDir = new File(absoluteSnapshotPath);
             String details = null;
-            if (!snapshot.exists()) {
-                details = "snapshot file " + snapshot.getName() + " doesn't exist";
+            if (!snapshotDir.exists()) {
+                details = "snapshot directory " + snapshotDir.getName() + " doesn't exist";
                 s_logger.debug(details);
-                return new Answer(cmd, true, details);
+                return new Answer(cmd, false, details);
             }
-
-            if (!snapshot.delete()) {
-                return new Answer(cmd, false, "Unable to delete file " + snapshot.getName() + " under install path "
-                        + relativeSnapshotPath);
+            // delete snapshot in the directory if exists
+            String lPath = absoluteSnapshotPath + "/*" + snapshotName + "*";
+            String result = deleteLocalFile(lPath);
+            if (result != null) {
+                details = "failed to delete snapshot " + lPath + " , err=" + result;
+                s_logger.warn(details);
+                return new Answer(cmd, false, details);
             }
-
             return new Answer(cmd, true, null);
         } else if (dstore instanceof S3TO) {
             final S3TO s3 = (S3TO) dstore;
