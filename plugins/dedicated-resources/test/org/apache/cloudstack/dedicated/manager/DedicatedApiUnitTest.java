@@ -22,17 +22,15 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import junit.framework.Assert;
 
-import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -48,6 +46,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -61,7 +63,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -108,22 +110,24 @@ public class DedicatedApiUnitTest {
     private static long accountId = 5L;
     private static String accountName = "admin";
 
-    @BeforeClass
-    public static void setUp() throws ConfigurationException {
-
-    }
-
     @Before
-    public void testSetUp() {
+    public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
         DomainVO domain = new DomainVO("rootDomain", 5L, 5L, "networkDomain");
 
-        UserContext.registerContext(1, account, null, true);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        CallContext.register(user, account);
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(account);
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(account);
         when(_accountDao.findById(anyLong())).thenReturn(account);
         when(_domainDao.findById(domainId)).thenReturn(domain);
+    }
+
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test(expected = InvalidParameterValueException.class)

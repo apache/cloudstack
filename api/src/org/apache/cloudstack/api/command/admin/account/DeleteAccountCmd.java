@@ -27,13 +27,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteAccount", description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
 public class DeleteAccountCmd extends BaseAsyncCmd {
@@ -74,7 +75,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();// Let's give the caller here for event logging.
+        Account account = CallContext.current().getCallingAccount();// Let's give the caller here for event logging.
         if (account != null) {
             return account.getAccountId();
         }
@@ -95,7 +96,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Account Id: "+getId());
+        CallContext.current().setEventDetails("Account Id: "+getId());
 
         boolean	result = _regionService.deleteUserAccount(this);
         if (result) {

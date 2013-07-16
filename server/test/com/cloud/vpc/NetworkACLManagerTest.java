@@ -15,6 +15,35 @@
 
 package com.cloud.vpc;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -35,32 +64,9 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
-import junit.framework.TestCase;
-import org.apache.cloudstack.test.utils.SpringUtils;
-import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -90,13 +96,22 @@ public class NetworkACLManagerTest extends TestCase{
 
     private static final Logger s_logger = Logger.getLogger( NetworkACLManagerTest.class);
 
+    @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.registerContext(1, account, null, true);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        CallContext.register(user, account);
         acl = Mockito.mock(NetworkACLVO.class);
         aclItem = Mockito.mock(NetworkACLItemVO.class);
+    }
+
+    @Override
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test

@@ -19,12 +19,14 @@ package org.apache.cloudstack.api.command.user.vm;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.*;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import java.util.List;

@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoVnmcResourceResponse;
@@ -35,7 +37,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.cisco.CiscoVnmcController;
 import com.cloud.network.element.CiscoVnmcElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name="addCiscoVnmcResource", responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
@@ -110,6 +111,6 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

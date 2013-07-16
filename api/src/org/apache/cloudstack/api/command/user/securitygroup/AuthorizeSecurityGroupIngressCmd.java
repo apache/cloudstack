@@ -33,12 +33,13 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 
@@ -165,7 +166,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

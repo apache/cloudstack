@@ -20,10 +20,12 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.*;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -143,6 +145,6 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

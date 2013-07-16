@@ -58,6 +58,8 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -210,7 +212,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
@@ -469,7 +470,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @ActionEvent(eventType = EventTypes.EVENT_VM_RESETPASSWORD, eventDescription = "resetting Vm password", async = true)
     public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password)
             throws ResourceUnavailableException, InsufficientCapacityException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
         _vmDao.loadDetails(userVm);
@@ -515,7 +516,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     private boolean resetVMPasswordInternal(Long vmId,
             String password) throws ResourceUnavailableException,
             InsufficientCapacityException {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = CallContext.current().getCallingUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
         if (password == null || password.equals("")) {
@@ -584,7 +585,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd)
             throws ResourceUnavailableException, InsufficientCapacityException {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         Long vmId = cmd.getId();
 
@@ -636,7 +637,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     private boolean resetVMSSHKeyInternal(Long vmId, String SSHPublicKey, String password) throws ResourceUnavailableException, InsufficientCapacityException {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = CallContext.current().getCallingUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
@@ -754,7 +755,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
 
     private UserVm upgradeStoppedVirtualMachine(Long vmId, Long svcOffId) throws ResourceAllocationException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(vmId);
@@ -827,7 +828,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
         String ipAddress = cmd.getIpAddress();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if(vmInstance == null) {
@@ -902,7 +903,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm removeNicFromVirtualMachine(RemoveNicFromVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
         Long vmId = cmd.getVmId();
         Long nicId = cmd.getNicId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if(vmInstance == null) {
@@ -959,7 +960,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd) throws InvalidParameterValueException, CloudRuntimeException {
         Long vmId = cmd.getVmId();
         Long nicId = cmd.getNicId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null){
@@ -1122,7 +1123,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
@@ -1285,7 +1286,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throws ResourceAllocationException, CloudRuntimeException {
 
         Long vmId = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId.longValue());
@@ -1496,9 +1497,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
-        UserContext ctx = UserContext.current();
-        ctx.setAccountId(vm.getAccountId());
-
         try {
             // expunge the vm
             if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
@@ -1651,7 +1649,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         @Override
         public void run() {
-            UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+            ServerContexts.registerSystemContext();
             GlobalLock scanLock = GlobalLock.getInternLock("UserVMExpunge");
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -1685,9 +1683,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
             } finally {
                 scanLock.releaseRef();
-                UserContext.unregisterContext();
+                ServerContexts.unregisterSystemContext();
             }
         }
+
     }
 
     private static boolean isAdmin(short accountType) {
@@ -1708,7 +1707,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Input validation
         UserVmVO vmInstance = null;
@@ -1728,7 +1727,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Can't enable ha for the vm as it's created from the Service offering having HA disabled");
         }
 
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true,
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true,
                 vmInstance);
 
         if (displayName == null) {
@@ -1863,7 +1862,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd)
             throws InsufficientCapacityException, ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long vmId = cmd.getId();
 
         // Verify input parameters
@@ -1886,7 +1885,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
-        return rebootVirtualMachine(UserContext.current().getCallerUserId(),
+        return rebootVirtualMachine(CallContext.current().getCallingUserId(),
                 vmId);
     }
 
@@ -1900,7 +1899,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     @DB
     public InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String groupName = cmd.getGroupName();
@@ -1955,7 +1954,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean deleteVmGroup(DeleteVMGroupCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long groupId = cmd.getId();
 
         // Verify input parameters
@@ -2108,7 +2107,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 	    List<Long> affinityGroupIdList)
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
         // Verify that caller can perform actions in behalf of vm owner
@@ -2168,7 +2167,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 	        List<Long> affinityGroupIdList) throws InsufficientCapacityException, ConcurrentOperationException,
 	        ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
         boolean isSecurityGroupEnabledNetworkUsed = false;
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
@@ -2283,7 +2282,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 	    IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList)
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
         // Verify that caller can perform actions in behalf of vm owner
@@ -2779,7 +2778,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
-        UserContext.current().setEventDetails("Vm Id: " + vm.getId());
+        CallContext.current().setEventDetails("Vm Id: " + vm.getId());
 
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(),
                 vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString(),
@@ -3113,8 +3112,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm stopVirtualMachine(long vmId, boolean forced)
             throws ConcurrentOperationException {
         // Input validation
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        Long userId = CallContext.current().getCallingUserId();
 
         // if account is removed, return error
         if (caller != null && caller.getRemoved() != null) {
@@ -3155,13 +3154,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
-            UserContext ctx = UserContext.current();
+            CallContext ctx = CallContext.current();
             try {
                 long networkId = ip.getAssociatedWithNetworkId();
                 Network guestNetwork = _networkDao.findById(networkId);
                 NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
                 assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
-                _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
+                _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn(
                         "Failed to disable static nat and release system ip "
@@ -3195,9 +3194,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     throws ConcurrentOperationException, ResourceUnavailableException,
                     InsufficientCapacityException {
         // Input validation
-        Account callerAccount = UserContext.current().getCaller();
-        UserVO callerUser = _userDao.findById(UserContext.current()
-                .getCallerUserId());
+        Account callerAccount = CallContext.current().getCallingAccount();
+        UserVO callerUser = _userDao.findById(CallContext.current()
+                .getCallingUserId());
 
         // if account is removed, return error
         if (callerAccount != null && callerAccount.getRemoved() != null) {
@@ -3227,7 +3226,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         Host destinationHost = null;
         if (hostId != null) {
-            Account account = UserContext.current().getCaller();
+            Account account = CallContext.current().getCallingAccount();
             if (!_accountService.isRootAdmin(account.getType())) {
                 throw new PermissionDeniedException(
                         "Parameter hostid can only be specified by a Root Admin, permission denied");
@@ -3329,8 +3328,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     public UserVm destroyVm(long vmId) throws ResourceUnavailableException,
     ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        Long userId = CallContext.current().getCallingUserId();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
@@ -3395,7 +3394,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public void collectVmDiskStatistics (UserVmVO userVm) {
         // support KVM only util 2013.06.25
         if (!userVm.getHypervisorType().equals(HypervisorType.KVM))
-            return;        
+            return;
     	// Collect vm disk statistics from host before stopping Vm
     	long hostId = userVm.getHostId();
     	List<String> vmNames = new ArrayList<String>();
@@ -3721,7 +3720,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
         // access check - only root admin can migrate VM
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
@@ -3794,7 +3793,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
@@ -3920,7 +3919,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             Map<String, String> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException {
         // Access check - only root administrator can migrate VM.
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
@@ -4044,7 +4043,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // VERIFICATIONS and VALIDATIONS
 
         // VV 1: verify the two users
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN
                 && caller.getType() != Account.ACCOUNT_TYPE_DOMAIN_ADMIN) { // only
             // root
@@ -4383,7 +4382,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).getIsPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);
-                                UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+                                UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
                                 Journal journal = new Journal.LogJournal("Implementing " + newNetwork, s_logger);
                                 ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(),
                                         journal, callerUser, caller);
@@ -4453,7 +4452,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     public UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
         // Input validation
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         long vmId = cmd.getVmId();
         Long newTemplateId = cmd.getTemplateId();

@@ -44,6 +44,8 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -62,7 +64,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 
@@ -194,7 +195,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public String getAccountName() {
         if (accountName == null) {
-            return UserContext.current().getCaller().getAccountName();
+            return CallContext.current().getCallingAccount().getAccountName();
         }
         return accountName;
     }
@@ -209,7 +210,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public Long getDomainId() {
         if (domainId == null) {
-            return UserContext.current().getCaller().getDomainId();
+            return CallContext.current().getCallingAccount().getDomainId();
         }
         return domainId;
     }
@@ -379,7 +380,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -416,7 +417,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
         if (getStartVm()) {
             try {
-                UserContext.current().setEventDetails("Vm Id: "+getEntityId());
+                CallContext.current().setEventDetails("Vm Id: "+getEntityId());
                 result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);

@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.vmware;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -28,12 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import junit.framework.TestCase;
-
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.test.utils.SpringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,7 +35,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -54,13 +47,19 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -77,7 +76,6 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
-import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.manager.VmwareManagerImpl;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
@@ -90,7 +88,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -176,7 +174,10 @@ public class VmwareDatacenterApiUnitTest {
         acct.setType(Account.ACCOUNT_TYPE_ADMIN);
         acct.setAccountName("admin");
         acct.setDomainId(domainId);
-        UserContext.registerContext(1, acct, null, true);
+
+        UserVO user1 = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        CallContext.register(user1, acct);
 
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
 
@@ -220,6 +221,11 @@ public class VmwareDatacenterApiUnitTest {
         Mockito.when(addCmd.getPassword()).thenReturn(password);
         Mockito.when(addCmd.getName()).thenReturn(vmwareDcName);
         Mockito.when(removeCmd.getZoneId()).thenReturn(1L);
+    }
+
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     //@Test(expected = InvalidParameterValueException.class)

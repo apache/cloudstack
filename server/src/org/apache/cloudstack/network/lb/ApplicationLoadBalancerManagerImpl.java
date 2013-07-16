@@ -26,8 +26,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -59,7 +61,6 @@ import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -99,7 +100,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw new InvalidParameterValueException("Can't find guest network by id");
         }
         
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, guestNtwk);
         
         Network sourceIpNtwk = _networkModel.getNetwork(sourceIpNetworkId);
@@ -166,7 +167,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             }
             s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port "
                     + newRule.getSourcePortStart() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
-            UserContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
+            CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
             Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(),
                     ntwk.getDataCenterId(), newRule.getId(), null, LoadBalancingRule.class.getName(),
@@ -373,7 +374,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(

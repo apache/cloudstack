@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -134,7 +135,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
@@ -378,7 +378,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw ex;
         }
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Cannot perform this operation, Zone with specified id is currently disabled");
@@ -573,7 +573,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String password = cmd.getPassword();
         List<String> hostTags = cmd.getHostTags();
 
-        dcId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), dcId);
+        dcId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), dcId);
 
         // this is for standalone option
         if (clusterName == null && clusterId == null) {
@@ -623,7 +623,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Can't find zone by id " + dcId);
         }
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Cannot perform this operation, Zone with specified id is currently disabled");
@@ -818,13 +818,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @DB
     protected boolean doDeleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
-        _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
+        _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), host.getDataCenterId());
 
         if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
             throw new CloudRuntimeException("Host " + host.getUuid() + " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
@@ -2043,7 +2043,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.debug("Deleting Host: " + host.getId() + " Guid:" + host.getGuid());
         }
 
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
 
         if (forceDestroyStorage) {
             // put local storage into mainenance mode, will set all the VMs on

@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteIpForwardingRule", description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
 public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
@@ -70,7 +71,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Rule Id: "+id);
+        CallContext.current().setEventDetails("Rule Id: "+id);
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _rulesService.revokeStaticNatRule(id, true);
 

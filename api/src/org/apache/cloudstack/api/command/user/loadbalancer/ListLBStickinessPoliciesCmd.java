@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "listLBStickinessPolicies", description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class, since="3.0.0")
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
@@ -71,7 +72,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
 
         if (lb != null) {
             //check permissions
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
             _accountService.checkAccess(caller, null, true, lb);
             List<? extends StickinessPolicy> stickinessPolicies = _lbService.searchForLBStickinessPolicies(this);
             LBStickinessResponse spResponse = _responseGenerator.createLBStickinessPolicyResponse(stickinessPolicies, lb);

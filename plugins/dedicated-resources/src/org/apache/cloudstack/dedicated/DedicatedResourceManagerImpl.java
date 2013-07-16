@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.component.AdapterBase;
+
 import org.apache.cloudstack.api.commands.DedicateClusterCmd;
 import org.apache.cloudstack.api.commands.DedicateHostCmd;
 import org.apache.cloudstack.api.commands.DedicatePodCmd;
@@ -41,6 +42,8 @@ import org.apache.cloudstack.api.response.DedicateClusterResponse;
 import org.apache.cloudstack.api.response.DedicateHostResponse;
 import org.apache.cloudstack.api.response.DedicatePodResponse;
 import org.apache.cloudstack.api.response.DedicateZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -66,7 +69,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -107,7 +109,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long accountId = null;
         List<HostVO> hosts = null;
         if(accountName != null){
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
             Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, null);
             accountId = owner.getId();
         }
@@ -236,7 +238,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
     public List<DedicatedResourceVO> dedicatePod(Long podId, Long domainId, String accountName) {
         Long accountId = null;
         if(accountName != null){
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
             Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, null);
             accountId  = owner.getId();
         }
@@ -354,7 +356,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long accountId = null;
         List<HostVO> hosts = null;
         if(accountName != null){
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
             Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, null);
             accountId = owner.getId();
         }
@@ -456,7 +458,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
     public List<DedicatedResourceVO> dedicateHost(Long hostId, Long domainId, String accountName) {
         Long accountId = null;
         if(accountName != null){
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
             Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, null);
             accountId = owner.getId();
         }

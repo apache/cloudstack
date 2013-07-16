@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoVnmcResourceResponse;
@@ -34,7 +36,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoVnmcElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name="deleteCiscoVnmcResource", responseObject=SuccessResponse.class, description="Deletes a Cisco Vnmc controller")
@@ -87,7 +88,7 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
 }

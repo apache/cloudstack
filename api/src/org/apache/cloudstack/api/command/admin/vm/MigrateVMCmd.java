@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -36,7 +38,6 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
@@ -129,7 +130,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
             }
-            UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
         }
 
         StoragePool destStoragePool = null;
@@ -138,7 +139,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destStoragePool == null) {
                 throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
             }
-            UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
         }
 
         try{

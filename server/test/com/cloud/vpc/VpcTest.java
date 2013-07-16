@@ -15,43 +15,15 @@
 
 package com.cloud.vpc;
 
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkService;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
-import com.cloud.network.vpc.*;
-import com.cloud.network.vpc.dao.PrivateIpDao;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
-import com.cloud.network.vpc.dao.VpcServiceMapDao;
-import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.vm.dao.DomainRouterDao;
+import java.io.IOException;
+import java.util.UUID;
+
+import javax.inject.Inject;
 
 import junit.framework.TestCase;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
-import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,9 +39,45 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.UUID;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.VpcService;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.vm.dao.DomainRouterDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -93,12 +101,21 @@ public class VpcTest extends TestCase {
     private VpcVO vpc;
     private static final Logger s_logger = Logger.getLogger(VpcTest.class);
 
+    @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.registerContext(1, account, null, true);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        CallContext.register(user, account);
         vpc = new VpcVO(1, "myvpc", "myvpc", 2, 1, 1, "10.0.1.0/16", "mydomain");
+    }
+
+    @Override
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test

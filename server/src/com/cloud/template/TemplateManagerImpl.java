@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCm
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -72,6 +74,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -79,7 +82,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
-
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -113,7 +115,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOSVO;
@@ -121,7 +122,6 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.DataStoreRole;
@@ -133,7 +133,6 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateZoneVO;
-
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -157,14 +156,12 @@ import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
-
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
@@ -332,7 +329,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template")
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (cmd.getTemplateTag() != null) {
             if (!_accountService.isRootAdmin(account.getType())) {
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
@@ -374,7 +371,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_EXTRACT, eventDescription = "extracting ISO", async = true)
     public String extract(ExtractIsoCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -387,7 +384,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_EXTRACT, eventDescription = "extracting template", async = true)
     public String extract(ExtractTemplateCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -412,7 +409,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template id=" + templateId);
         }
 
-        _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.ModifyEntry, true, vmTemplate);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.ModifyEntry, true, vmTemplate);
 
         prepareTemplateInAllStoragePools(vmTemplate, zoneId);
         return vmTemplate;
@@ -677,10 +674,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_COPY, eventDescription = "copying template", async = true)
     public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
         Long templateId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = CallContext.current().getCallingUserId();
         Long sourceZoneId = cmd.getSourceZoneId();
         Long destZoneId = cmd.getDestinationZoneId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
         if (sourceZoneId.equals(destZoneId)) {
@@ -888,8 +885,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
     public boolean detachIso(long vmId) {
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        Long userId = CallContext.current().getCallingUserId();
 
         // Verify input parameters
         UserVmVO vmInstanceCheck = _userVmDao.findById(vmId);
@@ -908,7 +905,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
         }
-        UserContext.current().setEventDetails("Vm Id: " + vmId + " ISO Id: " + isoId);
+        CallContext.current().setEventDetails("Vm Id: " + vmId + " ISO Id: " + isoId);
 
         State vmState = userVM.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
@@ -927,8 +924,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
     public boolean attachIso(long isoId, long vmId) {
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        Long userId = CallContext.current().getCallingUserId();
 
         // Verify input parameters
         UserVmVO vm = _userVmDao.findById(vmId);
@@ -1045,7 +1042,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_DELETE, eventDescription = "deleting template", async = true)
     public boolean deleteTemplate(DeleteTemplateCmd cmd) {
         Long templateId = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         VirtualMachineTemplate template = getTemplate(templateId);
         if (template == null) {
@@ -1067,7 +1064,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DELETE, eventDescription = "deleting iso", async = true)
     public boolean deleteIso(DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
 
         VirtualMachineTemplate template = getTemplate(templateId);
@@ -1112,7 +1109,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long id = cmd.getId();
 
         if (id.equals(Long.valueOf(1))) {
@@ -1163,7 +1160,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Input validation
         Long id = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<String> accountNames = cmd.getAccountNames();
         List<Long> projectIds = cmd.getProjectIds();
         Boolean isFeatured = cmd.isFeatured();
@@ -1325,7 +1322,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", async = true)
     public VirtualMachineTemplate createPrivateTemplate(CreateTemplateCmd command) throws CloudRuntimeException {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = CallContext.current().getCallingUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
@@ -1433,9 +1430,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = CallContext.current().getCallingUserId();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = (isAdmin(caller.getType()));
 
         _accountMgr.checkAccess(caller, null, true, templateOwner);
@@ -1687,7 +1684,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.isBootable();
         Integer sortKey = cmd.getSortKey();
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);

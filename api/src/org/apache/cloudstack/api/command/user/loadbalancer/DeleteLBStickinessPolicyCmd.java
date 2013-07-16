@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -31,7 +33,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteLBStickinessPolicy", description = "Deletes a LB stickiness policy.", responseObject = SuccessResponse.class, since="3.0.0")
 public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
@@ -64,7 +65,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -84,7 +85,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("Load balancer stickiness policy Id: " + getId());
+        CallContext.current().setEventDetails("Load balancer stickiness policy Id: " + getId());
         boolean result = _lbService.deleteLBStickinessPolicy(getId(), true);
 
         if (result) {

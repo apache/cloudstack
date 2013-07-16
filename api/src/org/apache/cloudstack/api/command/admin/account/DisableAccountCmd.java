@@ -27,14 +27,15 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "disableAccount", description="Disables an account", responseObject=AccountResponse.class)
 public class DisableAccountCmd extends BaseAsyncCmd {
@@ -116,7 +117,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
-        UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
+        CallContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
         Account result = _regionService.disableAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);

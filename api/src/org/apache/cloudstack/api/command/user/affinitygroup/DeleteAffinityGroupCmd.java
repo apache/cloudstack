@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class)
 public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
@@ -100,7 +101,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);

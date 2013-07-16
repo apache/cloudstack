@@ -133,6 +133,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -141,6 +142,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -276,7 +278,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -699,7 +700,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // show this info to admin only
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
             if (vl != null) {
@@ -2182,7 +2183,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setReservedIpRange(reservation);
 
         // return vlan information only to Root admin
-        if (network.getBroadcastUri() != null && UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (network.getBroadcastUri() != null && CallContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";

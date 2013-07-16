@@ -29,11 +29,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listTemplates", description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
@@ -95,7 +96,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     public boolean listInReadyState() {
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.

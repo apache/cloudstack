@@ -17,6 +17,19 @@
 
 package com.cloud.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -24,20 +37,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.ComponentContext;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-
-@Component
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
 
@@ -45,6 +46,12 @@ public class ActionEventUtils {
     private static AccountDao _accountDao;
     protected static UserDao _userDao;
     protected static EventBus _eventBus = null;
+
+    public static final String EventDetails = "event_details";
+    public static final String EventId = "event_id";
+    public static final String EntityType = "entity_type";
+    public static final String EntityUuid = "entity_uuid";
+    public static final String EntityDetails = "entity_details";
 
     @Inject EventDao eventDao;
     @Inject AccountDao accountDao;
@@ -156,10 +163,10 @@ public class ActionEventUtils {
         // get the entity details for which ActionEvent is generated
         String entityType = null;
         String entityUuid = null;
-        UserContext context = UserContext.current();
+        CallContext context = CallContext.current();
         if (context != null) {
-            entityType = context.getEntityType();
-            entityUuid = context.getEntityUUID();
+            entityType = (String)context.getContextParameter(EntityType);
+            entityUuid = (String)context.getContextParameter(EntityUuid);
         }
 
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(

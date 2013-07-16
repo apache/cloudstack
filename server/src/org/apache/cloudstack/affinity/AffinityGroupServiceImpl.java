@@ -28,8 +28,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Primary;
+
 
 
 import com.cloud.deploy.DeploymentPlanner;
@@ -41,7 +44,6 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
@@ -85,7 +87,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
             String affinityGroupType, String description) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
 
         if (_affinityGroupDao.isNameInUse(owner.getAccountId(), owner.getDomainId(), affinityGroupName)) {
@@ -127,7 +129,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
     public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
 
         AffinityGroupVO group = null;
@@ -187,7 +189,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(AffinityGroupVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         Long accountId = caller.getAccountId();
         Long domainId = caller.getDomainId();
@@ -329,7 +331,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(vmInstance.getAccountId());
 
         // check that the affinity groups exist

@@ -17,6 +17,25 @@
 
 package org.apache.cloudstack.networkoffering;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.inject.Inject;
+
+import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -33,22 +52,8 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
-import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/createNetworkOffering.xml")
@@ -73,6 +78,7 @@ public class CreateNetworkOfferingTest extends TestCase{
     @Inject
     VpcManager vpcMgr;
 
+    @Override
     @Before
     public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
@@ -86,7 +92,13 @@ public class CreateNetworkOfferingTest extends TestCase{
         Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
 
-        UserContext.registerContext(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
+        CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
+    }
+
+    @Override
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     //Test Shared network offerings

@@ -29,12 +29,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class)
 public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
@@ -70,7 +71,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
         AutoScaleVmProfile result = _autoScaleService.updateAutoScaleVmProfile(this);
         if (result != null) {
             AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);

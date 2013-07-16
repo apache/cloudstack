@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 
@@ -133,7 +134,7 @@ public class UpdateVMCmd extends BaseCmd{
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.updateVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

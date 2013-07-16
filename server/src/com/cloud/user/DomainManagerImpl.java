@@ -24,12 +24,14 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionManager;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
@@ -133,7 +135,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
     public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         if (parentId == null) {
             parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
@@ -184,7 +186,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
         txn.commit();
-        UserContext.current().setEntityDetails(Domain.class, domain.getUuid());
+        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
         return domain;
     }
 
@@ -211,7 +213,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_DELETE, eventDescription = "deleting Domain", async = true)
     public boolean deleteDomain(long domainId, Boolean cleanup) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         DomainVO domain = _domainDao.findById(domainId);
 
@@ -281,7 +283,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
 
             cleanupDomainOfferings(domain.getId());
-            UserContext.current().setEntityDetails(Domain.class, domain.getUuid());
+            CallContext.current().putContextParameter(Domain.class, domain.getUuid());
             return true;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
@@ -350,15 +352,15 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         for (AccountVO account : accounts) {
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
-                boolean deleteAccount = _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller());
+                boolean deleteAccount = _accountMgr.deleteAccount(account, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount());
                 if (!deleteAccount) {
                     s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
                 }
-                success = (success && deleteAccount);    
+                success = (success && deleteAccount);
             } else {
                 ProjectVO project = _projectDao.findByProjectAccountId(account.getId());
                 s_logger.debug("Deleting project " + project + " as a part of domain id=" + domainId + " cleanup");
-                boolean deleteProject = _projectMgr.deleteProject(UserContext.current().getCaller(), UserContext.current().getCallerUserId(), project);
+                boolean deleteProject = _projectMgr.deleteProject(CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), project);
                 if (!deleteProject) {
                     s_logger.warn("Failed to cleanup project " + project + " as a part of domain cleanup");
                 }
@@ -370,8 +372,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         boolean networksDeleted = true;
         s_logger.debug("Deleting networks for domain id=" + domainId);
         List<Long> networkIds = _networkDomainDao.listNetworkIdsByDomain(domainId);
-        UserContext ctx = UserContext.current();
-        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallerUserId()), ctx.getCaller());
+        CallContext ctx = CallContext.current();
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallingUserId()), ctx.getCallingAccount());
         for (Long networkId : networkIds) {
             s_logger.debug("Deleting network id=" + networkId + " as a part of domain id=" + domainId + " cleanup");
             
@@ -419,7 +421,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
@@ -491,7 +493,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         boolean listAll = cmd.listAll();
         String path = null;
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (domainId != null) {
             _accountMgr.checkAccess(caller, getDomain(domainId));
         } else {
@@ -560,7 +562,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         // check permissions
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, domain);
 
         // domain name is unique in the cloud
@@ -606,7 +608,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
         }
         _domainDao.update(domainId, domain);
-        UserContext.current().setEntityDetails(Domain.class, domain.getUuid());
+        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
         txn.commit();
 
         return _domainDao.findById(domainId);

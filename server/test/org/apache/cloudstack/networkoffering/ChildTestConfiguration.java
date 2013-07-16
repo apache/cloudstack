@@ -19,12 +19,6 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
-
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.region.PortableIpDaoImpl;
-import org.apache.cloudstack.region.dao.RegionDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -35,7 +29,15 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.region.PortableIpDaoImpl;
+import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
+import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
@@ -106,8 +108,6 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserContextInitializer;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
@@ -115,7 +115,6 @@ import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
-import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
 
 @Configuration
 @ComponentScan(basePackageClasses={
@@ -296,13 +295,8 @@ public class ChildTestConfiguration {
     }
 
     @Bean
-    public UserContext userContext() {
-        return Mockito.mock(UserContext.class);
-    }
-
-    @Bean
-    public UserContextInitializer userContextInitializer() {
-        return Mockito.mock(UserContextInitializer.class);
+    public CallContext userContext() {
+        return Mockito.mock(CallContext.class);
     }
 
     @Bean

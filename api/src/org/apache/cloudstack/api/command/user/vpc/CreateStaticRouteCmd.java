@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -35,7 +37,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.VpcGateway;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createStaticRoute", description="Creates a static route", responseObject=StaticRouteResponse.class)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
@@ -92,7 +93,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         boolean success = false;
         StaticRoute route = _entityMgr.findById(StaticRoute.class, getEntityId());
         try {
-            UserContext.current().setEventDetails("Static route Id: " + getEntityId());
+            CallContext.current().setEventDetails("Static route Id: " + getEntityId());
             success = _vpcService.applyStaticRoutes(route.getVpcId());
 
             // State is different after the route is applied, so get new object here

@@ -39,8 +39,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.StartupCommandProcessor;
@@ -103,7 +106,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -760,7 +762,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, true);
             return (h == null ? false : true);
         } else {
-            _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
+            _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails()));
             return true;
         }
     }
@@ -1112,17 +1114,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ServerResource resource;
         Map<String, String> details;
         long id;
-        ActionDelegate<Long> actionDelegate;
 
-        public SimulateStartTask(long id, ServerResource resource, Map<String, String> details, ActionDelegate<Long> actionDelegate) {
+        public SimulateStartTask(long id, ServerResource resource, Map<String, String> details) {
             this.id = id;
             this.resource = resource;
             this.details = details;
-            this.actionDelegate = actionDelegate;
         }
 
         @Override
         public void run() {
+            ServerContexts.registerSystemContext();
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
@@ -1132,9 +1133,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
-                if (actionDelegate != null) {
-                    actionDelegate.action(new Long(id));
-                }
+                ServerContexts.unregisterSystemContext();
             }
         }
     }
@@ -1152,15 +1151,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         @Override
         public void run() {
-            _request.logD("Processing the first command ");
-            StartupCommand[] startups = new StartupCommand[_cmds.length];
-            for (int i = 0; i < _cmds.length; i++) {
-                startups[i] = (StartupCommand) _cmds[i];
-            }
+            ServerContexts.registerSystemContext();
+            try {
+                _request.logD("Processing the first command ");
+                StartupCommand[] startups = new StartupCommand[_cmds.length];
+                for (int i = 0; i < _cmds.length; i++) {
+                    startups[i] = (StartupCommand)_cmds[i];
+                }
 
-            AgentAttache attache = handleConnectedAgent(_link, startups, _request);
-            if (attache == null) {
-                s_logger.warn("Unable to create attache for agent: " + _request);
+                AgentAttache attache = handleConnectedAgent(_link, startups, _request);
+                if (attache == null) {
+                    s_logger.warn("Unable to create attache for agent: " + _request);
+                }
+            } finally {
+                ServerContexts.unregisterSystemContext();
             }
         }
     }

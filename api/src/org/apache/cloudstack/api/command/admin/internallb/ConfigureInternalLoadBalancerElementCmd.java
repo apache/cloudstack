@@ -23,7 +23,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,10 +31,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
 import java.util.List;
 
 @APICommand(name = "configureInternalLoadBalancerElement", responseObject=InternalLoadBalancerElementResponse.class,
@@ -96,7 +99,7 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Internal load balancer element: " + id);
+        CallContext.current().setEventDetails("Internal load balancer element: " + id);
         VirtualRouterProvider result = _service.get(0).configureInternalLoadBalancerElement(getId(), getEnabled());
         if (result != null){
             InternalLoadBalancerElementResponse routerResponse = _responseGenerator.createInternalLbElementResponse(result);

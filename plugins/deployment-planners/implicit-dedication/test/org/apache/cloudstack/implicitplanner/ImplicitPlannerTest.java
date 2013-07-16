@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.implicitplanner;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -30,15 +30,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -53,6 +50,11 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
@@ -82,7 +84,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
@@ -151,12 +153,8 @@ public class ImplicitPlannerTest {
     int ramInOffering = 512;
     AccountVO acct = new AccountVO(accountId);
 
-    @BeforeClass
-    public static void setUp() throws ConfigurationException {
-    }
-
     @Before
-    public void testSetUp() {
+    public void setUp() {
         ComponentContext.initComponentsLifeCycle();
 
         acct.setType(Account.ACCOUNT_TYPE_NORMAL);
@@ -164,7 +162,14 @@ public class ImplicitPlannerTest {
         acct.setDomainId(domainId);
         acct.setId(accountId);
 
-        UserContext.registerContext(1, acct, null, true);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        CallContext.register(user, acct);
+    }
+
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test

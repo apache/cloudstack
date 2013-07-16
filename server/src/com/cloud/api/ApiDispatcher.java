@@ -33,6 +33,9 @@ import java.util.regex.Matcher;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -51,19 +54,16 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.Validate;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
-import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.async.AsyncJobManager;
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.exception.CSExceptionErrorCode;
@@ -74,9 +74,12 @@ public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
     Long _createSnapshotQueueSizeLimit;
-    @Inject AsyncJobManager _asyncMgr = null;
-    @Inject AccountManager _accountMgr = null;
-    @Inject EntityManager _entityMgr = null;
+    @Inject
+    AsyncJobManager _asyncMgr = null;
+    @Inject
+    AccountManager _accountMgr = null;
+    @Inject
+    EntityManager _entityMgr = null;
 
     private static ApiDispatcher s_instance;
 
@@ -89,7 +92,7 @@ public class ApiDispatcher {
 
     @PostConstruct
     void init() {
-    	s_instance = this;
+        s_instance = this;
     }
 
     public void setCreateSnapshotQueueSizeLimit(Long snapshotLimit) {
@@ -99,27 +102,25 @@ public class ApiDispatcher {
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) throws Exception {
         processParameters(cmd, params);
 
-            UserContext ctx = UserContext.current();
-            ctx.setAccountId(cmd.getEntityOwnerId());
-            cmd.create();
+        cmd.create();
 
     }
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
-        if(cmd instanceof BaseAsyncCreateCmd) {
+        if (cmd instanceof BaseAsyncCreateCmd) {
             //check that caller can access the owner account.
             _accountMgr.checkAccess(caller, null, true, owner);
         }
 
-        if(!entitiesToAccess.isEmpty()){
+        if (!entitiesToAccess.isEmpty()) {
             //check that caller can access the owner account.
             _accountMgr.checkAccess(caller, null, true, owner);
             for (Object entity : entitiesToAccess.keySet()) {
                 if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity) entity);
+                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity)entity);
                 }
                 else if (entity instanceof InfrastructureEntity) {
                     //FIXME: Move this code in adapter, remove code from Account manager
@@ -129,37 +130,36 @@ public class ApiDispatcher {
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) throws Exception {
-            processParameters(cmd, params);
-            UserContext ctx = UserContext.current();
-            ctx.setAccountId(cmd.getEntityOwnerId());
-            
-            if (cmd instanceof BaseAsyncCmd) {
+        processParameters(cmd, params);
+        CallContext ctx = CallContext.current();
 
-                BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmd;
-                String startEventId = params.get("ctxStartEventId");
-                ctx.setStartEventId(Long.valueOf(startEventId));
+        if (cmd instanceof BaseAsyncCmd) {
 
-                // Synchronise job on the object if needed
-                if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
-                    Long queueSizeLimit = null;
-                    if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
-                        queueSizeLimit = _createSnapshotQueueSizeLimit;
-                    } else {
-                        queueSizeLimit = 1L;
-                    }
+            BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
+            String startEventId = params.get("ctxStartEventId");
+            ctx.setStartEventId(Long.valueOf(startEventId));
 
-                    if (queueSizeLimit != null) {
+            // Synchronise job on the object if needed
+            if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
+                Long queueSizeLimit = null;
+                if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
+                    queueSizeLimit = _createSnapshotQueueSizeLimit;
+                } else {
+                    queueSizeLimit = 1L;
+                }
+
+                if (queueSizeLimit != null) {
                     _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
-                    } else {
-                        s_logger.trace("The queue size is unlimited, skipping the synchronizing");
-                    }
+                } else {
+                    s_logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
             }
-            cmd.execute();
+        }
+        cmd.execute();
 
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void processParameters(BaseCmd cmd, Map<String, String> params) {
         Map<Object, AccessType> entitiesToAccess = new HashMap<Object, AccessType>();
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
@@ -168,7 +168,7 @@ public class ApiDispatcher {
             Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
             Long pageSize = null;
             if (pageSizeObj != null) {
-                pageSize = Long.valueOf((String) pageSizeObj);
+                pageSize = Long.valueOf((String)pageSizeObj);
             }
 
             if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && !pageSize.equals(BaseListCmd.PAGESIZE_UNLIMITED))) {
@@ -193,7 +193,8 @@ public class ApiDispatcher {
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to missing parameter "
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
+                            + " due to missing parameter "
                             + parameterAnnotation.name());
                 }
                 continue;
@@ -206,24 +207,28 @@ public class ApiDispatcher {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
                 }
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
+                        + " due to invalid value " + paramObj
                         + " for parameter "
                         + parameterAnnotation.name());
             } catch (ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
                 }
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command "
+                        + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
                         + ", please pass dates in the format mentioned in the api documentation");
             } catch (InvalidParameterValueException invEx) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
+                        + " due to invalid value. " + invEx.getMessage());
             } catch (CloudRuntimeException cloudEx) {
-            	s_logger.error("CloudRuntimeException", cloudEx);
+                s_logger.error("CloudRuntimeException", cloudEx);
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
                 //means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command "
+                        + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
 
             //check access on the resource this field points to
@@ -252,30 +257,30 @@ public class ApiDispatcher {
                                 switch (listType) {
                                 case LONG:
                                 case UUID:
-                                    List<Long> listParam = (List<Long>) field.get(cmd);
+                                    List<Long> listParam = (List<Long>)field.get(cmd);
                                     for (Long entityId : listParam) {
                                         Object entityObj = s_instance._entityMgr.findById(entity, entityId);
                                         entitiesToAccess.put(entityObj, checkAccess.accessType());
                                     }
                                     break;
-                                    /*
-                                     * case STRING: List<String> listParam =
-                                     * new ArrayList<String>(); listParam =
-                                     * (List)field.get(cmd); for(String
-                                     * entityName: listParam){
-                                     * ControlledEntity entityObj =
-                                     * (ControlledEntity
-                                     * )daoClassInstance(entityId);
-                                     * entitiesToAccess.add(entityObj); }
-                                     * break;
-                                     */
+                                /*
+                                 * case STRING: List<String> listParam =
+                                 * new ArrayList<String>(); listParam =
+                                 * (List)field.get(cmd); for(String
+                                 * entityName: listParam){
+                                 * ControlledEntity entityObj =
+                                 * (ControlledEntity
+                                 * )daoClassInstance(entityId);
+                                 * entitiesToAccess.add(entityObj); }
+                                 * break;
+                                 */
                                 default:
                                     break;
                                 }
                                 break;
                             case LONG:
                             case UUID:
-                                Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
+                                Object entityObj = s_instance._entityMgr.findById(entity, (Long)field.get(cmd));
                                 entitiesToAccess.put(entityObj, checkAccess.accessType());
                                 break;
                             default:
@@ -333,7 +338,7 @@ public class ApiDispatcher {
         if (isPre3x && !isUuid) {
             try {
                 internalId = Long.parseLong(uuid);
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 internalId = null;
             }
             if (internalId != null)
@@ -344,7 +349,7 @@ public class ApiDispatcher {
         Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
         // Go through each entity which is an interface to a VO class and get a VO object
         // Try to getId() for the object using reflection, break on first non-null value
-        for (Class<?> entity: entities) {
+        for (Class<?> entity : entities) {
             // For backward compatibility, we search within removed entities and let service layer deal
             // with removed ones, return empty response or error
             Object objVO = s_instance._entityMgr.findByUuidIncludingRemoved(entity, uuid);
@@ -366,12 +371,12 @@ public class ApiDispatcher {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
             throw new InvalidParameterValueException("Invalid parameter " + annotation.name() + " value=" + uuid
-                + " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
+                    + " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
         }
         return internalId;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
         try {
             field.setAccessible(true);
@@ -387,8 +392,7 @@ public class ApiDispatcher {
                 if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd
                         || cmdObj instanceof ArchiveEventsCmd
                         || cmdObj instanceof ArchiveAlertsCmd
-                        || cmdObj instanceof DeleteAlertsCmd
-                        ) {
+                        || cmdObj instanceof DeleteAlertsCmd) {
                     boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
                     if (isObjInNewDateFormat) {
                         DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
@@ -450,7 +454,7 @@ public class ApiDispatcher {
                     case LONG: {
                         listParam.add(Long.valueOf(token));
                     }
-                    break;
+                        break;
                     case SHORT:
                         listParam.add(Short.valueOf(token));
                     case STRING:

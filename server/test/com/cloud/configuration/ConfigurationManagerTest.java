@@ -17,25 +17,38 @@
 
 package com.cloud.configuration;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.lang.reflect.Field;
 
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import junit.framework.Assert;
+
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -48,16 +61,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.Ip;
-
-import junit.framework.Assert;
-
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
 
 public class ConfigurationManagerTest {
 
@@ -98,10 +105,13 @@ public class ConfigurationManagerTest {
         configurationMgr._zoneDao = _zoneDao;
         configurationMgr._firewallDao = _firewallDao;
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(configurationMgr._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
         when(configurationMgr._accountMgr.getActiveAccountById(anyLong())).thenReturn(account);
+
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        CallContext.register(user, account);
 
         when(configurationMgr._publicIpAddressDao.countIPs(anyLong(), anyLong(), anyBoolean())).thenReturn(1);
 
@@ -111,8 +121,6 @@ public class ConfigurationManagerTest {
         when(configurationMgr._accountVlanMapDao.persist(any(AccountVlanMapVO.class))).thenReturn(new AccountVlanMapVO());
 
         when(configurationMgr._vlanDao.acquireInLockTable(anyLong(), anyInt())).thenReturn(vlan);
-
-        UserContext.registerContext(1, account, null, true);
 
         Field dedicateIdField = _dedicatePublicIpRangeClass.getDeclaredField("id");
         dedicateIdField.setAccessible(true);
@@ -133,6 +141,11 @@ public class ConfigurationManagerTest {
         Field releaseIdField = _releasePublicIpRangeClass.getDeclaredField("id");
         releaseIdField.setAccessible(true);
         releaseIdField.set(releasePublicIpRangesCmd, 1L);
+    }
+
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test
@@ -400,12 +413,14 @@ public class ConfigurationManagerTest {
 
 
     public class DedicatePublicIpRangeCmdExtn extends DedicatePublicIpRangeCmd {
+        @Override
         public long getEntityOwnerId() {
             return 1;
         }
     }
 
     public class ReleasePublicIpRangeCmdExtn extends ReleasePublicIpRangeCmd {
+        @Override
         public long getEntityOwnerId() {
             return 1;
         }

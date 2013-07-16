@@ -23,6 +23,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -37,7 +39,6 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -73,7 +74,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
     @Override
     public VolumeResponse newVolumeResponse(VolumeJoinVO volume) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         VolumeResponse volResponse = new VolumeResponse();
         volResponse.setId(volume.getUuid());

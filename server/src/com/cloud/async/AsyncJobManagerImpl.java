@@ -36,42 +36,44 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dao.EntityManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventCategory;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.event.EventCategory;
-import com.cloud.event.EventTypes;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -86,8 +88,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.MacAddress;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 @Component
 @Local(value={AsyncJobManager.class})
@@ -109,6 +109,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private DomainDao _domainDao;
     private long _jobExpireSeconds = 86400;						// 1 day
     private long _jobCancelThresholdSeconds = 3600;         // 1 hour (for cancelling the jobs blocking other jobs)
+
+    @Inject
+    private EntityManager _entityMgr;
 
     @Inject private ApiDispatcher _dispatcher;
 
@@ -378,7 +381,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         AsyncJobVO job = _jobDao.findById(cmd.getId());
         if (job == null) {
@@ -517,16 +520,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         String acctIdStr = params.get("ctxAccountId");
                         Long userId = null;
                         Account accountObject = null;
+                        User user = null;
 
                         if (userIdStr != null) {
                             userId = Long.parseLong(userIdStr);
+                            user = _entityMgr.findById(User.class, userId);
                         }
 
                         if (acctIdStr != null) {
                             accountObject = _accountDao.findById(Long.parseLong(acctIdStr));
                         }
 
-                        UserContext.registerContext(userId, accountObject, null, false);
+
+                        CallContext.register(user, accountObject);
                         try {
                             // dispatch could ultimately queue the job
                             _dispatcher.dispatch(cmdObj, params);
@@ -534,7 +540,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             // serialize this to the async job table
                             completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
                         } finally {
-                            UserContext.unregisterContext();
+                            CallContext.unregister();
                         }
 
                         // commands might need to be queued as part of synchronization here, so they just have to be re-dispatched from the queue mechanism...
@@ -723,7 +729,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     for(AsyncJobVO job : l) {
                     	s_logger.trace("Expunging unfinished job " + job);
                         expungeAsyncJob(job);
-                    }       
+                    }
                     
                     //2) Expunge finished jobs
                     List<AsyncJobVO> completedJobs = _jobDao.getExpiredCompletedJobs(cutTime, 100);

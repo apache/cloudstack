@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -34,7 +36,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "startRouter", responseObject=DomainRouterResponse.class, description="Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
@@ -101,7 +102,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Router Id: "+getId());
+        CallContext.current().setEventDetails("Router Id: "+getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {

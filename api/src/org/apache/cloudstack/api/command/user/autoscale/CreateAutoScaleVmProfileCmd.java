@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -39,7 +41,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createAutoScaleVmProfile", description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.", responseObject = AutoScaleVmProfileResponse.class)
 @SuppressWarnings("rawtypes")
@@ -119,7 +120,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         if (autoscaleUserId != null) {
             return autoscaleUserId;
         } else {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
     }
 
@@ -136,7 +137,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             User user = _entityMgr.findById(User.class, autoscaleUserId);
             account = _entityMgr.findById(Account.class, user.getAccountId());
         } else {
-            account = UserContext.current().getCaller();
+            account = CallContext.current().getCallingAccount();
         }
         accountId = account.getAccountId();
         domainId = account.getDomainId();

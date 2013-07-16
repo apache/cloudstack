@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -31,7 +33,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "rebootVirtualMachine", description="Reboots a virtual machine.", responseObject=UserVmResponse.class)
@@ -94,7 +95,7 @@ public class RebootVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);
 

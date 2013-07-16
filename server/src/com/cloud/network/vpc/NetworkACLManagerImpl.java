@@ -35,16 +35,19 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.context.CallContext;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -232,7 +235,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         if (!_networkACLItemDao.setStateToAdd(newRule)) {
             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
         }
-        UserContext.current().setEventDetails("ACL Item Id: " + newRule.getId());
+        CallContext.current().setEventDetails("ACL Item Id: " + newRule.getId());
 
         txn.commit();
 

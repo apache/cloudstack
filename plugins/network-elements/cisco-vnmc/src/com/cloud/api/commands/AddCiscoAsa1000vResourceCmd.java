@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoAsa1000vResourceResponse;
@@ -36,7 +38,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.cisco.CiscoAsa1000vDevice;
 import com.cloud.network.element.CiscoAsa1000vService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name="addCiscoAsa1000vResource", responseObject=CiscoAsa1000vResourceResponse.class, description="Adds a Cisco Asa 1000v appliance")
@@ -111,6 +112,6 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

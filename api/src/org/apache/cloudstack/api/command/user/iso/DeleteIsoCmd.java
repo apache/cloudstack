@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteIso", description="Deletes an ISO file.", responseObject=SuccessResponse.class)
 public class DeleteIsoCmd extends BaseAsyncCmd {
@@ -106,7 +107,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("ISO Id: "+getId());
+        CallContext.current().setEventDetails("ISO Id: "+getId());
         boolean result = _templateService.deleteIso(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

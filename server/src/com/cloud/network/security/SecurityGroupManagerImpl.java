@@ -43,10 +43,12 @@ import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupC
 import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.services.identitymanagement.model.User;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
@@ -75,7 +77,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
@@ -97,8 +98,12 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import edu.emory.mathcs.backport.java.util.Collections;
+
 import org.apache.cloudstack.api.command.user.securitygroup.*;
+import org.apache.cloudstack.context.CallContext;
+
 import java.util.*;
 
 @Local(value = { SecurityGroupManager.class, SecurityGroupService.class })
@@ -596,7 +601,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified");
         }
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
 
         if (owner == null) {
@@ -773,7 +778,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
     private boolean revokeSecurityGroupRule(Long id, SecurityRuleType type) {
         // input validation
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         SecurityGroupRuleVO rule = _securityGroupRuleDao.findById(id);
         if (rule == null) {
@@ -827,7 +832,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_CREATE, eventDescription = "creating security group")
     public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         String name = cmd.getSecurityGroupName();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
         if (_securityGroupDao.isNameInUse(owner.getId(), owner.getDomainId(), cmd.getSecurityGroupName())) {
@@ -1066,7 +1071,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_DELETE, eventDescription = "deleting security group")
     public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException {
         Long groupId = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         SecurityGroupVO group = _securityGroupDao.findById(groupId);
         if (group == null) {
@@ -1318,7 +1323,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             return true;
         }
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         for (SecurityGroupVO securityGroup: vmSgGrps) {
             Account owner = _accountMgr.getAccount(securityGroup.getAccountId());

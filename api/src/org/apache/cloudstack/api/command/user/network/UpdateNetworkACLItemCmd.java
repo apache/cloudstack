@@ -21,12 +21,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -134,7 +136,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -158,7 +160,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Rule Id: " + getId());
+        CallContext.current().setEventDetails("Rule Id: " + getId());
         NetworkACLItem aclItem = _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(),
                 getAction(), getNumber(), getSourcePortStart(), getSourcePortEnd(), getIcmpCode(), getIcmpType());
         if (aclItem == null) {

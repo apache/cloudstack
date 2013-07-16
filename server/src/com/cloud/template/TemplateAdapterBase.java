@@ -27,9 +27,11 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -59,7 +61,6 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -201,7 +202,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         	if (zone == null) {
         		throw new IllegalArgumentException("Please specify a valid zone.");
         	}
-    		Account caller = UserContext.current().getCaller();
+    		Account caller = CallContext.current().getCallingAccount();
     		if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
     			throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
     		}
@@ -215,7 +216,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-        UserContext.current().setEventDetails("Id: " +id+ " name: " + name);
+        CallContext.current().setEventDetails("Id: " +id+ " name: " + name);
         return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
                 featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(),
                 templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, null, isDynamicallyScalable, templateType);
@@ -225,13 +226,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
 	    //check if the caller can operate with the template owner
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
     boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
 
-    return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
+    return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
                 cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
                 cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()),
                 cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(),
@@ -242,11 +243,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	@Override
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 	    //check if the caller can operate with the template owner
-	    Account caller = UserContext.current().getCaller();
+	    Account caller = CallContext.current().getCallingAccount();
 	    Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 	    _accountMgr.checkAccess(caller, null, true, owner);
 
-        return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
+        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
                 true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
                 cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(),
                 TemplateType.USER);
@@ -323,8 +324,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	@Override
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		Long templateId = cmd.getId();
-		Long userId = UserContext.current().getCallerUserId();
-		Account account = UserContext.current().getCaller();
+		Long userId = CallContext.current().getCallingUserId();
+		Account account = CallContext.current().getCallingAccount();
 		Long zoneId = cmd.getZoneId();
 
 		VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
@@ -348,7 +349,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
 	public TemplateProfile prepareExtractTemplate(ExtractTemplateCmd cmd) {
 		Long templateId = cmd.getId();
-		Long userId = UserContext.current().getCallerUserId();
+		Long userId = CallContext.current().getCallingUserId();
 	        Long zoneId = cmd.getZoneId();
 
 		VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
@@ -360,8 +361,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
 	public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
 		Long templateId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
-        Account account = UserContext.current().getCaller();
+        Long userId = CallContext.current().getCallingUserId();
+        Account account = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
 
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());

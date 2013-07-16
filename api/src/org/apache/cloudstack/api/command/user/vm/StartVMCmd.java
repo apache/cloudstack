@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -35,7 +37,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
@@ -114,7 +115,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
         try {
-            UserContext.current().setEventDetails("Vm Id: " + getId());
+            CallContext.current().setEventDetails("Vm Id: " + getId());
 
             UserVm result ;
             result = _userVmService.startVirtualMachine(this);

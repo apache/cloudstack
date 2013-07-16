@@ -31,10 +31,12 @@ import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailDao;
+
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
@@ -64,7 +66,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;

@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -35,7 +36,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 
@@ -69,16 +69,16 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCaller().getAccountName();
+        return CallContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCaller().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -131,7 +131,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InvalidParameterValueException {
-        UserContext.current().setEventDetails("Ip Id: " + id);
+        CallContext.current().setEventDetails("Ip Id: " + id);
         NicSecondaryIp nicSecIp = getIpEntry();
 
         if (nicSecIp == null) {

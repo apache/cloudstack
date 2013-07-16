@@ -24,13 +24,14 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
@@ -109,7 +110,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
         password = _mgr.generateRandomPassword();
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

@@ -20,8 +20,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -40,7 +43,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.ReservationContext;
 
 @Component
@@ -100,7 +102,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

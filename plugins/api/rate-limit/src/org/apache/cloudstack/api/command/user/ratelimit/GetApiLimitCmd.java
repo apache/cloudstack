@@ -31,10 +31,12 @@ import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 
 import com.cloud.configuration.Config;
@@ -45,7 +47,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import javax.inject.Inject;
@@ -73,7 +74,7 @@ public class GetApiLimitCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -87,7 +88,7 @@ public class GetApiLimitCmd extends BaseCmd {
         if ( !apiLimitEnabled ){
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         ApiLimitResponse response = _apiLimitService.searchApiLimit(caller);
         response.setResponseName(getCommandName());
         response.setObjectName("apilimit");

@@ -25,13 +25,14 @@ import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "updateDefaultNicForVirtualMachine", description="Changes the default NIC on a VM", responseObject=UserVmResponse.class)
@@ -99,7 +100,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
+        CallContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

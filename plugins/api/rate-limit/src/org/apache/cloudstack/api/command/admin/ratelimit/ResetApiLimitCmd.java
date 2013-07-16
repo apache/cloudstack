@@ -26,13 +26,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 import javax.inject.Inject;
 
@@ -84,7 +85,7 @@ public class ResetApiLimitCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -24,15 +24,18 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -53,7 +56,6 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -94,6 +96,7 @@ public class ApplicationLoadBalancerTest extends TestCase{
 
 
     
+    @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
@@ -133,7 +136,7 @@ public class ApplicationLoadBalancerTest extends TestCase{
         
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
-        UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+        CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
         
         Mockito.when(_ntwkModel.areServicesSupportedInNetwork(Mockito.anyLong(), Mockito.any(Network.Service.class))).thenReturn(true);
         
@@ -146,6 +149,12 @@ public class ApplicationLoadBalancerTest extends TestCase{
         
     }
     
+    @Override
+    @After
+    public void tearDown() {
+        CallContext.unregister();
+    }
+
     /**
      * TESTS FOR .getApplicationLoadBalancer
      */
@@ -165,7 +174,7 @@ public class ApplicationLoadBalancerTest extends TestCase{
         try {
             rule = _appLbSvc.getApplicationLoadBalancer(nonExistingLbId);
             if (rule != null) {
-                notFound = false; 
+                notFound = false;
             }
         } catch (InvalidParameterValueException ex) {
             notFound = true;
@@ -182,11 +191,11 @@ public class ApplicationLoadBalancerTest extends TestCase{
     @Test
     //Positive test - delete existing lb
     public void deleteExistingLoadBalancer() {
-        boolean result = false; 
+        boolean result = false;
         try {
             result = _appLbSvc.deleteApplicationLoadBalancer(existingLbId);
         } finally {
-            assertTrue("Couldn't delete existing application load balancer", result);   
+            assertTrue("Couldn't delete existing application load balancer", result);
         }
     }
     
@@ -204,17 +213,17 @@ public class ApplicationLoadBalancerTest extends TestCase{
     
     /**
      * TESTS FOR .createApplicationLoadBalancer
-     * @throws NetworkRuleConflictException 
-     * @throws InsufficientVirtualNetworkCapcityException 
-     * @throws InsufficientAddressCapacityException 
+     * @throws NetworkRuleConflictException
+     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientAddressCapacityException
      */
     
     @Test (expected = CloudRuntimeException.class)
     //Positive test
     public void createValidLoadBalancer() throws InsufficientAddressCapacityException,
-        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {    
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
-                            22, 22, "roundrobin", validGuestNetworkId, validAccountId); 
+                            22, 22, "roundrobin", validGuestNetworkId, validAccountId);
     }
     
     
@@ -230,7 +239,7 @@ public class ApplicationLoadBalancerTest extends TestCase{
     @Test(expected = InvalidParameterValueException.class)
     //Negative test - invalid SourcePort
     public void createWithInvalidSourcePort() throws InsufficientAddressCapacityException,
-        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {        
+        InsufficientVirtualNetworkCapcityException, NetworkRuleConflictException {
         _appLbSvc.createApplicationLoadBalancer("alena", "alena", Scheme.Internal, validGuestNetworkId, validRequestedIp,
                     65536, 22, "roundrobin", validGuestNetworkId, validAccountId);
     }

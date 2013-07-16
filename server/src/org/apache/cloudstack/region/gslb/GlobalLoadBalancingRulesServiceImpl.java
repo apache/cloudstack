@@ -34,20 +34,23 @@ import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.dao.RegionDao;
+
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -150,8 +153,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             "Assigning a load balancer rule to global load balancer rule", async=true)
     public boolean assignToGlobalLoadBalancerRule(AssignToGlobalLoadBalancerRuleCmd assignToGslbCmd) {
 
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         long gslbRuleId =  assignToGslbCmd.getGlobalLoadBalancerRuleId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
@@ -292,8 +295,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             "Removing a load balancer rule to be part of global load balancer rule")
     public boolean removeFromGlobalLoadBalancerRule(RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd) {
 
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         long gslbRuleId =  removeFromGslbCmd.getGlobalLoadBalancerRuleId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
@@ -405,8 +408,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             "Delete global load balancer rule")
     public boolean deleteGlobalLoadBalancerRule(DeleteGlobalLoadBalancerRuleCmd deleteGslbCmd) {
 
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
         long gslbRuleId =  deleteGslbCmd.getGlobalLoadBalancerId();
 
         try {
@@ -493,8 +496,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
 
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
 
@@ -541,8 +544,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     @Override
     public List<GlobalLoadBalancerRule> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd) {
 
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         Integer regionId =  listGslbCmd.getRegionId();
         Long ruleId = listGslbCmd.getId();

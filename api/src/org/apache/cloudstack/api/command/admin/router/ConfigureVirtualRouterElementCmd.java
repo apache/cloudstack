@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -37,7 +39,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "configureVirtualRouterElement", responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
 public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
@@ -116,7 +117,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Virtual router element: " + id);
+        CallContext.current().setEventDetails("Virtual router element: " + id);
         VirtualRouterProvider result = _service.get(0).configure(this);
         if (result != null){
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);

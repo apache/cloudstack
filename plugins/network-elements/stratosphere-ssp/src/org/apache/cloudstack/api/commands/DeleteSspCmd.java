@@ -24,7 +24,9 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.SspService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -32,7 +34,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.UserContext;
 
 @APICommand(name="deleteStratosphereSsp", responseObject=SuccessResponse.class, description="Removes stratosphere ssp server")
 public class DeleteSspCmd extends BaseCmd {
@@ -51,7 +52,7 @@ public class DeleteSspCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

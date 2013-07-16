@@ -18,15 +18,17 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.*;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "scaleSystemVm", responseObject=SystemVmResponse.class, description="Scale the service offering for a system vm (console proxy or secondary storage). " +
@@ -71,7 +73,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -81,7 +83,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("SystemVm Id: "+getId());
+        CallContext.current().setEventDetails("SystemVm Id: "+getId());
 
         ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
         if (serviceOffering == null) {

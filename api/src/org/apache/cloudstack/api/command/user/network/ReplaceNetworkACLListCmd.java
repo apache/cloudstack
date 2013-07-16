@@ -22,12 +22,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 @APICommand(name = "replaceNetworkACLList", description="Replaces ACL associated with a Network or private gateway", responseObject=SuccessResponse.class)
@@ -87,7 +89,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -101,7 +103,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network id and private gateway can't be passed  at  the same time");
         }
 
-        UserContext.current().setEventDetails("Network ACL Id: " + aclId);
+        CallContext.current().setEventDetails("Network ACL Id: " + aclId);
         boolean result = false;
         if (getPrivateGatewayId() != null) {
             result = _networkACLService.replaceNetworkACLonPrivateGw(aclId, privateGatewayId);

@@ -29,13 +29,14 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createVolume", responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
@@ -155,7 +156,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -185,7 +186,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
+        CallContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);

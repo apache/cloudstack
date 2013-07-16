@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -109,7 +111,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
@@ -280,7 +281,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         boolean backedUp = false;
         // does the caller have the authority to act on this volume
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
 
@@ -427,7 +428,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
     private Long getSnapshotUserId() {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = CallContext.current().getCallingUserId();
         if (userId == null) {
             return User.UID_SYSTEM;
         }
@@ -476,7 +477,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_DELETE, eventDescription = "deleting snapshot", async = true)
     public boolean deleteSnapshot(long snapshotId) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
         SnapshotVO snapshotCheck = this._snapshotDao.findById(snapshotId);
@@ -534,14 +535,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String intervalTypeStr = cmd.getIntervalType();
         Map<String, String> tags = cmd.getTags();
         Long zoneId = cmd.getZoneId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         // Verify parameters
         if (volumeId != null) {
             VolumeVO volume = _volsDao.findById(volumeId);
             if (volume != null) {
-                _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
             }
         }
 
@@ -712,7 +713,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
         }
 
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
@@ -810,7 +811,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
         }
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
         Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.listAndCountByVolumeId(volumeId);
         return new Pair<List<? extends SnapshotPolicy>, Integer>(result.first(), result.second());
     }
@@ -847,7 +848,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getSnapshotPolicyId();
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
 
         // Verify parameters
         VolumeVO volume = _volsDao.findById(volumeId);
@@ -1070,7 +1071,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
 
-            _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
         }
 
         boolean success = true;
@@ -1102,7 +1103,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
     @Override
     public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = this.volFactory.getVolume(volumeId);
         supportedByHypervisor(volume);
 

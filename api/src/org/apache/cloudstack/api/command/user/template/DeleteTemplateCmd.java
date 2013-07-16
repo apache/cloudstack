@@ -26,13 +26,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteTemplate", responseObject=SuccessResponse.class, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
 public class DeleteTemplateCmd extends BaseAsyncCmd {
@@ -108,7 +108,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Template Id: "+getId());
+        CallContext.current().setEventDetails("Template Id: "+getId());
         boolean result = _templateService.deleteTemplate(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

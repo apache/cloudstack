@@ -25,11 +25,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name="deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since="4.2.0")
@@ -62,7 +63,7 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("vmsnapshot id: " + getId());
+        CallContext.current().setEventDetails("vmsnapshot id: " + getId());
         boolean result = _vmSnapshotService.deleteVMSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

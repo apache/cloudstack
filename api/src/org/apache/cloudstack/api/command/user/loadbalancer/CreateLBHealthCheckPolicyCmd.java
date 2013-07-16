@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 
 
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,15 +27,18 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.HealthCheckPolicy;
+
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name = "createLBHealthCheckPolicy", description = "Creates a Load Balancer healthcheck policy ", responseObject = LBHealthCheckResponse.class, since="4.2.0")
@@ -97,7 +101,7 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -127,7 +131,7 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
         boolean success = false;
 
         try {
-            UserContext.current().setEventDetails("Load balancer healthcheck policy Id : " + getEntityId());
+            CallContext.current().setEventDetails("Load balancer healthcheck policy Id : " + getEntityId());
             success = _lbService.applyLBHealthCheckPolicy(this);
             if (success) {
                 // State might be different after the rule is applied, so get new object here

@@ -28,9 +28,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -72,7 +74,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -232,7 +233,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
 
     protected Account getCaller(){
-        return UserContext.current().getCaller();
+        return CallContext.current().getCallingAccount();
     }
     
     @Override
@@ -663,7 +664,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     "VM Snapshot reverting failed due to vm snapshot is not in the state of Created.");
         }
 
-        UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+        UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
         
         UserVmVO vm = null;
         Long hostId = null;

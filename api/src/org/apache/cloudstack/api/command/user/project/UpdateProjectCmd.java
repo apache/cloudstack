@@ -23,13 +23,14 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateProject", description="Updates a project", responseObject=ProjectResponse.class, since="3.0.0")
 public class UpdateProjectCmd extends BaseAsyncCmd {
@@ -90,7 +91,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceAllocationException{
-        UserContext.current().setEventDetails("Project id: "+ getId());
+        CallContext.current().setEventDetails("Project id: "+ getId());
         Project project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);

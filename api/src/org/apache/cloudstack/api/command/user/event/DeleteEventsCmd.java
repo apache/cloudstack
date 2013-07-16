@@ -27,11 +27,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class)
 public class DeleteEventsCmd extends BaseCmd {
@@ -90,7 +91,7 @@ public class DeleteEventsCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }

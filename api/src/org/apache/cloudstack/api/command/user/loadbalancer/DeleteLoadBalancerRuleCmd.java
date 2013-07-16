@@ -25,13 +25,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteLoadBalancerRule", description="Deletes a load balancer rule.", responseObject=SuccessResponse.class)
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -85,7 +86,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Load balancer Id: "+getId());
+        CallContext.current().setEventDetails("Load balancer Id: "+getId());
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _lbService.deleteLoadBalancerRule(id, true);
 

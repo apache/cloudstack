@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseAsyncCmd;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -30,6 +29,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,7 +39,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteF5LoadBalancer", responseObject=SuccessResponse.class, description=" delete a F5 load balancer device")
@@ -102,6 +102,6 @@ public class DeleteF5LoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

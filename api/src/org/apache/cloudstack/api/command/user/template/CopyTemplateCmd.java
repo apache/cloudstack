@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -35,7 +37,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "copyTemplate", description="Copies a template from one zone to another.", responseObject=TemplateResponse.class)
 public class CopyTemplateCmd extends BaseAsyncCmd {
@@ -120,7 +121,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceAllocationException{
         try {
-            UserContext.current().setEventDetails(getEventDescription());
+            CallContext.current().setEventDetails(getEventDescription());
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
 
             if (template != null){

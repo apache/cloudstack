@@ -25,12 +25,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteAutoScaleVmProfile", description = "Deletes a autoscale vm profile.", responseObject = SuccessResponse.class)
 public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
@@ -84,7 +85,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale VM Profile Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale VM Profile Id: " + getId());
         boolean result = _autoScaleService.deleteAutoScaleVmProfile(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

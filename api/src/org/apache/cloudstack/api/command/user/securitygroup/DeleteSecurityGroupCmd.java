@@ -26,11 +26,12 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteSecurityGroup", description="Deletes security group", responseObject=SuccessResponse.class)
 public class DeleteSecurityGroupCmd extends BaseCmd {
@@ -107,7 +108,7 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

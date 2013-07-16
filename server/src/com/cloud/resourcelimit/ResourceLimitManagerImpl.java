@@ -30,8 +30,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -78,7 +80,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -424,7 +425,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public List<ResourceLimitVO> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
         boolean isAccount = true;
 
@@ -568,7 +569,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public ResourceLimitVO updateResourceLimit(Long accountId, Long domainId, Integer typeId, Long max) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         if (max == null) {
             max = new Long(Resource.RESOURCE_UNLIMITED);
@@ -666,7 +667,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public List<ResourceCountVO> recalculateResourceCount(Long accountId, Long domainId, Integer typeId) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException {
-        Account callerAccount = UserContext.current().getCaller();
+        Account callerAccount = CallContext.current().getCallingAccount();
         long count = 0;
         List<ResourceCountVO> counts = new ArrayList<ResourceCountVO>();
         List<ResourceType> resourceTypes = new ArrayList<ResourceType>();

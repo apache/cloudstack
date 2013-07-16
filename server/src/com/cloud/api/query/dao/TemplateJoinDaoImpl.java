@@ -26,8 +26,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +44,6 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -97,7 +98,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
     private String getTemplateStatus(TemplateJoinVO template){
         boolean isAdmin = false;
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
         }
@@ -316,7 +317,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setDomainName(iso.getDomainName());
 
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
         if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;

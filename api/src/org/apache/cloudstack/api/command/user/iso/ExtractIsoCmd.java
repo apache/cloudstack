@@ -26,13 +26,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "extractIso", description="Extracts an ISO", responseObject=ExtractResponse.class)
@@ -123,7 +124,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         try {
-            UserContext.current().setEventDetails(getEventDescription());
+            CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
                 ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);

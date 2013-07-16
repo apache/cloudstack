@@ -77,8 +77,10 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.query.QueryService;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -166,7 +168,6 @@ import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
@@ -334,7 +335,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<UserAccountJoinVO>, Integer> searchForUsersInternal(ListUsersCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // TODO: Integrate with ACL checkAccess refactoring
         Long domainId = cmd.getDomainId();
@@ -440,7 +441,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<EventJoinVO>, Integer> searchForEventsInternal(ListEventsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Long id = cmd.getId();
@@ -555,7 +556,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<ResourceTagJoinVO>, Integer> listTagsInternal(ListTagsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String key = cmd.getKey();
         String value = cmd.getValue();
@@ -636,7 +637,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String name = cmd.getGroupName();
         String keyword = cmd.getKeyword();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
@@ -689,7 +690,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String hypervisor = cmd.getHypervisor();
         boolean listAll = cmd.listAll();
@@ -947,7 +948,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<SecurityGroupJoinVO>, Integer> searchForSecurityGroupsInternal(ListSecurityGroupsCmd cmd)
             throws PermissionDeniedException, InvalidParameterValueException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long instanceId = cmd.getVirtualMachineId();
         String securityGroup = cmd.getSecurityGroupName();
         Long id = cmd.getId();
@@ -1080,7 +1081,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
             String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
@@ -1216,7 +1217,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         boolean isRecursive = cmd.isRecursive();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long accountId = null;
         String path = null;
 
@@ -1358,7 +1359,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         boolean isRecursive = cmd.isRecursive();
         boolean listAll = cmd.listAll();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
@@ -1424,7 +1425,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // long projectId, String accountName, String role, Long startIndex,
         // Long pageSizeVal) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // check that the project exists
         Project project = _projectDao.findById(projectId);
@@ -1483,7 +1484,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     public Pair<List<HostJoinVO>, Integer> searchForServersInternal(ListHostsCmd cmd) {
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object name = cmd.getHostName();
         Object type = cmd.getType();
         Object state = cmd.getState();
@@ -1595,7 +1596,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Long id = cmd.getId();
@@ -1730,7 +1731,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<AccountJoinVO>, Integer> searchForAccountsInternal(ListAccountsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
         String accountName = cmd.getSearchName();
@@ -1858,7 +1859,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -1946,7 +1947,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object id = cmd.getId();
         Object name = cmd.getStoragePoolName();
         Object path = cmd.getPath();
@@ -2038,7 +2039,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<ImageStoreJoinVO>, Integer> searchForImageStoresInternal(ListImageStoresCmd cmd) {
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object id = cmd.getId();
         Object name = cmd.getStoreName();
         String provider = cmd.getProvider();
@@ -2118,7 +2119,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<ImageStoreJoinVO>, Integer> searchForCacheStoresInternal(ListCacheStoresCmd cmd) {
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object id = cmd.getId();
         Object name = cmd.getStoreName();
         String provider = cmd.getProvider();
@@ -2212,7 +2213,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.getPageSizeVal());
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         Object name = cmd.getDiskOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -2333,7 +2334,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -2455,7 +2456,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<DataCenterJoinVO>, Integer> listDataCentersInternal(ListZonesByCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
@@ -2651,7 +2652,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
@@ -2935,7 +2936,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         boolean listAll = false;
         if (isoFilter != null && isoFilter == TemplateFilter.all) {
@@ -2981,7 +2982,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             String affinityGroupName, String affinityGroupType, Long vmId, String accountName, Long domainId,
             boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         Long accountId = caller.getAccountId();
 

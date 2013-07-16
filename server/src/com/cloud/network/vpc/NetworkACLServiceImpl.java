@@ -31,7 +31,6 @@ import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -42,16 +41,20 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +88,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Vpc vpc = _vpcMgr.getVpc(vpcId);
         if(vpc == null){
             throw new InvalidParameterValueException("Unable to find VPC");
@@ -137,7 +140,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public boolean deleteNetworkACL(long id) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         NetworkACL acl = _networkACLDao.findById(id);
         if(acl == null) {
             throw new InvalidParameterValueException("Unable to find specified ACL");
@@ -157,7 +160,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
     @Override
     public boolean replaceNetworkACLonPrivateGw(long aclId, long privateGatewayId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         VpcGateway gateway = _vpcGatewayDao.findById(privateGatewayId);
         if (gateway == null) {
             throw new InvalidParameterValueException("Unable to find specified private gateway");
@@ -198,7 +201,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public boolean replaceNetworkACL(long aclId, long networkId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         NetworkVO network = _networkDao.findById(networkId);
         if(network == null){
@@ -237,7 +240,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd aclItemCmd){
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long aclId = aclItemCmd.getACLId();
         if(aclId == null){
             //ACL id is not specified. Get the ACL details from network
@@ -415,7 +418,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String action = cmd.getAction();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
@@ -518,7 +521,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         _accountMgr.checkAccess(caller, null, true, vpc);
 

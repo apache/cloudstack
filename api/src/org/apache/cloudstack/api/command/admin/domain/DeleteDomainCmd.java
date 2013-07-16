@@ -26,13 +26,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteDomain", description="Deletes a specified domain", responseObject=SuccessResponse.class)
 public class DeleteDomainCmd extends BaseAsyncCmd {
@@ -95,7 +96,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Domain Id: "+getId());
+        CallContext.current().setEventDetails("Domain Id: "+getId());
         boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

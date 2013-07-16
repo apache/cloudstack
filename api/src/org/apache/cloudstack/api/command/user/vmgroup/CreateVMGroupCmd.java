@@ -25,9 +25,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroup;
 
 @APICommand(name = "createInstanceGroup", description = "Creates a vm group", responseObject = InstanceGroupResponse.class)
@@ -88,7 +89,7 @@ public class CreateVMGroupCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

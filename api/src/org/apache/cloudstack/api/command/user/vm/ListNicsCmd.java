@@ -31,13 +31,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 
@@ -67,11 +67,11 @@ public class ListNicsCmd extends BaseListCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCaller().getAccountName();
+        return CallContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCaller().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     public Long getNicId() {
@@ -84,7 +84,7 @@ public class ListNicsCmd extends BaseListCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 

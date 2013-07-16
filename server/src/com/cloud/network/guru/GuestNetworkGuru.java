@@ -28,7 +28,10 @@ import javax.inject.Inject;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.utils.Pair;
+
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -62,7 +65,6 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -275,7 +277,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 		"part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), network.getAccountId(),
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -415,7 +417,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), 
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), profile.getAccountId(),
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(),
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     + profile.getBroadcastUri().getHost() + " for Network: " + profile.getId(), 0);
         }

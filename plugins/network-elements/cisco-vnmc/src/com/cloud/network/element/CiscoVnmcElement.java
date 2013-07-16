@@ -28,7 +28,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -117,7 +119,6 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -359,8 +360,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
             if (outsideIp == null) { // none available, acquire one
                 try {
-                    Account caller = UserContext.current().getCaller();
-                    long callerUserId = UserContext.current().getCallerUserId();
+                    Account caller = CallContext.current().getCallingAccount();
+                    long callerUserId = CallContext.current().getCallingUserId();
                     outsideIp = _networkMgr.allocateIp(owner, false, caller, callerUserId, zone);
                 } catch (ResourceAllocationException e) {
                     s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);

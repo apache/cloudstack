@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -43,10 +45,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.*;
 import com.cloud.network.VpnUser.State;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -66,18 +64,12 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.NetUtils;
@@ -113,8 +105,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @DB
     public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall, long networkId) 
             throws NetworkRuleConflictException {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         // make sure ip address exists
         PublicIpAddress ipAddr = _networkMgr.getPublicIpAddress(publicIpId);
@@ -312,7 +304,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @Override
     @DB
     public VpnUser addVpnUser(long vpnOwnerId, String username, String password) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
             throw new InvalidParameterValueException(
@@ -366,7 +358,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
         return _vpnUsersDao.listByAccount(vpnOwnerId);
@@ -374,7 +366,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override @DB
     public RemoteAccessVpnVO startRemoteAccessVpn(long ipAddressId, boolean openFirewall) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipAddressId);
         if (vpn == null) {
@@ -425,7 +417,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @DB
     @Override
     public boolean applyVpnUsers(long vpnOwnerId, String userName) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
@@ -504,7 +496,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public Pair<List<? extends VpnUser>, Integer> searchForVpnUsers(ListVpnUsersCmd cmd) {
         String username = cmd.getUsername();
         Long id = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -542,7 +534,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @Override
     public Pair<List<? extends RemoteAccessVpn>, Integer> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) {
         // do some parameter validation
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long ipAddressId = cmd.getPublicIpId();
         List<Long> permittedAccounts = new ArrayList<Long>();
 

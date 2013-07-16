@@ -22,11 +22,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
-import com.cloud.user.UserContext;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -129,7 +131,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
 
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         GlobalLoadBalancerRule rule = _entityMgr.findById(GlobalLoadBalancerRule.class, getEntityId());
         GlobalLoadBalancerResponse response = null;
         if (rule != null) {
@@ -145,7 +147,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
             GlobalLoadBalancerRule gslbRule = _gslbService.createGlobalLoadBalancerRule(this);
             this.setEntityId(gslbRule.getId());
             this.setEntityUuid(gslbRule.getUuid());
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
         } catch (Exception ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
@@ -174,7 +176,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
         return accountId;
     }

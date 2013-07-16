@@ -17,20 +17,31 @@
 
 package com.cloud.network;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.lang.reflect.Field;
 
-import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
+import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.dao.DataCenterVnetDao;
@@ -40,17 +51,11 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Transaction;
-
-import junit.framework.Assert;
-
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
 
 public class DedicateGuestVlanRangesTest {
 
@@ -86,11 +91,13 @@ public class DedicateGuestVlanRangesTest {
         networkService._datacneter_vnet = _dataCenterVnetDao;
         networkService._accountGuestVlanMapDao = _accountGuestVlanMapDao;
 
-        Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(networkService._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
+        
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
 
-        UserContext.registerContext(1, account, null, true);
+        CallContext.register(user, account);
 
         Field accountNameField = _dedicateGuestVlanRangeClass.getDeclaredField("accountName");
         accountNameField.setAccessible(true);
@@ -111,6 +118,11 @@ public class DedicateGuestVlanRangesTest {
         Field releaseIdField = _releaseGuestVlanRangeClass.getDeclaredField("id");
         releaseIdField.setAccessible(true);
         releaseIdField.set(releaseDedicatedGuestVlanRangesCmd, 1L);
+    }
+
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test
@@ -359,18 +371,21 @@ public class DedicateGuestVlanRangesTest {
     }
     
     public class DedicateGuestVlanRangeCmdExtn extends DedicateGuestVlanRangeCmd {
+        @Override
         public long getEntityOwnerId() {
             return 1;
         }
     }
 
     public class ReleaseDedicatedGuestVlanRangeCmdExtn extends ReleaseDedicatedGuestVlanRangeCmd {
+        @Override
         public long getEntityOwnerId() {
             return 1;
         }
     }
 
     public class ListDedicatedGuestVlanRangesCmdExtn extends ListDedicatedGuestVlanRangesCmd {
+        @Override
         public long getEntityOwnerId() {
             return 1;
         }

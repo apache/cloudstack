@@ -41,15 +41,19 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.*;
 import com.cloud.vm.*;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.event.ActionEventUtils;
+
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.region.*;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
@@ -513,7 +517,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
@@ -554,6 +557,7 @@ import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
 import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
+import org.apache.cloudstack.context.CallContext;
 
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
@@ -837,7 +841,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean archiveEvents(ArchiveEventsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> ids = cmd.getIds();
         boolean result =true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
@@ -852,7 +856,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -864,7 +868,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean deleteEvents(DeleteEventsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> ids = cmd.getIds();
         boolean result =true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
@@ -879,7 +883,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEvents);
 
         if (ids != null && events.size() < ids.size()) {
             result = false;
@@ -906,7 +910,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, startIndex, pageSizeVal);
         SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
 
-        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
@@ -924,7 +928,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
         String keyword = cmd.getKeyword();
-        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
 
     	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -981,7 +985,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd) {
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object name = cmd.getHostName();
         Object type = cmd.getType();
         Object state = cmd.getState();
@@ -1001,7 +1005,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>
             listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
@@ -1188,7 +1192,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId) {
         // Access check - only root administrator can migrate volumes.
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the volume");
@@ -1387,7 +1391,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
-        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
 
     	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1745,7 +1749,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Integer sortKey = cmd.getSortKey();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Boolean isRoutingTemplate = cmd.isRoutingType();
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
 
         // verify that template exists
         VMTemplateVO template = _templateDao.findById(id);
@@ -1865,7 +1869,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<Long> permittedAccounts = new ArrayList<Long>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         if (isAllocated) {
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                     cmd.getDomainId(), cmd.isRecursive(), null);
@@ -2056,9 +2060,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO stopConsoleProxy(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException, OperationTimedoutException,
     ConcurrentOperationException {
 
-        User caller = _userDao.findById(UserContext.current().getCallerUserId());
+        User caller = _userDao.findById(CallContext.current().getCallingUserId());
 
-        if (_itMgr.advanceStop(systemVm, isForced, caller, UserContext.current().getCaller())) {
+        if (_itMgr.advanceStop(systemVm, isForced, caller, CallContext.current().getCallingAccount())) {
             return _consoleProxyDao.findById(systemVm.getId());
         }
         return null;
@@ -2132,7 +2136,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // check permissions
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, domain);
 
         // domain name is unique under the parent domain
@@ -2216,7 +2220,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object type = cmd.getType();
         Object keyword = cmd.getKeyword();
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), null);
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
@@ -2242,14 +2246,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean archiveAlerts(ArchiveAlertsCmd cmd) {
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), null);
         boolean result = _alertDao.archiveAlert(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), zoneId);
         return result;
     }
 
     @Override
     public boolean deleteAlerts(DeleteAlertsCmd cmd) {
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), null);
         boolean result = _alertDao.deleteAlert(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), zoneId);
         return result;
     }
@@ -2265,7 +2269,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (clusterId != null) {
             throw new InvalidParameterValueException("Currently clusterId param is not suppoerted");
         }
-        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
         List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
 
         if (zoneId == null && podId == null) {// Group by Zone, capacity type
@@ -2374,7 +2378,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long clusterId = cmd.getClusterId();
         Boolean fetchLatest = cmd.getFetchLatest();
 
-        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
         if (fetchLatest != null && fetchLatest) {
             _alertMgr.recalculateCapacity();
         }
@@ -2945,9 +2949,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private SecondaryStorageVmVO stopSecondaryStorageVm(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException,
     OperationTimedoutException, ConcurrentOperationException {
 
-        User caller = _userDao.findById(UserContext.current().getCallerUserId());
+        User caller = _userDao.findById(CallContext.current().getCallingUserId());
 
-        if (_itMgr.advanceStop(systemVm, isForced, caller, UserContext.current().getCaller())) {
+        if (_itMgr.advanceStop(systemVm, isForced, caller, CallContext.current().getCallingAccount())) {
             return _secStorageVmDao.findById(systemVm.getId());
         }
         return null;
@@ -2971,7 +2975,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd) {
         String type = cmd.getSystemVmType();
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Long id = cmd.getId();
         String name = cmd.getSystemVmName();
         String state = cmd.getState();
@@ -3153,7 +3157,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ArrayList<String> getCloudIdentifierResponse(long userId) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // verify that user exists
         User user = _accountMgr.getUserIncludingRemoved(userId);
@@ -3241,7 +3245,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long groupId = cmd.getId();
         String groupName = cmd.getGroupName();
 
@@ -3439,7 +3443,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long projectId = cmd.getProjectId();
@@ -3463,7 +3467,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean deleteSSHKeyPair(DeleteSSHKeyPairCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long projectId = cmd.getProjectId();
@@ -3491,7 +3495,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String name = cmd.getName();
         String fingerPrint = cmd.getFingerprint();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
@@ -3523,7 +3527,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_SSH_KEYPAIR, eventDescription = "registering ssh keypair", async = true)
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
@@ -3561,7 +3565,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public String getVMPassword(GetVMPasswordCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vm = _userVmDao.findById(cmd.getId());
         if (vm == null) {
@@ -3708,7 +3712,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
             hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
-            UserContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
+            CallContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
             return hpvCapabilities;
         } else {
             return null;
@@ -3737,7 +3741,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId){
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {

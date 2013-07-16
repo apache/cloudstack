@@ -25,12 +25,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "attachVolume", description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
 public class AttachVolumeCmd extends BaseAsyncCmd {
@@ -118,7 +119,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
+        CallContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
         Volume result = _volumeService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);

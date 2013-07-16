@@ -22,14 +22,16 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.cloudstack.api.*;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -39,7 +41,6 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 

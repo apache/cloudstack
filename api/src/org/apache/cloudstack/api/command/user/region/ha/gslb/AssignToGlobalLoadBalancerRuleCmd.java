@@ -24,15 +24,18 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -146,7 +149,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
+        CallContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
                 + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {

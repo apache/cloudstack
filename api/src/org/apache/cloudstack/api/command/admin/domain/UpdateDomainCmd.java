@@ -25,13 +25,14 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateDomain", description="Updates a domain with a new name", responseObject=DomainResponse.class)
 public class UpdateDomainCmd extends BaseCmd {
@@ -86,7 +87,7 @@ public class UpdateDomainCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Domain Id: "+getId());
+        CallContext.current().setEventDetails("Domain Id: "+getId());
         Domain domain =  _regionService.updateDomain(this);
 
         if (domain != null) {

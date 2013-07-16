@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -33,7 +35,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deletePrivateGateway", description="Deletes a Private gateway", responseObject=SuccessResponse.class)
 public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
@@ -81,7 +82,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        UserContext.current().setEventDetails("Network ACL Id: " + id);
+        CallContext.current().setEventDetails("Network ACL Id: " + id);
         boolean result = _vpcService.deleteVpcPrivateGateway(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

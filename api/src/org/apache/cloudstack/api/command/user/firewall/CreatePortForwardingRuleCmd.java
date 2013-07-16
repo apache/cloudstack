@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -39,7 +41,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 
 @APICommand(name = "createPortForwardingRule", description = "Creates a port forwarding rule", responseObject = FirewallRuleResponse.class)
@@ -171,17 +172,17 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         boolean success = true;
         PortForwardingRule rule = null;
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyIngressFirewallRules(ipAddressId, callerContext.getCaller());
+                success = success && _firewallService.applyIngressFirewallRules(ipAddressId, callerContext.getCallingAccount());
             }
 
-            success = success && _rulesService.applyPortForwardingRules(ipAddressId, callerContext.getCaller());
+            success = success && _rulesService.applyPortForwardingRules(ipAddressId, callerContext.getCallingAccount());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
@@ -271,7 +272,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
 
         if (account != null) {
             return account.getId();

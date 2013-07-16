@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateLoadBalancerRule", description="Updates load balancer", responseObject=LoadBalancerResponse.class)
 public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -103,7 +104,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Load balancer Id: "+getId());
+        CallContext.current().setEventDetails("Load balancer Id: "+getId());
         LoadBalancer result = _lbService.updateLoadBalancerRule(this);
         if (result != null){
             LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);

@@ -22,7 +22,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
+
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -47,7 +50,6 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -140,7 +142,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
 
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanTag));
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
         } else {
             vlanTag = Integer.parseInt(config.getBroadcastUri().getHost());
             implemented.setBroadcastUri(config.getBroadcastUri());

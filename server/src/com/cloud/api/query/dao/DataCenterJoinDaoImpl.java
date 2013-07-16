@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -25,13 +26,15 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.dc.DataCenter;
+
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -56,7 +59,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     @Override
     public ZoneResponse newDataCenterResponse(DataCenterJoinVO dataCenter, Boolean showCapacities) {
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
         zoneResponse.setName(dataCenter.getName());

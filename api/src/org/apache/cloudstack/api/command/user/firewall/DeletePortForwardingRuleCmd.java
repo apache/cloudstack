@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deletePortForwardingRule", description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
 public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
@@ -92,7 +93,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Rule Id: "+id);
+        CallContext.current().setEventDetails("Rule Id: "+id);
         //revoke corresponding firewall rule first
         boolean result  = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result &&  _rulesService.revokePortForwardingRule(id, true);

@@ -23,7 +23,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.SspResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.SspService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.DataCenterDao;
@@ -33,7 +35,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name="addStratosphereSsp", responseObject=SspResponse.class, description="Adds stratosphere ssp server")
@@ -70,7 +71,7 @@ public class AddSspCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

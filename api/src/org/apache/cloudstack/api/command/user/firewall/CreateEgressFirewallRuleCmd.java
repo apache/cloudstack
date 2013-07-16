@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,7 +42,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createEgressFirewallRule", description = "Creates a egress firewall rule for a given network ", responseObject = FirewallResponse.class)
@@ -128,12 +129,12 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         boolean success = false;
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-             success = _firewallService.applyEgressFirewallRules (rule, callerContext.getCaller());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+             success = _firewallService.applyEgressFirewallRules (rule, callerContext.getCallingAccount());
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
             FirewallResponse fwResponse = new FirewallResponse();
@@ -204,7 +205,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
 
         if (account != null) {
             return account.getId();

@@ -23,11 +23,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createDomain", description="Creates a domain", responseObject=DomainResponse.class)
 public class CreateDomainCmd extends BaseCmd {
@@ -88,7 +89,7 @@ public class CreateDomainCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Domain Name: "+getDomainName()+((getParentDomainId()!=null)?", Parent DomainId :"+getParentDomainId():""));
+        CallContext.current().setEventDetails("Domain Name: "+getDomainName()+((getParentDomainId()!=null)?", Parent DomainId :"+getParentDomainId():""));
         Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain(), getDomainUUID());
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

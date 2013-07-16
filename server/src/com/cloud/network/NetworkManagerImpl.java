@@ -39,10 +39,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -167,7 +169,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -712,8 +713,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
-        long callerUserId = UserContext.current().getCallerUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
         // check permissions
         _accountMgr.checkAccess(caller, null, false, ipOwner);
 
@@ -768,7 +769,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 ex.addProxyObject(ApiDBUtils.findZoneById(zone.getId()).getUuid());
                 throw ex;
             }
-            UserContext.current().setEventDetails("Ip Id: " + ip.getId());
+            CallContext.current().setEventDetails("Ip Id: " + ip.getId());
             Ip ipAddress = ip.getAddress();
 
             s_logger.debug("Got " + ipAddress + " to assign for account " + ipOwner.getId() + " in zone " + zone.getId());
@@ -874,7 +875,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId, boolean releaseOnFailure)
             throws ResourceAllocationException, ResourceUnavailableException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
 
         IPAddressVO ipToAssoc = _ipAddressDao.findById(ipId);
@@ -888,7 +889,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                 if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseNetwork, false, network);
                 } else {
                     throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
                         "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
@@ -1002,7 +1003,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             throws ResourceAllocationException, ResourceUnavailableException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
 
         Network network = _networksDao.findById(networkId);
@@ -1025,7 +1026,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     assert (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()));
-                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.UseNetwork, false, network);
                 }
             } else {
                 _accountMgr.checkAccess(caller, null, true, ipToAssoc);
@@ -1984,7 +1985,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         // reapply all the firewall/staticNat/lb rules
         s_logger.debug("Reprogramming network " + network + " as a part of network implement");
-        if (!reprogramNetworkRules(network.getId(), UserContext.current().getCaller(), network)) {
+        if (!reprogramNetworkRules(network.getId(), CallContext.current().getCallingAccount(), network)) {
             s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
             // see DataCenterVO.java
             ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
@@ -2655,7 +2656,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         txn.commit();
-        UserContext.current().setEventDetails("Network Id: " + network.getId());
+        CallContext.current().setEventDetails("Network Id: " + network.getId());
         return network;
     }
 
@@ -3356,8 +3357,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if ( createNetwork && requiredOfferings.get(0).getIsPersistent() ) {
             DataCenter zone = _dcDao.findById(zoneId);
             DeployDestination dest = new DeployDestination(zone, null, null, null);
-            Account callerAccount = UserContext.current().getCaller();
-            UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+            Account callerAccount = CallContext.current().getCallingAccount();
+            UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
             Journal journal = new Journal.LogJournal("Implementing " + guestNetwork, s_logger);
             ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, callerAccount);
             s_logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
@@ -3559,7 +3560,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp)
     throws InsufficientAddressCapacityException {
         String ipaddr = null;
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         // check permissions
         Network network = _networksDao.findById(networkId);
 
@@ -4176,8 +4177,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         Long networkId = ip.getAssociatedWithNetworkId();
         if (networkId != null) {
             if (ip.getSystem()) {
-                UserContext ctx = UserContext.current();
-                if (!disassociatePublicIpAddress(ip.getId(), ctx.getCallerUserId(), ctx.getCaller())) {
+                CallContext ctx = CallContext.current();
+                if (!disassociatePublicIpAddress(ip.getId(), ctx.getCallingUserId(), ctx.getCallingAccount())) {
                     s_logger.warn("Unable to release system ip address id=" + ip.getId());
                     success = false;
                 } else {

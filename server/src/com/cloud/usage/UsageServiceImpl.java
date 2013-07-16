@@ -30,8 +30,10 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +48,6 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -115,7 +116,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account caller = (Account)UserContext.current().getCaller();
+        Account caller = (Account)CallContext.current().getCallingAccount();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
         

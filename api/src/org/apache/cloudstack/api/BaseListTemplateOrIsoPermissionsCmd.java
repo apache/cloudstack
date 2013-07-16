@@ -19,11 +19,12 @@ package org.apache.cloudstack.api;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Logger s_logger = getLogger();
@@ -79,7 +80,7 @@ public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
     public void execute(){
         List<String> accountNames = _templateService.listTemplatePermissions(this);
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         boolean isAdmin = (isAdmin(account.getType()));
 
         TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(accountNames, id, isAdmin);

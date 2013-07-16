@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteProject", description="Deletes a project", responseObject=SuccessResponse.class, since="3.0.0")
 public class DeleteProjectCmd extends BaseAsyncCmd {
@@ -65,7 +66,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Project Id: " + id);
+        CallContext.current().setEventDetails("Project Id: " + id);
         boolean result = _projectService.deleteProject(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -35,7 +37,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "extractVolume", description="Extracts volume", responseObject=ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
@@ -126,7 +127,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume Id: " + getId());
         String uploadUrl = _volumeService.extractVolume(this);
         if (uploadUrl != null) {
             ExtractResponse response = new ExtractResponse();

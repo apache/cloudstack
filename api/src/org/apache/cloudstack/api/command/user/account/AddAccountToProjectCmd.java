@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name = "addAccountToProject", description="Adds acoount to a project", responseObject=SuccessResponse.class, since="3.0.0")
@@ -85,7 +86,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }
 
-        UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

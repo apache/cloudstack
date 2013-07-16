@@ -27,10 +27,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
@@ -96,7 +96,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("VM Id: " + getVmId());
+        CallContext.current().setEventDetails("VM Id: " + getVmId());
         VMSnapshot result = _vmSnapshotService.creatVMSnapshot(getVmId(),getEntityId());
         if (result != null) {
             VMSnapshotResponse response = _responseGenerator

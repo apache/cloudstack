@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -32,7 +34,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createNetwork", description="Creates a network", responseObject=NetworkResponse.class)
 public class CreateNetworkCmd extends BaseCmd {
@@ -274,7 +275,7 @@ public class CreateNetworkCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

@@ -25,11 +25,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "removeVpnUser", description="Removes vpn user", responseObject=SuccessResponse.class)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
@@ -89,7 +90,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -108,7 +109,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         Account owner = _accountService.getAccount(getEntityOwnerId());
-        boolean result = _ravService.removeVpnUser(owner.getId(), userName, UserContext.current().getCaller());
+        boolean result = _ravService.removeVpnUser(owner.getId(), userName, CallContext.current().getCallingAccount());
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove vpn user");
         }

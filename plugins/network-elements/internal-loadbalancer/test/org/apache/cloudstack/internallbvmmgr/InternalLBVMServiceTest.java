@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -23,13 +23,16 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -48,13 +51,12 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.user.UserContext;
-import com.cloud.user.dao.AccountDao;
 
 
 /**
@@ -80,6 +82,7 @@ public class InternalLBVMServiceTest extends TestCase {
     long nonExistingVmId = 2L;
     long nonInternalLbVmId = 3L;
     
+    @Override
     @Before
     public void setUp() {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
@@ -94,7 +97,7 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
         Mockito.when(_accountDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(new AccountVO(2));
-        UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+        CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
         
         
         DomainRouterVO validVm = new DomainRouterVO(validVmId,off.getId(),1,"alena",1,HypervisorType.XenServer,1,1,1,
@@ -136,6 +139,12 @@ public class InternalLBVMServiceTest extends TestCase {
 
     }
     
+    @Override
+    @After
+    public void tearDown() {
+        CallContext.unregister();
+    }
+
     //TESTS FOR START COMMAND
     
     

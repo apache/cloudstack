@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.NetworkACLItem;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,6 +32,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -42,7 +45,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
@@ -171,7 +173,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -220,7 +222,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _networkACLService.applyNetworkACL(rule.getAclId());
 
             // State is different after the rule is applied, so get new object here

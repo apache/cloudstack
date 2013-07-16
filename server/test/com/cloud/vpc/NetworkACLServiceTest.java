@@ -15,23 +15,15 @@
 
 package com.cloud.vpc;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.vpc.*;
-import com.cloud.network.vpc.dao.NetworkACLDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
-import com.cloud.utils.component.ComponentContext;
+import java.io.IOException;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,9 +39,31 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.UUID;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.NetworkACLService;
+import com.cloud.network.vpc.NetworkACLServiceImpl;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -74,11 +88,14 @@ public class NetworkACLServiceTest extends TestCase{
 
     private static final Logger s_logger = Logger.getLogger( NetworkACLServiceTest.class);
 
+    @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.registerContext(1, account, null, true);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+
+        CallContext.register(user, account);
 
         createACLItemCmd = new CreateNetworkACLCmd(){
             @Override
@@ -116,6 +133,12 @@ public class NetworkACLServiceTest extends TestCase{
                 return 4L;
             }
         };
+    }
+
+    @Override
+    @After
+    public void tearDown() {
+        CallContext.unregister();
     }
 
     @Test

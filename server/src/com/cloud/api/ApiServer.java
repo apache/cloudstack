@@ -52,34 +52,6 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
-import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
-import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
-import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
-import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
-import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
-import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.ExceptionResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -111,6 +83,36 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJob;
@@ -119,6 +121,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dao.EntityManager;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.ActionEventUtils;
@@ -135,7 +138,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -162,6 +164,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject private DomainManager _domainMgr;
     @Inject private AsyncJobManager _asyncMgr;
     @Inject private ConfigurationDao _configDao;
+    @Inject
+    private EntityManager _entityMgr;
 
     @Inject List<PluggableService> _pluggableServices;
     @Inject List<APIChecker> _apiAccessCheckers;
@@ -179,6 +183,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @PostConstruct
     void initComponent() {
         s_instance = this;
+        CallContext.init(_entityMgr);
     }
 
     public static ApiServer getInstance() {
@@ -297,7 +302,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-                UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
+                CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
                 String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -314,7 +319,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            UserContext.unregisterContext();
+            CallContext.unregister();
         }
     }
 
@@ -411,7 +416,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (InsufficientCapacityException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
 
@@ -421,7 +426,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (ResourceAllocationException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -430,7 +435,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (ResourceUnavailableException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -447,7 +452,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (Exception ex){
             s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -458,9 +463,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) throws Exception {
-        UserContext ctx = UserContext.current();
-        Long callerUserId = ctx.getCallerUserId();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Long callerUserId = ctx.getCallingUserId();
+        Account caller = ctx.getCallingAccount();
 
 
         // Queue command based on Cmd super class:
@@ -503,8 +508,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             params.put("ctxStartEventId", String.valueOf(startEventId));
             params.put("cmdEventType", asyncCmd.getEventType().toString());
-
-            ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
             AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
@@ -730,8 +733,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         + account.getState());
                 return false;
             }
-
-            UserContext.updateContext(user.getId(), account, null);
 
             try{
                 checkCommandAvailable(user, commandName);

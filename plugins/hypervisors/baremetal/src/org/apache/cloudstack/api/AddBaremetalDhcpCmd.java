@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.baremetal.database.BaremetalDhcpVO;
@@ -41,7 +43,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.UserContext;
 @APICommand(name="addBaremetalDhcp", description="adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     private static final String s_name = "addexternaldhcpresponse";
@@ -102,7 +103,7 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     public Long getPodId() {

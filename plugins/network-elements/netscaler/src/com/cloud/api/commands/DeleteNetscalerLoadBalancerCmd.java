@@ -27,6 +27,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -35,7 +37,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteNetscalerLoadBalancer", responseObject=SuccessResponse.class, description=" delete a netscaler load balancer device")
@@ -100,6 +101,6 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

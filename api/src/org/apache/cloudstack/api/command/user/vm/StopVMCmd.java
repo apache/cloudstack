@@ -25,13 +25,14 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.")
@@ -111,7 +112,7 @@ public class StopVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        UserContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result;
 
         result = _userVmService.stopVirtualMachine(getId(), isForced());

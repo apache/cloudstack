@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -30,7 +32,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "suspendProject", description="Suspends a project", responseObject=ProjectResponse.class, since="3.0.0")
 public class SuspendProjectCmd extends BaseAsyncCmd {
@@ -66,7 +67,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
-        UserContext.current().setEventDetails("Project Id: " + id);
+        CallContext.current().setEventDetails("Project Id: " + id);
         Project project = _projectService.suspendProject(id);
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);

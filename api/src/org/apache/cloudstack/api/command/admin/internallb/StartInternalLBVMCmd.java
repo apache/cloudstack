@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -33,7 +35,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "startInternalLoadBalancerVM", responseObject=DomainRouterResponse.class, description="Starts an existing internal lb vm.")
 public class StartInternalLBVMCmd extends BaseAsyncCmd {
@@ -100,13 +101,13 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Internal Lb Vm Id: "+getId());
+        CallContext.current().setEventDetails("Internal Lb Vm Id: "+getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id");
         } else {
-            result = _internalLbSvc.startInternalLbVm(getId(), UserContext.current().getCaller(), UserContext.current().getCallerUserId());
+            result = _internalLbSvc.startInternalLbVm(getId(), CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId());
         }
         
         if (result != null){

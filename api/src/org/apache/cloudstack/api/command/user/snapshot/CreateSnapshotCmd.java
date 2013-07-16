@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -38,7 +40,6 @@ import com.cloud.projects.Project;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
@@ -164,7 +165,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         s_logger.info("VOLSS: createSnapshotCmd starts:" + System.currentTimeMillis());
-        UserContext.current().setEventDetails("Volume Id: "+getVolumeId());
+        CallContext.current().setEventDetails("Volume Id: "+getVolumeId());
         Snapshot snapshot;
         try {
             snapshot = _volumeService.takeSnapshot(this.getVolumeId(), this.getPolicyId(), this.getEntityId(), _accountService.getAccount(getEntityOwnerId()));

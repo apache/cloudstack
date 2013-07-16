@@ -25,7 +25,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,6 +38,8 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
@@ -251,7 +253,7 @@ import java.util.Map;
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
+        CallContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
         template = this._templateService.createPrivateTemplate(this);
 

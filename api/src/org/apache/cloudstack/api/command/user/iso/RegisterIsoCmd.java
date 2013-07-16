@@ -30,11 +30,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "registerIso", responseObject=TemplateResponse.class, description="Registers an existing ISO into the CloudStack Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
@@ -169,7 +170,7 @@ public class RegisterIsoCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

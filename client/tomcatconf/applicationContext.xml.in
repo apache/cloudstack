@@ -832,7 +832,6 @@
   <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
   <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
   <bean id="usageEventUtils" class="com.cloud.event.UsageEventUtils" />
-  <bean id="userContextInitializer" class="com.cloud.user.UserContextInitializer" />
   <bean id="vMEntityManagerImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VMEntityManagerImpl" />
   <bean id="virtualMachineEntityFactory" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityFactory" />
   <bean id="virtualMachineEntityImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl" />

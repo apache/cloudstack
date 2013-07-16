@@ -26,6 +26,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -63,7 +65,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -189,8 +190,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
     public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Ip vmIp, boolean openFirewall)
             throws NetworkRuleConflictException {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         Long ipAddrId = rule.getSourceIpAddressId();
 
@@ -317,7 +318,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 if (!_firewallDao.setStateToAdd(newRule)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
-                UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(),
                         ipAddress.getDataCenterId(), newRule.getId(), null, PortForwardingRule.class.getName(),
                         newRule.getUuid());
@@ -352,7 +353,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating static nat rule", create = true)
     public StaticNatRule createStaticNatRule(StaticNatRule rule, boolean openFirewall) throws NetworkRuleConflictException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         Long ipAddrId = rule.getSourceIpAddressId();
 
@@ -399,7 +400,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
-            UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
+            CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(),
                     null, FirewallRule.class.getName(), newRule.getUuid());
 
@@ -433,9 +434,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     private boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm, String vmGuestIp)
             throws NetworkRuleConflictException, ResourceUnavailableException {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
-        UserContext.current().setEventDetails("Ip Id: " + ipId);
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
+        CallContext.current().setEventDetails("Ip Id: " + ipId);
 
         // Verify input parameters
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
@@ -569,7 +570,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
                 // Verify ip address parameter
                 // checking vm id is not sufficient, check for the vm ip
-                isIpReadyForStaticNat(vmId, ipAddress, dstIp, caller, ctx.getCallerUserId());
+                isIpReadyForStaticNat(vmId, ipAddress, dstIp, caller, ctx.getCallingUserId());
             }
 
             ipAddress.setOneToOneNat(true);
@@ -655,8 +656,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_DELETE, eventDescription = "revoking forwarding rule", async = true)
     public boolean revokePortForwardingRule(long ruleId, boolean apply) {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         PortForwardingRuleVO rule = _portForwardingDao.findById(ruleId);
         if (rule == null) {
@@ -665,7 +666,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         _accountMgr.checkAccess(caller, null, true, rule);
 
-        if (!revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)) {
+        if (!revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallingUserId(), apply)) {
             throw new CloudRuntimeException("Failed to delete port forwarding rule");
         }
         return true;
@@ -690,8 +691,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_DELETE, eventDescription = "revoking forwarding rule", async = true)
     public boolean revokeStaticNatRule(long ruleId, boolean apply) {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
 
         FirewallRuleVO rule = _firewallDao.findById(ruleId);
         if (rule == null) {
@@ -700,7 +701,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         _accountMgr.checkAccess(caller, null, true, rule);
 
-        if (!revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply)) {
+        if (!revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallingUserId(), apply)) {
             throw new CloudRuntimeException("Failed to revoke forwarding rule");
         }
         return true;
@@ -764,7 +765,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
@@ -977,7 +978,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     public Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
@@ -1182,8 +1183,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISABLE_STATIC_NAT, eventDescription = "disabling static nat", async=true)
     public boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        CallContext ctx = CallContext.current();
+        Account caller = ctx.getCallingAccount();
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
 
@@ -1211,7 +1212,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         }
 
-        return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
+        return disableStaticNat(ipId, caller, ctx.getCallingUserId(), false);
     }
 
     @Override
