@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2563,7 +2564,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
 
-        Map<String, NicProfile> networkNicMap = new HashMap<String, NicProfile>();
+        LinkedHashMap<String, NicProfile> networkNicMap = new LinkedHashMap<String, NicProfile>();
 
         short defaultNetworkNumber = 0;
         boolean securityGroupEnabled = false;
