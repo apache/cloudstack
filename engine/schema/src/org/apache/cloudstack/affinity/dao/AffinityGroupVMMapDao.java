@@ -23,7 +23,6 @@ import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
 
 public interface AffinityGroupVMMapDao extends GenericDao<AffinityGroupVMMapVO, Long> {
 
@@ -44,4 +43,6 @@ public interface AffinityGroupVMMapDao extends GenericDao<AffinityGroupVMMapVO, 
     List<AffinityGroupVMMapVO> findByVmIdType(long instanceId, String type);
 
     void updateMap(Long vmId, List<Long> affinityGroupIds);
+
+    List<Long> listAffinityGroupIdsByVmId(long instanceId);
 }

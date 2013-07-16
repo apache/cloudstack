@@ -16,12 +16,9 @@
 // under the License.
 package com.cloud.server;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import com.cloud.exception.*;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
@@ -43,18 +40,12 @@ import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
-import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
-import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
-import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
-
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
@@ -69,7 +60,6 @@ import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -371,6 +361,8 @@ public interface ManagementService {
     List<String> listDeploymentPlanners();
 
     VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException;
-    
+
     boolean getExecuteInSequence();
+
+    void cleanupVMReservations();
 }

@@ -117,7 +117,6 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         return true;
     }
 
-    @DB
     @Override
     public boolean check(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination plannedDestination)
             throws AffinityConflictException {
@@ -132,31 +131,24 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-            final Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                // lock the group
-                AffinityGroupVO group = _affinityGroupDao.lockRow(vmGroupMapping.getAffinityGroupId(), true);
-                // if more than 1 VM's are present in the group then check for
-                // conflict due to parallel deployment
-                List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(vmGroupMapping
-                        .getAffinityGroupId());
-                groupVMIds.remove(vm.getId());
+            // if more than 1 VM's are present in the group then check for
+            // conflict due to parallel deployment
+            List<Long> groupVMIds = _affinityGroupVMMapDao
+                    .listVmIdsByAffinityGroup(vmGroupMapping.getAffinityGroupId());
+            groupVMIds.remove(vm.getId());
 
-                for (Long groupVMId : groupVMIds) {
-                    VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
-                    if (vmReservation.getHostId() != null && vmReservation.getHostId().equals(plannedHostId)) {
-                        return false;
+            for (Long groupVMId : groupVMIds) {
+                VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
+                if (vmReservation != null && vmReservation.getHostId() != null
+                        && vmReservation.getHostId().equals(plannedHostId)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM "
+                                + vmReservation.getVmId() + " reserved on the same host " + plannedHostId);
                     }
+                    return false;
                 }
-
-                return true;
-
-            } finally {
-                txn.commit();
             }
         }
-
         return true;
     }
 
