@@ -27,9 +27,8 @@
   <para>This feature is supported on XenServer, VMware, and KVM hypervisors.</para>
   <section id="prereq-addnic">
     <title>Prerequisites</title>
-    <para>For adding or removing networks to work, ensure that vm-tools are running on the guest VMs
-      on VMware hypervisor. If vm-tools are not present, running dhclient does not result in IPs
-      getting assigned to the NICs.</para>
+    <para>Ensure that vm-tools are running on guest VMs for adding or removing networks to work on
+      VMware hypervisor.</para>
   </section>
   <section id="add-nic">
     <title>Adding a Network</title>

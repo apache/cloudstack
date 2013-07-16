@@ -29,8 +29,7 @@
   only while the VM is in running or stopped state.</para>
   <section id="prereq-addnic">
     <title>Prerequisites</title>
-    <para>For adding or removing NICs to work, ensure that vm-tools are running on the guest VMs on
-      VMware hypervisor.</para>
+    <para>Ensure that vm-tools are running on guest VMs for adding or removing networks to work on VMware hypervisor.</para>
   </section>
   <section id="addnic">
     <title>addNicToVirtualMachine</title>
