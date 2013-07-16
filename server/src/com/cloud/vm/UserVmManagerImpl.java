@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -414,6 +415,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     DedicatedResourceDao _dedicatedDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    AffinityGroupService _affinityGroupService;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -2488,7 +2491,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             for (Long affinityGroupId : affinityGroupIdList) {
                 AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
                 if (ag == null) {
-                    throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
+                    throw new InvalidParameterValueException("Unable to find affinity group " + ag);
+                } else if (!_affinityGroupService.isAffinityGroupProcessorAvailable(ag.getType())) {
+                    throw new InvalidParameterValueException("Affinity group type is not supported for group: " + ag
+                            + " ,type: " + ag.getType() + " , Please try again after removing the affinity group");
                 } else {
                     // verify permissions
                     _accountMgr.checkAccess(caller, null, true, owner, ag);

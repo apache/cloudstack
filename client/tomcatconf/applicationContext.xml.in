@@ -899,7 +899,9 @@
 
   <bean id="UcsManager" class="com.cloud.ucs.manager.UcsManagerImpl" />
 
-  <bean id="AffinityGroupServiceImpl" class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl"/>
+  <bean id="AffinityGroupServiceImpl" class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl">
+  	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
+  </bean>
   <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl">
     <property name="Planners" value="#{deploymentPlanners.Adapters}" />
 	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />

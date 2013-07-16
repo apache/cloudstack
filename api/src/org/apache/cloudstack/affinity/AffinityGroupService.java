@@ -73,4 +73,6 @@ public interface AffinityGroupService {
 
     UserVm updateVMAffinityGroups(Long vmId, List<Long> affinityGroupIds);
 
+    boolean isAffinityGroupProcessorAvailable(String affinityGroupType);
+
 }

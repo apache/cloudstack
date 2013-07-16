@@ -82,6 +82,16 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @Inject
     private UserVmDao _userVmDao;
 
+    protected List<AffinityGroupProcessor> _affinityProcessors;
+
+    public List<AffinityGroupProcessor> getAffinityGroupProcessors() {
+        return _affinityProcessors;
+    }
+
+    public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
+        this._affinityProcessors = affinityProcessors;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_CREATE, eventDescription = "Creating Affinity Group", create = true)
     public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
@@ -359,6 +369,16 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         // APIResponseHelper will pull out the updated affinitygroups.
         return vmInstance;
 
+    }
+
+    @Override
+    public boolean isAffinityGroupProcessorAvailable(String affinityGroupType) {
+        for (AffinityGroupProcessor processor : _affinityProcessors) {
+            if (affinityGroupType != null && affinityGroupType.equals(processor.getType())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
