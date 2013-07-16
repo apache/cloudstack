@@ -1004,7 +1004,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
+                                accountid=self.account_1.name,
                                 domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
