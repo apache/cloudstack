@@ -676,15 +676,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             // Either way delete the snapshots for this volume.
             List<SnapshotVO> snapshots = listSnapsforVolume(volumeId);
             for (SnapshotVO snapshot : snapshots) {
-                SnapshotVO snap = _snapshotDao.findById(snapshot.getId());
-                SnapshotStrategy snapshotStrategy = null;
-                for (SnapshotStrategy strategy : snapshotStrategies) {
-                    if (strategy.canHandle(snap)) {
-                        snapshotStrategy = strategy;
-                        break;
-                    }
-                }
-                if (snapshotStrategy.deleteSnapshot(snapshot.getId())) {
+                if (_snapshotDao.expunge(snapshot.getId())) {
                     if (snapshot.getRecurringType() == Type.MANUAL) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage,
