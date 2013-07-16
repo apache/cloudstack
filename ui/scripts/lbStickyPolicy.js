@@ -259,7 +259,7 @@
           }
         });
       },
-      delete: function(stickyRuleID, complete, error) {
+      'delete': function(stickyRuleID, complete, error) {
         $.ajax({
           url: createURL('deleteLBStickinessPolicy'),
           data: {
@@ -296,10 +296,10 @@
         };
         
         // Delete existing rule
-        if (data.methodname != 'None') {
+        if (data.methodname !== 'None') {
           addStickyPolicy();
         } else {
-          cloudStack.lbStickyPolicy.actions.delete(stickyRuleID, complete, error);
+          cloudStack.lbStickyPolicy.actions['delete'](stickyRuleID, complete, error);
         }
       }
     }
