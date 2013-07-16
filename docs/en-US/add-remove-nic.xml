@@ -26,7 +26,13 @@
     or traditional server loads can be accommodated with ease. </para>
   <para>This feature is supported on XenServer and KVM hypervisors.</para>
   <para>The following APIs have been added to support this feature. These API calls can function
-    only while the VM is in running or stopped state.</para>
+  only while the VM is in running or stopped state.</para>
+  <section id="prereq-addnic">
+    <title>Prerequisites</title>
+    <para>For adding or removing NICs to work, ensure that vm-tools are running on the
+      guest VMs running on VMware hypervisor. If vm-tools are not present, running dhclient does not
+      result in IPs getting assigned to the NICs.</para>
+  </section>
   <section id="addnic">
     <title>addNicToVirtualMachine</title>
     <para>The addNicToVirtualMachine API adds a new NIC to the specified VM on a selected

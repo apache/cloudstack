@@ -25,6 +25,12 @@
     also change the default physical network of a virtual machine. With this functionality, hybrid
     or traditional server loads can be accommodated with ease. </para>
   <para>This feature is supported on XenServer and KVM hypervisors.</para>
+  <section id="prereq-addnic">
+    <title>Prerequisites</title>
+    <para>For adding or removing physical networks to work, ensure that vm-tools are running on the
+      guest VMs on VMware hypervisor. If vm-tools are not present, running dhclient does not
+      result in IPs getting assigned to the NICs.</para>
+  </section>
   <section id="add-nic">
     <title>Adding a Physical Network</title>
     <orderedlist>
