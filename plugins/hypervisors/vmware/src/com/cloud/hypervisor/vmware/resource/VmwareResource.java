@@ -4865,14 +4865,39 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * @return
      */
     protected Answer execute(UnregisterNicCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource UnregisterNicCommand: " + _gson.toJson(cmd));
+        s_logger.info("Executing resource UnregisterNicCommand: " + _gson.toJson(cmd));
+
+        if (_guestTrafficInfo == null) {
+            return new Answer(cmd, false, "No Guest Traffic Info found, unable to determine where to clean up");
         }
 
-        VmwareContext context = getServiceContext();
-        getHyperHost(context);
         try {
-            return new Answer(cmd, true, "Not implemented yet");
+            if (_guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+                // For now we only need to cleanup the nvp specific portgroups
+                // on the standard switches
+                return new Answer(cmd, true, "Nothing to do");
+            }
+
+            s_logger.debug("Cleaning up portgroup " + cmd.getNicUuid() + " on switch "
+                    + _guestTrafficInfo.getVirtualSwitchName());
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost host = getHyperHost(context);
+            ManagedObjectReference clusterMO = host.getHyperHostCluster();
+
+            // Get a list of all the hosts in this cluster
+            @SuppressWarnings("unchecked")
+            List<ManagedObjectReference> hosts = (List<ManagedObjectReference>) context.getVimClient()
+            .getDynamicProperty(clusterMO, "host");
+            if (hosts == null) {
+                return new Answer(cmd, false, "No hosts in cluster, which is pretty weird");
+            }
+
+            for (ManagedObjectReference hostMOR : hosts) {
+                HostMO hostMo = new HostMO(context, hostMOR);
+                hostMo.deletePortGroup(cmd.getNicUuid().toString());
+                s_logger.debug("Removed portgroup " + cmd.getNicUuid() + " from host " + hostMo.getHostName());
+            }
+            return new Answer(cmd, true, "Unregistered resources for NIC " + cmd.getNicUuid());
         } catch (Exception e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
