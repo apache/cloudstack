@@ -2669,7 +2669,7 @@ ServerResource {
         return command.execute();
     }
 
-    private synchronized Answer execute(MigrateCommand cmd) {
+    private Answer execute(MigrateCommand cmd) {
         String vmName = cmd.getVmName();
 
         State state = null;
@@ -3267,7 +3267,7 @@ ServerResource {
         }
     }
 
-    protected synchronized StartAnswer execute(StartCommand cmd) {
+    protected StartAnswer execute(StartCommand cmd) {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         vmSpec.setVncAddr(cmd.getHostIp());
         String vmName = vmSpec.getName();

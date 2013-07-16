@@ -580,7 +580,7 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
-    protected synchronized Answer execute(final SavePasswordCommand cmd) {
+    protected Answer execute(final SavePasswordCommand cmd) {
         final String password = cmd.getPassword();
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmName = cmd.getVmName();
@@ -596,7 +596,7 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
-    protected synchronized Answer execute (final DhcpEntryCommand cmd) {
+    protected Answer execute (final DhcpEntryCommand cmd) {
         final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
         command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
         if (cmd.getVmIpAddress() != null) {
@@ -866,7 +866,7 @@ public class VirtualRoutingResource implements Manager {
 
 
 
-    public synchronized String savePassword(final String privateIpAddress, final String vmIpAddress, final String password, final String localPath) {
+    public String savePassword(final String privateIpAddress, final String vmIpAddress, final String password, final String localPath) {
         final Script command  = new Script(_savepasswordPath, _startTimeout, s_logger);
         command.add("-r", privateIpAddress);
         command.add("-v", vmIpAddress);
