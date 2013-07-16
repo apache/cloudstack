@@ -22,10 +22,10 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+
 
 @APICommand(name = "cleanVMReservations", description = "Cleanups VM reservations in the database.", responseObject = SuccessResponse.class)
 public class CleanVMReservationsCmd extends BaseAsyncCmd {
@@ -49,7 +49,7 @@ public class CleanVMReservationsCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
