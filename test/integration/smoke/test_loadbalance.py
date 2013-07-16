@@ -188,17 +188,17 @@ class TestLoadBalance(cloudstackTestCase):
         cleanup_resources(cls.api_client, cls._cleanup)
         return
 
-    def try_ssh(self, src_nat_ip_addr, hostnames):
+    def try_ssh(self, ip_addr, hostnames):
         try:
             self.debug(
                 "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
-                (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
+                (self.vm_1.ipaddress, ip_addr)
             )
            # If Round Robin Algorithm is chosen,
             # each ssh command should alternate between VMs
 
             ssh_1  = remoteSSHClient(
-                src_nat_ip_addr.ipaddress,
+                ip_addr,
                 self.services['lbrule']["publicport"],
                 self.vm_1.username,
                 self.vm_1.password
@@ -207,7 +207,7 @@ class TestLoadBalance(cloudstackTestCase):
             self.debug(hostnames)
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
-                                    (e, src_nat_ip_addr.ipaddress))
+                                    (e, ip_addr))
         time.sleep(self.services["lb_switch_wait"])
         return
 
