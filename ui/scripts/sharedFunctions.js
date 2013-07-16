@@ -134,6 +134,518 @@ var lbProviderMap = {
   }
 };
 
+//Add Guest Network in Advanced zone (for root-admin only)
+var addGuestNetworkDialog = {
+  zoneObjs: [],   
+  physicalNetworkObjs: [],
+  networkOfferingObjs: [],
+  def: {
+    label: 'label.add.guest.network',
+
+    messages: {     
+      notification: function(args) {
+        return 'label.add.guest.network';
+      }
+    },
+
+    preFilter: function(args) {      
+      if(isAdmin()) 
+        return true;     
+      else
+        return false;      
+    },
+    
+    createForm: {
+      title: 'label.add.guest.network',  //Add Shared Network in advanced zone
+
+      preFilter: function(args) {   
+        if('zones' in args.context) {//Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
+          args.$form.find('.form-item[rel=zoneId]').hide();
+          args.$form.find('.form-item[rel=physicalNetworkId]').hide();
+        }
+        else {//Network menu > guest network section > add guest network dialog
+          args.$form.find('.form-item[rel=zoneId]').css('display', 'inline-block');
+          args.$form.find('.form-item[rel=physicalNetworkId]').css('display', 'inline-block');
+        }  
+      },
+      
+      fields: {
+        name: {
+          docID: 'helpGuestNetworkZoneName',
+          label: 'label.name',
+          validation: { required: true }
+        },
+        description: {
+          label: 'label.description',
+          docID: 'helpGuestNetworkZoneDescription',
+          validation: { required: true }
+        },        
+        
+        zoneId: {
+          label: 'label.zone',
+          validation: { required: true },
+          docID: 'helpGuestNetworkZone',
+          select: function(args) {   
+            if('zones' in args.context) {//Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
+              addGuestNetworkDialog.zoneObjs = args.context.zones; //i.e. only one zone entry
+            }
+            else {//Network menu > guest network section > add guest network dialog
+              $.ajax({
+                url: createURL('listZones'),
+                async: false,
+                success: function(json) {
+                  addGuestNetworkDialog.zoneObjs = []; //reset                   
+                  var items = json.listzonesresponse.zone;
+                  if(items != null) {
+                    for(var i = 0; i < items.length; i++) {
+                      if(items[i].networktype == 'Advanced') {
+                        addGuestNetworkDialog.zoneObjs.push(items[i]);
+                      }
+                    }
+                  }                     
+                }
+              });
+            }              
+            args.response.success({
+              data: $.map(addGuestNetworkDialog.zoneObjs, function(zone) {
+                return {
+                  id: zone.id,
+                  description: zone.name
+                };
+              })
+            });    
+          },
+          isHidden: true
+        },   
+        
+        physicalNetworkId: {
+          label: 'label.physical.network',
+          dependsOn: 'zoneId',
+          select: function(args) {   
+            if('physicalNetworks' in args.context) {
+              addGuestNetworkDialog.physicalNetworkObjs = args.context.physicalNetworks;
+            }
+            else {
+              var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
+              $.ajax({
+                url: createURL('listPhysicalNetworks'),
+                data: {
+                  zoneid: selectedZoneId
+                },
+                async: false,
+                success: function(json) {               
+                  addGuestNetworkDialog.physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;                  
+                }
+              });
+            }        
+            var items = [];
+            if(addGuestNetworkDialog.physicalNetworkObjs != null) {
+              for(var i = 0; i < addGuestNetworkDialog.physicalNetworkObjs.length; i++) {
+                items.push({ id: addGuestNetworkDialog.physicalNetworkObjs[i].id, description: addGuestNetworkDialog.physicalNetworkObjs[i].name });
+              }
+            }
+            args.response.success({data: items});            
+          },
+          isHidden: true
+        },
+        
+        vlanId: {
+          label: 'label.vlan.id',
+          docID: 'helpGuestNetworkZoneVLANID'
+        },
+        isolatedpvlanId: {
+          label: 'Secondary Isolated VLAN ID'                           
+        },
+        
+        scope: {
+          label: 'label.scope',
+          docID: 'helpGuestNetworkZoneScope',
+          select: function(args) {
+            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
+            var selectedZoneObj = {};
+            if(addGuestNetworkDialog.zoneObjs != null && selectedZoneId != "") {
+              for(var i = 0; i < addGuestNetworkDialog.zoneObjs.length; i++) {
+                if(addGuestNetworkDialog.zoneObjs[i].id == selectedZoneId) {
+                  selectedZoneObj = addGuestNetworkDialog.zoneObjs[i];
+                  break;
+                }
+              }
+            }      
+                        
+            var array1 = [];                              
+            if(selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled == true) {                                
+              array1.push({id: 'zone-wide', description: 'All'});
+            }
+            else {                              
+              array1.push({id: 'zone-wide', description: 'All'});
+              array1.push({id: 'domain-specific', description: 'Domain'});
+              array1.push({id: 'account-specific', description: 'Account'});
+              array1.push({id: 'project-specific', description: 'Project'});
+            }
+            args.response.success({data: array1});
+
+            args.$select.change(function() {
+              var $form = $(this).closest('form');
+              if($(this).val() == "zone-wide") {
+                $form.find('.form-item[rel=domainId]').hide();
+                $form.find('.form-item[rel=subdomainaccess]').hide();
+                $form.find('.form-item[rel=account]').hide();
+                $form.find('.form-item[rel=projectId]').hide();
+              }
+              else if ($(this).val() == "domain-specific") {
+                $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                $form.find('.form-item[rel=subdomainaccess]').css('display', 'inline-block');
+                $form.find('.form-item[rel=account]').hide();
+                $form.find('.form-item[rel=projectId]').hide();
+              }
+              else if($(this).val() == "account-specific") {
+                $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                $form.find('.form-item[rel=subdomainaccess]').hide();
+                $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                $form.find('.form-item[rel=projectId]').hide();
+              }
+              else if($(this).val() == "project-specific") {
+                $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                $form.find('.form-item[rel=subdomainaccess]').hide();
+                $form.find('.form-item[rel=account]').hide();
+                $form.find('.form-item[rel=projectId]').css('display', 'inline-block');
+              }
+            });
+          }
+        },
+        domainId: {
+          label: 'label.domain',
+          validation: { required: true },
+          select: function(args) {
+            var items = [];
+            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
+            var selectedZoneObj = {};
+            if(addGuestNetworkDialog.zoneObjs != null && selectedZoneId != "") {
+              for(var i = 0; i < addGuestNetworkDialog.zoneObjs.length; i++) {
+                if(addGuestNetworkDialog.zoneObjs[i].id == selectedZoneId) {
+                  selectedZoneObj = addGuestNetworkDialog.zoneObjs[i];
+                  break;
+                }
+              }
+            }            
+            if(selectedZoneObj.domainid != null) { //list only domains under selectedZoneObj.domainid
+              $.ajax({
+                url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true"),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                  var domainObjs = json.listdomainchildrenresponse.domain;
+                  $(domainObjs).each(function() {
+                    items.push({id: this.id, description: this.path});
+                  });
+                }
+              });
+              $.ajax({
+                url: createURL("listDomains&id=" + selectedZoneObj.domainid),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                  var domainObjs = json.listdomainsresponse.domain;
+                  $(domainObjs).each(function() {
+                    items.push({id: this.id, description: this.path});
+                  });
+                }
+              });
+            }
+            else { //list all domains
+              $.ajax({
+                url: createURL("listDomains&listAll=true"),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                  var domainObjs = json.listdomainsresponse.domain;
+                  $(domainObjs).each(function() {
+                    items.push({id: this.id, description: this.path});
+                  });
+                }
+              });
+            }
+            args.response.success({data: items});
+          }
+        },
+        subdomainaccess: {
+          label: 'label.subdomain.access', isBoolean: true, isHidden: true,
+        },
+        account: { label: 'label.account' },
+
+        projectId: {
+          label: 'label.project',
+          validation: { required: true },
+          select: function(args) {
+            var items = [];
+            $.ajax({
+              url: createURL("listProjects&listAll=true"),
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                projectObjs = json.listprojectsresponse.project;
+                $(projectObjs).each(function() {
+                  items.push({id: this.id, description: this.name});
+                });
+              }
+            });
+            args.response.success({data: items});
+          }
+        },
+        
+        networkOfferingId: {
+          label: 'label.network.offering',
+          docID: 'helpGuestNetworkZoneNetworkOffering',
+          dependsOn: 'scope',
+          select: function(args) {   
+            var data = {
+              state: 'Enabled',
+              zoneid: args.$form.find('.form-item[rel=zoneId]').find('select').val()
+            };
+                        
+            var selectedPhysicalNetworkObj = [];
+            var selectedPhysicalNetworkId = args.$form.find('.form-item[rel=physicalNetworkId]').find('select').val();
+            if(addGuestNetworkDialog.physicalNetworkObjs != null) {
+              for(var i = 0; i < addGuestNetworkDialog.physicalNetworkObjs.length; i++) {
+                if(addGuestNetworkDialog.physicalNetworkObjs[i].id == selectedPhysicalNetworkId) {
+                  selectedPhysicalNetworkObj = addGuestNetworkDialog.physicalNetworkObjs[i];
+                  break;
+                }
+              }
+            }     
+            if(selectedPhysicalNetworkObj.tags != null && selectedPhysicalNetworkObj.tags.length > 0) {
+              $.extend(data, {
+                tags: selectedPhysicalNetworkObj.tags
+              });              
+            }            
+            
+            //Network tab in Guest Traffic Type in Infrastructure menu is only available when it's under Advanced zone.
+            //zone dropdown in add guest network dialog includes only Advanced zones.  
+            if(args.scope == "zone-wide" || args.scope == "domain-specific") {
+              $.extend(data, {
+                guestiptype: 'Shared'
+              });
+            }
+
+            var items= [];             
+            $.ajax({
+              url: createURL('listNetworkOfferings'),
+              data: data,
+              async: false,
+              success: function(json) {        
+                addGuestNetworkDialog.networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                if (addGuestNetworkDialog.networkOfferingObjs != null && addGuestNetworkDialog.networkOfferingObjs.length > 0) {                  
+                  var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
+                  var selectedZoneObj = {};
+                  if(addGuestNetworkDialog.zoneObjs != null && selectedZoneId != "") {
+                    for(var i = 0; i < addGuestNetworkDialog.zoneObjs.length; i++) {
+                      if(addGuestNetworkDialog.zoneObjs[i].id == selectedZoneId) {
+                        selectedZoneObj = addGuestNetworkDialog.zoneObjs[i];
+                        break;
+                      }
+                    }
+                  }     
+                  for (var i = 0; i < addGuestNetworkDialog.networkOfferingObjs.length; i++) {    
+                    //for zone-wide network in Advanced SG-enabled zone, list only SG network offerings 
+                    if(selectedZoneObj.networktype == 'Advanced' && selectedZoneObj.securitygroupsenabled == true) {                                    
+                      if(args.scope == "zone-wide") { 
+                        var includingSecurityGroup = false;
+                        var serviceObjArray = addGuestNetworkDialog.networkOfferingObjs[i].service;
+                        for(var k = 0; k < serviceObjArray.length; k++) {                                           
+                          if(serviceObjArray[k].name == "SecurityGroup") {
+                            includingSecurityGroup = true;
+                            break;
+                          }
+                        }
+                        if(includingSecurityGroup == false)
+                          continue; //skip to next network offering
+                      }
+                    }                    
+                    items.push({id: addGuestNetworkDialog.networkOfferingObjs[i].id, description: addGuestNetworkDialog.networkOfferingObjs[i].displaytext});
+                  }
+                }
+              }
+            });            
+            args.response.success({data: items});
+
+            args.$select.change(function(){
+              var $form = $(this).closest("form");
+              var selectedNetworkOfferingId = $(this).val();
+              $(addGuestNetworkDialog.networkOfferingObjs).each(function(){
+                if(this.id == selectedNetworkOfferingId) {                                    
+                  if(this.specifyvlan == false) {
+                    $form.find('.form-item[rel=vlanId]').hide();
+                    cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=vlanId]')); //make vlanId optional  
+                    
+                    $form.find('.form-item[rel=isolatedpvlanId]').hide();
+                  }
+                  else {
+                    $form.find('.form-item[rel=vlanId]').css('display', 'inline-block');                                      
+                    cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=vlanId]'));    //make vlanId required  
+                    
+                    $form.find('.form-item[rel=isolatedpvlanId]').css('display', 'inline-block');             
+                  }
+                  return false; //break each loop
+                }
+              });
+            });
+          }
+        },
+
+        //IPv4 (begin)
+        ip4gateway: {
+          label: 'IPv4 Gateway',
+          docID: 'helpGuestNetworkZoneGateway'
+        },
+        ip4Netmask: {
+          label: 'IPv4 Netmask',
+          docID: 'helpGuestNetworkZoneNetmask'
+        },
+        startipv4: { 
+          label: 'IPv4 Start IP',               
+          docID: 'helpGuestNetworkZoneStartIP'
+        },
+        endipv4: { 
+          label: 'IPv4 End IP',               
+          docID: 'helpGuestNetworkZoneEndIP'
+        },
+        //IPv4 (end)
+        
+        //IPv6 (begin)
+        ip6gateway: {
+          label: 'IPv6 Gateway',
+          docID: 'helpGuestNetworkZoneGateway'
+        },
+        ip6cidr: {
+          label: 'IPv6 CIDR'
+        },
+        startipv6: { 
+          label: 'IPv6 Start IP',               
+          docID: 'helpGuestNetworkZoneStartIP'
+        },
+        endipv6: { 
+          label: 'IPv6 End IP',               
+          docID: 'helpGuestNetworkZoneEndIP'
+        },
+        //IPv6 (end)
+
+        networkdomain: {
+          label: 'label.network.domain',
+          docID: 'helpGuestNetworkZoneNetworkDomain'
+        }
+      }
+    },
+
+    action: function(args) { //Add guest network in advanced zone                       
+      if (
+        ((args.data.ip4gateway.length == 0) && (args.data.ip4Netmask.length == 0) && (args.data.startipv4.length == 0) && (args.data.endipv4.length == 0))
+        && 
+        ((args.data.ip6gateway.length == 0) && (args.data.ip6cidr.length == 0) && (args.data.startipv6.length == 0) && (args.data.endipv6.length == 0))
+      )
+      {
+        args.response.error("Either IPv4 fields or IPv6 fields need to be filled when adding a guest network");
+        return;
+      }
+    
+      var $form = args.$form;
+
+      var array1 = [];  
+      array1.push("&zoneId=" + args.data.zoneId);
+      array1.push("&networkOfferingId=" + args.data.networkOfferingId);
+
+      //Pass physical network ID to createNetwork API only when network offering's guestiptype is Shared.
+      var selectedNetworkOfferingObj;
+      if(addGuestNetworkDialog.networkOfferingObjs != null) {
+        for(var i = 0; i < addGuestNetworkDialog.networkOfferingObjs.length; i++) {
+          if(addGuestNetworkDialog.networkOfferingObjs[i].id == args.data.networkOfferingId) {
+            selectedNetworkOfferingObj = addGuestNetworkDialog.networkOfferingObjs[i]
+            break;
+          }
+        }
+      }
+      
+      if(selectedNetworkOfferingObj.guestiptype == "Shared")
+        array1.push("&physicalnetworkid=" + args.data.physicalNetworkId);
+
+      array1.push("&name=" + todb(args.data.name));
+      array1.push("&displayText=" + todb(args.data.description));
+
+      if(($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0))
+        array1.push("&vlan=" + todb(args.data.vlanId));
+      
+      if(($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0))
+        array1.push("&isolatedpvlan=" + todb(args.data.isolatedpvlanId));
+                              
+      if($form.find('.form-item[rel=domainId]').css("display") != "none") {
+        array1.push("&domainId=" + args.data.domainId);
+
+        if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+          array1.push("&account=" + args.data.account);
+          array1.push("&acltype=account");
+        }
+        else if($form.find('.form-item[rel=projectId]').css("display") != "none") {  //project-specific
+          array1.push("&projectid=" + args.data.projectId);
+          array1.push("&acltype=account");                            
+        }
+        else {  //domain-specific
+          array1.push("&acltype=domain");
+
+          if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
+            array1.push("&subdomainaccess=true");
+          else
+            array1.push("&subdomainaccess=false");
+        }
+      }
+      else { //zone-wide
+        array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
+      }
+
+      //IPv4 (begin)
+      if(args.data.ip4gateway != null && args.data.ip4gateway.length > 0)
+        array1.push("&gateway=" + args.data.ip4gateway);
+      if(args.data.ip4Netmask != null && args.data.ip4Netmask.length > 0)
+        array1.push("&netmask=" + args.data.ip4Netmask);
+      if(($form.find('.form-item[rel=startipv4]').css("display") != "none") && (args.data.startipv4 != null && args.data.startipv4.length > 0))
+        array1.push("&startip=" + args.data.startipv4);
+      if(($form.find('.form-item[rel=endipv4]').css("display") != "none") && (args.data.endipv4 != null && args.data.endipv4.length > 0))
+        array1.push("&endip=" + args.data.endipv4);
+      //IPv4 (end)
+      
+      //IPv6 (begin)
+      if(args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
+        array1.push("&ip6gateway=" + args.data.ip6gateway);
+      if(args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
+        array1.push("&ip6cidr=" + args.data.ip6cidr);
+      if(($form.find('.form-item[rel=startipv6]').css("display") != "none") && (args.data.startipv6 != null && args.data.startipv6.length > 0))
+        array1.push("&startipv6=" + args.data.startipv6);
+      if(($form.find('.form-item[rel=endipv6]').css("display") != "none") && (args.data.endipv6 != null && args.data.endipv6.length > 0))
+        array1.push("&endipv6=" + args.data.endipv6);
+      //IPv6 (end)
+      
+      if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+        array1.push("&networkdomain=" + todb(args.data.networkdomain));
+
+      $.ajax({
+        url: createURL("createNetwork" + array1.join("")),
+        dataType: "json",
+        success: function(json) {
+          var item = json.createnetworkresponse.network;
+          args.response.success({data:item});
+        },
+        error: function(XMLHttpResponse) {
+          var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+          args.response.error(errorMsg);
+        }
+      });
+    },
+    notification: {
+      poll: function(args) {
+        args.complete();
+      }
+    }
+  }    
+}
+  
 
 // Role Functions
 function isAdmin() {

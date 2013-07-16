@@ -550,7 +550,10 @@
               messages: {
                 notification: function() { return 'Add Isolated Guest Network'; }
               }
-            }
+            },
+            
+            rootAdminAddGuestNetwork: $.extend( {}, addGuestNetworkDialog.def, {isHeader: true} )
+            
           },
           id: 'networks',
           fields: {
