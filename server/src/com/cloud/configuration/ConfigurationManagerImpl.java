@@ -2831,6 +2831,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     ip6Gateway = network.getIp6Gateway();
                     ip6Cidr = network.getIp6Cidr();
                     _networkModel.checkIp6Parameters(startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                    sameSubnet = true;
                 }
             }
         }
@@ -2846,7 +2847,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             vlanDetails = new Pair<String, String>(newVlanGateway, newVlanNetmask);
         }
         // check if the gatewayip is the part of the ip range being added.
-        if (NetUtils.ipRangesOverlap(startIP, endIP, vlanDetails.first(), vlanDetails.first())) {
+        if (ipv4 && NetUtils.ipRangesOverlap(startIP, endIP, vlanDetails.first(), vlanDetails.first())) {
             throw new InvalidParameterValueException(
                     "The gateway ip should not be the part of the ip range being added.");
         }

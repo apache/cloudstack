@@ -2004,8 +2004,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
                     element instanceof DhcpServiceProvider) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
-                if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
-                     return false;
+                if (profile.getIp6Address() == null) {
+                    if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
+                        return false;
+                    }
                 }
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
