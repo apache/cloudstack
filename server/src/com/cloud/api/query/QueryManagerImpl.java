@@ -2694,7 +2694,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
-        SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
+        SearchCriteria<TemplateJoinVO> sc = sb.create();
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
