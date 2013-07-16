@@ -62,7 +62,7 @@ class Services:
                                     "protocol": 'TCP',
                                 },
                          "netscaler": {
-                                "ipaddress": '192.168.100.213',
+                                "ipaddress": '10.147.60.27',
                                 "username": 'nsroot',
                                 "password": 'nsroot',
                                 "networkdevicetype": 'NetscalerVPXLoadBalancer',
