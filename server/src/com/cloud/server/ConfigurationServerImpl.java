@@ -235,7 +235,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             	Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
             	if (devel) {
             		String value = _configDao.getValue(Config.ManagementHostIPAdr.key());
-            		if (value != null) {
+            		if (value != null && !value.equals("localhost")) {
             			needUpdateHostIp = false;
             		}
             	}
