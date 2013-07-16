@@ -820,7 +820,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
         } else if (type == Resource.ResourceType.volume) {
             newCount = _volumeDao.countAllocatedVolumesForAccount(accountId);
-            long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
+            long virtualRouterCount = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId).size();
             newCount = newCount - virtualRouterCount; // don't count the volumes of virtual router
         } else if (type == Resource.ResourceType.snapshot) {
             newCount = _snapshotDao.countSnapshotsForAccount(accountId);
@@ -839,7 +839,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else if (type == Resource.ResourceType.memory) {
             newCount = calculateMemoryForAccount(accountId);
         } else if (type == Resource.ResourceType.primary_storage) {
-            newCount = _volumeDao.primaryStorageUsedForAccount(accountId);
+            List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
+            newCount = _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
         } else if (type == Resource.ResourceType.secondary_storage) {
             newCount = calculateSecondaryStorageForAccount(accountId);
         } else {

@@ -318,7 +318,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         primaryStorageSearch = createSearchBuilder(SumCount.class);
         primaryStorageSearch.select("sum", Func.SUM, primaryStorageSearch.entity().getSize());
         primaryStorageSearch.and("accountId", primaryStorageSearch.entity().getAccountId(), Op.EQ);
-        primaryStorageSearch.and("path", primaryStorageSearch.entity().getPath(), Op.NNULL);
+        primaryStorageSearch.and("virtualRouterVmIds", primaryStorageSearch.entity().getInstanceId(), Op.NIN);
+        primaryStorageSearch.and().op("path", primaryStorageSearch.entity().getPath(), Op.NNULL);
+        primaryStorageSearch.or("states", primaryStorageSearch.entity().getState(), Op.IN);
+        primaryStorageSearch.cp();
         primaryStorageSearch.and("isRemoved", primaryStorageSearch.entity().getRemoved(), Op.NULL);
         primaryStorageSearch.done();
 
@@ -326,6 +329,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         secondaryStorageSearch.select("sum", Func.SUM, secondaryStorageSearch.entity().getSize());
         secondaryStorageSearch.and("accountId", secondaryStorageSearch.entity().getAccountId(), Op.EQ);
         secondaryStorageSearch.and("path", secondaryStorageSearch.entity().getPath(), Op.NULL);
+        secondaryStorageSearch.and("states", secondaryStorageSearch.entity().getState(), Op.NIN);
         secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
         secondaryStorageSearch.done();
     }
@@ -349,9 +353,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public long primaryStorageUsedForAccount(long accountId) {
+    public long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters) {
         SearchCriteria<SumCount> sc = primaryStorageSearch.create();
         sc.setParameters("accountId", accountId);
+        if (!virtualRouters.isEmpty()) {
+            sc.setParameters("virtualRouterVmIds", virtualRouters.toArray(new Object[virtualRouters.size()]));
+        }
+        sc.setParameters("states", State.Allocated);
         List<SumCount> storageSpace = customSearch(sc, null);
         if (storageSpace != null) {
             return storageSpace.get(0).sum;
@@ -364,6 +372,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public long secondaryStorageUsedForAccount(long accountId) {
         SearchCriteria<SumCount> sc = secondaryStorageSearch.create();
         sc.setParameters("accountId", accountId);
+        sc.setParameters("states", State.Allocated);
         List<SumCount> storageSpace = customSearch(sc, null);
         if (storageSpace != null) {
             return storageSpace.get(0).sum;

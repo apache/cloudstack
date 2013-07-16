@@ -79,7 +79,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostUpSearch;
     protected SearchBuilder<VMInstanceVO> InstanceNameSearch;
     protected SearchBuilder<VMInstanceVO> HostNameSearch;
-    protected GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
@@ -197,12 +197,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostNameSearch.and("hostName", HostNameSearch.entity().getHostName(), Op.EQ);
         HostNameSearch.done();
 
-        CountVirtualRoutersByAccount = createSearchBuilder(Long.class);
-        CountVirtualRoutersByAccount.select(null, Func.COUNT, null);
-        CountVirtualRoutersByAccount.and("account", CountVirtualRoutersByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
-        CountVirtualRoutersByAccount.and("type", CountVirtualRoutersByAccount.entity().getType(), SearchCriteria.Op.EQ);
-        CountVirtualRoutersByAccount.and("state", CountVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);
-        CountVirtualRoutersByAccount.done();
+        FindIdsOfVirtualRoutersByAccount = createSearchBuilder(Long.class);
+        FindIdsOfVirtualRoutersByAccount.selectField(FindIdsOfVirtualRoutersByAccount.entity().getId());
+        FindIdsOfVirtualRoutersByAccount.and("account", FindIdsOfVirtualRoutersByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        FindIdsOfVirtualRoutersByAccount.and("type", FindIdsOfVirtualRoutersByAccount.entity().getType(), SearchCriteria.Op.EQ);
+        FindIdsOfVirtualRoutersByAccount.and("state", FindIdsOfVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        FindIdsOfVirtualRoutersByAccount.done();
 
         CountRunningByHost = createSearchBuilder(Long.class);
         CountRunningByHost.select(null, Func.COUNT, null);
@@ -441,12 +441,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 	}
 
     @Override
-    public Long countAllocatedVirtualRoutersForAccount(long accountId) {
-    	SearchCriteria<Long> sc = CountVirtualRoutersByAccount.create();
+    public List<Long> findIdsOfAllocatedVirtualRoutersForAccount(long accountId) {
+        SearchCriteria<Long> sc = FindIdsOfVirtualRoutersByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("type", VirtualMachine.Type.DomainRouter);
-		sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
-        return customSearch(sc, null).get(0);
+        sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        return customSearch(sc, null);
     }
 
     @Override
