@@ -21,8 +21,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.utils.Pair;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
@@ -33,6 +31,9 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
 
 public class DatastoreMO extends BaseMO {
 	private static final Logger s_logger = Logger.getLogger(DatastoreMO.class);
@@ -48,7 +49,8 @@ public class DatastoreMO extends BaseMO {
 		super(context, morType, morValue);
 	}
 
-	public String getName() throws Exception {
+	@Override
+    public String getName() throws Exception {
 		if(_name == null)
 			_name = (String)_context.getVimClient().getDynamicProperty(_mor, "name");
 
@@ -131,10 +133,15 @@ public class DatastoreMO extends BaseMO {
 		String fullPath = path;
 		if(!DatastoreFile.isFullDatastorePath(fullPath))
 			fullPath = String.format("[%s] %s", datastoreName, path);
+        DatastoreFile file = new DatastoreFile(fullPath);
+        // Test if file specified is null or empty. We don't need to attempt to delete and return success.
+        if (file.getFileName() == null || file.getFileName().isEmpty()) {
+            return true;
+        }
 
 		try {
 			if(testExistence && !fileExists(fullPath)) {
-                String searchResult = searchFileInSubFolders(fullPath.split(" ")[1], true);
+                String searchResult = searchFileInSubFolders(file.getFileName(), true);
                 if (searchResult == null) {
                     return true;
                 } else {
