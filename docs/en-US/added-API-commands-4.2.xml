@@ -118,20 +118,345 @@
         key/value pairs)</para>
     </listitem>
     <listitem>
-      <para>createPortableIpAddressRange</para>
-      <para>Creates portable IP addresses from the portable public IP address pool.</para>
+      <para>createPortableIpRange</para>
+      <para>Creates portable IP addresses in the portable public IP address pool.</para>
       <para>The request parameters are region id, start ip, end ip, netmask, gateway, and
         vlan.</para>
     </listitem>
     <listitem>
-      <para>deletePortableIpAddressRange</para>
+      <para>deletePortableIpRange</para>
       <para>Deletes portable IP addresses from the portable public IP address pool.</para>
       <para>The request parameters is portable ip address range id.</para>
     </listitem>
     <listitem>
-      <para>createPortableIpAddressRange</para>
-      <para>Lists portable IP addresses in the portable public IP address pool.</para>
+      <para>listPortableIpRange</para>
+      <para>Lists portable IP addresses in the portable public IP address pool associated with a
+        Region.</para>
       <para>The request parameters are elastic ip id and region id.</para>
+    </listitem>
+    <listitem>
+      <para>createVMSnapshot (create a virtual machine snapshot)</para>
+    </listitem>
+    <listitem>
+      <para>deleteVMSnapshot (delete a virtual machine snapshot)</para>
+    </listitem>
+    <listitem>
+      <para>listVMSnapshot (show a virtual machine snapshot)</para>
+    </listitem>
+    <listitem>
+      <para>revertToVMSnapshot (return a virtual machine to the state and data saved in a given
+        snapshot)</para>
+    </listitem>
+    <listitem>
+      <para>createLBHealthCheckPolicy (creates a new health check policy for a load balancer rule;
+        see <xref linkend="health-check"/>)</para>
+    </listitem>
+    <listitem>
+      <para>deleteLBHealthCheckPolicy (deletes an existing health check policy from a load balancer
+        rule)</para>
+    </listitem>
+    <listitem>
+      <para>listLBHealthCheckPolicies (displays the health check policy for a load balancer
+        rule)</para>
+    </listitem>
+    <listitem>
+      <para>createEgressFirewallRules (creates an egress firewall rule on the guest network; see
+          <xref linkend="egress-firewall"/>)</para>
+    </listitem>
+    <listitem>
+      <para>deleteEgressFirewallRules (deletes a egress firewall rule on the guest network.)</para>
+    </listitem>
+    <listitem>
+      <para>listEgressFirewallRules (lists the egress firewall rules configured for a guest
+        network.)</para>
+    </listitem>
+    <listitem>
+      <para>resetSSHKeyForVirtualMachine (Resets the SSHkey for virtual machine.)</para>
+    </listitem>
+    <listitem>
+      <para>addBaremetalHost (Adds a new host. Technically, this API command was present in v3.0.6,
+        but its functionality was disabled. See <xref linkend="baremetal"/>)</para>
+    </listitem>
+    <listitem>
+      <para>addBaremetalDhcp (Adds a DHCP server for bare metal hosts)</para>
+    </listitem>
+    <listitem>
+      <para> addBaremetalPxePingServer (Adds a PXE PING server for bare metal hosts)</para>
+    </listitem>
+    <listitem>
+      <para> addBaremetalPxeKickStartServer (Adds a PXE server for bare metal hosts)</para>
+    </listitem>
+    <listitem>
+      <para> listBaremetalDhcp (Shows the DHCP servers currently defined for bare metal
+        hosts)</para>
+    </listitem>
+    <listitem>
+      <para> listBaremetalPxePingServer (Shows the PXE PING servers currently defined for bare metal
+        hosts)</para>
+    </listitem>
+    <listitem>
+      <para>addNicToVirtualMachine (Adds a new NIC to the specified VM on a selected network; see
+          <xref linkend="multiple-ip-nic"/>)</para>
+    </listitem>
+    <listitem>
+      <para>removeNicFromVirtualMachine (Removes the specified NIC from a selected VM.)</para>
+    </listitem>
+    <listitem>
+      <para>updateDefaultNicForVirtualMachine (Updates the specified NIC to be the default one for a
+        selected VM.)</para>
+    </listitem>
+    <listitem>
+      <para>addRegion (Registers a Region into another Region; see <xref linkend="regions"/>)</para>
+    </listitem>
+    <listitem>
+      <para>updateRegion (Updates Region details: ID, Name, Endpoint, User API Key, and User Secret
+        Key.)</para>
+    </listitem>
+    <listitem>
+      <para>removeRegion (Removes a Region from current Region.)</para>
+    </listitem>
+    <listitem>
+      <para>listRegions (Get all the Regions. They can be filtered by using the ID or Name.)</para>
+    </listitem>
+    <listitem>
+      <para>getUser (This API can only be used by the Admin. Get user account details by using the
+        API Key.) </para>
+    </listitem>
+    <listitem>
+      <para>getApiLimit (Show number of remaining APIs for the invoking user in current
+        window)</para>
+    </listitem>
+    <listitem>
+      <para>resetApiLimit (For root admin, if account ID parameter is passed, it will reset count
+        for that particular account, otherwise it will reset all counters)</para>
+    </listitem>
+    <listitem>
+      <para>lockAccount (Locks an account)</para>
+    </listitem>
+    <listitem>
+      <para>lockUser (Locks a user account)</para>
+    </listitem>
+    <listitem>
+      <para>scaleVirtualMachine (Scales the virtual machine to a new service offering.) </para>
+    </listitem>
+    <listitem>
+      <para>migrateVirtualMachineWithVolume (Attempts migrating VM with its volumes to a different
+        host.) </para>
+    </listitem>
+    <listitem>
+      <para>dedicatePublicIpRange (Dedicates a Public IP range to an account.) </para>
+    </listitem>
+    <listitem>
+      <para>releasePublicIpRange (Releases a Public IP range back to the system pool.) </para>
+    </listitem>
+    <listitem>
+      <para>dedicateGuestVlanRange (Dedicates a guest VLAN range to an account.) </para>
+    </listitem>
+    <listitem>
+      <para>releaseDedicatedGuestVlanRange (Releases a dedicated guest VLAN range to the system.)
+      </para>
+    </listitem>
+    <listitem>
+      <para>listDedicatedGuestVlanRanges (Lists dedicated guest VLAN ranges.) </para>
+    </listitem>
+    <listitem>
+      <para>updatePortForwardingRule (Updates a port forwarding rule. Only the private port and the
+        VM can be updated.) </para>
+    </listitem>
+    <listitem>
+      <para>scaleSystemVm (Scale the service offering for a systemVM, console proxy, or secondary
+        storage. The system VM must be in Stopped state for this command to take effect.) </para>
+    </listitem>
+    <listitem>
+      <para>listDeploymentPlanners (Lists all the deployment planners available.) </para>
+    </listitem>
+    <listitem>
+      <para>addS3 (Adds a Amazon Simple Storage Service instance.) </para>
+    </listitem>
+    <listitem>
+      <para>listS3s (Lists all the Amazon Simple Storage Service instances.) </para>
+    </listitem>
+    <listitem>
+      <para>findHostsForMigration (Find hosts suitable for migrating a VM to.) </para>
+    </listitem>
+    <listitem>
+      <para>releaseHostReservation (Releases host reservation.) </para>
+    </listitem>
+    <listitem>
+      <para>resizeVolume (Resizes a volume.) </para>
+    </listitem>
+    <listitem>
+      <para>updateVolume (Updates the volume.) </para>
+    </listitem>
+    <listitem>
+      <para>listStorageProviders (Lists storage providers.) </para>
+    </listitem>
+    <listitem>
+      <para>findStoragePoolsForMigration (Lists storage pools available for migrating a volume.)
+      </para>
+    </listitem>
+    <listitem>
+      <para>createEgressFirewallRule (Creates a egress firewall rule for a given network. ) </para>
+    </listitem>
+    <listitem>
+      <para>deleteEgressFirewallRule (Deletes an egress firewall rule.) </para>
+    </listitem>
+    <listitem>
+      <para>listEgressFirewallRules (Lists all egress firewall rules for network.) </para>
+    </listitem>
+    <listitem>
+      <para>updateNetworkACLItem (Updates ACL item with specified ID.) </para>
+    </listitem>
+    <listitem>
+      <para>createNetworkACLList (Creates a Network ACL for the given VPC.) </para>
+    </listitem>
+    <listitem>
+      <para>deleteNetworkACLList (Deletes a Network ACL.) </para>
+    </listitem>
+    <listitem>
+      <para>replaceNetworkACLList (Replaces ACL associated with a Network or private gateway.)
+      </para>
+    </listitem>
+    <listitem>
+      <para>listNetworkACLLists (Lists all network ACLs.) </para>
+    </listitem>
+    <listitem>
+      <para>addResourceDetail (Adds detail for the Resource.) </para>
+    </listitem>
+    <listitem>
+      <para>removeResourceDetail (Removes detail for the Resource.) </para>
+    </listitem>
+    <listitem>
+      <para>listResourceDetails (List resource details.) </para>
+    </listitem>
+    <listitem>
+      <para>addNiciraNvpDevice (Adds a Nicira NVP device.) </para>
+    </listitem>
+    <listitem>
+      <para>deleteNiciraNvpDevice (Deletes a Nicira NVP device.) </para>
+    </listitem>
+    <listitem>
+      <para>listNiciraNvpDevices (Lists Nicira NVP devices.) </para>
+    </listitem>
+    <listitem>
+      <para>listNiciraNvpDeviceNetworks (Lists network that are using a Nicira NVP device.) </para>
+    </listitem>
+    <listitem>
+      <para>addBigSwitchVnsDevice (Adds a BigSwitch VNS device.) </para>
+    </listitem>
+    <listitem>
+      <para>deleteBigSwitchVnsDevice (Deletes a BigSwitch VNS device.) </para>
+    </listitem>
+    <listitem>
+      <para>listBigSwitchVnsDevices (Lists BigSwitch VNS devices.) </para>
+    </listitem>
+    <listitem>
+      <para>configureSimulator (Configures a simulator.) </para>
+    </listitem>
+    <listitem>
+      <para>listApis (Lists all the available APIs on the server, provided by the API Discovery
+        plugin.) </para>
+    </listitem>
+    <listitem>
+      <para>getApiLimit (Get the API limit count for the caller.) </para>
+    </listitem>
+    <listitem>
+      <para>resetApiLimit (Reset the API count.) </para>
+    </listitem>
+    <listitem>
+      <para>assignToGlobalLoadBalancerRule (Assign load balancer rule or list of load balancer rules
+        to a global load balancer rules.) </para>
+    </listitem>
+    <listitem>
+      <para>removeFromGlobalLoadBalancerRule (Removes a load balancer rule association with global
+        load balancer rule) </para>
+    </listitem>
+    <listitem>
+      <para>listVMSnapshot (List virtual machine snapshot by conditions) </para>
+    </listitem>
+    <listitem>
+      <para>createLoadBalancer (Creates a Load Balancer) </para>
+    </listitem>
+    <listitem>
+      <para>listLoadBalancers (Lists Load Balancers) </para>
+    </listitem>
+    <listitem>
+      <para>deleteLoadBalancer (Deletes a load balancer) </para>
+    </listitem>
+    <listitem>
+      <para>configureInternalLoadBalancerElement (Configures an Internal Load Balancer element.)
+      </para>
+    </listitem>
+    <listitem>
+      <para>createInternalLoadBalancerElement (Create an Internal Load Balancer element.) </para>
+    </listitem>
+    <listitem>
+      <para>listInternalLoadBalancerElements (Lists all available Internal Load Balancer elements.)
+      </para>
+    </listitem>
+    <listitem>
+      <para>createAffinityGroup (Creates an affinity or anti-affinity group.) </para>
+    </listitem>
+    <listitem>
+      <para>deleteAffinityGroup (Deletes an affinity group.) </para>
+    </listitem>
+    <listitem>
+      <para>listAffinityGroups (Lists all the affinity groups.)</para>
+    </listitem>
+    <listitem>
+      <para>updateVMAffinityGroup (Updates the affinity or anti-affinity group associations of a VM.
+        The VM has to be stopped and restarted for the new properties to take effect.) </para>
+    </listitem>
+    <listitem>
+      <para>listAffinityGroupTypes (Lists affinity group types available.) </para>
+    </listitem>
+    <listitem>
+      <para>stopInternalLoadBalancerVM (Stops an Internal LB VM.) </para>
+    </listitem>
+    <listitem>
+      <para>startInternalLoadBalancerVM (Starts an existing Internal LB VM.) </para>
+    </listitem>
+    <listitem>
+      <para>listInternalLoadBalancerVMs (List internal LB VMs.) </para>
+    </listitem>
+    <listitem>
+      <para>listNetworkIsolationMethods (Lists supported methods of network isolation.) </para>
+    </listitem>
+    <listitem>
+      <para>dedicateZone (Dedicates a zone.) </para>
+    </listitem>
+    <listitem>
+      <para>dedicatePod (Dedicates a pod.) </para>
+    </listitem>
+    <listitem>
+      <para>dedicateCluster (Dedicate an existing cluster.) </para>
+    </listitem>
+    <listitem>
+      <para>dedicateHost (Dedicates a host.) </para>
+    </listitem>
+    <listitem>
+      <para>releaseDedicatedZone (Release dedication of zone.) </para>
+    </listitem>
+    <listitem>
+      <para>releaseDedicatedPod (Release dedication for the pod.) </para>
+    </listitem>
+    <listitem>
+      <para>releaseDedicatedCluster (Release dedication for cluster.) </para>
+    </listitem>
+    <listitem>
+      <para>releaseDedicatedHost (Release dedication for host.) </para>
+    </listitem>
+    <listitem>
+      <para>listDedicatedZones (List dedicated zones.) </para>
+    </listitem>
+    <listitem>
+      <para>listDedicatedPods (Lists dedicated pods.) </para>
+    </listitem>
+    <listitem>
+      <para>listDedicatedClusters (Lists dedicated clusters.) </para>
+    </listitem>
+    <listitem>
+      <para>listDedicatedHosts (Lists dedicated hosts.) </para>
     </listitem>
   </itemizedlist>
 </section>
