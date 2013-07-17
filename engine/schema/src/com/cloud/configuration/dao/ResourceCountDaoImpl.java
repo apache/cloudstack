@@ -98,7 +98,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     @Override 
     public void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count) {
         ResourceCountVO resourceCountVO = findByOwnerAndType(ownerId, ownerType, type);
-        if (count != resourceCountVO.getCount()) {
+        if (resourceCountVO != null && count != resourceCountVO.getCount()) {
             resourceCountVO.setCount(count);
             update(resourceCountVO.getId(), resourceCountVO);
         }
