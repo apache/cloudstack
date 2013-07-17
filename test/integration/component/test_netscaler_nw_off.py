@@ -404,7 +404,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
         physical_network = physical_networks[0]
         self.debug("Adding netscaler device: %s" %
                                     self.services["netscaler_1"]["ipaddress"])
-        netscaler = NetScaler.add(
+        netscaler_1 = NetScaler.add(
                                   self.apiclient,
                                   self.services["netscaler_1"],
                                   physicalnetworkid=physical_network.id
