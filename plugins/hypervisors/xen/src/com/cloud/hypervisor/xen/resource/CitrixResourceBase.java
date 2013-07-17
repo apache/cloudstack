@@ -3959,7 +3959,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
 
-    public void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
+    public String swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
         String lfilename;
         String ldir;
         if ( isISCSI ) {
@@ -3970,6 +3970,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             lfilename = snapshotUuid + ".vhd";
         }
         swiftUpload(conn, swift, container, ldir, lfilename, isISCSI, wait);
+        return lfilename;
     }
 
 

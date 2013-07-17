@@ -1051,7 +1051,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return result;
     }
 
-    public void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
+    public String swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
         String lfilename;
         String ldir;
         if ( isISCSI ) {
@@ -1062,6 +1062,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             lfilename = snapshotUuid + ".vhd";
         }
         swiftUpload(conn, swift, container, ldir, lfilename, isISCSI, wait);
+        return lfilename;
     }
 
     private static List<String> serializeProperties(final Object object,
@@ -1280,6 +1281,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             DataStoreTO destStore = destData.getDataStore();
             String folder = destPath;
+            String finalPath = null;
             if (fullbackup) {
                 // the first snapshot is always a full snapshot
 
@@ -1297,11 +1299,14 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
                     if( destStore instanceof SwiftTO) {
                         try {
-                            hypervisorResource.swiftBackupSnapshot(conn, (SwiftTO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, "S-" + snapshotTO.getVolume().getVolumeId().toString(), false, wait);
-                            snapshotBackupUuid = snapshotBackupUuid + ".vhd";
+                            String container = "S-" + snapshotTO.getVolume().getVolumeId().toString();
+                            snapshotBackupUuid = swiftBackupSnapshot(conn, (SwiftTO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, container, false, wait);
+                            String swiftPath = container + File.separator + snapshotBackupUuid;
+                            finalPath = container + File.separator + swiftPath;
                         } finally {
                             deleteSnapshotBackup(conn, folder, secondaryStorageMountPath, snapshotBackupUuid);
                         }
+
                     } else if (destStore instanceof S3TO) {
                         try {
                             backupSnapshotToS3(conn, (S3TO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, isISCSI, wait);
@@ -1309,6 +1314,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
                         } finally {
                             deleteSnapshotBackup(conn, folder, secondaryStorageMountPath, snapshotBackupUuid);
                         }
+                        finalPath = folder + File.separator + snapshotBackupUuid;
+                    } else {
+                        finalPath = folder + File.separator + snapshotBackupUuid;
                     }
 
                 } finally {
@@ -1319,26 +1327,23 @@ public class XenServerStorageProcessor implements StorageProcessor {
             } else {
                 String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
                 if( destStore instanceof SwiftTO ) {
-                    swiftBackupSnapshot(conn, (SwiftTO)destStore, primaryStorageSRUuid, snapshotPaUuid, "S-" + snapshotTO.getVolume().getVolumeId().toString(), isISCSI, wait);
-                    if ( isISCSI ) {
-                        snapshotBackupUuid = "VHD-" + snapshotPaUuid;
-                    } else {
-                        snapshotBackupUuid = snapshotPaUuid + ".vhd";
-                    }
-
+                    String container = "S-" + snapshotTO.getVolume().getVolumeId().toString();
+                    snapshotBackupUuid = swiftBackupSnapshot(conn, (SwiftTO)destStore, primaryStorageSRUuid, snapshotPaUuid, "S-" + snapshotTO.getVolume().getVolumeId().toString(), isISCSI, wait);
+                    finalPath = container + File.separator + snapshotBackupUuid;
                 } else if (destStore instanceof S3TO ) {
                     backupSnapshotToS3(conn, (S3TO)destStore, primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
+                    finalPath = folder + File.separator + snapshotPaUuid;
                 } else {
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, folder + File.separator + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes())
                              , secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
-
+                    finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }
             String volumeUuid = snapshotTO.getVolume().getPath();
             destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-            newSnapshot.setPath(folder + File.separator + snapshotBackupUuid);
+            newSnapshot.setPath(finalPath);
             if (fullbackup) {
                 newSnapshot.setParentSnapshotPath(null);
             } else {

@@ -212,6 +212,7 @@
         <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
         <ref bean="cloudStackImageStoreProviderImpl"/>
         <ref bean="s3ImageStoreProviderImpl"/>
+        <ref local="swiftImageStoreProviderImpl"/>
         <ref bean="solidFireDataStoreProvider"/>
       </list>
     </property>
