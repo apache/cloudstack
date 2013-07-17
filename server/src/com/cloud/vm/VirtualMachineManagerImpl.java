@@ -353,7 +353,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             HypervisorType hyperType) throws InsufficientCapacityException {
 
         VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
-        Account owner = _entityMgr.findById(Account.class, vm.getId());
+        Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
