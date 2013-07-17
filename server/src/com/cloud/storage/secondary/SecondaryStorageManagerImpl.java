@@ -419,7 +419,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
-        sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
+        sc.addAnd(sc.getEntity().getState(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
         List<HostVO> ssvms = sc.list();
         for (HostVO ssvm : ssvms) {
         	if (ssvm.getId() == ssAHostId) {
@@ -575,8 +575,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
+        secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
-            secStorageVm = _itMgr.allocate(secStorageVm, template, _serviceOffering, networks, plan, null, systemAcct);
+            _itMgr.allocate(name, template, _serviceOffering, networks, plan, null);
+            secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -890,14 +892,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, "s")) {
-            return null;
-        }
-        return VirtualMachineName.getSystemVmId(vmName);
-    }
-
-    @Override
     public boolean stopSecStorageVm(long secStorageVmId) {
         SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
         if (secStorageVm == null) {
@@ -1011,21 +1005,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public SecondaryStorageVmVO findByName(String name) {
-        if (!VirtualMachineName.isValidSecStorageVmName(name, null)) {
-            return null;
-        }
-        return findById(VirtualMachineName.getSystemVmId(name));
-    }
-
-    @Override
     public SecondaryStorageVmVO findById(long id) {
         return _secStorageVmDao.findById(id);
-    }
-
-    @Override
-    public SecondaryStorageVmVO persist(SecondaryStorageVmVO vm) {
-        return _secStorageVmDao.persist(vm);
     }
 
     @Override
@@ -1377,7 +1358,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (dcId != null) {
             sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
         }
-		sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
+        sc.addAnd(sc.getEntity().getState(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
 	    return sc.list();
     }

@@ -17,81 +17,90 @@
 
 package com.cloud.vm;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.MigrateWithStorageAnswer;
+import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
+import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
+import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
+import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
+import com.cloud.agent.api.MigrateWithStorageSendAnswer;
+import com.cloud.agent.api.MigrateWithStorageSendCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeVO;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.MigrateWithStorageAnswer;
-import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
-import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
-import com.cloud.agent.api.MigrateWithStorageSendAnswer;
-import com.cloud.agent.api.MigrateWithStorageSendCommand;
-import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
-import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeManager;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.*;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import com.cloud.utils.Pair;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.junit.Test;
-import org.junit.Before;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.*;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public class VirtualMachineManagerImplTest {
 

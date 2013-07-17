@@ -723,8 +723,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(),
                 systemAcct.getId(), 0, _serviceOffering.getOfferHA());
+        proxy = _consoleProxyDao.persist(proxy);
         try {
-            proxy = _itMgr.allocate(proxy, template, _serviceOffering, networks, plan, null, systemAcct);
+            _itMgr.allocate(name, template, _serviceOffering, networks, plan, null);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -1006,14 +1007,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         _allocProxyLock.releaseRef();
         _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
-    }
-
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
-            return null;
-        }
-        return VirtualMachineName.getConsoleProxyId(vmName);
     }
 
     @Override
@@ -1479,24 +1472,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         _consoleProxyDao.update(proxy.getId(), proxy);
     }
 
-
-
-    @Override
-    public ConsoleProxyVO persist(ConsoleProxyVO proxy) {
-        return _consoleProxyDao.persist(proxy);
-    }
-
     @Override
     public ConsoleProxyVO findById(long id) {
         return _consoleProxyDao.findById(id);
-    }
-
-    @Override
-    public ConsoleProxyVO findByName(String name) {
-        if (!VirtualMachineName.isValidConsoleProxyName(name)) {
-            return null;
-        }
-        return findById(VirtualMachineName.getConsoleProxyId(name));
     }
 
     @Override

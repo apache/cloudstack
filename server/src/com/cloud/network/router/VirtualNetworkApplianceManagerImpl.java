@@ -790,15 +790,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     protected VirtualNetworkApplianceManagerImpl() {
     }
 
-    @Override
-    public Long convertToId(final String vmName) {
-        if (!VirtualMachineName.isValidRouterName(vmName, _instance)) {
-            return null;
-        }
-
-        return VirtualMachineName.getRouterId(vmName);
-    }
-
     private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress, String userData,
             String serviceOffering, String zoneName, String guestIpAddress, String vmName,
             String vmInstanceName, long vmId, String vmUuid, String publicKey, long guestNetworkId) {
@@ -1046,7 +1037,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             String privateIP = router.getPrivateIpAddress();
             HostVO host = _hostDao.findById(router.getHostId());
-            if (host == null || host.getStatus() != Status.Up) {
+            if (host == null || host.getState() != Status.Up) {
                 continue;
             } else if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
                 /* Only cover hosts managed by this management server */
@@ -1118,7 +1109,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             } else {
                 String privateIP = router.getPrivateIpAddress();
                 HostVO host = _hostDao.findById(router.getHostId());
-                if (host == null || host.getStatus() != Status.Up) {
+                if (host == null || host.getState() != Status.Up) {
                     router.setRedundantState(RedundantState.UNKNOWN);
                     updated = true;
                 } else if (privateIP != null) {
@@ -1177,7 +1168,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         if (masterRouter.getState() == State.Running && backupRouter.getState() == State.Running) {
             HostVO masterHost = _hostDao.findById(masterRouter.getHostId());
             HostVO backupHost = _hostDao.findById(backupRouter.getHostId());
-            if (masterHost.getStatus() == Status.Up && backupHost.getStatus() == Status.Up) {
+            if (masterHost.getState() == Status.Up && backupHost.getState() == Status.Up) {
                 String title =  "Reboot " + backupRouter.getInstanceName() + " to ensure redundant virtual routers work";
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(title);
@@ -1412,7 +1403,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
 
             for (HostVO h : hosts) {
-                if (h.getStatus() == Status.Up) {
+                if (h.getState() == Status.Up) {
                     s_logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " +
                                 cv.getId() + " to start domain router for OVM");
                     return h.getHypervisorType();
@@ -1658,7 +1649,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false,
                 RedundantState.UNKNOWN, offerHA, false, vpcId);
                 router.setRole(Role.VIRTUAL_ROUTER);
-                router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
+                router = _routerDao.persist(router);
+                _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null);
+                router = _routerDao.findById(router.getId());
             } catch (InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
                     s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
@@ -1979,7 +1972,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             State state = router.getState();
             if (router.getHostId() != null && state != State.Running) {
                 HostVO host = _hostDao.findById(router.getHostId());
-                if (host == null || host.getStatus() != Status.Up) {
+                if (host == null || host.getState() != Status.Up) {
                     skip = true;
                 }
             }
@@ -2673,7 +2666,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (router.getState() != State.Running) {
                 s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
                 throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state "
-                + router.getState(), DataCenter.class, network.getDataCenterId());
+                        + router.getState(), DataCenter.class, network.getDataCenterId());
             }
 
             Commands cmds = new Commands(OnError.Stop);
@@ -2741,7 +2734,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             } else {
                 s_logger.warn("Failed to delete remote access VPN: domR " + router + " is not in right state " + router.getState());
                 throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " +
-                router.getState(), DataCenter.class, network.getDataCenterId());
+                        router.getState(), DataCenter.class, network.getDataCenterId());
             }
         }
 
@@ -3026,12 +3019,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public DomainRouterVO persist(DomainRouterVO router) {
-        DomainRouterVO virtualRouter =  _routerDao.persist(router);
-        return virtualRouter;
-    }
-
-    @Override
     //FIXME add partial success and STOP state support
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users, List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
@@ -3046,7 +3033,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (router.getState() != State.Running) {
                 s_logger.warn("Failed to add/remove VPN users: router not in running state");
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " +
-                router.getState(), DataCenter.class, network.getDataCenterId());
+                        router.getState(), DataCenter.class, network.getDataCenterId());
             }
 
             Commands cmds = new Commands(OnError.Continue);
@@ -3093,15 +3080,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public DomainRouterVO findById(long id) {
         return _routerDao.findById(id);
-    }
-
-    @Override
-    public DomainRouterVO findByName(String name) {
-        if (!VirtualMachineName.isValidRouterName(name)) {
-            return null;
-        }
-
-        return _routerDao.findById(VirtualMachineName.getRouterId(name));
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "starting router Vm", async = true)
@@ -3810,7 +3788,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.debug("Applying " + typeString + " in network " + network);
 
                 if (router.isStopPending()) {
-                    if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
+                    if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {
                         throw new ResourceUnavailableException("Unable to process due to the stop pending router " +
                     router.getInstanceName() + " haven't been stopped after it's host coming back!",
                                 DataCenter.class, router.getDataCenterId());
@@ -3840,7 +3818,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() +
                         ", so not sending apply " + typeString + " commands to the backend");
             } else {
-                s_logger.warn("Unable to apply " + typeString +", virtual router is not in the right state " + router.getState());
+                s_logger.warn("Unable to apply " + typeString + ", virtual router is not in the right state " + router.getState());
                 if (isZoneBasic && isPodLevelException) {
                     throw new ResourceUnavailableException("Unable to apply " + typeString +
                             ", virtual router is not in the right state", Pod.class, podId);

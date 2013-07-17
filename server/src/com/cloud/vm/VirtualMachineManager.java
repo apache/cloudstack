@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -20,13 +20,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.deploy.DeploymentPlanner;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -55,7 +55,7 @@ import com.cloud.utils.fsm.NoTransitionException;
  */
 public interface VirtualMachineManager extends Manager {
 
-    <T extends VMInstanceVO> T allocate(T vm,
+    void allocate(String vmInstanceName,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
@@ -63,26 +63,14 @@ public interface VirtualMachineManager extends Manager {
             List<Pair<NetworkVO, NicProfile>> networks,
             Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlan plan,
-            HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException;
+            HypervisorType hyperType) throws InsufficientCapacityException;
 
-    <T extends VMInstanceVO> T allocate(T vm,
-            VMTemplateVO template,
-            ServiceOfferingVO serviceOffering,
-            Long rootSize,
-            Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkVO, NicProfile>> networks,
-            DeploymentPlan plan,
-            HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException;
-
-    <T extends VMInstanceVO> T allocate(T vm,
+    void allocate(String vmInstanceName,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
-            HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException;
+            HypervisorType hyperType) throws InsufficientCapacityException;
 
     <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
 
@@ -155,15 +143,15 @@ public interface VirtualMachineManager extends Manager {
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
+    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
                 ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param vm
      * @param nic
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -172,8 +160,8 @@ public interface VirtualMachineManager extends Manager {
      * @param network
      * @param broadcastUri TODO
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
 

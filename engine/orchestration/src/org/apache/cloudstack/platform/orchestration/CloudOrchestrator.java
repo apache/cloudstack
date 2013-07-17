@@ -25,27 +25,27 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.VolumeManager;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
-import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
-import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
@@ -211,9 +211,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
 
 
-    	if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
-			return null;
-		}
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null, plan, hypervisorType);
 
         return vmEntity;
     }
@@ -266,9 +264,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
 		HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-    	if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
-			return null;
-		}
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null, plan, hypervisorType);
 
         return vmEntity;
     }

@@ -1135,7 +1135,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
 
-        if(vmInstance.getState().equals(State.Stopped)){
+        if (vmInstance.getState().equals(State.Stopped)) {
             upgradeStoppedVirtualMachine(vmId, newServiceOfferingId);
             return true;
         }
@@ -1173,7 +1173,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // Dynamically upgrade the running vms
         boolean success = false;
-        if(vmInstance.getState().equals(State.Running)){
+        if (vmInstance.getState().equals(State.Running)) {
             int retry = _scaleRetry;
             ExcludeList excludes = new ExcludeList();
             boolean enableDynamicallyScaleVm = Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vmInstance.getDataCenterId()));
@@ -1489,14 +1489,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     public String getRandomPrivateTemplateName() {
         return UUID.randomUUID().toString();
-    }
-
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidVmName(vmName, _instance)) {
-            return null;
-        }
-        return VirtualMachineName.getVmId(vmName);
     }
 
     @Override
@@ -3097,21 +3089,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public UserVmVO persist(UserVmVO vm) {
-        return _vmDao.persist(vm);
-    }
-
-    @Override
     public UserVmVO findById(long id) {
         return _vmDao.findById(id);
-    }
-
-    @Override
-    public UserVmVO findByName(String name) {
-        if (!VirtualMachineName.isValidVmName(name)) {
-            return null;
-        }
-        return findById(VirtualMachineName.getVmId(name));
     }
 
     @Override
@@ -3854,11 +3833,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // check if host is UP
-        if (destinationHost.getStatus() != com.cloud.host.Status.Up
+        if (destinationHost.getState() != com.cloud.host.Status.Up
                 || destinationHost.getResourceState() != ResourceState.Enabled) {
             throw new InvalidParameterValueException(
                     "Cannot migrate VM, destination host is not in correct state, has status: "
-                            + destinationHost.getStatus() + ", state: "
+                            + destinationHost.getState() + ", state: "
                             + destinationHost.getResourceState());
         }
 
@@ -3982,10 +3961,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // Check if destination host is up.
-        if (destinationHost.getStatus() != com.cloud.host.Status.Up ||
+        if (destinationHost.getState() != com.cloud.host.Status.Up ||
                 destinationHost.getResourceState() != ResourceState.Enabled){
             throw new CloudRuntimeException("Cannot migrate VM, destination host is not in correct state, has " +
-                    "status: " + destinationHost.getStatus() + ", state: " + destinationHost.getResourceState());
+                    "status: " + destinationHost.getState() + ", state: " + destinationHost.getResourceState());
         }
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
