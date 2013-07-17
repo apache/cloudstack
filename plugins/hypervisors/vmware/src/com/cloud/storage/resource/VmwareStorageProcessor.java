@@ -869,7 +869,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 	            }
 	            TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
 	            NfsTO nfsImageStore = (NfsTO)iso.getDataStore();
-	            String storeUrl = nfsImageStore.getUrl();
+	            String storeUrl = null;
+	            if (nfsImageStore != null)
+	                storeUrl = nfsImageStore.getUrl();
 	            if (storeUrl == null) {
 	                if (!iso.getName().equalsIgnoreCase("vmware-tools.iso")) {
 	                    String msg = "ISO store root url is not found in AttachIsoCommand";
