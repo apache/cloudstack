@@ -19,14 +19,19 @@
   under the License.
 -->
 <section id="add-remove-nic-ui">
-  <title>Reconfiguring Physical Networks in VMs</title>
+  <title>Reconfiguring Networks in VMs</title>
   <para>&PRODUCT; provides you the ability to move VMs between networks and reconfigure a VM's
-    network. You can remove a VM from a physical network and add to a new physical network. You can
-    also change the default physical network of a virtual machine. With this functionality, hybrid
-    or traditional server loads can be accommodated with ease. </para>
-  <para>This feature is supported on XenServer and KVM hypervisors.</para>
+    network. You can remove a VM from a network and add to a new network. You can also change the
+    default network of a virtual machine. With this functionality, hybrid or traditional server
+    loads can be accommodated with ease. </para>
+  <para>This feature is supported on XenServer, VMware, and KVM hypervisors.</para>
+  <section id="prereq-addnic">
+    <title>Prerequisites</title>
+    <para>Ensure that vm-tools are running on guest VMs for adding or removing networks to work on
+      VMware hypervisor.</para>
+  </section>
   <section id="add-nic">
-    <title>Adding a Physical Network</title>
+    <title>Adding a Network</title>
     <orderedlist>
       <listitem>
         <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
@@ -79,7 +84,7 @@
     </orderedlist>
   </section>
   <section id="remove-nic">
-    <title>Removing a Physical Network</title>
+    <title>Removing a Network</title>
     <orderedlist>
       <listitem>
         <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
@@ -112,7 +117,7 @@
     </orderedlist>
   </section>
   <section id="default-nic">
-    <title>Selecting the Default Physical Network</title>
+    <title>Selecting the Default Network</title>
     <orderedlist>
       <listitem>
         <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
