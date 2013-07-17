@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -54,7 +54,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the security group")
     private String securityGroupName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "Deploy vm for the project", entityType=ProjectAccountResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "Create security group for project", entityType=ProjectResponse.class)
     private Long projectId;
 
     // ///////////////////////////////////////////////////

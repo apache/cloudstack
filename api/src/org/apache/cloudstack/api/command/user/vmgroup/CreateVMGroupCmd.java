@@ -24,9 +24,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.context.CallContext;
-
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.vm.InstanceGroup;
@@ -52,7 +51,7 @@ public class CreateVMGroupCmd extends BaseCmd {
             description = "the domain ID of account owning the instance group")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectAccountResponse.class,
+    @Parameter(name = ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
             description = "The project of the instance group")
     private Long projectId;
 
