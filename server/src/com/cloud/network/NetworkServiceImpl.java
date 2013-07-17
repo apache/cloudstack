@@ -2479,8 +2479,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             pNetwork = _physicalNetworkDao.persist(pNetwork);
 
             // Add vnet entries for the new zone if zone type is Advanced
+
+            List <String> vnets = new ArrayList<String>();
+            for (Integer i= vnetStart; i<= vnetEnd; i++ ) {
+                vnets.add(i.toString());
+            }
+
             if (vnetRange != null) {
-                _dcDao.addVnet(zone.getId(), pNetwork.getId(), vnetStart, vnetEnd);
+                _dcDao.addVnet(zone.getId(), pNetwork.getId(), vnets);
             }
 
             // add VirtualRouter as the default network service provider
@@ -2530,7 +2536,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE, eventDescription = "updating physical network", async = true)
-    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state, String removeVlan) {
+    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRange, String state, String removeVlan) {
 
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
@@ -2547,7 +2553,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             ex.addProxyObject(String.valueOf(network.getDataCenterId()), "dataCenterId");
             throw ex;
         }
-        if (newVnetRangeString != null) {
+        if (newVnetRange!= null) {
             if (zone.getNetworkType() == NetworkType.Basic
                     || (zone.getNetworkType() == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
                 throw new InvalidParameterValueException("Can't add vnet range to the physical network in the zone that supports " + zone.getNetworkType() + " network, Security Group enabled: "
@@ -2557,7 +2563,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (removeVlan != null){
             List<Integer> tokens = processVlanRange(network,removeVlan);
-            boolean result = removeVlanRange(network, tokens.get(0), tokens.get(1));
+            removeVlanRange(network, tokens.get(0), tokens.get(1));
         }
 
         if (tags != null && tags.size() > 1) {
@@ -2589,119 +2595,63 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean AddVnet = true;
         List<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>();
 
-        if (newVnetRangeString != null) {
-            Integer newStartVnet = 0;
-            Integer newEndVnet = 0;
-            List<Integer> tokens = processVlanRange(network, newVnetRangeString);
-            newStartVnet = tokens.get(0);
-            newEndVnet = tokens.get(1);
-            Integer j=0;
-            List <Pair <Integer,Integer>> existingRanges = network.getVnet();
-            if (!existingRanges.isEmpty()) {
-                for (; j < existingRanges.size(); j++){
-                    int existingStartVnet = existingRanges.get(j).first();
-                    int existingEndVnet = existingRanges.get(j).second();
-
-                    // check if vnet is being extended
-                    if (newStartVnet.intValue() >= existingStartVnet & newEndVnet.intValue() <= existingEndVnet) {
-                        throw new InvalidParameterValueException("The vlan range you trying to add already exists.");
+        List<Integer> tokens = null;
+        List<String>  add_Vnet = null;
+        if (newVnetRange != null) {
+            tokens = processVlanRange(network, newVnetRange);
+            HashSet<String> vnetsInDb = new HashSet<String>();
+            vnetsInDb.addAll(_datacneter_vnet.listVnetsByPhysicalNetworkAndDataCenter(network.getDataCenterId(), id));
+            HashSet<String> tempVnets = new HashSet<String>();
+            tempVnets.addAll(vnetsInDb);
+            for (Integer i = tokens.get(0); i <= tokens.get(1); i++) {
+                tempVnets.add(i.toString());
+                }
+            tempVnets.removeAll(vnetsInDb);
+            if (tempVnets.isEmpty()) {
+                throw new InvalidParameterValueException("The vlan range you are trying to add already exists.");
+                }
+            vnetsInDb.addAll(tempVnets);
+            add_Vnet = new ArrayList<String>();
+            add_Vnet.addAll(tempVnets);
+            List<String> sortedList = new ArrayList<String>(vnetsInDb);
+            Collections.sort(sortedList, new Comparator<String>() {
+            public int compare(String s1, String s2) {
+                        return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
                     }
-
-                    if (newStartVnet < existingStartVnet & newEndVnet+1 >= existingStartVnet & newEndVnet <= existingEndVnet) {
-                        vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
-                        existingRanges.get(j).first(newStartVnet);
-                        AddVnet = false;
-                        break;
-                    }
-
-                    else if (newStartVnet > existingStartVnet & newStartVnet-1 <= existingEndVnet & newEndVnet >= existingEndVnet) {
-                        vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
-                        existingRanges.get(j).second(newEndVnet);
-                        AddVnet = false;
-                        break;
-                    }
-
-                    else if (newStartVnet< existingStartVnet & newEndVnet > existingEndVnet){
-                        vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet,existingStartVnet-1));
-                        vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet+1,newEndVnet));
-                        existingRanges.get(j).first(newStartVnet);
-                        existingRanges.get(j).second(newEndVnet);
-                        break;
+                });
+            //build the vlan string form the allocated vlan list.
+            String vnetRange = "";
+            String startvnet = sortedList.get(0);
+            String endvnet = "";
+            for ( int i =0; i < sortedList.size()-1; i++ ) {
+                if (Integer.valueOf(sortedList.get(i+1)) - Integer.valueOf(sortedList.get(i)) > 1) {
+                    endvnet = sortedList.get(i);
+                    vnetRange=vnetRange + startvnet+"-"+endvnet+";";
+                    startvnet = sortedList.get(i+1);
                     }
                 }
-
+            endvnet = sortedList.get(sortedList.size()-1);
+            vnetRange=vnetRange + startvnet+"-"+endvnet+";";
+            vnetRange = vnetRange.substring(0,vnetRange.length()-1);
+            network.setVnet(vnetRange);
             }
-            if (AddVnet){
-                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
-                    existingRanges.add(new Pair<Integer, Integer>(newStartVnet,newEndVnet));
-            }
-
-            Map <Integer,Integer> vnetMap = new HashMap<Integer, Integer>(existingRanges.size());
-            Map <Integer, Integer> IndexMap = new HashMap<Integer, Integer>(existingRanges.size());
-            for (int i=0; i< existingRanges.size(); i++){
-                 vnetMap.put(existingRanges.get(i).first(),existingRanges.get(i).second());
-                 IndexMap.put(existingRanges.get(i).first(),i);
-            }
-
-            Integer value;
-            Integer index;
-            String vnetString = "";
-            for (int i=0; i < existingRanges.size(); i++){
-                 value = vnetMap.get((existingRanges.get(i).second()+1));
-                 if (value != null) {
-                     vnetMap.remove((existingRanges.get(i).second()+1));
-                     vnetMap.remove(existingRanges.get(i).first());
-                     vnetMap.put(existingRanges.get(i).first(),value);
-                     existingRanges.add(new Pair<Integer,Integer>(existingRanges.get(i).first(),value));
-                     index = IndexMap.get(existingRanges.get(i).second()+1);
-                     existingRanges.get(index).first(-1);
-                     existingRanges.get(index).second(-1);
-                     existingRanges.get(i).first(-1);
-                     existingRanges.get(i).second(-1);
-                 }
-                value = vnetMap.get((existingRanges.get(i).second()));
-                if (value != null && ( (existingRanges.get(i).second()) != (existingRanges.get(i).first()) )) {
-                    vnetMap.remove((existingRanges.get(i).second()));
-                    vnetMap.remove(existingRanges.get(i).first());
-                    vnetMap.put(existingRanges.get(i).first(),value);
-                    existingRanges.add(new Pair<Integer,Integer>(existingRanges.get(i).first(),value));
-                    index = IndexMap.get(existingRanges.get(i).second());
-                    existingRanges.get(index).first(-1);
-                    existingRanges.get(index).second(-1);
-                    existingRanges.get(i).first(-1);
-                    existingRanges.get(i).second(-1);
-                }
-            }
-
-            if (newVnetRangeString != null) {
-               for (Pair<Integer,Integer> vnetRange : existingRanges ){
-                    value=vnetMap.get(vnetRange.first());
-                    if (value != null){
-                        vnetString = vnetString+vnetRange.first().toString()+"-"+value.toString()+";";
-                    }
-               }
-               if (vnetString.length() > 0 && vnetString.charAt(vnetString.length()-1)==';') {
-                   vnetString = vnetString.substring(0, vnetString.length()-1);
-               }
-               network.setVnet(vnetString);
-            }
-
-            for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
-                s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId()
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        if (add_Vnet != null) {
+            s_logger.debug("Adding vnet range " + tokens.get(0).toString() + "-" + tokens.get(1).toString() + " for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId()
                     + " as a part of updatePhysicalNetwork call");
-                _dcDao.addVnet(network.getDataCenterId(), network.getId(), vnetToAdd.first(), vnetToAdd.second());
-            }
+            _dcDao.addVnet(network.getDataCenterId(), network.getId(), add_Vnet);
         }
-
         _physicalNetworkDao.update(id, network);
+        txn.commit();
 
         return network;
     }
 
-    private List<Integer> processVlanRange(PhysicalNetworkVO network, String removeVlan) {
+    private List<Integer> processVlanRange(PhysicalNetworkVO network, String vlan) {
         Integer StartVnet;
         Integer EndVnet;
-        String[] VnetRange = removeVlan.split("-");
+        String[] VnetRange = vlan.split("-");
 
         // Init with [min,max] of VLAN. Actually 0x000 and 0xFFF are reserved by IEEE, shoudn't be used.
         long minVnet = MIN_VLAN_ID;

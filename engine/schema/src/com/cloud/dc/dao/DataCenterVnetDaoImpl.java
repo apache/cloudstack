@@ -64,6 +64,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     private final GenericSearchBuilder<DataCenterVnetVO, Integer> countVnetsAllocatedToAccount;
     protected GenericSearchBuilder<DataCenterVnetVO, Integer> countVnetsDedicatedToAccount;
     protected SearchBuilder<AccountGuestVlanMapVO> AccountGuestVlanMapSearch;
+    protected GenericSearchBuilder<DataCenterVnetVO, String> ListAllVnetSearch;
 
     @Inject protected AccountGuestVlanMapDao _accountGuestVlanMapDao;
     
@@ -112,15 +113,15 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }    
     
     @DB
-    public void add(long dcId, long physicalNetworkId, int start, int end) {
+    public void add(long dcId, long physicalNetworkId, List<String> vnets) {
         String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
         
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertVnet);
-            for (int i = start; i <= end; i++) {
-                stmt.setString(1, String.valueOf(i));
+            for (int i =0; i <= vnets.size()-1; i++) {
+                stmt.setString(1, vnets.get(i));
                 stmt.setLong(2, dcId);
                 stmt.setLong(3, physicalNetworkId);
                 stmt.addBatch();
@@ -128,11 +129,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
             stmt.executeBatch();
             txn.commit();
         } catch (SQLException e) {
-           if (!e.getMessage().contains("Duplicate")){
-               txn.rollback();
-               txn.close();
-               throw new CloudRuntimeException("Exception caught adding vnet ", e);
-           }
+            throw new CloudRuntimeException(e.getMessage());
         }
     }
 
@@ -228,6 +225,14 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     @Override
+    public List<String> listVnetsByPhysicalNetworkAndDataCenter(long dcId, long physicalNetworkId){
+        SearchCriteria<String> sc = ListAllVnetSearch.create();
+        sc.setParameters("dc", dcId );
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return customSearch(sc, null);
+    }
+
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         boolean result = super.configure(name, params);
 
@@ -314,5 +319,12 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         countVnetsAllocatedToAccount.and("accountId", countVnetsAllocatedToAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         countVnetsAllocatedToAccount.select(null, Func.COUNT, countVnetsAllocatedToAccount.entity().getId());
         countVnetsAllocatedToAccount.done();
+
+        ListAllVnetSearch  = createSearchBuilder(String.class);
+        ListAllVnetSearch.select(null, Func.NATIVE, ListAllVnetSearch.entity().getVnet());
+        ListAllVnetSearch.and("dc", ListAllVnetSearch.entity().getDataCenterId(), Op.EQ);
+        ListAllVnetSearch.and("physicalNetworkId", ListAllVnetSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        ListAllVnetSearch.done();
+
     }
 }

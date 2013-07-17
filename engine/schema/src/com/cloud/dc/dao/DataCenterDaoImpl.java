@@ -268,8 +268,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void addVnet(long dcId, long physicalNetworkId, int start, int end) {
-        _vnetAllocDao.add(dcId, physicalNetworkId, start, end);
+    public void addVnet(long dcId, long physicalNetworkId, List<String> vnets) {
+        _vnetAllocDao.add(dcId, physicalNetworkId, vnets);
     }
 
     @Override

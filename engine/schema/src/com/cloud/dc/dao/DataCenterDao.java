@@ -70,7 +70,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
 	int countZoneVlans(long dcId, boolean onlyCountAllocated);
     
-    void addVnet(long dcId, long physicalNetworkId, int start, int end);
+    void addVnet(long dcId, long physicalNetworkId, List<String> vnets);
     void deleteVnet(long physicalNetworkId);
     List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId);
 
