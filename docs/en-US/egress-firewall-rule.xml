@@ -20,16 +20,14 @@
 -->
 <section id="egress-firewall-rule">
   <title>Creating Egress Firewall Rules in an Advanced Zone</title>
-  <note>
-    <para>The egress firewall rules are supported only on virtual routers.</para>
-  </note>
   <para>The egress traffic originates from a private network to a public network, such as the
     Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed from a
     guest network to the Internet. However, you can control the egress traffic in an Advanced zone
     by creating egress firewall rules. When an egress firewall rule is applied, the traffic specific
     to the rule is allowed and the remaining traffic is blocked. When all the firewall rules are
     removed the default policy, Block, is applied.</para>
-  <note>
+  <para>Egress firewall rules are supported on Juniper SRX and virtual router.</para>
+    <note>
     <para>The egress firewall rules are not supported on shared networks.</para>
   </note>
   <para>Consider the following scenarios to apply egress firewall rules:</para>
