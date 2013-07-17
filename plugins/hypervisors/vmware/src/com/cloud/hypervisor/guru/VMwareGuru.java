@@ -30,6 +30,8 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
+
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -88,8 +90,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
-
-import org.apache.cloudstack.storage.command.CopyCommand;
 
 @Local(value=HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
@@ -356,6 +356,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                         cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
                         cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
                         cmd instanceof CopyVolumeCommand ||
+                        cmd instanceof CopyCommand ||
                         cmd instanceof CreateVolumeOVACommand ||
                         cmd instanceof PrepareOVAPackingCommand ||
                         cmd instanceof CreateVolumeFromSnapshotCommand) {
