@@ -409,6 +409,10 @@ public class ApiConstants {
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
     public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
+    // Ovs controller
+    public static final String OVS_DEVICE_ID = "ovsdeviceid";
+    public static final String OVS_DEVICE_NAME = "ovsdevicename";
+
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";

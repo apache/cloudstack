@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.api.response.OvsDeviceResponse;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -32,9 +34,14 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.commands.AddOvsDeviceCmd;
+import com.cloud.network.commands.DeleteOvsDeviceCmd;
+import com.cloud.network.commands.ListOvsDevicesCmd;
 import com.cloud.network.ovs.OvsTunnelManager;
+import com.cloud.network.ovs.dao.OvsDeviceVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.DB;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
