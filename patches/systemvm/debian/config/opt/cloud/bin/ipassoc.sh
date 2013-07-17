@@ -230,7 +230,7 @@ add_first_ip() {
       sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
       sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
-  add_routing $1 
+  add_routing $1
 
   return 0
 }
@@ -277,7 +277,7 @@ add_an_ip () {
       sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
       sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
-  add_routing $1 
+  add_routing $1
   return $?
    
 }
@@ -303,11 +303,41 @@ remove_an_ip () {
   return 0
 }
 
+enable_rpsrfs() {
+    #enable rps and rfs for this new interface
+    if [  -f /etc/rpsrfsenable ]
+    then
+        enable=$(cat /etc/rpsrfsenable)
+        if [ $enable -eq 1 ]
+        then
+          proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+          if [ $proc -le 1 ]
+          then
+              return $status;
+          fi
+
+          num=1
+          num=$(($num<<$proc))
+          num=$(($num-1));
+          echo $num;
+          hex=$(printf "%x\n" $num)
+          echo $hex;
+          #enable rps
+          echo $hex > /sys/class/net/$ethDev/queues/rx-0/rps_cpus
+
+          #enable rfs
+          echo 256 > /sys/class/net/$ethDev/queues/rx-0/rps_flow_cnt
+
+         fi
+     fi
+}
+
 #set -x
 sflag=0
 lflag=
 fflag=
 cflag=
+nflag=
 op=""
 
 is_master=0
@@ -328,7 +358,7 @@ then
     if_keep_state=1
 fi
 
-while getopts 'sfADa:l:c:g:' OPTION
+while getopts 'sfADna:l:c:g:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -350,6 +380,8 @@ do
   g)	gflag=1
   		defaultGwIP="$OPTARG"
   		;;
+  n)   nflag=1
+        ;;
   ?)	usage
                 unlock_exit 2 $lock $locked
 		;;
@@ -369,6 +401,13 @@ then
     unlock_exit 2 $lock $locked
 fi
 
+
+if [ "$Aflag" == "1" ] && [ "$nflag" == "1" ]
+then
+    #enable rps, rfs for the new interface
+    enable_rpsrfs
+
+ fi
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then

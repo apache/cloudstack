@@ -1769,6 +1769,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         args += " -g ";
         args += vlanGateway;
 
+        if (addVif) {
+            args += " -n ";
+        }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Run command on domain router " + privateIpAddress + ", /opt/cloud/bin/ipassoc.sh " + args);
         }

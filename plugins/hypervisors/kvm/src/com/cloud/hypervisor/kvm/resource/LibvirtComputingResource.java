@@ -1922,19 +1922,21 @@ ServerResource {
             int i = 0;
             String result = null;
             int nicNum = 0;
+            boolean newNic = false;
             for (IpAddressTO ip : ips) {
                 if (!vlanAllocatedToVM.containsKey(ip.getVlanId())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getVlanId(),
                             ip.getVifMacAddress());
                     vlanAllocatedToVM.put(ip.getVlanId(), nicPos++);
+                    newNic = true;
                 }
                 nicNum = vlanAllocatedToVM.get(ip.getVlanId());
                 networkUsage(routerIp, "addVif", "eth" + nicNum);
                 result = _virtRouterResource.assignPublicIpAddress(routerName,
                         routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(),
                         ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(),
-                        ip.getVlanNetmask(), ip.getVifMacAddress(), nicNum);
+                        ip.getVlanNetmask(), ip.getVifMacAddress(), nicNum, newNic);
 
                 if (result != null) {
                     results[i++] = IpAssocAnswer.errorResult;
