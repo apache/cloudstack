@@ -340,6 +340,11 @@
             click: function() {
               var data = cloudStack.serializeForm($('.ui-dialog .autoscaler form'));
 
+              // Pass VPC data
+              if (formData.tier) {
+                data.tier = formData.tier;
+              }
+
               $loading.appendTo($autoscalerDialog);
               cloudStack.autoscaler.actions.apply({
                 formData: formData,
