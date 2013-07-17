@@ -50,6 +50,7 @@ public class SwiftUtil {
         String srcDirectory = srcFile.getParent();
         Script command = new Script("/bin/bash", logger);
         long size = srcFile.length();
+        command.add("-c");
         if (size <= SWIFT_MAX_SIZE) {
             command.add("cd " + srcDirectory
                     + ";/usr/bin/python " + swiftCli + " -A "
