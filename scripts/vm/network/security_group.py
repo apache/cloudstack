@@ -27,6 +27,7 @@ from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, O
 import re
 import traceback
 
+logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
 iptables = Command("iptables")
 bash = Command("/bin/bash")
 virsh = Command("virsh")
@@ -49,8 +50,8 @@ def can_bridge_firewall(privnic):
         sys.exit(2)
 
 
-    if not os.path.exists('/var/run/cloud'):
-        os.makedirs('/var/run/cloud')
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
 
     cleanup_rules_for_dead_vms()
     cleanup_rules()
@@ -269,7 +270,7 @@ def default_network_rules_systemvm(vm_name, localbrname):
 
 def remove_secip_log_for_vm(vmName):
     vm_name = vmName
-    logfilename = "/var/run/cloud/"+vm_name+".ip"
+    logfilename = logpath + vm_name + ".ip"
 
     result = True
     try:
@@ -282,7 +283,7 @@ def remove_secip_log_for_vm(vmName):
 
 def write_secip_log_for_vm (vmName, secIps, vmId):
     vm_name = vmName
-    logfilename = "/var/run/cloud/"+vm_name+".ip"
+    logfilename = logpath + vm_name + ".ip"
     logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
     output = ','.join([vmName, secIps, vmId])
@@ -480,7 +481,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
               logging.exception("Ignoring failure to delete rules for vm " + vmName)
 
 def rewrite_rule_log_for_vm(vm_name, new_domid):
-    logfilename = "/var/run/cloud/" + vm_name +".log"
+    logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return
     lines = (line.rstrip() for line in open(logfilename))
@@ -494,7 +495,7 @@ def rewrite_rule_log_for_vm(vm_name, new_domid):
 
 def get_rule_log_for_vm(vmName):
     vm_name = vmName;
-    logfilename = "/var/run/cloud/" + vm_name +".log"
+    logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return ''
 
@@ -516,7 +517,8 @@ def check_domid_changed(vmName):
     except:
         pass
 
-    logfilename = "/var/run/cloud/" + vmName +".log"
+    vm_name = vmName;
+    logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return ['-1', curr_domid]
 
@@ -664,7 +666,7 @@ def cleanup_rules():
 
 def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
     vm_name = vmName;
-    logfilename = "/var/run/cloud/" + vm_name +".log"
+    logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return [True, True, True, True, True, True]
 
@@ -688,7 +690,7 @@ def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
 
 def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     vm_name = vmName
-    logfilename = "/var/run/cloud/" + vm_name +".log"
+    logfilename = logpath + vm_name + ".log"
     logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
     output = ','.join([vmName, vmID, vmIP, domID, signature, seqno])
@@ -706,7 +708,7 @@ def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
 
 def remove_rule_log_for_vm(vmName):
     vm_name = vmName
-    logfilename = "/var/run/cloud/" + vm_name +".log"
+    logfilename = logpath + vm_name + ".log"
 
     result = True
     try:
