@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
+import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -54,6 +55,11 @@ public class LocalHostEndpoint implements EndPoint {
         localResource.setParentPath(path);
         resource = localResource;
         executor = Executors.newScheduledThreadPool(10);
+    }
+
+    public static EndPoint getEndpoint() {
+        LocalHostEndpoint endpoint = ComponentContext.inject(LocalHostEndpoint.class);
+        return endpoint;
     }
 
     @Override
