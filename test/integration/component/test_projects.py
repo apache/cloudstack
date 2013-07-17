@@ -170,8 +170,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
 
     @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_create_multiple_projects_by_account(self):
-        """ Verify an account can own multiple projects and can belong to
-            multiple projects
+        """ Verify an account can own multiple projects and can belong to multiple projects
         """
         # Validate the following
         # 1. Create multiple project. Verify at step 1 An account is allowed
@@ -245,22 +244,27 @@ class TestMultipleProjectCreation(cloudstackTestCase):
                         "Check list project response returns a valid project"
                         )
 
+        self.assert_(isinstance(self.user.user, list))
+        self.assert_(len(self.user.user) > 0, msg="Account %s has no users" % self.user.name)
+        self.debug("Adding account %s to project with email %s" % (self.user.name, self.user.user[0].email))
+        email = self.user.user[0].email
+
         # Add user to the project
         project_1.addAccount(
                            self.apiclient,
                            self.user.name,
-                           self.user.email
+                           email
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project_1.id,
                                             account=self.user.name,
                                             )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
@@ -270,7 +274,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                             account.role,
@@ -281,18 +285,18 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         project_2.addAccount(
                            self.apiclient,
                            self.user.name,
-                           self.user.email
+                           email
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project_2.id,
                                             account=self.user.name,
                                             )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
@@ -302,7 +306,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                             account.role,
