@@ -100,7 +100,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
     @Column(name="engine_state", updatable=true, nullable=false, length=32)
-    protected State engineState = null;
+    protected State state = null;
 
 
     public EngineClusterVO() {
@@ -108,7 +108,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
         allocationState = Grouping.AllocationState.Enabled;
 
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.state = State.Disabled;
     }
 
     public EngineClusterVO(long dataCenterId, long podId, String name) {
@@ -119,7 +119,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
         this.allocationState = Grouping.AllocationState.Enabled;
         this.managedState = ManagedState.Managed;
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.state = State.Disabled;
     }
 
     @Override
@@ -238,6 +238,6 @@ public class EngineClusterVO implements EngineCluster, Identity {
     }
 
     public State getState() {
-        return engineState;
+        return state;
     }    
 }

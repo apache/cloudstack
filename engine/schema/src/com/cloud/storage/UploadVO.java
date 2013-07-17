@@ -44,7 +44,7 @@ public class UploadVO implements Upload {
     private String uuid;
 
     @Column(name = "host_id")
-    private long storeId;
+    private long dataStoreId;
 
     @Column(name = "type_id")
     private long typeId;
@@ -85,11 +85,11 @@ public class UploadVO implements Upload {
 
     @Override
     public long getDataStoreId() {
-        return storeId;
+        return dataStoreId;
     }
 
     public void setDataStoreId(long hostId) {
-        this.storeId = hostId;
+        this.dataStoreId = hostId;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class UploadVO implements Upload {
 
     public UploadVO(long hostId, long templateId) {
         super();
-        this.storeId = hostId;
+        this.dataStoreId = hostId;
         this.typeId = templateId;
         this.uuid = UUID.randomUUID().toString();
     }
@@ -126,7 +126,7 @@ public class UploadVO implements Upload {
     public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, Type type, String uploadUrl,
             Mode mode) {
         super();
-        this.storeId = hostId;
+        this.dataStoreId = hostId;
         this.typeId = typeId;
         this.lastUpdated = lastUpdated;
         this.uploadState = uploadState;
@@ -139,7 +139,7 @@ public class UploadVO implements Upload {
     public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, int uploadPercent, Type type,
             Mode mode) {
         super();
-        this.storeId = hostId;
+        this.dataStoreId = hostId;
         this.typeId = typeId;
         this.lastUpdated = lastUpdated;
         this.uploadState = uploadState;
@@ -179,7 +179,7 @@ public class UploadVO implements Upload {
     public boolean equals(Object obj) {
         if (obj instanceof UploadVO) {
             UploadVO other = (UploadVO) obj;
-            return (this.typeId == other.getTypeId() && this.storeId == other.getDataStoreId() && this.type == other
+            return (this.typeId == other.getTypeId() && this.dataStoreId == other.getDataStoreId() && this.type == other
                     .getType());
         }
         return false;

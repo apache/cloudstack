@@ -32,7 +32,7 @@ public class SspCredentialVO {
     private long id;
 
     @Column(name="data_center_id")
-    private long dataCenterId; // Actually, this is zoneId
+    private long zoneId; // Actually, this is zoneId
 
     // XXX: We might want to restrict access to this by cloudstack privileges.
     @Column(name="username")
@@ -42,11 +42,11 @@ public class SspCredentialVO {
     private String password;
 
     public long getZoneId() {
-        return dataCenterId;
+        return zoneId;
     }
 
     public void setZoneId(long zoneId) {
-        this.dataCenterId = zoneId;
+        this.zoneId = zoneId;
     }
 
     public String getUsername() {
