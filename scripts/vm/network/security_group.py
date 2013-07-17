@@ -140,7 +140,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
                 try:
                     execute("iptables -t nat " + dnat)
                 except:
-                    logging.debug("Igoring failure to delete dnat: " + dnat)
+                    logging.debug("Ignoring failure to delete dnat: " + dnat)
         except:
             pass
     remove_rule_log_for_vm(vm_name)
@@ -319,7 +319,7 @@ def add_to_ipset(ipsetname, ips, action):
             logging.debug("vm ip " + ip)
             execute("ipset " + action + " " + ipsetname + " " + ip)
         except:
-            logging.debug("vm ip alreday in ip set " + ip)
+            logging.debug("vm ip already in ip set " + ip)
             continue
 
     return result
