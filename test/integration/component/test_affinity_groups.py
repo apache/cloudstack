@@ -1078,7 +1078,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
                templateid=self.template.id,
                serviceofferingid=self.service_offering.id,
                affinitygroupnames=ag_list,
-                affinitygroupids=ag_ids
+               affinitygroupids=ag_ids
             )
         self.debug('Created VM=%s in Affinity Group=%s' %
                     (vm.id, ag_list))
@@ -1114,7 +1114,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
 
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"])
-        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
+        vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name])
 
         vm1.delete(self.api_client)
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])

@@ -237,7 +237,7 @@ class VirtualMachine:
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
-                    diskofferingid=None, affinitygroupnames=None, group=None,
+                    diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
                     hostid=None, keypair=None, mode='basic', method='GET'):
         """Create the instance"""
 
@@ -298,6 +298,9 @@ class VirtualMachine:
             cmd.affinitygroupnames  = services["affinitygroupnames"]
         elif affinitygroupnames:
             cmd.affinitygroupnames  = affinitygroupnames
+
+        if affinitygroupids:
+            cmd.affinitygroupids  = affinitygroupids
 
         if projectid:
             cmd.projectid = projectid
@@ -2988,7 +2991,7 @@ class AffinityGroup:
         if name is not None:
             cmd.name = name
         if account is not None:
-            cmd.account = account
+            cmd.accountname = account
         if domainid is not None:
             cmd.domaindid = domainid
 
