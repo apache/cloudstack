@@ -45,6 +45,10 @@ public class LocalHostEndpoint implements EndPoint {
     ConfigurationDao configDao;
 
     public LocalHostEndpoint() {
+
+    }
+
+    private void configure() {
         // get mount parent folder configured in global setting, if set, this will overwrite _parent in NfsSecondaryStorageResource to work
         // around permission issue for default /mnt folder
         String mountParent = configDao.getValue(Config.MountParent.key());
@@ -59,6 +63,7 @@ public class LocalHostEndpoint implements EndPoint {
 
     public static EndPoint getEndpoint() {
         LocalHostEndpoint endpoint = ComponentContext.inject(LocalHostEndpoint.class);
+        endpoint.configure();
         return endpoint;
     }
 

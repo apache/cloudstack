@@ -440,8 +440,9 @@ specify a valid config file" % cfgFile)
                 networkId = networkcmdresponse.id
                 self.createpods(zone.pods, zoneId, networkId)
 
-            self.createSecondaryStorages(zone.secondaryStorages, zoneId)
+            '''Note: Swift needs cache storage first'''
             self.createCacheStorages(zone.cacheStorages, zoneId)
+            self.createSecondaryStorages(zone.secondaryStorages, zoneId)
 
             enabled = getattr(zone, 'enabled', 'True')
             if enabled == 'True' or enabled is None:
