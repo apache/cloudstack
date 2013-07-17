@@ -2366,6 +2366,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -g ";
             args += vlanGateway;
 
+            if (addVif) {
+                //To indicate this is new interface created
+                args += " -n";
+            }
+
 
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
