@@ -2483,7 +2483,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
             Map<Network.Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId()), Service.Dhcp);
             String supportsMultipleSubnets = dhcpCapabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
-            if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
+            if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
                 List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.revoked);
                 s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
                 removeRevokedIpAliasFromDb(revokedIpAliasVOs);
