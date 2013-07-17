@@ -234,6 +234,22 @@ cloudStack.docs = {
   desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
+  helpComputeOfferingDiskBytesReadRate: {
+  desc: 'Allowed disk read rate in bytes per second',
+  externalLink: ''
+  },
+  helpComputeOfferingDiskBytesWriteRate: {
+  desc: 'Allowed disk write rate in bytes per second',
+  externalLink: ''
+  },
+  helpComputeOfferingDiskIopsReadRate: {
+  desc: 'Allowed disk read rate in I/O requests per second',
+  externalLink: ''
+  },
+  helpComputeOfferingDiskIopsWriteRate: {
+  desc: 'Allowed disk write rate in I/O requests per second',
+  externalLink: ''
+  },
   helpComputeOfferingHA: {
   desc: 'If yes, the administrator can choose to have the VM be monitored and as highly available as possible',
   externalLink: ''
@@ -280,6 +296,22 @@ cloudStack.docs = {
   },
   helpDiskOfferingDiskSize: {
   desc: 'Appears only if Custom Disk Size is not selected. Define the volume size in GB.',
+  externalLink: ''
+  },
+  helpDiskOfferingDiskBytesReadRate: {
+  desc: 'Allowed disk read rate in bytes per second',
+  externalLink: ''
+  },
+  helpDiskOfferingDiskBytesWriteRate: {
+  desc: 'Allowed disk write rate in bytes per second',
+  externalLink: ''
+  },
+  helpDiskOfferingDiskIopsReadRate: {
+  desc: 'Allowed disk read rate in I/O requests per second',
+  externalLink: ''
+  },
+  helpDiskOfferingDiskIopsWriteRate: {
+  desc: 'Allowed disk write rate in I/O requests per second',
   externalLink: ''
   },
   helpDiskOfferingCustomDiskIops: {
@@ -716,6 +748,22 @@ cloudStack.docs = {
   },
   helpSystemOfferingNetworkRate: {
   desc: 'Allowed data transfer rate in megabits(Mb) per second',
+  externalLink: ''
+  },
+  helpSystemOfferingDiskBytesReadRate: {
+  desc: 'Allowed disk read rate in bytes per second',
+  externalLink: ''
+  },
+  helpSystemOfferingDiskBytesWriteRate: {
+  desc: 'Allowed disk write rate in bytes per second',
+  externalLink: ''
+  },
+  helpSystemOfferingDiskIopsReadRate: {
+  desc: 'Allowed disk read rate in I/O requests per second',
+  externalLink: ''
+  },
+  helpSystemOfferingDiskIopsWriteRate: {
+  desc: 'Allowed disk write rate in I/O requests per second',
   externalLink: ''
   },
   helpSystemOfferingHA: {
