@@ -415,6 +415,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
+				  domainid=self.account.domainid,	
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
@@ -425,6 +426,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
+				  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
