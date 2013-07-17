@@ -725,14 +725,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
 						hostService.getWorkerName(context, cmd, 1));
 
 				success = (snapshotBackupUuid != null);
-				if (success) {
-					details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-					return new CopyCmdAnswer(details);
-				} else {
-					SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-					newSnapshot.setPath(snapshotBackupUuid);
-					return new CopyCmdAnswer(newSnapshot);
-				}
+
+                if (!success) {
+                    details = "Failed to backUp the snapshot with uuid: " + snapshotUuid + " to secondary storage.";
+                    return new CopyCmdAnswer(details);
+                } else {
+                    details = "Successfully backedUp the snapshot with Uuid: " + snapshotUuid + " to secondary storage.";
+                    SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                    newSnapshot.setPath(destSnapshot.getPath() + "/" + snapshotBackupUuid);
+                    return new CopyCmdAnswer(newSnapshot);
+                }
 			} finally {
 				if(vmMo != null){
 					ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
