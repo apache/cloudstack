@@ -21,37 +21,40 @@
 -->
 <section id="multiple-ip-nic">
   <title>Configuring Multiple IP Addresses on a Single NIC</title>
-  <para>&PRODUCT; now provides you the ability to associate multiple private IP addresses per guest
-    VM NIC. This feature is supported on all the network configurations&mdash;Basic, Advanced, and
-    VPC. Security Groups, Static NAT and Port forwarding services are supported on these additional
-    IPs. In addition to the primary IP, you can assign additional IPs to the guest VM NIC.</para>
+  <para>&PRODUCT; provides you the ability to associate multiple private IP addresses per guest VM
+    NIC. In addition to the primary IP, you can assign additional IPs to the guest VM NIC. This
+    feature is supported on all the network configurations&mdash;Basic, Advanced, and VPC. Security
+    Groups, Static NAT and Port forwarding services are supported on these additional IPs. </para>
   <para>As always, you can specify an IP from the guest subnet; if not specified, an IP is
     automatically picked up from the guest VM subnet. You can view the IPs associated with for each
-    guest VM NICs on the UI. You can apply NAT on these additional guest IPs by using firewall
-    configuration in the &PRODUCT; UI. You must specify the NIC to which the IP should be
+    guest VM NICs on the UI. You can apply NAT on these additional guest IPs by using network
+    configuration option in the &PRODUCT; UI. You must specify the NIC to which the IP should be
     associated.</para>
-  <para>This feature is supported on XenServer, KVM, and VMware hypervisors.</para>
-  <note>
-    <para>You need to configure the secondary IP address on the guest VM. &PRODUCT; will
-      not configure the acquired IP address on the VM. Ensure that you assign IPs to NIC each
-      time the VM reboots.</para>
-  </note>
-  <para>Some of the use cases are described below:</para>
-  <itemizedlist>
-    <listitem>
-      <para>Building network appliances: Network appliances, such as firewalls and load balancers,
-        generally work best when they have access to multiple IP addresses on the network
-        interface.</para>
-    </listitem>
-    <listitem>
-      <para>Moving private IP addresses between interfaces or instances. Applications that are bound
-        to specific IP addresses can be moved between instances. </para>
-    </listitem>
-    <listitem>
-      <para>Hosting multiple SSL Websites on a single instance. You can install multiple SSL
-        certificates on a single instance, each associated with a distinct IP address.</para>
-    </listitem>
-  </itemizedlist>
+  <para>This feature is supported on XenServer, KVM, and VMware hypervisors. Note that Basic zone
+    security groups are not supported on VMware.</para>
+  <section id="usecases-mip">
+    <title>Use Cases</title>
+    <para>Some of the use cases are described below:</para>
+    <itemizedlist>
+      <listitem>
+        <para>Network devices, such as firewalls and load balancers, generally work best when they
+          have access to multiple IP addresses on the network interface.</para>
+      </listitem>
+      <listitem>
+        <para>Moving private IP addresses between interfaces or instances. Applications that are
+          bound to specific IP addresses can be moved between instances. </para>
+      </listitem>
+      <listitem>
+        <para>Hosting multiple SSL Websites on a single instance. You can install multiple SSL
+          certificates on a single instance, each associated with a distinct IP address.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="guideline-nic">
+    <title>Guidelines</title>
+    <para>To prevent IP conflict, configure different subnets when multiple networks are connected
+      to the same VM.</para>
+  </section>
   <section id="workflow-rn">
     <title>Assigning Additional IPs to a VM</title>
     <orderedlist>
@@ -68,17 +71,19 @@
         <para>In the Details tab, click NICs.</para>
       </listitem>
       <listitem>
-        <para>Click View All.</para>
+        <para>Click View Secondary IPs.</para>
       </listitem>
       <listitem>
-        <para>Click Acquire New IP, and click Yes in the confirmation dialog.</para>
-        <para>You are prompted for confirmation because, typically, IP addresses are a limited
-          resource. Within a few moments, the new IP address should appear with the state Allocated.
-          You can now use the IP address in Port Forwarding or StaticNAT rules.</para>
+        <para>Click Acquire New Secondary IP, and click Yes in the confirmation dialog.</para>
+        <para>You need to specify the secondary IP address on the guest VM. &PRODUCT; will not
+          automatically configure the acquired IP address on the VM. Ensure that you assign IPs to
+          NIC each time the VM reboots.</para>
+        <para>Within a few moments, the new IP address should appear with the state Allocated. You
+          can now use the IP address in Port Forwarding or StaticNAT rules.</para>
       </listitem>
     </orderedlist>
   </section>
-   <section id="caveats">
+  <section id="caveats">
     <title>Port Forwarding and StaticNAT Services Changes</title>
     <para>Because multiple IPs can be associated per NIC, you are allowed to select a desired IP for
       the Port Forwarding and StaticNAT services. The default is the primary IP. To enable this
