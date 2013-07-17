@@ -481,7 +481,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     vpcid=self.vpc.id,
                                     domainid=self.account.domainid
                                 )
-        self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray))
+        self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray[0], vmarray[1]))
         lb_rule.assign(self.apiclient, vmarray)
         return lb_rule
 
