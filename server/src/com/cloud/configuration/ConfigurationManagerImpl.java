@@ -4047,7 +4047,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         NetworkOffering offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate,
                 serviceProviderMap, false, guestType, false, serviceOfferingId, conserveMode, serviceCapabilityMap,
-                specifyIpRanges, isPersistent, details, egressDefaultPolicy);
+                specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
