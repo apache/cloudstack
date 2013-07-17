@@ -67,8 +67,10 @@ create_snapshot() {
   local disk=$1
   local snapshotname="$2"
   local failed=0
+  is_lv ${disk}
+  islv_ret=$?
 
-  if [ ${dmsnapshot} = "yes" ] && is_lv ${disk}; then
+  if [ ${dmsnapshot} = "yes" ] && [ "$islv_ret" == "1" ]; then
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
     local lv_dm=`double_hyphens ${lv}`
@@ -120,8 +122,10 @@ destroy_snapshot() {
   local disk=$1
   local snapshotname="$2"
   local failed=0
+  is_lv ${disk}
+  islv_ret=$?
 
-  if is_lv ${disk}; then
+  if [ "$islv_ret" == "1" ]; then
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
     local lv_dm=`double_hyphens ${lv}`
@@ -187,7 +191,10 @@ backup_snapshot() {
      fi
   fi
 
-  if [ ${dmsnapshot} = "yes" ] && is_lv ${disk}; then
+  is_lv ${disk}
+  islv_ret=$?
+
+  if [ ${dmsnapshot} = "yes" ] && [ "$islv_ret" == "1" ] ; then
     local vg=`get_vg ${disk}`
     local vg_dm=`double_hyphens ${vg}`
     local scriptdir=`dirname ${0}`

@@ -1072,13 +1072,13 @@ ServerResource {
 
     private void passCmdLine(String vmName, String cmdLine)
             throws InternalErrorException {
-        final Script command = new Script(_patchViaSocketPath, _timeout, s_logger);
+        final Script command = new Script(_patchViaSocketPath, 5*1000, s_logger);
         String result;
         command.add("-n",vmName);
         command.add("-p", cmdLine.replaceAll(" ", "%"));
         result = command.execute();
         if (result != null) {
-            throw new InternalErrorException(result);
+            s_logger.debug("passcmd failed:" + result);
         }
     }
 

@@ -536,7 +536,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path) {
+    protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
         HttpClient client = new DefaultHttpClient();
         HttpGet get = new HttpGet(url);
         try {
@@ -548,10 +548,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
 
             String nfsMountPath = getRootDir(nfs.getUrl());
+
             String filePath = nfsMountPath + File.separator + path;
-            FileOutputStream outputStream = new FileOutputStream(filePath);
+            File directory = new File(filePath);
+            if (!directory.exists()) {
+                _storage.mkdirs(filePath);
+            }
+            File destFile = new File(filePath + File.separator + name);
+            if (!destFile.exists()) {
+                destFile.createNewFile();
+            }
+            FileOutputStream outputStream = new FileOutputStream(destFile);
             entity.writeTo(outputStream);
-            return new File(filePath);
+            return new File(destFile.getAbsolutePath());
         } catch (IOException e) {
             s_logger.debug("Faild to get url:"+ url + ", due to " + e.toString());
             throw new CloudRuntimeException(e);
@@ -565,9 +574,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new DownloadAnswer("cache store can't be null", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
+        File file = null;
         try {
             NfsTO nfsCacheStore = (NfsTO)cacheStore;
-            File file = downloadFromUrlToNfs(cmd.getUrl(), nfsCacheStore, path);
+            String fileName = UUID.randomUUID().toString() + "." + cmd.getFormat().getFileExtension();
+            file = downloadFromUrlToNfs(cmd.getUrl(), nfsCacheStore, path, fileName);
             String swiftPath = SwiftUtil.putObject(swiftTO, file, "T-" + cmd.getId());
             String md5sum = null;
             try {
@@ -576,14 +587,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.debug("Failed to get md5sum: " + file.getAbsoluteFile());
             }
 
-            file.delete();
-
-            return new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+            DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
                     swiftPath, swiftPath, file.length(), file.length(), md5sum
             );
+            return answer;
         } catch (Exception e) {
              s_logger.debug("Failed to register template into swift", e);
             return new DownloadAnswer(e.toString(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+        } finally {
+            if (file != null) {
+                file.delete();
+            }
         }
     }
 

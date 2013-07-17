@@ -18,7 +18,7 @@ package com.cloud.agent.api.to;
 
 import com.cloud.storage.DataStoreRole;
 
-public final class NfsTO implements DataStoreTO {
+public class NfsTO implements DataStoreTO {
 
     private String _url;
     private DataStoreRole _role;

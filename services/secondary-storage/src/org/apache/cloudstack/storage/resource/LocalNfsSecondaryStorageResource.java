@@ -65,13 +65,10 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
         ((DownloadManagerImpl) _dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
-        // get mount parent folder configured in global setting, if set, this will overwrite _parent in NfsSecondaryStorageResource to work
-        // around permission issue for default /mnt folder
-        ConfigurationDaoImpl configDao = new ConfigurationDaoImpl();
-        String mountParent = configDao.getValue(Config.MountParent.key());
-        if (mountParent != null) {
-            _parent = mountParent + File.separator + "secStorage";
-        }
+    }
+
+    public void setParentPath(String path) {
+        this._parent = path;
     }
 
     @Override
