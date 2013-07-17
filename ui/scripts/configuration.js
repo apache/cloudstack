@@ -112,6 +112,7 @@
                   },
                   diskBytesReadRate: {
                       label: 'label.disk.bytes.read.rate',
+                      docID: 'helpComputeOfferingDiskBytesReadRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -119,6 +120,7 @@
                   },
                   diskBytesWriteRate: {
                       label: 'label.disk.bytes.write.rate',
+                      docID: 'helpComputeOfferingDiskBytesWriteRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -126,6 +128,7 @@
                   },
                   diskIopsReadRate: {
                       label: 'label.disk.iops.read.rate',
+                      docID: 'helpComputeOfferingDiskIopsReadRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -133,6 +136,7 @@
                   },
                   diskIopsWriteRate: {
                       label: 'label.disk.iops.write.rate',
+                      docID: 'helpComputeOfferingDiskIopsWriteRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -588,6 +592,7 @@
                   },
                   diskBytesReadRate: {
                       label: 'label.disk.bytes.read.rate',
+                      docID: 'helpSystemOfferingDiskBytesReadRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -595,6 +600,7 @@
                   },
                   diskBytesWriteRate: {
                       label: 'label.disk.bytes.write.rate',
+                      docID: 'helpSystemOfferingDiskBytesWriteRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -602,6 +608,7 @@
                   },
                   diskIopsReadRate: {
                       label: 'label.disk.iops.read.rate',
+                      docID: 'helpSystemOfferingDiskIopsReadRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -609,6 +616,7 @@
                   },
                   diskIopsWriteRate: {
                       label: 'label.disk.iops.write.rate',
+                      docID: 'helpSystemOfferingDiskIopsWriteRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -1046,12 +1054,12 @@
                           $isCustomizedIops.css('display', 'inline-block');
 
                           if ($isCustomizedIops == true) {
-                            $minIops.css('display', 'inline-block');
-                            $maxIops.css('display', 'inline-block');
-                          }
-                          else {
                             $minIops.hide();
                             $maxIops.hide();
+                          }
+                          else {
+                            $minIops.css('display', 'inline-block');
+                            $maxIops.css('display', 'inline-block');
                           }
                         }
                         else if (qosId == 'hypervisor') { // Hypervisor Qos
@@ -1097,6 +1105,7 @@
                   },
                   diskBytesReadRate: {
                       label: 'label.disk.bytes.read.rate',
+                      docID: 'helpDiskOfferingDiskBytesReadRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -1104,6 +1113,7 @@
                   },
                   diskBytesWriteRate: {
                       label: 'label.disk.bytes.write.rate',
+                      docID: 'helpDiskOfferingDiskBytesWriteRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -1111,6 +1121,7 @@
                   },
                   diskIopsReadRate: {
                       label: 'label.disk.iops.read.rate',
+                      docID: 'helpDiskOfferingDiskIopsReadRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -1118,6 +1129,7 @@
                   },
                   diskIopsWriteRate: {
                       label: 'label.disk.iops.write.rate',
+                      docID: 'helpDiskOfferingDiskIopsWriteRate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -1784,7 +1796,7 @@
 
                   displayText: { label: 'label.description', validation: { required: true }, docID: 'helpNetworkOfferingDescription' },
 
-                  networkRate: { label: 'label.network.rate.megabytes', docID: 'helpNetworkOfferingNetworkRate' },
+                  networkRate: { label: 'label.network.rate', docID: 'helpNetworkOfferingNetworkRate' },
 
 									/*
                   trafficType: {
