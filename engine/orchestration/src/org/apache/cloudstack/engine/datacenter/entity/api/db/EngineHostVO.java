@@ -383,7 +383,7 @@ public class EngineHostVO implements EngineHost, Identity {
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
     @Column(name="engine_state", updatable=true, nullable=false, length=32)
-    protected State engineState = null;
+    protected State orchestrationState = null;
 
 
     public EngineHostVO(String guid) {
@@ -393,12 +393,12 @@ public class EngineHostVO implements EngineHost, Identity {
         this.dom0MinMemory = 0;
         this.resourceState = ResourceState.Creating;
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.orchestrationState = State.Disabled;
     }
 
     protected EngineHostVO() {
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.orchestrationState = State.Disabled;
     }
 
     public EngineHostVO(long id,
@@ -433,7 +433,7 @@ public class EngineHostVO implements EngineHost, Identity {
         this.totalSize = totalSize;
         this.fsType = fsType;
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.orchestrationState = State.Disabled;
     }
 
     public EngineHostVO(long id,
@@ -492,7 +492,7 @@ public class EngineHostVO implements EngineHost, Identity {
         this.dom0MinMemory = dom0MinMemory;
         this.storageUrl = url;
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.orchestrationState = State.Disabled;
     }
 
     public void setPodId(Long podId) {
@@ -773,6 +773,6 @@ public class EngineHostVO implements EngineHost, Identity {
     }
 
     public State getOrchestrationState() {
-        return engineState;
+        return orchestrationState;
     }	
 }

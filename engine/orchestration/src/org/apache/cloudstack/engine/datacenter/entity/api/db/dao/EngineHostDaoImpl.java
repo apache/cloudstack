@@ -29,11 +29,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -311,7 +312,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
         StateChangeSearch = createSearchBuilder();
         StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
-        StateChangeSearch.and("state", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        StateChangeSearch.and("state", StateChangeSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();
     }
 
@@ -336,7 +337,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     @Override @DB
     public List<EngineHostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         Transaction txn = Transaction.currentTxn();
-        txn.start();       
+        txn.start();
         SearchCriteria<EngineHostVO> sc = UnmanagedDirectConnectSearch.create();
         sc.setParameters("lastPinged", lastPingSecondsAfter);
         //sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.Disabled);

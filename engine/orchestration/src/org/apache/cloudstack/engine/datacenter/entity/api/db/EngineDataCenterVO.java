@@ -158,7 +158,7 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
     @Column(name="engine_state", updatable=true, nullable=false, length=32)
-    protected State engineState = null;
+    protected State state = null;
 
 
     @Override
@@ -246,7 +246,7 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
         this.zoneToken = zoneToken;
         this.domain = domainSuffix;
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.state = State.Disabled;
     }
 
     @Override
@@ -481,7 +481,7 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     }
 
     public State getState() {
-        return engineState;
+        return state;
     }
 
 	@Override
