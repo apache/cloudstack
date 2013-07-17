@@ -75,6 +75,15 @@
             the VPC, and is not overlapped with the CIDR of any existing tier within the VPC.</para>
         </listitem>
         <listitem>
+          <para><emphasis role="bold">VLAN</emphasis>: The VLAN ID for the tier you create. </para>
+          <para>This option is only visible if the network offering you selected is
+            VLAN-enabled.</para>
+          <para condition="install">For more information, see the Assigning VLANs to Isolated
+            Networks section in the &PRODUCT; Administration Guide.</para>
+          <para condition="admin">For more information, see <xref linkend="vlan-assign-isolated-nw"
+            />.</para>
+        </listitem>
+        <listitem>
           <para><emphasis role="bold">Netmask</emphasis>: The netmask for the tier you create. </para>
           <para>For example, if the VPC CIDR is 10.0.0.0/16 and the network tier CIDR is
             10.0.1.0/24, the gateway of the tier is 10.0.1.1, and the netmask of the tier is
