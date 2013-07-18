@@ -415,7 +415,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-				  domainid=self.account.domainid,	
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
@@ -426,7 +426,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-				  domainid=self.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         self.debug("Deployed VM in account: %s, ID: %s" % (
@@ -930,7 +930,6 @@ class TesttemplateHierarchy(cloudstackTestCase):
         # 2. Verify template is also visible for domain_2
 
         # Sleep to ensure that template state is reflected across
-        time.sleep(self.services["sleep"])
 
         templates = list_templates(
                                     self.apiclient,
@@ -1169,12 +1168,6 @@ class TestUserDetails(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
@@ -1475,12 +1468,6 @@ class TestUserLogin(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
@@ -1651,19 +1638,13 @@ class TestDomainForceRemove(cloudstackTestCase):
         try:
             #Clean up, terminate the created resources
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator"])
     def test_forceDeleteDomain(self):
-        """ Test delete domain with force option"""
+        """ Test delete domain without force option"""
 
         # Steps for validations
         # 1. create a domain DOM
