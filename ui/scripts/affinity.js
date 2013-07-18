@@ -37,7 +37,7 @@
                     }
                 }
                 $.ajax({
-                    url: createURL('listAffinityGroups'),
+                    url: createURL('listAffinityGroups&listAll=true'),
                     data: data,
                     success: function(json) {
                         var items = json.listaffinitygroupsresponse.affinitygroup;
