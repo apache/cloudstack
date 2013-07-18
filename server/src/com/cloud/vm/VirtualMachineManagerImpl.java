@@ -359,13 +359,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Allocating entries for VM: " + vm);
         }
 
-        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, serviceOffering, null, params);
-
         vm.setDataCenterId(plan.getDataCenterId());
         if (plan.getPodId() != null) {
             vm.setPodId(plan.getPodId());
         }
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
+        vm = _vmDao.persist(vm);
+
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, serviceOffering, null, params);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
