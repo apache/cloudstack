@@ -144,6 +144,129 @@ under the License.
         <title>Upgrade Instructions</title>
         <para>This section contains upgrade instructions from prior versions of CloudStack to &PRODUCT; 4.1.1. We include instructions on upgrading to &PRODUCT; from pre-Apache versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases made while CloudStack was in the Apache Incubator.</para>
         <para>If you run into any issues during upgrades, please feel free to ask questions on users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
+        <section id="upgrade-from-4.1.0-to-4.1.1">
+            <title>Upgrade from 4.1.0 to 4.1.1</title>
+            <para>This section will guide you from &PRODUCT; 4.1.0 versions to &PRODUCT; 4.1.1.</para>
+            <para>Any steps that are hypervisor-specific will be called out with a note.</para>
+            <para>We recommend reading through this section once or twice before beginning your upgrade procedure, and working through it on a test system before working on a production system.</para>
+            <orderedlist>
+                <listitem>
+                    <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for Ubuntu).</para>
+                    <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.1 source, or check the &PRODUCT; downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
+                    <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
+                </listitem>
+                <listitem>
+                    <para>Stop your management server or servers. Run this on all management server hosts:</para>
+                    <programlisting><prompt>#</prompt> service cloudstack-management stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>If you are running a usage server or usage servers, stop those as well:</para>
+                    <programlisting><prompt>#</prompt> service cloudstack-usage stop</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
+                    <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
+                </listitem>
+                <listitem id="upgrade-deb-packages">
+                    <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
+                    <note><title>Community Packages</title>
+                        <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and APT repository, substitute your own URL for the ones used in these examples.</para>
+                    </note>
+                    <orderedlist id="debsteps">
+                        <listitem>
+                            <para>The first step is to confirm that your sources list is pointed to the correct repository for each system with &PRODUCT; packages. This means all management servers, and any hosts that have the KVM agent. (No changes should be necessary for hosts that are running VMware or Xen.)</para>
+                            <para>Start by opening <filename>/etc/apt/sources.list.d/cloudstack.list</filename> on any systems that have &PRODUCT; packages installed.</para>
+                            <para>This file should have one line, which contains:</para>
+                            <programlisting language="Bash">deb http://cloudstack.apt-get.eu/ubuntu precise 4.1</programlisting>
+                            <para>If the line above is not correct, correct it. Note that if you're using your own package repository, change this line to read as appropriate for your 4.1.1 repository.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Now update your apt package list:</para>
+                            <programlisting language="Bash">$ sudo apt-get update</programlisting>
+                        </listitem>
+                        <listitem id="deb-master">
+                            <para>Now that you have the repository configured, it's time to update the <filename>cloudstack-management</filename> package. This will pull in any other dependencies and updates you need.</para>
+                            <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
+                        </listitem>
+                        <listitem id="kvm-agent-deb">
+                            <para>On KVM hosts you will need to also upgrade the <filename>cloudstack-agent</filename> package:</para>
+                            <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Verify that the file <filename>/etc/cloudstack/agent/environment.properties</filename> has a line that reads:</para>
+                            <programlisting language="Bash">paths.script=/usr/share/cloudstack-common</programlisting>
+                            <para>If not, add the line.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Restart the agent:</para>
+                            <programlisting language="Bash">
+                                service cloudstack-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
+                            </programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem id="upgrade-rpm-packages">
+                    <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="restart-system-vms" />.</para> 
+                    <note><title>Community Packages</title>
+                        <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and yum repository, substitute your own URL for the ones used in these examples.</para>
+                    </note>
+                    <orderedlist id="rpmsteps">
+                        <listitem>
+                            <para>The first step is to confirm that your yum configuration is pointed at the correct repository for each system with &PRODUCT; packages. This means all management servers, and any hosts that have the KVM agent. (No changes should be necessary for hosts that are running VMware or Xen.)</para>
+                            <para>Start by opening <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that have &PRODUCT; packages installed.</para>
+                            <para>This file should have content similar to the following:</para>
+                            <programlisting language="Bash">
+                                [apache-cloudstack]
+                                name=Apache CloudStack
+                                baseurl=http://cloudstack.apt-get.eu/rhel/4.1/
+                                enabled=1
+                                gpgcheck=0
+                            </programlisting>
+                            <para>If the file above is not correct, correct it. Note that if you're using your own package repository, change the baseurl line to read as appropriate for your 4.1.1 repository.</para>
+                        </listitem>
+                        <listitem id="rpm-master">
+                            <para>Now that you have the repository configured, it's time to update the <filename>cloudstack-management</filename> package.</para>
+                            <programlisting language="Bash">$ sudo yum update cloudstack-management</programlisting>
+                        </listitem>
+                        <listitem id="kvm-agent-rpm">
+                            <para>For KVM hosts, you will need to update the <filename>cloudstack-agent</filename> package.</para>
+                            <programlisting language="Bash">$ sudo yum update cloudstack-agent</programlisting>
+                        </listitem>
+                        <listitem>
+                            <para>Verify that the file <filename>/etc/cloudstack/agent/environment.properties</filename> has a line that reads:</para>
+                            <programlisting language="Bash">paths.script=/usr/share/cloudstack-common</programlisting>
+                            <para>If not, add the line.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Restart the agent:</para>
+                            <programlisting language="Bash">
+                                service cloudstack-agent stop
+                                killall jsvc
+                                service cloudstack-agent start
+                            </programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem id="restart-system-vms">
+                    <para>Once you've upgraded the packages on your management servers, you'll need to restart the system VMs. Make sure port 8096 is open in your local host firewall to do this.</para>
+                    <para>There is a script that will do this for you, all you need to do is run the script and supply the IP address for your MySQL instance and your MySQL credentials:</para>
+                    <programlisting language="Bash"><prompt>#</prompt> nohup cloudstack-sysvmadm -d <replaceable>IP address</replaceable> -u cloud -p -a &gt; sysvm.log 2&gt;&amp;1 &amp;</programlisting>
+                    <para>You can monitor the log for progress. The process of restarting the system VMs can take an hour or more.</para>
+                    <programlisting language="Bash"><prompt>#</prompt> tail -f sysvm.log</programlisting>
+                    <para>The output to <filename>sysvm.log</filename> will look something like this:</para>
+                    <programlisting language="Bash">
+                        Stopping and starting 1 secondary storage vm(s)...
+                        Done stopping and starting secondary storage vm(s)
+                        Stopping and starting 1 console proxy vm(s)...
+                        Done stopping and starting console proxy vm(s).
+                        Stopping and starting 4 running routing vm(s)...
+                        Done restarting router(s).
+                    </programlisting>
+                </listitem>
+            </orderedlist>
+        </section>
         <section id="upgrade-from-4.0-to-4.1">
             <title>Upgrade from 4.0.x to 4.1.1</title>
             <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.1.1.</para>
