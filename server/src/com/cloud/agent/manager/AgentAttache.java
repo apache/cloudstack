@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -68,7 +67,7 @@ public abstract class AgentAttache {
     private static final Random                       s_rand                               = new Random(System.currentTimeMillis());
 
     protected static final Comparator<Request> s_reqComparator =
-        new Comparator<Request>() {
+            new Comparator<Request>() {
         @Override
         public int compare(Request o1, Request o2) {
             long seq1 = o1.getSequence();
@@ -84,7 +83,7 @@ public abstract class AgentAttache {
     };
 
     protected static final Comparator<Object> s_seqComparator =
-        new Comparator<Object>() {
+            new Comparator<Object>() {
         @Override
         public int compare(Object o1, Object o2) {
             long seq1 = ((Request) o1).getSequence();
@@ -110,9 +109,9 @@ public abstract class AgentAttache {
     protected AgentManagerImpl _agentMgr;
 
     public final static String[] s_commandsAllowedInMaintenanceMode =
-        new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(), ClusterSyncCommand.class.toString(), CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString() };
+            new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(), ClusterSyncCommand.class.toString(), CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString() };
     protected final static String[] s_commandsNotAllowedInConnectingMode =
-        new String[] { StartCommand.class.toString(), CreateCommand.class.toString() };
+            new String[] { StartCommand.class.toString(), CreateCommand.class.toString() };
     static {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
@@ -242,7 +241,7 @@ public abstract class AgentAttache {
     public int getQueueSize() {
         return _requests.size();
     }
-    
+
     public int getNonRecurringListenersSize() {
         List<Listener> nonRecurringListenersList = new ArrayList<Listener>();
         if (_waitForList.isEmpty()) {
@@ -258,7 +257,7 @@ public abstract class AgentAttache {
                     s_logger.debug("Listener is " + entry.getValue() + " waiting on " + entry.getKey());
                     nonRecurringListenersList.add(monitor);
                 }
-           }
+            }
         }
 
         return nonRecurringListenersList.size();
@@ -291,16 +290,16 @@ public abstract class AgentAttache {
                     unregisterListener(seq);
                 }
             }
-            
-            _agentMgr.notifyAnswersToMonitors(_id, seq, answers); 
-            
+
+            _agentMgr.notifyAnswersToMonitors(_id, seq, answers);
+
         } finally {
             // we should always trigger next command execution, even in failure cases - otherwise in exception case all the remaining will be stuck in the sync queue forever
             if (resp.executeInSequence()) {
                 sendNext(seq);
             }
         }
-        
+
         return processed;
     }
 
@@ -338,15 +337,26 @@ public abstract class AgentAttache {
         checkAvailability(req.getCommands());
 
         long seq = req.getSequence();
-        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Request seq: " + seq);
+        }
+
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
             s_logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
         }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("waiting to send " + seq);
+        }
+
         synchronized(this) {
             try {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("entering synchronize block for sending " + seq);
+                }
+
                 if (isClosed()) {
                     throw new AgentUnavailableException("The link to the agent has been closed", _id);
                 }

@@ -113,15 +113,24 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Downloading template to data store " + dataStore.getId());
+            }
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Downloading volume to data store " + dataStore.getId());
+            }
             _downloadMonitor.downloadVolumeToStorage(data, caller);
         }
     }
 
     protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
             CreateContext<CreateCmdResult> context) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Performing image store createTemplate async callback");
+        }
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();

@@ -123,7 +123,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         ComponentContext.inject(dl);
         _agentMgr.registerForHostEvents(dl, true, false, false);
 
-       return true;
+        return true;
     }
 
     @Override
@@ -153,7 +153,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0,
                     Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
             vmTemplateStore.setDataStoreRole(store.getRole());
-            _vmTemplateStoreDao.persist(vmTemplateStore);
+            vmTemplateStore = _vmTemplateStoreDao.persist(vmTemplateStore);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
@@ -176,7 +176,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 return;
             }
             DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd,
-                     callback);
+                    callback);
             ComponentContext.inject(dl);  // initialize those auto-wired field in download listener.
             if (downloadJobExists) {
                 // due to handling existing download job issues, we still keep
@@ -184,6 +184,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 // DownloadListener to use
                 // new ObjectInDataStore.State transition. TODO: fix this later
                 // to be able to remove downloadState from template_store_ref.
+                s_logger.info("found existing download job");
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
 
@@ -192,6 +193,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 old = _listenerTemplateMap.put(vmTemplateStore, dl);
             }
             if (old != null) {
+                s_logger.info("abandon obsolete download listener");
                 old.abandon();
             }
 

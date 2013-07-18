@@ -572,12 +572,21 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         TemplateObject tmplForCopy = (TemplateObject)_templateFactory.getTemplate(srcTemplate, destStore);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Setting source template url to " + url);
+        }
         tmplForCopy.setUrl(url);
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Mark template_store_ref entry as Creating");
+        }
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
         DataObject templateOnStore = destStore.create(tmplForCopy);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Invoke datastore driver createAsync to create template on destination store");
+        }
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
                 (TemplateObject) templateOnStore, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
@@ -653,6 +662,9 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected Void copyTemplateCrossZoneCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Performing copy template cross zone callback after completion");
+        }
         TemplateInfo destTemplate = context.getTemplate();
         CreateCmdResult result = callback.getResult();
         AsyncCallFuture<TemplateApiResult> future = context.getFuture();
