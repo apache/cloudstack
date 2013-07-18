@@ -136,7 +136,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
 
     if vif is not None:
         try:
-            dnats = execute("iptables -t nat -S | grep " + vif + " | sed 's/-A/-D/'").split("\n")
+            dnats = execute("""iptables -t nat -S | awk '/%s/ { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
             for dnat in dnats:
                 try:
                     execute("iptables -t nat " + dnat)
@@ -471,7 +471,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
 
     vmchain = vm_name
 
-    delcmd = "iptables-save | grep BF | grep " + vmchain + " | grep physdev-is-bridged | sed 's/-A/-D/'"
+    delcmd = """iptables-save | awk '/BF(.*)physdev-is-bridged(.*)%s/ { sub(/-A/, "-D", $1) ; print }'""" % vmchain
     delcmds = execute(delcmd).split('\n')
     delcmds.pop()
     for cmd in delcmds:
@@ -547,7 +547,7 @@ def network_rules_for_rebooted_vm(vmName):
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
-    brName = execute("iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $9}' | head -1").strip()
+    brName = execute("iptables-save | awk -F '-j ' '/FORWARD -o(.*)physdev-is-bridged(.*)BF/ {print $2}'").strip()
     if brName is None or brName is "":
         brName = "cloudbr0"
     else:
@@ -569,8 +569,8 @@ def network_rules_for_rebooted_vm(vmName):
 
     #change antispoof rule in vmchain
     try:
-        delcmd = "iptables-save | grep '\-A " + vmchain_default + "' | grep physdev | sed 's/-A/-D/'"
-        inscmd = "iptables-save |grep '\-A " + vmchain_default + "' | grep physdev | sed -r 's/vnet[0-9]+/ " + vifs[0] + "/' | sed 's/-A/-I/'"
+        delcmd = """iptables-save | awk '/-A %s(.*)physdev/ { sub(/-A/, "-D", $1) ; print }'""" % vmchain_default
+        inscmd = """iptables-save | awk '/-A %s(.*)physdev/ { gsub(/vnet[0-9]+/, "%s") ; sub(/-A/, "-D", $1) ; print }'""" % ( vmchain_default,vifs[0] )
         ipts = []
         for cmd in [delcmd, inscmd]:
             logging.debug(cmd)
@@ -616,7 +616,7 @@ def cleanup_rules_for_dead_vms():
 
 def cleanup_rules():
     try:
-        chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | grep -v '.*-eg' | awk '{print $1}' | cut -d':' -f2"
+        chainscmd = """iptables-save | grep -P '^:(?!.*-(def|eg))' | awk '{sub(/^:/, "", $1) ; print $1}'"""
         chains = execute(chainscmd).split('\n')
         cleanup = []
         for chain in chains:
@@ -637,7 +637,7 @@ def cleanup_rules():
                     logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
                     cleanup.append(vm_name)
 
-        chainscmd = "ebtables-save |grep :i |awk '{print $1}' |sed -e 's/\-in//g' |sed -e 's/\-out//g' |sed -e 's/^://g'"
+        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out))/, "") ; print $1}'"""
         chains = execute(chainscmd).split('\n')
         for chain in chains:
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
@@ -906,13 +906,13 @@ def addFWFramework(brname):
         execute("iptables -N " + brfwin)
 
     try:
-        refs = execute("iptables -n -L " + brfw + " |grep " + brfw + " | cut -d \( -f2 | awk '{print $1}'").strip()
+        refs = execute("""iptables -n -L " + brfw + " | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % brfw).strip()
         if refs == "0":
             execute("iptables -I FORWARD -i " + brname + " -j DROP")
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
             execute("iptables -I FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
             execute("iptables -I FORWARD -o " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
-            phydev = execute("brctl show |grep -w " + brname + " | awk '{print $4}'").strip()
+            phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
             execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
