@@ -402,9 +402,9 @@ public class ViewResponseHelper {
     }
 
     public static List<TemplateResponse> createIsoResponse(TemplateJoinVO... templates) {
-        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        Hashtable<String, TemplateResponse> vrDataList = new Hashtable<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
-            TemplateResponse vrData = vrDataList.get(vr.getId());
+            TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if ( vrData == null ){
                 // first time encountering this volume
                 vrData = ApiDBUtils.newIsoResponse(vr);
@@ -413,7 +413,7 @@ public class ViewResponseHelper {
                 // update tags
                 vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
             }
-            vrDataList.put(vr.getId(), vrData);
+            vrDataList.put(vr.getTempZonePair(), vrData);
         }
         return new ArrayList<TemplateResponse>(vrDataList.values());
     }
