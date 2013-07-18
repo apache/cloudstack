@@ -23,11 +23,11 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import com.cloud.dao.EntityManager;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**

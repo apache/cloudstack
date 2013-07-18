@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Transient;
@@ -33,7 +34,6 @@ import net.sf.cglib.proxy.MethodProxy;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria.SelectType;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * GenericSearchBuilder is used to build a search based on a VO object
@@ -74,13 +74,19 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
     }
     
     protected Attribute getSpecifiedAttribute() {
-        assert(_entity != null && _specifiedAttrs != null && _specifiedAttrs.size() == 1) : "Now now, better specify an attribute or else we can't help you";
+        if (_entity == null || _specifiedAttrs == null || _specifiedAttrs.size() != 1) {
+            throw new RuntimeException("Now now, better specify an attribute or else we can't help you");
+        }
         return _specifiedAttrs.get(0);
     }
 
     public GenericSearchBuilder<T, K> selectField(Object... useless) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() > 0 : "You didn't specify any attributes";
+        if (_entity == null) {
+            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
+        }
+        if (_specifiedAttrs.size() <= 0) {
+            throw new RuntimeException("You didn't specify any attributes");
+        }
    
         if (_selects == null) {
             _selects = new ArrayList<Select>();
@@ -117,9 +123,15 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
      * @return a SearchBuilder to build more search parts.
      */
     public GenericSearchBuilder<T, K> select(String fieldName, Func func, Object useless, Object... params) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() <= 1 : "You can't specify more than one field to search on";
-        assert func.getCount() == -1 || (func.getCount() == (params.length + 1)) : "The number of parameters does not match the function param count for " + func;
+        if (_entity == null) {
+            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
+        }
+        if (_specifiedAttrs.size() > 1) {
+            throw new RuntimeException("You can't specify more than one field to search on");
+        }
+        if (func.getCount() != -1 && (func.getCount() != (params.length + 1))) {
+            throw new RuntimeException("The number of parameters does not match the function param count for " + func);
+        }
         
         if (_selects == null) {
             _selects = new ArrayList<Select>();
@@ -131,12 +143,15 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
                 field = _resultType.getDeclaredField(fieldName);
                 field.setAccessible(true);
             } catch (SecurityException e) {
-                throw new CloudRuntimeException("Unable to find " + fieldName, e);
+                throw new RuntimeException("Unable to find " + fieldName, e);
             } catch (NoSuchFieldException e) {
-                throw new CloudRuntimeException("Unable to find " + fieldName, e);
+                throw new RuntimeException("Unable to find " + fieldName, e);
             }
         } else {
-            assert _selects.size() == 0 : "You're selecting more than one item and yet is not providing a container class to put these items in.  So what do you expect me to do.  Spin magic?";
+            if (_selects.size() != 0) {
+                throw new RuntimeException(
+                        "You're selecting more than one item and yet is not providing a container class to put these items in.  So what do you expect me to do.  Spin magic?");
+            }
         }
         
         Select select = new Select(func, _specifiedAttrs.size() == 0 ? null : _specifiedAttrs.get(0), field, params);
@@ -146,10 +161,6 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         
         return this;
     }
-    
-//    public GenericSearchBuilder<T, K> select(String joinName, String fieldName, Func func, Object useless, Object... params) {
-//
-//    }
     
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -174,7 +185,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
 			            }
 			        }
 			    }
-				assert false : "Perhaps you need to make the method start with get or is?";
+                throw new RuntimeException("Perhaps you need to make the method start with get or is: " + method);
 			}
 		}
         return methodProxy.invokeSuper(object, args);
@@ -199,6 +210,16 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+    public GenericSearchBuilder<T, K> and(Object useless, Op op, String name) {
+        constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public Preset and(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
     public GenericSearchBuilder<T, K> and() {
         constructCondition(null, " AND ", null, null);
         return this;
@@ -217,19 +238,53 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return and(name, useless, op);
     }
     
+    public GenericSearchBuilder<T, K> where(Object useless, Op op, String name) {
+        return and(name, useless, op);
+    }
+
+    public Preset where(Object useless, Op op) {
+        return and(useless, op);
+    }
+
     public GenericSearchBuilder<T, K> left(String name, Object useless, Op op) {
         constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
         return this;
     }
     
+    public GenericSearchBuilder<T, K> left(Object useless, Op op, String name) {
+        constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public Preset left(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
+    public GenericSearchBuilder<T, K> op(Object useless, Op op, String name) {
+        return left(useless, op, name);
+    }
+
+    public Preset op(Object useless, Op op) {
+        return left(useless, op);
+    }
+
     public GenericSearchBuilder<T, K> op(String name, Object useless, Op op) {
         return left(name, useless, op);
     }
     
+    public GenericSearchBuilder<T, K> openParen(Object useless, Op op, String name) {
+        return left(name, useless, op);
+    }
+
     public GenericSearchBuilder<T, K> openParen(String name, Object useless, Op op) {
         return left(name, useless, op);
     }
     
+    public Preset openParen(Object useless, Op op) {
+        return left(useless, op);
+    }
+
     public GroupBy<T, K> groupBy(Object... useless) {
         assert _groupBy == null : "Can't do more than one group bys";
         _groupBy = new GroupBy<T, K>(this);
@@ -254,6 +309,16 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+    public GenericSearchBuilder<T, K> or(Object useless, Op op, String name) {
+        constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public Preset or(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
     public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2, JoinBuilder.JoinType joinType) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
@@ -272,7 +337,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
-    protected void constructCondition(String conditionName, String cond, Attribute attr, Op op) {
+    protected Condition constructCondition(String conditionName, String cond, Attribute attr, Op op) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert op != Op.SC : "Call join";
@@ -280,6 +345,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         Condition condition = new Condition(conditionName, cond, attr, op);
         _conditions.add(condition);
         _specifiedAttrs.clear();
+        return condition;
     }
 
     /**
@@ -360,6 +426,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         protected final String cond;
         protected final Op op;
         protected final Attribute attr;
+        protected Object[] presets;
         
         protected Condition(String name) {
             this(name, null, null, null);
@@ -370,8 +437,21 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
             this.attr = attr;
             this.cond = cond;
             this.op = op;
+            this.presets = null;
         }
         
+        public boolean isPreset() {
+            return presets != null;
+        }
+
+        public void setPresets(Object... presets) {
+            this.presets = presets;
+        }
+
+        public Object[] getPresets() {
+            return presets;
+        }
+
         public void toSql(StringBuilder sql, Object[] params, int count) {
             if (count > 0) {
                 sql.append(cond);
@@ -409,7 +489,9 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
                 sql.delete(sql.length() - 5, sql.length());
                 sql.append(" IS NOT NULL ");
             } else {
-                assert((op.getParams() == 0 && params == null) || (params.length == op.getParams())) : "Problem with condition: " + name;
+                if ((op.getParams() != 0 || params != null) && (params.length != op.getParams())) {
+                    throw new RuntimeException("Problem with condition: " + name);
+                }
             }
         }
         
@@ -443,6 +525,24 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
             this.attr = attr;
             this.params = params;
             this.field = field;
+        }
+    }
+    
+    public class Preset {
+        GenericSearchBuilder<T, K> builder;
+        Condition condition;
+
+        protected Preset(GenericSearchBuilder<T, K> builder, Condition condition) {
+            this.builder = builder;
+            this.condition = condition;
+        }
+
+        public GenericSearchBuilder<T, K> values(Object... params) {
+            if (condition.op.getParams() > 0 && condition.op.params != params.length) {
+                throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
+            }
+            condition.setPresets(params);
+            return builder;
         }
     }
 }

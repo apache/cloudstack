@@ -14,14 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.db;
+package com.cloud.utils;
 
-public interface NextWhere<T, K> extends FirstWhere<T, K> {
-    NextWhere<T, K> and();
-    NextWhere<T, K> or();
-    NextWhere<T, K> not();
-    
-    @Override
-    void done();
-
+public interface Predicate {
+	boolean checkCondition();
 }

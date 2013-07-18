@@ -29,10 +29,10 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
 
-    protected ArrayList<Pair<Class<?>, String>> uuidList = new ArrayList<Pair<Class<?>, String>>();
-
     // This holds a list of uuids and their descriptive names.
     protected ArrayList<ExceptionProxyObject> idList = new ArrayList<ExceptionProxyObject>();
+
+    protected ArrayList<Pair<Class<?>, String>> uuidList = new ArrayList<Pair<Class<?>, String>>();
 
     protected int csErrorCode;
 
@@ -47,7 +47,7 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
-    public CloudRuntimeException() {
+    protected CloudRuntimeException() {
         super();
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
@@ -65,6 +65,12 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         idList.add(proxy);
     }
 
+    @Override
+    public CloudRuntimeException add(Class<?> entity, String uuid) {
+        uuidList.add(new Pair<Class<?>, String>(entity, uuid));
+        return this;
+    }
+
     public ArrayList<ExceptionProxyObject> getIdProxyList() {
         return idList;
     }
@@ -78,13 +84,7 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
     }
 
     public CloudRuntimeException(Throwable t) {
-        super(t);
-    }
-
-    @Override
-    public CloudRuntimeException add(Class<?> entity, String uuid) {
-        uuidList.add(new Pair<Class<?>, String>(entity, uuid));
-        return this;
+        super(t.getMessage(), t);
     }
 
     @Override

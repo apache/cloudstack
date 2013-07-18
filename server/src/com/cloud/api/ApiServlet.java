@@ -40,12 +40,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.dao.EntityManager;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.EntityManager;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")

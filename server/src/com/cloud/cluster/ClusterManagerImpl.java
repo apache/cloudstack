@@ -89,7 +89,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.NetUtils;
+
 import com.google.gson.Gson;
+
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 @Local(value = { ClusterManager.class })
 public class ClusterManagerImpl extends ManagerBase implements ClusterManager {

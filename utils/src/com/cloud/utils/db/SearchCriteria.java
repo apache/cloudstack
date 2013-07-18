@@ -295,6 +295,9 @@ public class SearchCriteria<K> {
         StringBuilder sql = new StringBuilder();
         int i = 0;
         for (Condition condition : _conditions) {
+            if (condition.isPreset()) {
+                _params.put(condition.name, condition.presets);
+            }
             Object[] params = _params.get(condition.name);
             if ((condition.op == null || condition.op.params == 0) || (params != null)) {
                 condition.toSql(sql, params, i++);
@@ -302,6 +305,9 @@ public class SearchCriteria<K> {
         }
 
         for (Condition condition : _additionals) {
+            if (condition.isPreset()) {
+                _params.put(condition.name, condition.presets);
+            }
             Object[] params = _params.get(condition.name);
             if ((condition.op.params == 0) || (params != null)) {
                 condition.toSql(sql, params, i++);

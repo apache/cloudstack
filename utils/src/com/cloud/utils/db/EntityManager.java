@@ -14,14 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dao;
+package com.cloud.utils.db;
 
 import java.io.Serializable;
 import java.util.List;
-
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 
 /**
  * Generic Entity Manager to retrieve database objects.

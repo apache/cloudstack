@@ -840,7 +840,7 @@
   <bean id="volumeTypeHelper" class="org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper" />
   <bean id="zoneRestService" class="org.apache.cloudstack.engine.rest.service.api.ZoneRestService" />
   <bean id="cloudZonesStartupProcessor" class="com.cloud.hypervisor.CloudZonesStartupProcessor" />
-  <bean id="managementServerNode" class="com.cloud.cluster.ManagementServerNode" />
+  <bean id="managementServerNode" class="org.apache.cloudstack.utils.identity.ManagementServerNode" />
   <bean id="testingAllocator" class="com.cloud.agent.manager.allocator.impl.TestingAllocator" />
   <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
   <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />

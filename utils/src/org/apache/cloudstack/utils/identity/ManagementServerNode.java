@@ -14,12 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.utils.identity;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -27,15 +26,12 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
-@Component
 @Local(value = {SystemIntegrityChecker.class})
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 	private final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
     
 	private static final long s_nodeId = MacAddress.getMacAddress().toLong();
     
-    public static enum State { Up, Down };
-
     public ManagementServerNode() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }

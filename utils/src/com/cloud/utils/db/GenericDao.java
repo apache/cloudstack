@@ -134,6 +134,8 @@ public interface GenericDao<T, ID extends Serializable> {
     
     boolean update(ID id, T entity);
     
+    int update(T entity, SearchCriteria<T> sc);
+    
     /**
      * Look for all active rows.
      * @return list of entity beans.
