@@ -384,7 +384,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
             }
 
-            pool.refresh();
+            //pool.refresh();
             pool.setCapacity(storage.getInfo().capacity);
             pool.setUsed(storage.getInfo().allocation);
             pool.setAvailable(storage.getInfo().available);
