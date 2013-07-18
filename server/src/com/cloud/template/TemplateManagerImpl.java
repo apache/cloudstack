@@ -634,9 +634,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             createEventType = EventTypes.EVENT_TEMPLATE_CREATE;
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
         TemplateInfo srcTemplate = this._tmplFactory.getTemplate(template.getId(), srcSecStore);
         // Copy will just find one eligible image store for the destination zone
         // and copy template there, not propagate to all image stores
