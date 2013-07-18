@@ -824,22 +824,10 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
                                                   domainid=self.domain_2.id
                                                   )
         self.assertEqual(
-                            isinstance(service_offerings, list),
-                            True,
+                            service_offerings,
+                            None,
                             "Check List Service Offerings for a valid response"
                         )
-        self.assertNotEqual(
-                            len(service_offerings),
-                            0,
-                            "Check List Service Offerings response"
-                            )
-
-        for service_offering in service_offerings:
-            self.assertEqual(
-               service_offering.id,
-               self.service_offering.id,
-               "Check Service offering ID for domain" + str(self.domain_2.name)
-            )
         return
 
 
