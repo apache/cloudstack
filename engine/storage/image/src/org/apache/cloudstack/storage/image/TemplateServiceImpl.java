@@ -580,8 +580,8 @@ public class TemplateServiceImpl implements TemplateService {
 
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
                 (TemplateObject) templateOnStore, future);
-        AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null)).setContext(context);
+        AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().copyTemplateCrossZoneCallBack(null, null)).setContext(context);
         destStore.getDriver().createAsync(destStore, templateOnStore, caller);
         return future;
     }
@@ -645,6 +645,28 @@ public class TemplateServiceImpl implements TemplateService {
             future.complete(res);
         } catch (Exception e) {
             s_logger.debug("Failed to process copy template callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
+    }
+
+    protected Void copyTemplateCrossZoneCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {
+        TemplateInfo destTemplate = context.getTemplate();
+        CreateCmdResult result = callback.getResult();
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        TemplateApiResult res = new TemplateApiResult(destTemplate);
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                destTemplate.processEvent(Event.OperationFailed);
+            } else {
+                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+            }
+            future.complete(res);
+        } catch (Exception e) {
+            s_logger.debug("Failed to process copy template cross zones callback", e);
             res.setResult(e.toString());
             future.complete(res);
         }
