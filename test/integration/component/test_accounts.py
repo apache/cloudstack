@@ -1504,7 +1504,7 @@ class TestUserLogin(cloudstackTestCase):
         return
 
     @attr(tags=["login", "accounts", "simulator", "advanced",
-                        "advancedns", "basic", "eip", "sg"])
+                        "advancedns", "basic", "eip", "sg", "needle"])
     def test_LoginApiDomain(self):
         """Test login API with domain
         """
