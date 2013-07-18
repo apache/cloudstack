@@ -263,10 +263,10 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Upload;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
+import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -3638,6 +3638,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         AffinityGroupResponse response = new AffinityGroupResponse();
 
         Account account = ApiDBUtils.findAccountById(group.getAccountId());
+        response.setId(group.getUuid());
         response.setAccountName(account.getAccountName());
         response.setName(group.getName());
         response.setType(group.getType());
