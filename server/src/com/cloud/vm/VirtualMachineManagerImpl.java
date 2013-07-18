@@ -3363,7 +3363,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Float cpuOvercommitRatio = Float.parseFloat(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), hostVo.getClusterId()));
         long minMemory = (long) (newServiceOffering.getRamSize()/memoryOvercommitRatio);
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(),
-                (int) (newServiceOffering.getSpeed()/cpuOvercommitRatio), newServiceOffering.getSpeed(), minMemory * 1024 * 1024, newServiceOffering.getRamSize() * 1024 * 1024, newServiceOffering.getLimitCpuUse(), isDynamicallyScalable);
+                (int) (newServiceOffering.getSpeed()/cpuOvercommitRatio), newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse(), isDynamicallyScalable);
 
         Long dstHostId = vm.getHostId();
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());

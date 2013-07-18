@@ -485,7 +485,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 if(_vmSnapshotDao.listByParent(vmSnapshotVO.getId()).size() == 0)
                     pathCount++;
                 if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory)
-                    memorySnapshotSize += (offering.getRamSize() * 1024 * 1024);
+                    memorySnapshotSize += (offering.getRamSize() * 1024L * 1024L);
             }
             if(pathCount <= 1)
                 totalSize = totalSize + memorySnapshotSize;
