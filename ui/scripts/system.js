@@ -9454,51 +9454,49 @@
                     podId = json.createpodresponse.pod.id;
 
                   //EXPLICIT DEDICATION
-                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                    if(args.$form.find('.form-item[rel=isDedicated]')
+                                 .find('input[type=checkbox]').is(':Checked')== true){
+
                       var array2 = [];
+
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
 
                       if(podId != null){
-                      $.ajax({
-                         url:createURL("dedicatePod&podId=" +podId +"&domainId=" +args.data.domainId + array2.join("")),
-                         dataType:"json",
-                         success:function(json){
+                        $.ajax({
+                          url:createURL("dedicatePod&podId=" +
+                                        podId +
+                                        "&domainId=" +
+                                        args.data.domainId +
+                                        array2.join("")),
+                          dataType:"json",
+                          success:function(json){
                             var jid = json.dedicatepodresponse.jobid;
-                    args.response.success({
-                               _custom:
-                           {      jobId: jid
-                             },
-                            notification: {
-                                 poll: pollAsyncJobResult
+                            args.response.success({
+                              _custom:{
+                                 jobId: jid
                               },
-
-										  data:item
-										});
-
-                         },
-
-                         error:function(json){
-
-                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                         }
-                       });
-
-                     }
+                               notification: {
+                                 poll: pollAsyncJobResult,
+                                // FIXME: should use label tag
+                                 desc: "Dedicate Pod"
+                              },
+										          data:item
+										        });
+                          },
+                          error:function(json){
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                          }
+                        });
+                      }
                     }
-                   else {
-                      args.response.success({data: item});
-                    }
-
+                    args.response.success({data: item});
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
-
                 });
-
-                
               },
 
               notification: {
@@ -10421,18 +10419,22 @@
                     
                       if(clusterId != null){
                         $.ajax({
-                          url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
+                          url:createURL("dedicateCluster&clusterId=" + 
+                                        clusterId +"&domainId=" +
+                                        args.data.domainId +
+                                        array2.join("")),
                           dataType:"json",
                           success:function(json){
                             var jid = json.dedicateclusterresponse.jobid;
                             args.response.success({
-                              _custom:
-                              {      jobId: jid
+                              _custom: {
+                                jobId: jid
                               },
                               notification: {
-                                poll: pollAsyncJobResult
+                                poll: pollAsyncJobResult,
+                                // FIXME: should use label tag
+                                desc: 'Dedicate Cluster'
                               },
-
                               data:$.extend(item, {state:'Enabled'})
 										        });
 
@@ -10442,9 +10444,8 @@
                           }
                         });
                       }
-                    } else {
-                      args.response.success({data: item});
                     }
+                    args.response.success({data: item});
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -11513,50 +11514,47 @@
                     var array2 = [];
 
                     if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
-                    
 
-                    if(hostId != null){
-                      $.ajax({
-                         url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
-                         dataType:"json",
-                         success:function(json){
-                             var jid = json.dedicatehostresponse.jobid;
-                              args.response.success({
-                                 _custom:
-                           {      jobId: jid
-                             },
-                            notification: {
-                              poll: pollAsyncJobResult
-                            },
+                      if(hostId != null){
+                        $.ajax({
+                          url:createURL("dedicateHost&hostId=" +
+                                        hostId +
+                                        "&domainId=" +
+                                        args.data.domainId +
+                                        array2.join("")),
+                          dataType:"json",
+                          success:function(json) {
+                          var jid = json.dedicatehostresponse.jobid;
+                            args.response.success({
+                              _custom: {
+                                jobId: jid
+                              },
+                              notification: {
+                                poll: pollAsyncJobResult,
+                                // FIXME: should use label tag
+                                desc: "Dedicate Host"
+                              },
+                              data:item
+                            });
 
-                            data:item
-
-                          });
-
-                        },
-
-                        error:function(json){
-                          args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                        }
-                      });
+                          },
+                          error:function(json){
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                          }
+                        });
+                      }
                     }
-                  }
-                  else {
-                      args.response.success({data: item});
-                    }
-
+                    args.response.success({data: item});
                   },
-
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
-
                 });
               },
-
               notification: {
                 poll: function(args){
                   args.complete({
@@ -11564,7 +11562,6 @@
                   });
                 }
               },
-
               messages: {
                 notification: function(args) {
                   return 'label.add.host';

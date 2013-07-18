@@ -182,6 +182,8 @@
                 // Disable any clicking/actions for row
                 $instanceRow.bind('click', function() { return false; });
 
+                if(args.notification) notification = args.notification;
+
                 notification._custom = args._custom;
 
                 if (additional && additional.success) additional.success(args);
@@ -246,25 +248,27 @@
                   {},
 
                   // Error
-                  function(args) {
+                  function(errorArgs) {
                     if (!isHeader) {
                       if ($instanceRow.data('list-view-new-item')) {
                         // For create forms
                         $instanceRow.remove();
                       } else {
                         // For standard actions
-                        replaceItem(
-                          $instanceRow,
-                          $.extend($instanceRow.data('json-obj'), args.data),
-                          args.actionFilter ?
-                            args.actionFilter :
-                            $instanceRow.data('list-view-action-filter')
-                        );
+                        if(!args.notification) {
+                          replaceItem(
+                            $instanceRow,
+                            $.extend($instanceRow.data('json-obj'), errorArgs.data),
+                            errorArgs.actionFilter ?
+                              errorArgs.actionFilter :
+                              $instanceRow.data('list-view-action-filter')
+                          );
+                        }
                       }
                     }
 
                     if (options.error) {
-                      options.error(args);
+                      options.error(errorArgs);
                     }
                   }
                 );
