@@ -103,10 +103,290 @@ under the License.
                     <tbody>
                         <row>
                             <entry>
-                                <para>CLOUDSTACK-XXXX</para>
+                                <para>CLOUDSTACK-531</para>
                             </entry>
                             <entry>
-                                <para>Example bug that was fixed.</para>
+                                <para>Potential disaster with template-cleanup enabled!</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2523</para>
+                            </entry>
+                            <entry>
+                                <para>Object_Store_Refactor - Recurring Snapshots are failing because of NullPointerException.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2758</para>
+                            </entry>
+                            <entry>
+                                <para>cloudstack-management does not start from RPM packages</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2905</para>
+                            </entry>
+                            <entry>
+                                <para>Recurring Snapshots are failing becuase of NullPointerException.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3005</para>
+                            </entry>
+                            <entry>
+                                <para>Upgrade from 2.2.14 to 4.1.0 failed with "Storage volume not found: no storage vol with matching name"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3015</para>
+                            </entry>
+                            <entry>
+                                <para>VPC virtual router lists deleted nics</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3097</para>
+                            </entry>
+                            <entry>
+                                <para>Installation docs have the wrong package names</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3278</para>
+                            </entry>
+                            <entry>
+                                <para>In non-OSS build, jetty:run does not upgrade the database to 4.1.0 and 4.1.1</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-1353</para>
+                            </entry>
+                            <entry>
+                                <para>KVM 6.3 snapshot Scheduling snapshot failed due to java.lang.NullPointerException</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3004</para>
+                            </entry>
+                            <entry>
+                                <para>[script] ssvm_check remove the duplicate file from consoleproxy and include the script from secondary storage folder while packing iso</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3080</para>
+                            </entry>
+                            <entry>
+                                <para>listVirtualMachines tag search refinement no longer working</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3179</para>
+                            </entry>
+                            <entry>
+                                <para>[DOC] Service cloud-management should be changed to service cloudstack-management</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3180</para>
+                            </entry>
+                            <entry>
+                                <para>[DOC] Path /usr/lib64/cloud/common/ for CentOS should be changed to /usr/share/cloudstack-common</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3182</para>
+                            </entry>
+                            <entry>
+                                <para>[DOC] Path /etc/cloud should be changed to /etc/cloudstack</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3440</para>
+                            </entry>
+                            <entry>
+                                <para>Action events are not published due to conflict of Eventutils and ActionEventUtils files</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3456</para>
+                            </entry>
+                            <entry>
+                                <para>We need to proactively close XAPI initiated console session from console proxy to avoid Deny of Service behave to XenServer host</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3540</para>
+                            </entry>
+                            <entry>
+                                <para>edithosts.sh script may delete the active dhcphosts.txt entry</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-305</para>
+                            </entry>
+                            <entry>
+                                <para>AWS APi - "Rolling back the transaction" seen in management server logs , everytime a soap call is made.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-308</para>
+                            </entry>
+                            <entry>
+                                <para>ec2-describe-instances - Instance type is always retuned as "m1.small"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-1475</para>
+                            </entry>
+                            <entry>
+                                <para>RegisterISO error after Update SSL Certificate</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-1759</para>
+                            </entry>
+                            <entry>
+                                <para>PF test cases failing with error "unexpected keyword argument 'keyPairFileLocation'"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-1760</para>
+                            </entry>
+                            <entry>
+                                <para>[Automation] Router test cases failed while checking dnsmasq service status</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2551</para>
+                            </entry>
+                            <entry>
+                                <para>Update Quick Install Guide</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2893</para>
+                            </entry>
+                            <entry>
+                                <para>The Agent attempts to re-create a already existing Libvirt Storage pool when creating a volume</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2936</para>
+                            </entry>
+                            <entry>
+                                <para>Disallow special characters on all text fields</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3213</para>
+                            </entry>
+                            <entry>
+                                <para>ResourceStateEvents for user VM are generated with entity type as Network</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3328</para>
+                            </entry>
+                            <entry>
+                                <para>cloudstack-agent RPM package doesn't require qemu-kvm</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3407</para>
+                            </entry>
+                            <entry>
+                                <para>network remains in 'allocated' if nic is added to it as first action</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3408</para>
+                            </entry>
+                            <entry>
+                                <para>userdata not available from all nics</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3409</para>
+                            </entry>
+                            <entry>
+                                <para>Security groups get clean up if VM is not in a running state</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-3433</para>
+                            </entry>
+                            <entry>
+                                <para>Relax the same package restriction for Command and its derived classes in ArrayTypeAdaptor</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-986</para>
+                            </entry>
+                            <entry>
+                                <para>Add Ubuntu instructions to 'Using the Management Server As the NFS Server'</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2338</para>
+                            </entry>
+                            <entry>
+                                <para>Add example of how to sign an API request</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2339</para>
+                            </entry>
+                            <entry>
+                                <para>Add libcloud example</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2859</para>
+                            </entry>
+                            <entry>
+                                <para>configurations for secondary external DNS appear to be wrong (4.4.4.4)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para>CLOUDSTACK-2902</para>
+                            </entry>
+                            <entry>
+                                <para>baseurl incorrect in installation guide</para>
                             </entry>
                         </row>
                     </tbody>
