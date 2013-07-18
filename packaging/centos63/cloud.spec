@@ -114,6 +114,9 @@ Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
+Requires: iptables
+Requires: ethtool
+Requires: vconfig
 Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
