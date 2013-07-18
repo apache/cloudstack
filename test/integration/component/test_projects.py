@@ -1431,13 +1431,10 @@ class TestProjectResources(cloudstackTestCase):
                     "Resources (volume) should be deleted as part of cleanup"
                     )
 
-        accounts = Project.listAccounts(self.apiclient, projectid=project.id)
-
-        self.assertEqual(
-                         accounts,
-                         None,
-                         "Accounts should be un-assigned from project"
-                    )
+        # Accounts should be un-assigned from project,
+        # so this call will raise an exception: Unable to find the project id=
+        with self.assertRaises(Exception):
+            Project.listAccounts(self.apiclient, projectid=project.id)
         return
 
 
