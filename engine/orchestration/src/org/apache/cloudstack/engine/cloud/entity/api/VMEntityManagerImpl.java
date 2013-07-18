@@ -115,6 +115,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
+
 	@Override
 	public VMEntityVO loadVirtualMachine(String vmId) {
 		// TODO Auto-generated method stub
@@ -197,7 +198,6 @@ public class VMEntityManagerImpl implements VMEntityManager {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
                     }
-
                     exclude.addHost(dest.getHost().getId());
                     continue;
                 }
@@ -228,8 +228,14 @@ public class VMEntityManagerImpl implements VMEntityManager {
                         _accountDao.findById(vm.getAccountId()), reservedPlan);
             } catch (Exception ex) {
                 // Retry the deployment without using the reservation plan
+                DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
+
+                if (reservedPlan.getAvoids() != null) {
+                    plan.setAvoids(reservedPlan.getAvoids());
+                }
+
                 _itMgr.start(vm, params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()),
-                        null);
+                        plan);
             }
         } else {
             // no reservation found. Let VirtualMachineManager retry
