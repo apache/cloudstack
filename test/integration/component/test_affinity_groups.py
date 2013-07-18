@@ -163,22 +163,31 @@ class TestCreateAffinityGroup(cloudstackTestCase):
             domainid = self.domain.id
 
         try:
-            self.aff_grp = AffinityGroup.create(api_client, aff_grp, acc, domainid)
+            return AffinityGroup.create(api_client, aff_grp, acc, domainid)
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced", "needle"])
     def test_01_admin_create_aff_grp(self):
+        """
+        Test create affinity group as admin
+        @return:
+        """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"])
-        self.debug("Created Affinity Group: %s" %self.aff_grp.name)
+        aff_group = self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"],
+                                        acc=self.account.name, domainid=self.account.domainid)
+        self.debug("Created Affinity Group: %s" % aff_group.name)
 
-        list_aff_grps = AffinityGroup.list(self.api_client)
-        AffinityGroup.delete(self.api_client, list_aff_grps[0].name)
-        self.debug("Deleted Affinity Group: %s" %list_aff_grps[0].name)
+        list_aff_grps = AffinityGroup.list(self.api_client, id=aff_group.id)
+        AffinityGroup.delete(self.api_client, id=list_aff_grps[0].id)
+        self.debug("Deleted Affinity Group: %s" % list_aff_grps[0].name)
 
     @attr(tags=["simulator", "basic", "advanced"])
     def test_02_doadmin_create_aff_grp(self):
+        """
+        Test create affinity group as domain admin
+        @return:
+        """
 
         self.new_domain = Domain.create(self.api_client, self.services["new_domain"])
         self.do_admin = Account.create(self.api_client, self.services["new_account"],
@@ -196,6 +205,10 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
     @attr(tags=["simulator", "basic", "advanced"])
     def test_03_user_create_aff_grp(self):
+        """
+        Test create affinity group as user
+        @return:
+        """
 
         self.user = Account.create(self.api_client, self.services["new_account"],
                                   domainid=self.domain.id)
@@ -211,6 +224,10 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
     @attr(tags=["simulator", "basic", "advanced"])
     def test_04_user_create_aff_grp_existing_name(self):
+        """
+        Test create affinity group that exists (same name)
+        @return:
+        """
 
         self.user = Account.create(self.api_client, self.services["new_account"],
                                   domainid=self.domain.id)
@@ -228,6 +245,10 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
     @attr(tags=["simulator", "basic", "advanced"])
     def test_05_create_aff_grp_same_name_diff_acc(self):
+        """
+        Test create affinity group with existing name but within different account
+        @return:
+        """
 
         self.user = Account.create(self.api_client, self.services["new_account"],
                                   domainid=self.domain.id)
@@ -247,6 +268,10 @@ class TestCreateAffinityGroup(cloudstackTestCase):
 
     @attr(tags=["simulator", "basic", "advanced"])
     def test_06_create_aff_grp_nonexisting_type(self):
+        """
+        Test create affinity group of non-existing type
+        @return:
+        """
 
         self.non_existing_aff_grp = {
                     "name": "TestAffGrp_HA",
