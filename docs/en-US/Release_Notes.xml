@@ -447,7 +447,7 @@ under the License.
                     <para>Make a backup of your MySQL database. If you run into any issues or need to roll back the upgrade, this will assist in debugging or restoring your existing environment. You'll be prompted for your password.</para>
                     <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
                 </listitem>
-                <listitem id="upgrade-deb-packages">
+                <listitem id="upgrade-deb-packages-411">
                     <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="upgrade-rpm-packages" />.</para> 
                     <note><title>Community Packages</title>
                         <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and APT repository, substitute your own URL for the ones used in these examples.</para>
@@ -487,7 +487,7 @@ under the License.
                         </listitem>
                     </orderedlist>
                 </listitem>
-                <listitem id="upgrade-rpm-packages">
+                <listitem id="upgrade-rpm-packages-411">
                     <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If not, skip to step <xref linkend="restart-system-vms" />.</para> 
                     <note><title>Community Packages</title>
                         <para>This section assumes you're using the community supplied packages for &PRODUCT;. If you've created your own packages and yum repository, substitute your own URL for the ones used in these examples.</para>
@@ -529,7 +529,7 @@ under the License.
                         </listitem>
                     </orderedlist>
                 </listitem>
-                <listitem id="restart-system-vms">
+                <listitem id="restart-system-vms-411">
                     <para>Once you've upgraded the packages on your management servers, you'll need to restart the system VMs. Make sure port 8096 is open in your local host firewall to do this.</para>
                     <para>There is a script that will do this for you, all you need to do is run the script and supply the IP address for your MySQL instance and your MySQL credentials:</para>
                     <programlisting language="Bash"><prompt>#</prompt> nohup cloudstack-sysvmadm -d <replaceable>IP address</replaceable> -u cloud -p -a &gt; sysvm.log 2&gt;&amp;1 &amp;</programlisting>
