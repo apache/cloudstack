@@ -66,7 +66,6 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -129,7 +128,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -150,7 +148,6 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -393,16 +390,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
                         "Management network CIDR is not configured originally. Set it default to " + localCidrs[0], "");
                 _configDao
-                        .update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
+                .update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
             } else {
                 s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr
-                        .sendAlert(
-                                AlertManager.ALERT_TYPE_MANAGMENT_NODE,
-                                0,
-                                new Long(0),
-                                "Management network CIDR is not properly configured and we are not able to find a default setting",
-                                "");
+                .sendAlert(
+                        AlertManager.ALERT_TYPE_MANAGMENT_NODE,
+                        0,
+                        new Long(0),
+                        "Management network CIDR is not properly configured and we are not able to find a default setting",
+                        "");
             }
         }
 
@@ -1271,6 +1268,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         host.add(2, "there are servers running in this zone");
         tablesToCheck.add(host);
 
+        List<String> imageStore = new ArrayList<String>();
+        host.add(0, "image_store");
+        host.add(1, "data_center_id");
+        host.add(2, "there are data store created for this zone");
+        tablesToCheck.add(imageStore);
+
         List<String> hostPodRef = new ArrayList<String>();
         hostPodRef.add(0, "host_pod_ref");
         hostPodRef.add(1, "data_center_id");
@@ -1334,7 +1337,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 selectSql += " AND taken IS NOT NULL";
             }
 
-            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")
+            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("image_store") || tableName.equals("volumes")
                     || tableName.equals("physical_network")) {
                 selectSql += " AND removed is NULL";
             }
@@ -1461,10 +1464,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
         for (HostPodVO hostPod : podsInZone) {
             String[] IpRange = hostPod.getDescription().split("-");
-            if (IpRange[0] == null || IpRange[1] == null)
+            if (IpRange[0] == null || IpRange[1] == null) {
                 continue;
-            if (!NetUtils.isValidIp(IpRange[0]) || !NetUtils.isValidIp(IpRange[1]))
+            }
+            if (!NetUtils.isValidIp(IpRange[0]) || !NetUtils.isValidIp(IpRange[1])) {
                 continue;
+            }
             if (NetUtils.ipRangesOverlap(startIp, endIp, IpRange[0], IpRange[1])) {
                 throw new InvalidParameterValueException(
                         "The Start IP and endIP address range overlap with private IP :" + IpRange[0] + ":"
@@ -1810,8 +1815,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean checkForDuplicates = !zoneName.equals(oldZoneName);
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null,
                 allocationStateStr, ip6Dns1, ip6Dns2);// not allowing updating
-                                                      // domain associated with
-                                                      // a zone, once created
+        // domain associated with
+        // a zone, once created
 
         zone.setName(zoneName);
         zone.setDns1(dns1);
@@ -2057,7 +2062,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr,
                 domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
-                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
+                        isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
     }
 
     @Override
@@ -2172,14 +2177,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
 
-        if ((bytesReadRate != null) && (bytesReadRate > 0))
+        if ((bytesReadRate != null) && (bytesReadRate > 0)) {
             offering.setBytesReadRate(bytesReadRate);
-        if ((bytesWriteRate != null) && (bytesWriteRate > 0))
+        }
+        if ((bytesWriteRate != null) && (bytesWriteRate > 0)) {
             offering.setBytesWriteRate(bytesWriteRate);
-        if ((iopsReadRate != null) && (iopsReadRate > 0))
+        }
+        if ((iopsReadRate != null) && (iopsReadRate > 0)) {
             offering.setIopsReadRate(iopsReadRate);
-        if ((iopsWriteRate != null) && (iopsWriteRate > 0))
+        }
+        if ((iopsWriteRate != null) && (iopsWriteRate > 0)) {
             offering.setIopsWriteRate(iopsWriteRate);
+        }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (details != null) {
@@ -2267,8 +2276,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
     public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
-    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
-    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
+            boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2291,8 +2300,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             iopsWriteRate = null;
 
             if (isCustomizedIops) {
-            	minIops = null;
-            	maxIops = null;
+                minIops = null;
+                maxIops = null;
             }
             else {
                 if (minIops == null && maxIops == null) {
@@ -2300,17 +2309,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     maxIops = 0L;
                 }
                 else {
-                	if (minIops == null || minIops <= 0) {
-                	    throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
-        	        }
+                    if (minIops == null || minIops <= 0) {
+                        throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
+                    }
 
-                	if (maxIops == null) {
-        	        	maxIops = 0L;
-        	        }
+                    if (maxIops == null) {
+                        maxIops = 0L;
+                    }
 
-                	if (minIops > maxIops) {
-                		throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
-                	}
+                    if (minIops > maxIops) {
+                        throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
+                    }
                 }
             }
         }
@@ -2321,18 +2330,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         tags = cleanupTags(tags);
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized,
-        		isCustomizedIops, minIops, maxIops);
+                isCustomizedIops, minIops, maxIops);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
 
-        if (bytesReadRate != null && (bytesReadRate > 0))
+        if (bytesReadRate != null && (bytesReadRate > 0)) {
             newDiskOffering.setBytesReadRate(bytesReadRate);
-        if (bytesWriteRate != null && (bytesWriteRate > 0))
+        }
+        if (bytesWriteRate != null && (bytesWriteRate > 0)) {
             newDiskOffering.setBytesWriteRate(bytesWriteRate);
-        if (iopsReadRate != null && (iopsReadRate > 0))
+        }
+        if (iopsReadRate != null && (iopsReadRate > 0)) {
             newDiskOffering.setIopsReadRate(iopsReadRate);
-        if (iopsWriteRate != null && (iopsWriteRate > 0))
+        }
+        if (iopsWriteRate != null && (iopsWriteRate > 0)) {
             newDiskOffering.setIopsWriteRate(iopsWriteRate);
+        }
 
         UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
@@ -2351,8 +2364,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long numGibibytes = cmd.getDiskSize();
         boolean isDisplayOfferingEnabled = cmd.getDisplayOffering() != null ? cmd.getDisplayOffering() : true;
         boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; // false
-                                                                                        // by
-                                                                                        // default
+        // by
+        // default
         String tags = cmd.getTags();
         // Long domainId = cmd.getDomainId() != null ? cmd.getDomainId() :
         // Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering
@@ -2384,8 +2397,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long iopsWriteRate = cmd.getIopsWriteRate();
 
         return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized,
-        		localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops, maxIops,
-        		bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate);
+                localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops, maxIops,
+                bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate);
     }
 
     @Override
@@ -2506,9 +2519,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "creating vlan ip range",
-            async = false)
+    async = false)
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
+    ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String startIP = cmd.getStartIp();
@@ -2742,7 +2755,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Map<Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(network.getNetworkOfferingId()), Service.Dhcp);
             String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
             if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
-                       throw new  InvalidParameterValueException("The Dhcp serivice provider for this network dose not support the dhcp  across multiple subnets");
+                throw new  InvalidParameterValueException("The Dhcp serivice provider for this network dose not support the dhcp  across multiple subnets");
             }
             s_logger.info("adding a new subnet to the network " + network.getId());
         } else if (sameSubnet != null)  {
@@ -2824,7 +2837,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         sameSubnet = true;
                         //check if the gateway provided by the user is same as that of the subnet.
                         if (newVlanGateway != null && !newVlanGateway.equals(vlanGateway)) {
-                             throw new InvalidParameterValueException("The gateway of the subnet should be unique. The subnet alreaddy has a gateway "+ vlanGateway);
+                            throw new InvalidParameterValueException("The gateway of the subnet should be unique. The subnet alreaddy has a gateway "+ vlanGateway);
                         }
                         break;
                     }
@@ -3031,7 +3044,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (otherVlanGateway == null) {
                     continue;
                 }
-                 String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
+                String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
                 String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
                 String otherVlanStartIP = otherVlanIpRange[0];
                 String otherVlanEndIP = null;
@@ -3100,7 +3113,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // Check if the vlan is being used 
+        // Check if the vlan is being used
         if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId
                     + " is already being used for dynamic vlan allocation for the guest network in zone " + zone.getName());
@@ -3261,7 +3274,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_DEDICATE, eventDescription = "dedicating vlan ip range",
-            async = false)
+    async = false)
     public Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd) throws ResourceAllocationException {
         Long vlanDbId = cmd.getId();
         String accountName = cmd.getAccountName();
@@ -3325,9 +3338,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
                 Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
-                if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName))
+                if (!accountAllocatedTo.getAccountName().equalsIgnoreCase(accountName)) {
                     throw new InvalidParameterValueException(ip.getAddress()
                             + " Public IP address in range is allocated to another account ");
+                }
             }
         }
 
@@ -3355,7 +3369,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_RELEASE, eventDescription = "releasing a public ip range",
-            async = false)
+    async = false)
     public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
         Long vlanDbId = cmd.getId();
 
@@ -3633,7 +3647,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (podName.equals("newPod")) {
                         throw new InvalidParameterValueException(
                                 "The subnet of the pod you are adding conflicts with the subnet of pod " + otherPodName
-                                        + " in zone " + zoneName + ". Please specify a different CIDR.");
+                                + " in zone " + zoneName + ". Please specify a different CIDR.");
                     } else {
                         throw new InvalidParameterValueException("Warning: The pods " + podName + " and "
                                 + otherPodName + " in zone " + zoneName
@@ -3694,7 +3708,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_DELETE, eventDescription = "deleting vlan ip range",
-            async = false)
+    async = false)
     public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) {
         Long vlanDbId = cmd.getId();
 
@@ -4244,7 +4258,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
         }
-        
+
         if (serviceProviderMap != null && serviceProviderMap.containsKey(Service.Lb) && !internalLb && !publicLb) {
             //if not specified, default public lb to true
             publicLb = true;
@@ -4417,7 +4431,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (specifyVlan != null) {
             sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
-        } 
+        }
 
         if (availability != null) {
             sc.addAnd("availability", SearchCriteria.Op.EQ, availability);
@@ -4966,7 +4980,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_CREATE,
-            eventDescription = "creating portable ip range", async = false)
+    eventDescription = "creating portable ip range", async = false)
     public PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException {
         Integer regionId = cmd.getRegionId();
         String startIP = cmd.getStartIp();
@@ -5010,9 +5024,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             List<DataCenterVO> zones= _zoneDao.listAllZones();
             if (zones != null && !zones.isEmpty()) {
                 for (DataCenterVO zone: zones) {
-                    if (_vlanDao.findByZoneAndVlanId(zone.getId(), vlanId) != null)
+                    if (_vlanDao.findByZoneAndVlanId(zone.getId(), vlanId) != null) {
                         throw new InvalidParameterValueException("Found a VLAN id " + vlanId + " already existing in"
                                 + " zone " + zone.getUuid() + " that conflicts with VLAN id of the portable ip range being configured");
+                    }
                 }
             }
 
@@ -5042,7 +5057,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_DELETE,
-            eventDescription = "deleting portable ip range", async = false)
+    eventDescription = "deleting portable ip range", async = false)
     public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
         long rangeId = cmd.getId();
         PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(rangeId);
