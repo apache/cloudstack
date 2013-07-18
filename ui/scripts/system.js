@@ -9478,6 +9478,7 @@
                               },
                                notification: {
                                  poll: pollAsyncJobResult,
+                                 interval: 5000,
                                 // FIXME: should use label tag
                                  desc: "Dedicate Pod"
                               },
@@ -10432,6 +10433,7 @@
                               },
                               notification: {
                                 poll: pollAsyncJobResult,
+                                interval: 5000,
                                 // FIXME: should use label tag
                                 desc: 'Dedicate Cluster'
                               },
@@ -11534,6 +11536,7 @@
                               },
                               notification: {
                                 poll: pollAsyncJobResult,
+                                interval: 7000,
                                 // FIXME: should use label tag
                                 desc: "Dedicate Host"
                               },
