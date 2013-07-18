@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,8 +17,6 @@
 //
 package com.cloud.ucs.manager;
 
-import java.io.File;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,26 +27,18 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddUcsManagerCmd;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ListUcsBladeCmd;
 import org.apache.cloudstack.api.ListUcsManagerCmd;
 import org.apache.cloudstack.api.ListUcsProfileCmd;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
-import org.apache.cxf.helpers.FileUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
@@ -56,14 +46,13 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceService;
 import com.cloud.ucs.database.UcsBladeDao;
 import com.cloud.ucs.database.UcsBladeVO;
 import com.cloud.ucs.database.UcsManagerDao;
 import com.cloud.ucs.database.UcsManagerVO;
 import com.cloud.ucs.structure.ComputeBlade;
+import com.cloud.ucs.structure.UcsCookie;
 import com.cloud.ucs.structure.UcsProfile;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -71,13 +60,14 @@ import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import com.cloud.utils.xmlobject.XmlObject;
 import com.cloud.utils.xmlobject.XmlObjectParser;
 
 @Local(value = { UcsManager.class })
 public class UcsManagerImpl implements UcsManager {
     public static final Logger s_logger = Logger.getLogger(UcsManagerImpl.class);
+    public static final Long COOKIE_TTL = TimeUnit.MILLISECONDS.convert(100L, TimeUnit.MINUTES);
+    public static final Long COOKIE_REFRESH_TTL = TimeUnit.MILLISECONDS.convert(10L, TimeUnit.MINUTES);
 
     @Inject
     private UcsManagerDao ucsDao;
@@ -94,7 +84,7 @@ public class UcsManagerImpl implements UcsManager {
     @Inject
     private DataCenterDao dcDao;
 
-    private Map<Long, String> cookies = new HashMap<Long, String>();
+    private final Map<Long, UcsCookie> cookies = new HashMap<Long, UcsCookie>();
     private String name;
     private int runLevel;
     private Map<String, Object> params;
@@ -166,23 +156,38 @@ public class UcsManagerImpl implements UcsManager {
 
     private String getCookie(Long ucsMgrId) {
         try {
-            String cookie = cookies.get(ucsMgrId);
-            if (cookie == null) {
-                UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
-                UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
-                String login = UcsCommands.loginCmd(mgrvo.getUsername(), mgrvo.getPassword());
-                String ret = client.call(login);
-                XmlObject xo = XmlObjectParser.parseFromString(ret);
-                cookie = xo.get("outCookie");
-                cookies.put(ucsMgrId, cookie);
+            UcsCookie ucsCookie = cookies.get(ucsMgrId);
+            long currentTime = System.currentTimeMillis();
+            UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
+            UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
+            String cmd = null;
+            if (ucsCookie == null) {
+                cmd = UcsCommands.loginCmd(mgrvo.getUsername(), mgrvo.getPassword());
             }
-
-            return cookie;
+            else {
+                String cookie = ucsCookie.getCookie();
+                long cookieStartTime = ucsCookie.getStartTime();
+                if(currentTime - cookieStartTime > COOKIE_TTL) {
+                    cmd = UcsCommands.loginCmd(mgrvo.getUsername(), mgrvo.getPassword());
+                }
+                else if(currentTime - cookieStartTime > COOKIE_REFRESH_TTL) {
+                    cmd = UcsCommands.refreshCmd(mgrvo.getUsername(), mgrvo.getPassword(), cookie);
+                }
+            }
+            if(!(cmd == null)) {
+                String ret = client.call(cmd);
+                XmlObject xo = XmlObjectParser.parseFromString(ret);
+                String cookie = xo.get("outCookie");
+                ucsCookie = new UcsCookie(cookie, currentTime);
+                cookies.put(ucsMgrId, ucsCookie);
+                //cookiesTime.put(cookie, currentTime); //This is currentTime on purpose, and not latest time.
+            }
+            return ucsCookie.getCookie();
         } catch (Exception e) {
             throw new CloudRuntimeException("Cannot get cookie", e);
         }
     }
-
+    
     private List<ComputeBlade> listBlades(Long ucsMgrId) {
         String cookie = getCookie(ucsMgrId);
         UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
@@ -234,6 +239,7 @@ public class UcsManagerImpl implements UcsManager {
         String cmd = UcsCommands.configResolveDn(cookie, dn);
         String res = client.call(cmd);
         XmlObject xo = XmlObjectParser.parseFromString(res);
+        s_logger.debug(String.format("association response is %s", res));
         return xo.get("outConfig.computeBlade.association").equals("associated");
     }
 
@@ -335,6 +341,7 @@ public class UcsManagerImpl implements UcsManager {
         return rsp;
     }
     
+    @Override
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
         SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
         serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
@@ -364,7 +371,7 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public Map<String, Object> getConfigParams() {
-        return this.params;
+        return params;
     }
 
     @Override
@@ -374,7 +381,7 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public void setRunLevel(int level) {
-        this.runLevel = level;
+        runLevel = level;
     }
 
     @Override
