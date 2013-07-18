@@ -529,7 +529,7 @@
   <bean id="OvmDiscoverer" class="com.cloud.ovm.hypervisor.OvmDiscoverer">
     <property name="name" value="Ovm Discover"/>
   </bean>
-  
+
   <bean id="dummyHostDiscoverer" class="com.cloud.resource.DummyHostDiscoverer">
     <property name="name" value="dummyHostDiscoverer" />
   </bean>
@@ -603,7 +603,6 @@
     <property name="name" value="OvmGuru"/>
   </bean>
 
-
   <!--=====================================================================================================-->
   <!--                                                                                                     -->
   <!--                           Storage Subsystem Components and Helpers                                  -->
@@ -619,6 +618,7 @@
   <bean id="OVA" class="org.apache.cloudstack.storage.image.format.OVA" />
   <bean id="QCOW2" class="org.apache.cloudstack.storage.image.format.QCOW2" />
   <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
+  <bean id="VHDX" class="org.apache.cloudstack.storage.image.format.VHDX" />
   <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
 
   <!--Data Store Services -->
