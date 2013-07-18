@@ -103,6 +103,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
         cls._cleanup = [
             cls.service_offering,
+            cls.ag,
             cls.account,
         ]
         return
@@ -185,9 +186,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
 
         @classmethod
-        def tearDown(cls):
+        def tearDownClass(cls):
             try:
-                #cls.api_client = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient().getApiClient()
                 #Clean up, terminate the created templates
                 cleanup_resources(cls.api_client, cls._cleanup)
             except Exception as e:
