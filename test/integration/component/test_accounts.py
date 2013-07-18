@@ -1073,8 +1073,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_add_vm_to_subdomain(self):
-        """ Test Sub domain allowed to launch VM  when a Domain level zone is
-            created"""
+        """ Test Sub domain allowed to launch VM  when a Domain level zone is created"""
 
         # Validate the following
         # 1. Verify VM created by Account_1 is in Running state
@@ -1504,7 +1503,7 @@ class TestUserLogin(cloudstackTestCase):
         return
 
     @attr(tags=["login", "accounts", "simulator", "advanced",
-                        "advancedns", "basic", "eip", "sg", "needle"])
+                        "advancedns", "basic", "eip", "sg"])
     def test_LoginApiDomain(self):
         """Test login API with domain
         """
