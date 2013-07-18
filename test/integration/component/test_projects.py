@@ -1203,10 +1203,9 @@ class TestProjectResources(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator", "needle"])
     def test_07_project_resources_account_delete(self):
-        """ Test Verify after an account is removed from the project, all his
-            resources stay with the project.
+        """ Test Verify after an account is removed from the project, all its resources stay with the project.
         """
         # Validate the following
         # 1. Create a project.
@@ -1261,13 +1260,13 @@ class TestProjectResources(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
                                         self.apiclient,
                                         projectid=project.id,
                                         account=self.user.name,
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
@@ -1277,7 +1276,7 @@ class TestProjectResources(cloudstackTestCase):
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                             account.role,
@@ -1292,9 +1291,8 @@ class TestProjectResources(cloudstackTestCase):
                                diskofferingid=self.disk_offering.id,
                                projectid=project.id
                                )
-        self.cleanup.append(volume)
 
-        # Delete the project user
+        # Delete the project user ie the account
         self.user.delete(self.apiclient)
 
         volumes = Volume.list(self.apiclient, id=volume.id)
