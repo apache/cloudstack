@@ -119,7 +119,7 @@ public class DiskOfferingVO implements DiskOffering {
     Long iopsWriteRate;
 
     @Column(name="display_offering")
-    boolean displayOffering;
+    boolean displayOffering = true;
 
     public DiskOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
