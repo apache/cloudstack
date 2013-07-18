@@ -163,7 +163,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
             domainid = self.domain.id
 
         try:
-            return AffinityGroup.create(api_client, aff_grp, acc, domainid)
+            self.aff_grp = AffinityGroup.create(api_client, aff_grp, acc, domainid)
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
@@ -174,11 +174,11 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         @return:
         """
 
-        aff_group = self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"],
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"],
                                         acc=self.account.name, domainid=self.account.domainid)
-        self.debug("Created Affinity Group: %s" % aff_group.name)
+        self.debug("Created Affinity Group: %s" % self.aff_grp.name)
 
-        list_aff_grps = AffinityGroup.list(self.api_client, id=aff_group.id)
+        list_aff_grps = AffinityGroup.list(self.api_client, id=self.aff_grp.id)
         AffinityGroup.delete(self.api_client, id=list_aff_grps[0].id)
         self.debug("Deleted Affinity Group: %s" % list_aff_grps[0].name)
 
@@ -426,8 +426,7 @@ class TestListAffinityGroups(cloudstackTestCase):
         #Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
 
-        for i in aff_grps_names:
-            AffinityGroup.delete(self.api_client, i)
+        [AffinityGroup.delete(self.api_client, name) for name in aff_grps_names]
 
     def test_03_list_aff_grps_by_id(self):
         """
@@ -587,7 +586,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
 
     def test_01_delete_aff_grp_by_id(self):
         """
-            Delete Afifnity Group by id.
+            Delete Affinity Group by id.
         """
 
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"])
@@ -602,7 +601,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
 
     def test_02_delete_aff_grp_for_acc(self):
         """
-            Delete Afifnity Group for an account.
+            Delete Affinity Group for an account.
         """
 
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"],
@@ -621,7 +620,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
 
     def test_03_delete_aff_grp_with_vms(self):
         """
-            Delete Afifnity Group which has vms in it.
+            Delete Affinity Group which has vms in it.
         """
 
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity_0"],
@@ -1484,7 +1483,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
     @attr(tags=["simulator", "basic", "advanced", "multihost"])
     def test_02_create_aff_grp_user(self):
         """
-            Create Affinity Group forregular user
+            Create Affinity Group for regular user
         """
 
         self.user = Account.create(self.api_client, self.services["new_account"],
