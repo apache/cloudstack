@@ -46,6 +46,7 @@ import com.ceph.rados.IoCTX;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdImage;
 import com.ceph.rbd.RbdException;
+import com.ceph.rbd.jna.RbdSnapInfo;
 
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
@@ -73,6 +74,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private String _manageSnapshotPath;
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
+    private int rbdFeatures = (1<<0); /* Feature 1<<0 means layering in RBD format 2 */
+    private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
 
     public LibvirtStorageAdaptor(StorageLayer storage) {
         _storageLayer = storage;
@@ -615,38 +618,116 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         StoragePool virtPool = libvirtPool.getPool();
         LibvirtStorageVolumeDef.volFormat libvirtformat = null;
 
+        String volPath = null;
+        String volName = null;
+        long volAllocation = 0;
+        long volCapacity = 0;
+
+        /**
+         * To have RBD function properly we want RBD images of format 2
+         * libvirt currently defaults to format 1
+         *
+         * For that reason we use the native RBD bindings to create the
+         * RBD image until libvirt creates RBD format 2 by default
+         */
         if (pool.getType() == StoragePoolType.RBD) {
             format = PhysicalDiskFormat.RAW;
+
+            try {
+                s_logger.info("Creating RBD image " + pool.getSourcePort() + "/" + name + " with size " + size);
+
+                Rados r = new Rados(pool.getAuthUserName());
+                r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+                r.confSet("key", pool.getAuthSecret());
+                r.connect();
+                s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                Rbd rbd = new Rbd(io);
+                rbd.create(name, size, this.rbdFeatures, this.rbdOrder);
+
+                r.ioCtxDestroy(io);
+            } catch (RadosException e) {
+                throw new CloudRuntimeException(e.toString());
+            } catch (RbdException e) {
+                throw new CloudRuntimeException(e.toString());
+            }
+
+            volPath = name;
+            volName = name;
+            volCapacity = size;
+            volAllocation = size;
+        } else {
+
+            if (format == PhysicalDiskFormat.QCOW2) {
+                libvirtformat = LibvirtStorageVolumeDef.volFormat.QCOW2;
+            } else if (format == PhysicalDiskFormat.RAW) {
+                libvirtformat = LibvirtStorageVolumeDef.volFormat.RAW;
+            } else if (format == PhysicalDiskFormat.DIR) {
+                libvirtformat = LibvirtStorageVolumeDef.volFormat.DIR;
+            } else if (format == PhysicalDiskFormat.TAR) {
+                libvirtformat = LibvirtStorageVolumeDef.volFormat.TAR;
+            }
+
+            LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name,
+                    size, libvirtformat, null, null);
+            s_logger.debug(volDef.toString());
+            try {
+                StorageVol vol = virtPool.storageVolCreateXML(volDef.toString(), 0);
+                volPath = vol.getPath();
+                volName = vol.getName();
+                volAllocation = vol.getInfo().allocation;
+                volCapacity = vol.getInfo().capacity;
+            } catch (LibvirtException e) {
+                throw new CloudRuntimeException(e.toString());
+            }
         }
 
-        if (format == PhysicalDiskFormat.QCOW2) {
-            libvirtformat = LibvirtStorageVolumeDef.volFormat.QCOW2;
-        } else if (format == PhysicalDiskFormat.RAW) {
-            libvirtformat = LibvirtStorageVolumeDef.volFormat.RAW;
-        } else if (format == PhysicalDiskFormat.DIR) {
-            libvirtformat = LibvirtStorageVolumeDef.volFormat.DIR;
-        } else if (format == PhysicalDiskFormat.TAR) {
-            libvirtformat = LibvirtStorageVolumeDef.volFormat.TAR;
-        }
-
-        LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(name,
-                size, libvirtformat, null, null);
-        s_logger.debug(volDef.toString());
-        try {
-            StorageVol vol = virtPool.storageVolCreateXML(volDef.toString(), 0);
-            KVMPhysicalDisk disk = new KVMPhysicalDisk(vol.getPath(),
-                    vol.getName(), pool);
-            disk.setFormat(format);
-            disk.setSize(vol.getInfo().allocation);
-            disk.setVirtualSize(vol.getInfo().capacity);
-            return disk;
-        } catch (LibvirtException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
+        KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, volName, pool);
+        disk.setFormat(format);
+        disk.setSize(volAllocation);
+        disk.setVirtualSize(volCapacity);
+        return disk;
     }
 
     @Override
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool) {
+
+        /**
+         * RBD volume can have snapshots and while they exist libvirt
+         * can't remove the RBD volume
+         *
+         * We have to remove those snapshots first
+         */
+        if (pool.getType() == StoragePoolType.RBD) {
+            try {
+                s_logger.info("Unprotecting and Removing RBD snapshots of image "
+                               + pool.getSourcePort() + "/" + uuid + " prior to removing the image");
+
+                Rados r = new Rados(pool.getAuthUserName());
+                r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+                r.confSet("key", pool.getAuthSecret());
+                r.connect();
+                s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                Rbd rbd = new Rbd(io);
+                RbdImage image = rbd.open(uuid);
+                List<RbdSnapInfo> snaps = image.snapList();
+                for (RbdSnapInfo snap : snaps) {
+                    image.snapUnprotect(snap.name);
+                    image.snapRemove(snap.name);
+                }
+
+                rbd.close(image);
+                r.ioCtxDestroy(io);
+            } catch (RadosException e) {
+                throw new CloudRuntimeException(e.toString());
+            } catch (RbdException e) {
+                throw new CloudRuntimeException(e.toString());
+            }
+        }
+
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         try {
             StorageVol vol = this.getVolume(libvirtPool.getPool(), uuid);
@@ -730,11 +811,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                      * we want to copy it
                      */
 
-                    /* Feature 1<<0 means layering in RBD format 2 */
-                    int rbdFeatures = (1<<0);
-                    /* Order 0 means 4MB blocks (the default) */
-                    int rbdOrder = 0;
-
                     try {
                         if ((srcPool.getSourceHost().equals(destPool.getSourceHost())) && (srcPool.getSourceDir().equals(destPool.getSourceDir()))) {
                             /* We are on the same Ceph cluster, but we require RBD format 2 on the source image */
@@ -755,7 +831,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                 s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName()
                                                + " is RBD format 1. We have to perform a regular copy (" + template.getVirtualSize() + " bytes)");
 
-                                rbd.create(disk.getName(), template.getVirtualSize(), rbdFeatures, rbdOrder);
+                                rbd.create(disk.getName(), template.getVirtualSize(), this.rbdFeatures, this.rbdOrder);
                                 RbdImage destImage = rbd.open(disk.getName());
 
                                 s_logger.debug("Starting to copy " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
@@ -768,7 +844,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                                + " is RBD format 2. We will perform a RBD clone using snapshot "
                                                + this.rbdTemplateSnapName);
                                 /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
-                                rbd.clone(template.getName(), this.rbdTemplateSnapName, io, disk.getName(), rbdFeatures, rbdOrder);
+                                rbd.clone(template.getName(), this.rbdTemplateSnapName, io, disk.getName(), this.rbdFeatures, this.rbdOrder);
                                 s_logger.debug("Succesfully cloned " + template.getName() + "@" + this.rbdTemplateSnapName + " to " + disk.getName());
                             }
 
@@ -798,7 +874,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                             s_logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host")
                                            + " in pool " + destPool.getSourceDir());
-                            dRbd.create(disk.getName(), template.getVirtualSize(), rbdFeatures, rbdOrder);
+                            dRbd.create(disk.getName(), template.getVirtualSize(), this.rbdFeatures, this.rbdOrder);
 
                             RbdImage srcImage = sRbd.open(template.getName());
                             RbdImage destImage = dRbd.open(disk.getName());
@@ -943,8 +1019,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
               */
             s_logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
             String tmpFile = "/tmp/" + name;
-            int rbdFeatures = (1<<0);
-            int rbdOrder = 0;
 
             try {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
@@ -963,7 +1037,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rbd rbd = new Rbd(io);
 
                 s_logger.debug("Creating RBD image " + name + " in Ceph pool " + destPool.getSourceDir() + " with RBD format 2");
-                rbd.create(name, disk.getVirtualSize(), rbdFeatures, rbdOrder);
+                rbd.create(name, disk.getVirtualSize(), this.rbdFeatures, this.rbdOrder);
 
                 RbdImage image = rbd.open(name);
 

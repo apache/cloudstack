@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.BufferedOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -238,6 +239,13 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+
+import com.ceph.rados.Rados;
+import com.ceph.rados.RadosException;
+import com.ceph.rados.IoCTX;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdImage;
+import com.ceph.rbd.RbdException;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -1972,12 +1980,6 @@ ServerResource {
                     cmd.getPool().getType(),
                     cmd.getPool().getUuid());
 
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                s_logger.debug("Snapshots are not supported on RBD volumes");
-                return new ManageSnapshotAnswer(cmd, false,
-                        "Snapshots are not supported on RBD volumes");
-            }
-
             KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(cmd
                     .getVolumePath());
             if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING
@@ -2004,23 +2006,63 @@ ServerResource {
                     vm.resume();
                 }
             } else {
+                /**
+                 * For RBD we can't use libvirt to do our snapshotting or any Bash scripts.
+                 * libvirt also wants to store the memory contents of the Virtual Machine,
+                 * but that's not possible with RBD since there is no way to store the memory
+                 * contents in RBD.
+                 *
+                 * So we rely on the Java bindings for RBD to create our snapshot
+                 *
+                 * This snapshot might not be 100% consistent due to writes still being in the
+                 * memory of the Virtual Machine, but if the VM runs a kernel which supports
+                 * barriers properly (>2.6.32) this won't be any different then pulling the power
+                 * cord out of a running machine.
+                 */
+                if (primaryPool.getType() == StoragePoolType.RBD) {
+                    try {
+                        Rados r = new Rados(primaryPool.getAuthUserName());
+                        r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+                        r.confSet("key", primaryPool.getAuthSecret());
+                        r.connect();
+                        s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
-                /* VM is not running, create a snapshot by ourself */
-                final Script command = new Script(_manageSnapshotPath,
-                        _cmdsTimeout, s_logger);
-                if (cmd.getCommandSwitch().equalsIgnoreCase(
-                        ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                    command.add("-c", disk.getPath());
+                        IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
+                        Rbd rbd = new Rbd(io);
+                        RbdImage image = rbd.open(disk.getName());
+
+                        if (cmd.getCommandSwitch().equalsIgnoreCase(
+                            ManageSnapshotCommand.CREATE_SNAPSHOT)) {
+                            s_logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
+                            image.snapCreate(snapshotName);
+                        } else {
+                            s_logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
+                            image.snapRemove(snapshotName);
+                        }
+
+                        rbd.close(image);
+                        r.ioCtxDestroy(io);
+                    } catch (Exception e) {
+                        s_logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
+                    }
                 } else {
-                    command.add("-d", snapshotPath);
-                }
+                    /* VM is not running, create a snapshot by ourself */
+                    final Script command = new Script(_manageSnapshotPath,
+                            _cmdsTimeout, s_logger);
+                    if (cmd.getCommandSwitch().equalsIgnoreCase(
+                            ManageSnapshotCommand.CREATE_SNAPSHOT)) {
+                        command.add("-c", disk.getPath());
+                    } else {
+                        command.add("-d", snapshotPath);
+                    }
 
-                command.add("-n", snapshotName);
-                String result = command.execute();
-                if (result != null) {
-                    s_logger.debug("Failed to manage snapshot: " + result);
-                    return new ManageSnapshotAnswer(cmd, false,
-                            "Failed to manage snapshot: " + result);
+                    command.add("-n", snapshotName);
+                    String result = command.execute();
+                    if (result != null) {
+                        s_logger.debug("Failed to manage snapshot: " + result);
+                        return new ManageSnapshotAnswer(cmd, false,
+                                "Failed to manage snapshot: " + result);
+                    }
                 }
             }
             return new ManageSnapshotAnswer(cmd, cmd.getSnapshotId(),
@@ -2062,16 +2104,74 @@ ServerResource {
                     cmd.getPrimaryStoragePoolNameLabel());
             KVMPhysicalDisk snapshotDisk = primaryPool.getPhysicalDisk(cmd
                     .getVolumePath());
-            Script command = new Script(_manageSnapshotPath, _cmdsTimeout,
-                    s_logger);
-            command.add("-b", snapshotDisk.getPath());
-            command.add("-n", snapshotName);
-            command.add("-p", snapshotDestPath);
-            command.add("-t", snapshotName);
-            String result = command.execute();
-            if (result != null) {
-                s_logger.debug("Failed to backup snaptshot: " + result);
-                return new BackupSnapshotAnswer(cmd, false, result, null, true);
+
+            /**
+             * RBD snapshots can't be copied using qemu-img, so we have to use
+             * the Java bindings for librbd here.
+             *
+             * These bindings will read the snapshot and write the contents to
+             * the secondary storage directly
+             * 
+             * It will stop doing so if the amount of time spend is longer then
+             * cmds.timeout
+             */
+            if (primaryPool.getType() == StoragePoolType.RBD) {
+                try {
+                    Rados r = new Rados(primaryPool.getAuthUserName());
+                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+                    r.confSet("key", primaryPool.getAuthSecret());
+                    r.connect();
+                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                    IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
+                    Rbd rbd = new Rbd(io);
+                    RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
+
+                    long startTime = System.currentTimeMillis() / 1000;
+
+                    File fh = new File(snapshotDestPath);
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));
+                    int chunkSize = 4194304;
+                    long offset = 0;
+                    s_logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
+                    while(true) {
+                        byte[] buf = new byte[chunkSize];
+
+                        int bytes = image.read(offset, buf, chunkSize);
+                        if (bytes <= 0) {
+                            break;
+                        }
+                        bos.write(buf, 0, bytes);
+                        offset += bytes;
+                    }
+                    s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + offset);
+                    bos.close();
+                    r.ioCtxDestroy(io);
+                } catch (RadosException e) {
+                    s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                } catch (RbdException e) {
+                    s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                } catch (FileNotFoundException e) {
+                    s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                } catch (IOException e) {
+                    s_logger.debug("An I/O error occured during a snapshot operation on " + snapshotDestPath);
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                }
+            } else {
+                Script command = new Script(_manageSnapshotPath, _cmdsTimeout,
+                        s_logger);
+                command.add("-b", snapshotDisk.getPath());
+                command.add("-n", snapshotName);
+                command.add("-p", snapshotDestPath);
+                command.add("-t", snapshotName);
+                String result = command.execute();
+                if (result != null) {
+                    s_logger.debug("Failed to backup snaptshot: " + result);
+                    return new BackupSnapshotAnswer(cmd, false, result, null, true);
+                }
             }
             /* Delete the snapshot on primary */
 
@@ -2108,11 +2208,11 @@ ServerResource {
                     vm.resume();
                 }
             } else {
-                command = new Script(_manageSnapshotPath, _cmdsTimeout,
+                Script command = new Script(_manageSnapshotPath, _cmdsTimeout,
                         s_logger);
                 command.add("-d", snapshotDisk.getPath());
                 command.add("-n", snapshotName);
-                result = command.execute();
+                String result = command.execute();
                 if (result != null) {
                     s_logger.debug("Failed to backup snapshot: " + result);
                     return new BackupSnapshotAnswer(cmd, false,

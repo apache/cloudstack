@@ -48,6 +48,12 @@
       <artifactId>rados</artifactId>
       <version>${cs.rados-java.version}</version>
     </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+       <artifactId>jna</artifactId>
+       <scope>provided</scope>
+       <version>${cs.jna.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
