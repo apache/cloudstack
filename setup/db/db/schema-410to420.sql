@@ -2240,3 +2240,7 @@ CREATE VIEW `cloud`.`project_view` AS
             and resource_tags.resource_type = 'Project'
             left join
         `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
+
+        
+ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size` smallint(6) NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
+ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size_limit` smallint(6) NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
