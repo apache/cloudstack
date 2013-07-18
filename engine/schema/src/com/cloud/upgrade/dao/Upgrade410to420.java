@@ -248,10 +248,10 @@ public class Upgrade410to420 implements DbUpgrade {
                         pstmt.executeUpdate();
                         pstmt.close();
                         // Change value of global configuration parameter router.template.* for the corresponding hypervisor
-                        pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', ?, ?, 'Name of the default router template on Xenserver')");
-                        pstmt.setString(1, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
-                        pstmt.setString(2, hypervisorAndTemplateName.getValue());
-                        pstmt.execute();
+                        pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");
+                        pstmt.setString(1, hypervisorAndTemplateName.getValue());
+                        pstmt.setString(2, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
+                        pstmt.executeUpdate();
                         pstmt.close();
                     } else {
                         if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){

@@ -2177,6 +2177,12 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'interval.baremetal.securitygroup.agent.echo', 10, 'Interval to echo baremetal security group agent, in seconds');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'timeout.baremetal.securitygroup.agent.echo', 3600, 'Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure');
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.hyperv', 'SystemVM Template (HyperV)', 'Name of the default router template on Hyperv.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.kvm', 'SystemVM Template (KVM)', 'Name of the default router template on KVM.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.lxc', 'SystemVM Template (LXC)', 'Name of the default router template on LXC.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.vmware', 'SystemVM Template (vSphere)', 'Name of the default router template on Vmware.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.xen', 'SystemVM Template (XenServer)', 'Name of the default router template on Xenserver.');
+
 alter table `cloud`.`network_offerings` add column egress_default_policy boolean default false;
 
 -- Add stratospher ssp tables
