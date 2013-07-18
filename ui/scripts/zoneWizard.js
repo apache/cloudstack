@@ -1750,10 +1750,7 @@
                 }
             },
             secondaryStorage: {
-                fields: {
-                    name: {
-                        label: 'label.name'
-                    },
+                fields: {                    
                     provider: {
                         label: 'Provider',
                         select: function(args) {
@@ -1764,19 +1761,13 @@
                                 },
                                 success: function(json) {
                                     var objs = json.liststorageprovidersresponse.dataStoreProvider;
-                                    var items = [];
+                                    var items = [{ id: '', description: ''}];
                                     if (objs != null) {
-                                        for (var i = 0; i < objs.length; i++) {
-                                            if (objs[i].name == 'NFS')
-                                                items.unshift({
-                                                    id: objs[i].name,
-                                                    description: objs[i].name
-                                                });
-                                            else
-                                                items.push({
-                                                    id: objs[i].name,
-                                                    description: objs[i].name
-                                                });
+                                        for (var i = 0; i < objs.length; i++) {    
+                                            items.push({
+                                                id: objs[i].name,
+                                                description: objs[i].name
+                                            });
                                         }
                                     }
                                     args.response.success({
@@ -1787,8 +1778,38 @@
                                         var $form = $(this).closest('form');
                                         var $fields = $form.find('.field');
 
-                                        if ($(this).val() == "NFS") {
+                                        if ($(this).val() == "") {
+                                        	$fields.filter('[rel=name]').hide();
+                                        	
                                             //NFS
+                                            $fields.filter('[rel=zoneid]').hide();
+                                            $fields.filter('[rel=nfsServer]').hide();
+                                            $fields.filter('[rel=path]').hide();
+
+                                            //S3
+                                            $fields.filter('[rel=accesskey]').hide();
+                                            $fields.filter('[rel=secretkey]').hide();
+                                            $fields.filter('[rel=bucket]').hide();
+                                            $fields.filter('[rel=endpoint]').hide();
+                                            $fields.filter('[rel=usehttps]').hide();
+                                            $fields.filter('[rel=connectiontimeout]').hide();
+                                            $fields.filter('[rel=maxerrorretry]').hide();
+                                            $fields.filter('[rel=sockettimeout]').hide();
+
+                                            $fields.filter('[rel=createNfsCache]').hide();
+                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=nfsCacheNfsServer]').hide();
+                                            $fields.filter('[rel=nfsCachePath]').hide();
+
+                                            //Swift
+                                            $fields.filter('[rel=url]').hide();
+                                            $fields.filter('[rel=account]').hide();
+                                            $fields.filter('[rel=username]').hide();
+                                            $fields.filter('[rel=key]').hide();
+                                        } else if ($(this).val() == "NFS") {
+                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
+                                        	
+                                        	//NFS
                                             $fields.filter('[rel=zoneid]').css('display', 'inline-block');
                                             $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
                                             $fields.filter('[rel=path]').css('display', 'inline-block');
@@ -1814,7 +1835,9 @@
                                             $fields.filter('[rel=username]').hide();
                                             $fields.filter('[rel=key]').hide();
                                         } else if ($(this).val() == "S3") {
-                                            //NFS
+                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
+                                        	
+                                        	//NFS
                                             $fields.filter('[rel=zoneid]').hide();
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
@@ -1840,7 +1863,9 @@
                                             $fields.filter('[rel=username]').hide();
                                             $fields.filter('[rel=key]').hide();
                                         } else if ($(this).val() == "Swift") {
-                                            //NFS
+                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
+                                        	
+                                        	//NFS
                                             $fields.filter('[rel=zoneid]').hide();
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
@@ -1874,19 +1899,25 @@
                         }
                     },
 
-
+                    name: {
+                        label: 'label.name',
+                        isHidden: true
+                    },
+                    
                     //NFS (begin)
                     nfsServer: {
                         label: 'label.nfs.server',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     path: {
                         label: 'label.path',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     //NFS (end)
 
@@ -1896,58 +1927,67 @@
                         label: 'label.s3.access_key',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     secretkey: {
                         label: 'label.s3.secret_key',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     bucket: {
                         label: 'label.s3.bucket',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     endpoint: {
-                        label: 'label.s3.endpoint'
+                        label: 'label.s3.endpoint',
+                        isHidden: true
                     },
                     usehttps: {
-                        label: 'label.s3.use_https',
-                        isEditable: true,
+                        label: 'label.s3.use_https',                        
                         isBoolean: true,
                         isChecked: true,
-                        converter: cloudStack.converters.toBooleanText
+                        isHidden: true
                     },
                     connectiontimeout: {
-                        label: 'label.s3.connection_timeout'
+                        label: 'label.s3.connection_timeout',
+                        isHidden: true
                     },
                     maxerrorretry: {
-                        label: 'label.s3.max_error_retry'
+                        label: 'label.s3.max_error_retry',
+                        isHidden: true
                     },
                     sockettimeout: {
-                        label: 'label.s3.socket_timeout'
+                        label: 'label.s3.socket_timeout',
+                        isHidden: true
                     },
 
                     createNfsCache: {
                         label: 'Create NFS Cache Storage',
                         isBoolean: true,
-                        isChecked: true
+                        isChecked: true,
+                        isHidden: true
                     },
                     nfsCacheNfsServer: {
                         dependsOn: 'createNfsCache',
                         label: 'label.nfs.server',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     nfsCachePath: {
                         dependsOn: 'createNfsCache',
                         label: 'label.path',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     //S3 (end)
 
@@ -1957,16 +1997,20 @@
                         label: 'label.url',
                         validation: {
                             required: true
-                        }
+                        },
+                        isHidden: true
                     },
                     account: {
-                        label: 'label.account'
+                        label: 'label.account',
+                        isHidden: true
                     },
                     username: {
-                        label: 'label.username'
+                        label: 'label.username',
+                        isHidden: true
                     },
                     key: {
-                        label: 'label.key'
+                        label: 'label.key',
+                        isHidden: true
                     }
                     //Swift (end)
                 }
@@ -3983,7 +4027,15 @@
                 },
 
                 addSecondaryStorage: function(args) {
-                    message(dictionary['message.creating.secondary.storage']);
+                	if (args.data.secondaryStorage.provider == '') {
+                		 complete({
+                             data: args.data
+                         });
+                		return; //skip addSecondaryStorage if provider dropdown is blank
+                	}
+                	
+                	
+                	message(dictionary['message.creating.secondary.storage']);
 
                     var data = {};
                     if (args.data.secondaryStorage.name != null && args.data.secondaryStorage.name.length > 0) {
