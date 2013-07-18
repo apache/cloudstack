@@ -23,7 +23,7 @@ under the License.
     <xi:include href="Preface.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <chapter id="welcome-4.1">
         <title>Welcome to &PRODUCT; 4.1</title>
-        <para>Welcome to the 4.1.1 release of &PRODUCT;, the first major release from the Apache CloudStack project since its graduation from the Apache Incubator.</para>
+        <para>Welcome to the 4.1.1 release of &PRODUCT;, the first major release from the &PRODUCT; project since its graduation from the Apache Incubator.</para>
         <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.1/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.1/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
         <para>If you find any errors or problems in this guide, please see <xref linkend="feedback" />. We hope you enjoy working with &PRODUCT;!</para>
     </chapter>
@@ -82,7 +82,7 @@ under the License.
         <title>Version 4.1.1</title>
         <section id="issues-fixed-4.1.1">
             <title>Issues Fixed in 4.1.1</title>
-            <para>Apache CloudStack uses <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK">Jira</ulink>
+            <para>&PRODUCT; uses <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK">Jira</ulink>
                 to track its issues. All bugs for 4.1.1 have been tracked in Jira, and have 
                 a standard naming convention of "CLOUDSTACK-NNNN" where "NNNN" is the issue number.</para>
             <para>This section includes a summary of known issues against 4.1.0 that were fixed in 4.1.1. Approximately 36 bugs were resolved or closed in the 4.1.1 cycle.</para>
@@ -142,7 +142,7 @@ under the License.
     </chapter>
     <chapter id="upgrade-instructions">
         <title>Upgrade Instructions</title>
-        <para>This section contains upgrade instructions from prior versions of CloudStack to Apache CloudStack 4.1.1. We include instructions on upgrading to Apache CloudStack from pre-Apache versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases made while CloudStack was in the Apache Incubator.</para>
+        <para>This section contains upgrade instructions from prior versions of CloudStack to &PRODUCT; 4.1.1. We include instructions on upgrading to &PRODUCT; from pre-Apache versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases made while CloudStack was in the Apache Incubator.</para>
         <para>If you run into any issues during upgrades, please feel free to ask questions on users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
         <section id="upgrade-from-4.0-to-4.1">
             <title>Upgrade from 4.0.x to 4.1.1</title>
@@ -156,7 +156,7 @@ under the License.
             <orderedlist>
                 <listitem>
                     <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for Ubuntu).</para>
-                    <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.1 source, or check the Apache CloudStack downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
+                    <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.1.1 source, or check the &PRODUCT; downloads page at <ulink url="http://cloudstack.apache.org/downloads.html">http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied by community members. You will need them for step <xref linkend="upgrade-deb-packages" /> or step <xref linkend="upgrade-rpm-packages" />.</para>
                     <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink url="http://cloudstack.apache.org/docs/en-US/index.html">Installation Guide</ulink>.</para>
                 </listitem>
                 <listitem>
@@ -317,7 +317,7 @@ under the License.
         </section>
         <section id="upgrade-from-3.0.2-to-4.0">
             <title>Upgrade from 3.0.2 to 4.1.1</title>
-            <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.1.1. Sections that are hypervisor-specific will be called out with a note.</para>
+            <para>This section will guide you from Citrix CloudStack 3.0.2 to &PRODUCT; 4.1.1. Sections that are hypervisor-specific will be called out with a note.</para>
             <orderedlist>
                 <listitem>
                     <note>
