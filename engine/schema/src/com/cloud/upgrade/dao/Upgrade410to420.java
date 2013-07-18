@@ -98,6 +98,8 @@ public class Upgrade410to420 implements DbUpgrade {
         migrateVolumeHostRef(conn);
         migrateTemplateHostRef(conn);
         migrateSnapshotStoreRef(conn);
+        fixNiciraKeys(conn);
+        fixRouterKeys(conn);
     }
 
     private void fixBaremetalForeignKeys(Connection conn) {
@@ -1841,6 +1843,56 @@ public class Upgrade410to420 implements DbUpgrade {
             try{
                 if (snapshotStoreInsert != null) {
                     snapshotStoreInsert.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    private void fixNiciraKeys(Connection conn) {
+        //First drop the key if it exists.
+        List<String> keys = new ArrayList<String>();
+        s_logger.debug("Dropping foreign key fk_nicira_nvp_nic_map__nic from the table nicira_nvp_nic_map if it exists");
+        keys.add("fk_nicira_nvp_nic_map__nic");
+        DbUpgradeUtils.dropKeysIfExist(conn, "nicira_nvp_nic_map", keys, true);
+
+        //Now add foreign key.
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`nicira_nvp_nic_map` ADD CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY (`nic`) REFERENCES `nics` (`uuid`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            s_logger.debug("Added foreign key fk_nicira_nvp_nic_map__nic to the table nicira_nvp_nic_map");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add foreign key fk_nicira_nvp_nic_map__nic to the table nicira_nvp_nic_map", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    private void fixRouterKeys(Connection conn) {
+        //First drop the key if it exists.
+        List<String> keys = new ArrayList<String>();
+        s_logger.debug("Dropping foreign key fk_router_network_ref__router_id from the table router_network_ref if it exists");
+        keys.add("fk_router_network_ref__router_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "router_network_ref", keys, true);
+
+        //Now add foreign key.
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`router_network_ref` ADD CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            s_logger.debug("Added foreign key fk_router_network_ref__router_id to the table router_network_ref");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add foreign key fk_router_network_ref__router_id to the table router_network_ref", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
                 }
             } catch (SQLException e) {
             }
