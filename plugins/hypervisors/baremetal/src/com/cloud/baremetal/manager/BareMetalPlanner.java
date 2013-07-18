@@ -109,7 +109,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 		if (target == null) {
 			s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
 			cpu_requested = offering.getCpu() * offering.getSpeed();
-			ram_requested = offering.getRamSize() * 1024 * 1024;
+			ram_requested = offering.getRamSize() * 1024L * 1024L;
 		} else {
 			cpu_requested = target.getCpus() * target.getSpeed().intValue();
 			ram_requested = target.getTotalMemory();
