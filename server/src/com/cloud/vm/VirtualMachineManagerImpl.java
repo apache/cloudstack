@@ -788,10 +788,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
         boolean canRetry = true;
+        ExcludeList avoids = null;
         try {
             Journal journal = start.second().getJournal();
 
-            ExcludeList avoids = null;
+
             if (planToDeploy != null) {
                 avoids = planToDeploy.getAvoids();
             }
@@ -1025,6 +1026,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         throw new ConcurrentOperationException(e.getMessage());
                     }
                 }
+            }
+
+            if (planToDeploy != null) {
+                planToDeploy.setAvoids(avoids);
             }
         }
 
