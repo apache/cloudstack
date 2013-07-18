@@ -133,6 +133,13 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     @DB
     public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
+    	SearchCriteriaService<UcsManagerVO, UcsManagerVO> q = SearchCriteria2.create(UcsManagerVO.class);
+    	q.addAnd(q.getEntity().getUrl(), Op.EQ, cmd.getUrl());
+    	UcsManagerVO mgrvo = q.find();
+    	if (mgrvo != null) {
+    	    throw new IllegalArgumentException(String.format("duplicate UCS manager. url[%s] is used by another UCS manager already", cmd.getUrl()));
+    	}
+    	 
         UcsManagerVO vo = new UcsManagerVO();
         vo.setUuid(UUID.randomUUID().toString());
         vo.setPassword(cmd.getPassword());
@@ -140,6 +147,7 @@ public class UcsManagerImpl implements UcsManager {
         vo.setUsername(cmd.getUsername());
         vo.setZoneId(cmd.getZoneId());
         vo.setName(cmd.getName());
+
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
