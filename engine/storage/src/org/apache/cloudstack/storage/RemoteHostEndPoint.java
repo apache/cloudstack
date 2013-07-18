@@ -43,6 +43,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class RemoteHostEndPoint implements EndPoint {
@@ -57,7 +58,7 @@ public class RemoteHostEndPoint implements EndPoint {
     private ScheduledExecutorService executor;
 
     public RemoteHostEndPoint() {
-        executor = Executors.newScheduledThreadPool(10);
+        executor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("RemoteHostEndPoint"));
     }
 
     private void configure(long hostId, String hostAddress, String publicAddress) {
@@ -170,6 +171,9 @@ public class RemoteHostEndPoint implements EndPoint {
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
         try {
             long newHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(this.hostId, cmd);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending command " + cmd.toString() + " to host: " + newHostId);
+            }
             agentMgr.send(newHostId, new Commands(cmd), new CmdRunner(callback));
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to send message", e);
