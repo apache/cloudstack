@@ -1051,7 +1051,6 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=master_router.id,
                               listall=True
                               )
@@ -1060,28 +1059,27 @@ class TestRvRRedundancy(cloudstackTestCase):
                     True,
                     "list router should return Master and backup routers"
                     )
-        self.assertEqual(
-                    routers[0].redundantstate,
-                    'UNKNOWN',
-                    "Redundant state of the router should be UNKNOWN"
-                    )
+        self.assertIn(
+            routers[0].redundantstate,
+            ['UNKNOWN', 'FAULT'],
+            "Redundant state of the master router should be UNKNOWN/FAULT but is %s" % routers[0].redundantstate
+        )
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return backup router"
                     )
         self.assertEqual(
                     routers[0].redundantstate,
                     'MASTER',
-                    "Redundant state of the router should be MASTER"
+                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
                     )
 
         self.debug("Starting the old MASTER router")
@@ -1089,12 +1087,11 @@ class TestRvRRedundancy(cloudstackTestCase):
             Router.start(self.apiclient, id=master_router.id)
             self.debug("old MASTER router started")
         except Exception as e:
-            self.fail("Failed to stop master router: %s" % e)
+            self.fail("Failed to start master router: %s" % e)
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the master router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=master_router.id,
                               listall=True
                               )
@@ -1106,7 +1103,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'BACKUP',
-                    "Redundant state of the router should be BACKUP"
+                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
                     )
         self.assertEqual(
                          master_router.publicip,
@@ -1171,10 +1168,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop backup router: %s" % e)
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
@@ -1183,16 +1179,15 @@ class TestRvRRedundancy(cloudstackTestCase):
                     True,
                     "list router should return Master and backup routers"
                     )
-        self.assertEqual(
-                    routers[0].redundantstate,
-                    'UNKNOWN',
-                    "Redundant state of the router should be UNKNOWN"
-                    )
+        self.assertIn(
+            routers[0].redundantstate,
+            ['UNKNOWN', 'FAULT'],
+            "Redundant state of the backup router should be UNKNOWN/FAULT but is %s" % routers[0].redundantstate
+        )
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the master router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=master_router.id,
                               listall=True
                               )
@@ -1204,7 +1199,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'MASTER',
-                    "Redundant state of the router should be MASTER"
+                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
                     )
 
         self.debug("Starting the old BACKUP router")
@@ -1214,10 +1209,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop master router: %s" % e)
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
@@ -1229,7 +1223,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'BACKUP',
-                    "Redundant state of the router should be BACKUP"
+                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
                     )
         self.assertEqual(
                          backup_router.publicip,
@@ -1288,10 +1282,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reboot MASTER router: %s" % e)
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the master router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=master_router.id,
                               listall=True
                               )
@@ -1303,13 +1296,12 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'BACKUP',
-                    "Redundant state of the router should be BACKUP"
+                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
                     )
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
@@ -1321,7 +1313,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'MASTER',
-                    "Redundant state of the router should be MASTER"
+                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
                     )
         self.assertEqual(
                          master_router.publicip,
@@ -1374,16 +1366,15 @@ class TestRvRRedundancy(cloudstackTestCase):
             master_router = routers[1]
             backup_router = routers[0]
 
-        self.debug("Rebooting the backuo router")
+        self.debug("Rebooting the backup router")
         try:
             Router.reboot(self.apiclient, id=backup_router.id)
         except Exception as e:
             self.fail("Failed to reboot BACKUP router: %s" % e)
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
@@ -1395,13 +1386,12 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'BACKUP',
-                    "Redundant state of the router should be BACKUP"
+                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
                     )
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the master router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=master_router.id,
                               listall=True
                               )
@@ -1413,7 +1403,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'MASTER',
-                    "Redundant state of the router should be MASTER"
+                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
                     )
         self.assertEqual(
                          master_router.publicip,
@@ -1472,10 +1462,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop BACKUP router: %s" % e)
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
@@ -1484,11 +1473,11 @@ class TestRvRRedundancy(cloudstackTestCase):
                     True,
                     "list router should return Master and backup routers"
                     )
-        self.assertEqual(
-                    routers[0].redundantstate,
-                    'UNKNOWN',
-                    "Redundant state of the router should be UNKNOWN"
-                    )
+        self.assertIn(
+            routers[0].redundantstate,
+            ['UNKNOWN', 'FAULT'],
+            "Redundant state of the backup router should be UNKNOWN/FAULT but is %s" % routers[0].redundantstate
+        )
 
         # Spawn an instance in that network
         vm_2 = VirtualMachine.create(
@@ -1518,10 +1507,9 @@ class TestRvRRedundancy(cloudstackTestCase):
                          "Vm should be in running state after deployment"
                          )
 
-        self.debug("Listing routers for network: %s" % self.network.name)
+        self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network.id,
                               id=backup_router.id,
                               listall=True
                               )
@@ -1533,6 +1521,6 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.assertEqual(
                     routers[0].redundantstate,
                     'BACKUP',
-                    "Redundant state of the router should be BACKUP"
+                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
                     )
         return
