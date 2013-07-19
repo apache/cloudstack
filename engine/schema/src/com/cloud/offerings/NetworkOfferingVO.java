@@ -426,4 +426,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.internalLb = internalLb;
     }
 
+    public void setPublicLb(boolean publicLb) {
+        this.publicLb = publicLb;
+    }
 }
