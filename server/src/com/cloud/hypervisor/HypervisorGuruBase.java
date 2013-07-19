@@ -120,7 +120,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             details.putAll(detailsInVm);
         }
         if (details.get(VirtualMachine.IsDynamicScalingEnabled) == null || details.get(VirtualMachine.IsDynamicScalingEnabled).isEmpty()) {
-            to. setEnableDynamicallyScaleVm(false);
+            to.setEnableDynamicallyScaleVm(false);
         } else {
             // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)
             to.setEnableDynamicallyScaleVm(details.get(VirtualMachine.IsDynamicScalingEnabled).equals("true") && Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vm.getDataCenterId())));

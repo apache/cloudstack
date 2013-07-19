@@ -100,6 +100,9 @@ import java.util.Map;
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
 
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -165,6 +168,10 @@ import java.util.Map;
         Collection paramsCollection = details.values();
         Map params = (Map) (paramsCollection.toArray())[0];
         return params;
+    }
+
+    public boolean isDynamicallyScalable() {
+        return isDynamicallyScalable == null ? false : isDynamicallyScalable;
     }
 
     // ///////////////////////////////////////////////////
