@@ -96,6 +96,25 @@ public class HostDatastoreSystemMO extends BaseMO {
 		return null;
 	}
 
+    public ManagedObjectReference findDatastoreByName(String datastoreName) throws Exception {
+        assert(datastoreName != null);
+
+        List<ManagedObjectReference> datastores = getDatastores();
+
+        if (datastores != null) {
+            for (ManagedObjectReference morDatastore : datastores) {
+                DatastoreInfo info = getDatastoreInfo(morDatastore);
+
+                if (info != null) {
+                    if (info.getName().equals(datastoreName))
+                        return morDatastore;
+                }
+            }
+        }
+
+        return null;
+    }
+
 	// TODO this is a hacking helper method, when we can pass down storage pool info along with volume
 	// we should be able to find the datastore by name
 	public ManagedObjectReference findDatastoreByExportPath(String exportPath) throws Exception {
@@ -130,7 +149,7 @@ public class HostDatastoreSystemMO extends BaseMO {
 
 	public ManagedObjectReference createVmfsDatastore(String datastoreName, HostScsiDisk hostScsiDisk) throws Exception {
 		// just grab the first instance of VmfsDatastoreOption
-		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 4).get(0);
+		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 5).get(0);
 
 		VmfsDatastoreCreateSpec vmfsDatastoreCreateSpec = (VmfsDatastoreCreateSpec)vmfsDatastoreOption.getSpec();
 

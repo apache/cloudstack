@@ -48,4 +48,8 @@ public class HostStorageSystemMO extends BaseMO {
 	public void rescanHba(String iScsiHbaDevice) throws Exception {
 		_context.getService().rescanHba(_mor, iScsiHbaDevice);
 	}
+
+    public void rescanVmfs() throws Exception {
+        _context.getService().rescanVmfs(_mor);
+    }
 }
