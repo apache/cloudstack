@@ -6473,7 +6473,7 @@
                                                     });
 
                                                     $.ajax({
-                                                        url: createURL('listVmwareDcs'),
+                                                        url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
                                                         data: {
                                                             zoneid: args.context.physicalResources[0].id
                                                         },
@@ -6485,15 +6485,21 @@
                                                                 selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
                                                                 selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
                                                             }
+                                                        },
+                                                        error: function(XMLHttpResponse) { //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});                                                      	
+                                                        	if(parseXMLHttpResponse(XMLHttpResponse) == 'The given command does not exist or it is not available for user')
+                                                        		return; //do nothing
+                                                        	else 
+                                                        		cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)}); //pop up error dialog box if the error is not 'The given command does not exist or it is not available for user'
                                                         }
                                                     });
 
                                                     // for testing only (begin)
                                                     /*
-                          selectedZoneObj.vmwaredcName = "datacenter";
-                          selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
-                          selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
-                          */
+						                            selectedZoneObj.vmwaredcName = "datacenter";
+						                            selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
+						                            selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
+						                            */
                                                     // for testing only (end)
 
                                                     args.response.success({
