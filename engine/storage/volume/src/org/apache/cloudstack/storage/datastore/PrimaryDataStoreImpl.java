@@ -228,13 +228,26 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             VMTemplateStoragePoolVO templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(),
                     obj.getId());
             if (templateStoragePoolRef == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Not found (templateId: " + obj.getId() + ", poolId: " + this.getId() + ") in template_spool_ref");
+                }
                 try {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Persisting (templateId: " + obj.getId() + ", poolId: " + this.getId() + ") to template_spool_ref");
+                    }
                     templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
                     templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                 } catch (Throwable t) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Failed to insert (templateId: " + obj.getId() + ", poolId: " + this.getId() + ") to template_spool_ref", t);
+                    }
                     templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
                     if (templateStoragePoolRef == null) {
                         throw new CloudRuntimeException("Failed to create template storage pool entry");
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
+                        }
                     }
                 }
             }
