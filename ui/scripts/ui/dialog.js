@@ -15,128 +15,134 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack, _l) {
-  cloudStack.dialog = {
-    /**
-     * Error message form
-     *
-     * Returns callback, that can be plugged into a standard data provider response
-     */
-    error: function(callback) {
-      return function(args) {
-        var message = args.message ? args.message : args;
-        if (message) cloudStack.dialog.notice({ message: message });
+    cloudStack.dialog = {
+        /**
+         * Error message form
+         *
+         * Returns callback, that can be plugged into a standard data provider response
+         */
+        error: function(callback) {
+            return function(args) {
+                var message = args.message ? args.message : args;
+                if (message) cloudStack.dialog.notice({
+                    message: message
+                });
 
-        if (callback) callback();
-      };
-    },
+                if (callback) callback();
+            };
+        },
 
-    /**
-     * Dialog with form
-     */
-    createForm: function(args) {
-      var $formContainer = $('<div>').addClass('form-container');
-      var $message = $('<span>').addClass('message').appendTo($formContainer).html(
-        _l(args.form.desc)
-      );
-      var $form = $('<form>').appendTo($formContainer)
-            .submit(function() {
-              $(this).closest('.ui-dialog').find('button.ok').click();
+        /**
+         * Dialog with form
+         */
+        createForm: function(args) {
+            var $formContainer = $('<div>').addClass('form-container');
+            var $message = $('<span>').addClass('message').appendTo($formContainer).html(
+                _l(args.form.desc)
+            );
+            var $form = $('<form>').appendTo($formContainer)
+                .submit(function() {
+                    $(this).closest('.ui-dialog').find('button.ok').click();
 
-              return false;
-            });
+                    return false;
+                });
 
-      var createLabel = _l(args.form.createLabel);
-      var $submit = $('<input>')
-            .attr({
-              type: 'submit'
+            var createLabel = _l(args.form.createLabel);
+            var $submit = $('<input>')
+                .attr({
+                    type: 'submit'
+                })
+                .hide()
+                .appendTo($form);
+
+            // Render fields and events
+            var fields = $.map(args.form.fields, function(value, key) {
+                return key;
             })
-            .hide()
-            .appendTo($form);
 
-      // Render fields and events
-      var fields = $.map(args.form.fields, function(value, key) {
-        return key;
-      })
+            var ret = function() {
+                $('.overlay').remove();
 
-      var ret = function() {
-        $('.overlay').remove();
-        
-        return $formContainer.dialog({
-          dialogClass: args.form.bigSize ? 'create-form big' : 'create-form',
-          closeOnEscape: false,
-          draggable: false,
-          width: args.form.bigSize ? 800 : 400,
-          title: _l(args.form.title),
-          open: function() {
-            if (args.form.preFilter) {
-              args.form.preFilter({ $form: $form, context: args.context });
-            }
-          },
-          buttons: [
-            {
-              text: createLabel ? createLabel : _l('label.ok'),
-              'class': 'ok',
-              click: function() {
-                if (!complete($formContainer)) { return false; }
+                return $formContainer.dialog({
+                    dialogClass: args.form.bigSize ? 'create-form big' : 'create-form',
+                    closeOnEscape: false,
+                    draggable: false,
+                    width: args.form.bigSize ? 800 : 400,
+                    title: _l(args.form.title),
+                    open: function() {
+                        if (args.form.preFilter) {
+                            args.form.preFilter({
+                                $form: $form,
+                                context: args.context
+                            });
+                        }
+                    },
+                    buttons: [{
+                        text: createLabel ? createLabel : _l('label.ok'),
+                        'class': 'ok',
+                        click: function() {
+                            if (!complete($formContainer)) {
+                                return false;
+                            }
 
-                $('div.overlay').remove();
-                $('.tooltip-box').remove();
-                $formContainer.remove();
-                $(this).dialog('destroy');
+                            $('div.overlay').remove();
+                            $('.tooltip-box').remove();
+                            $formContainer.remove();
+                            $(this).dialog('destroy');
 
-                $('.hovered-elem').hide();
+                            $('.hovered-elem').hide();
 
+                            return true;
+                        }
+                    }, {
+                        text: _l('label.cancel'),
+                        'class': 'cancel',
+                        click: function() {
+                            $('div.overlay').remove();
+                            $('.tooltip-box').remove();
+                            $formContainer.remove();
+                            $(this).dialog('destroy');
+
+                            $('.hovered-elem').hide();
+                        }
+                    }]
+                }).closest('.ui-dialog').overlay();
+            };
+
+            var isLastAsync = function(idx) {
+                for (var i = idx + 1; i < $(fields).length; i++) {
+                    var f = args.form.fields[$(fields).get(i)];
+                    if (f.select || f.dynamic) {
+                        return false;
+                    }
+                }
                 return true;
-              }
-            },
-            {
-              text: _l('label.cancel'),
-              'class': 'cancel',
-              click: function() {
-                $('div.overlay').remove();
-                $('.tooltip-box').remove();
-                $formContainer.remove();
-                $(this).dialog('destroy');
+            };
 
-                $('.hovered-elem').hide();
-              }
-            }
-          ]
-        }).closest('.ui-dialog').overlay();
-      };
+            var isAsync = false;
+            var isNoDialog = args.noDialog ? args.noDialog : false;
 
-      var isLastAsync = function(idx) {
-        for(var i = idx+1; i < $(fields).length ; i++) {
-          var f = args.form.fields[$(fields).get(i)];
-          if(f.select || f.dynamic){
-            return false;
-          }
-        }
-        return true;
-      };
+            $(fields).each(function(idx, element) {
+                var key = this;
+                var field = args.form.fields[key];
 
-      var isAsync = false;
-      var isNoDialog = args.noDialog ? args.noDialog : false;
+                var $formItem = $('<div>')
+                    .addClass('form-item')
+                    .attr({
+                        rel: key
+                    });
 
-      $(fields).each(function(idx, element) {
-        var key = this;
-        var field = args.form.fields[key];
+                if (field.isHidden != null) {
+                    if (typeof(field.isHidden) == 'boolean' && field.isHidden == true)
+                        $formItem.hide();
+                    else if (typeof(field.isHidden) == 'function' && field.isHidden() == true)
+                        $formItem.hide();
+                }
 
-        var $formItem = $('<div>')
-              .addClass('form-item')
-              .attr({ rel: key });
+                $formItem.appendTo($form);
 
-        if(field.isHidden != null) {
-          if (typeof(field.isHidden) == 'boolean' && field.isHidden == true)
-            $formItem.hide();
-          else if (typeof(field.isHidden) == 'function' && field.isHidden() == true)
-            $formItem.hide();
-        }
-
-        $formItem.appendTo($form);
-
-        //Handling Escape KeyPress events
-        /*   $('.ui-dialog').keypress(function(event) {
+                //Handling Escape KeyPress events
+                /*   $('.ui-dialog').keypress(function(event) {
          if ( event.which == 27 ) {
          event.stopPropagation();
          }
@@ -155,551 +161,567 @@
          $(':ui-dialog').dialog({
          closeOnEscape: false
          }); */
-        // Label field
+                // Label field
 
-        var $name = $('<div>').addClass('name')
-              .appendTo($formItem)
-              .append(
-                $('<label>').html(_l(field.label) + ':')
-              );
+                var $name = $('<div>').addClass('name')
+                    .appendTo($formItem)
+                    .append(
+                        $('<label>').html(_l(field.label) + ':')
+                );
 
-        // red asterisk
-        var $astersikSpan = $('<span>').addClass('field-required').html('*');
-        $name.find('label').prepend($astersikSpan);
+                // red asterisk
+                var $astersikSpan = $('<span>').addClass('field-required').html('*');
+                $name.find('label').prepend($astersikSpan);
 
-        if (field.validation == null || field.validation.required == false) {
-          $astersikSpan.hide();
-        }
-
-        // Tooltip description
-        if (field.desc) {
-          $formItem.attr({ title: _l(field.desc) });
-        }
-
-        // Input area
-        var $value = $('<div>').addClass('value')
-              .appendTo($formItem);
-        var $input, $dependsOn, selectFn, selectArgs;
-        var dependsOn = field.dependsOn;
-
-        // Depends on fields
-        if (field.dependsOn) {
-          $formItem.attr('depends-on', dependsOn);
-          $dependsOn = $form.find('input, select').filter(function() {
-            return $(this).attr('name') === dependsOn;
-          });
-
-          if ($dependsOn.is('[type=checkbox]')) {
-            var isReverse = args.form.fields[dependsOn].isReverse;
-
-            // Checkbox
-            $dependsOn.bind('click', function(event) {
-              var $target = $(this);
-              var $dependent = $target.closest('form').find('[depends-on=\'' + dependsOn + '\']');
-
-              if (($target.is(':checked') && !isReverse) ||
-                  ($target.is(':unchecked') && isReverse)) {
-                $dependent.css('display', 'inline-block');
-                $dependent.each(function() {
-                  if ($(this).data('dialog-select-fn')) {
-                    $(this).data('dialog-select-fn')();
-                  }
-                });
-              } else if (($target.is(':unchecked') && !isReverse) ||
-                         ($target.is(':checked') && isReverse)) {
-                $dependent.hide();
-              }
-
-              $dependent.find('input[type=checkbox]').click();
-
-              if (!isReverse) {
-                $dependent.find('input[type=checkbox]').attr('checked', false);
-              } else {
-                $dependent.find('input[type=checkbox]').attr('checked', true);
-              }
-
-              return true;
-            });
-
-            // Show fields by default if it is reverse checkbox
-            if (isReverse) {
-              $dependsOn.click();
-            }
-          }
-        }
-
-        // Determine field type of input
-        if (field.select) {
-          isAsync = true;
-          selectArgs = {
-            context: args.context,
-            response: {
-              success: function(args) {
-                $(args.data).each(function() {
-                  var id = this.id !== undefined ? this.id : this.name;
-                  var description = this.description;
-
-                  if (args.descriptionField)
-                    description = this[args.descriptionField];
-                  else
-                    description = this.description;
-
-                  var $option = $('<option>')
-                        .appendTo($input)
-                        .val(_s(id))
-                        .html(_s(description));
-                });
-
-                if (field.defaultValue) {
-                  $input.val(_s(field.defaultValue));
+                if (field.validation == null || field.validation.required == false) {
+                    $astersikSpan.hide();
                 }
 
-                $input.trigger('change');
-
-                if((!isNoDialog) && isLastAsync(idx)) {
-                   ret();
+                // Tooltip description
+                if (field.desc) {
+                    $formItem.attr({
+                        title: _l(field.desc)
+                    });
                 }
-              }
-            }
-          };
 
-          selectFn = field.select;
-          $input = $('<select>')
-            .attr({ name: key })
-            .data('dialog-select-fn', function(args) {
-              selectFn(args ? $.extend(true, {}, selectArgs, args) : selectArgs);
-            })
-            .appendTo($value);
+                // Input area
+                var $value = $('<div>').addClass('value')
+                    .appendTo($formItem);
+                var $input, $dependsOn, selectFn, selectArgs;
+                var dependsOn = field.dependsOn;
 
-          // Pass form item to provider for additional manipulation
-          $.extend(selectArgs, { $select: $input, $form: $form, type: 'createForm' });
+                // Depends on fields
+                if (field.dependsOn) {
+                    $formItem.attr('depends-on', dependsOn);
+                    $dependsOn = $form.find('input, select').filter(function() {
+                        return $(this).attr('name') === dependsOn;
+                    });
 
-          if (dependsOn) {
-            $dependsOn = $input.closest('form').find('input, select').filter(function() {
-              return $(this).attr('name') === dependsOn;
-            });
+                    if ($dependsOn.is('[type=checkbox]')) {
+                        var isReverse = args.form.fields[dependsOn].isReverse;
 
-            $dependsOn.bind('change', function(event) {
-              var $target = $(this);
+                        // Checkbox
+                        $dependsOn.bind('click', function(event) {
+                            var $target = $(this);
+                            var $dependent = $target.closest('form').find('[depends-on=\'' + dependsOn + '\']');
 
-              if (!$dependsOn.is('select')) return true;
+                            if (($target.is(':checked') && !isReverse) ||
+                                ($target.is(':unchecked') && isReverse)) {
+                                $dependent.css('display', 'inline-block');
+                                $dependent.each(function() {
+                                    if ($(this).data('dialog-select-fn')) {
+                                        $(this).data('dialog-select-fn')();
+                                    }
+                                });
+                            } else if (($target.is(':unchecked') && !isReverse) ||
+                                ($target.is(':checked') && isReverse)) {
+                                $dependent.hide();
+                            }
 
-              var dependsOnArgs = {};
+                            $dependent.find('input[type=checkbox]').click();
 
-              $input.find('option').remove();
+                            if (!isReverse) {
+                                $dependent.find('input[type=checkbox]').attr('checked', false);
+                            } else {
+                                $dependent.find('input[type=checkbox]').attr('checked', true);
+                            }
 
-              if (!$target.children().size()) return true;
+                            return true;
+                        });
 
-              dependsOnArgs[dependsOn] = $target.val();
-
-              selectFn($.extend(selectArgs, dependsOnArgs));
-
-              return true;
-            });
-
-            if (!$dependsOn.is('select')) {
-              selectFn(selectArgs);
-            }
-          } else {
-            selectFn(selectArgs);
-          }
-        } else if (field.isBoolean) {
-          if (field.multiArray) {
-            $input = $('<div>')
-              .addClass('multi-array').addClass(key).appendTo($value);
-
-            $.each(field.multiArray, function(itemKey, itemValue) {
-              $input.append(
-                $('<div>').addClass('item')
-                  .append(
-                    $.merge(
-                      $('<div>').addClass('name').html(_l(itemValue.label)),
-                      $('<div>').addClass('value').append(
-                        $('<input>').attr({ name: itemKey, type: 'checkbox' }).appendTo($value)
-                      )
-                    )
-                  )
-              );
-            });
-
-          } else {
-            $input = $('<input>').attr({ name: key, type: 'checkbox' }).appendTo($value);
-            if (field.isChecked) {
-              $input.attr('checked', 'checked');
-            } else {
-              // This is mainly for IE compatibility
-              setTimeout(function() {
-                $input.attr('checked', false);
-              }, 100);
-            }
-          }
-
-          // Setup on click event
-          if (field.onChange) {
-            $input.click(function() {
-              field.onChange({
-                $checkbox: $input
-              });
-            });
-          }
-        } else if (field.dynamic) {
-          isAsync = true;
-          // Generate a 'sub-create-form' -- append resulting fields
-          $input = $('<div>').addClass('dynamic-input').appendTo($value);
-          $form.hide();
-
-          field.dynamic({
-            response: {
-              success: function(args) {
-                var form = cloudStack.dialog.createForm({
-                  noDialog: true,
-                  form: {
-                    title: '',
-                    fields: args.fields
-                  }
-                });
-
-                var $fields = form.$formContainer.find('.form-item').appendTo($input);
-                $form.show();
-
-                // Form should be slightly wider
-                $form.closest(':ui-dialog').dialog('option', { position: 'center',closeOnEscape: false });
-                if((!isNoDialog) && isLastAsync(idx)) {
-                  ret();
+                        // Show fields by default if it is reverse checkbox
+                        if (isReverse) {
+                            $dependsOn.click();
+                        }
+                    }
                 }
-              }
-            }
-          });
-        } else if(field.isTextarea) {
-          $input = $('<textarea>').attr({
-            name: key
-          }).appendTo($value);
 
-          if (field.defaultValue) {
-            $input.val(field.defaultValue);
-          }
-        } else if (field.isDatepicker) { //jQuery datepicker
-            $input = $('<input>').attr({
-              name: key,
-              type: 'text'
-            }).appendTo($value);
+                // Determine field type of input
+                if (field.select) {
+                    isAsync = true;
+                    selectArgs = {
+                        context: args.context,
+                        response: {
+                            success: function(args) {
+                                $(args.data).each(function() {
+                                    var id = this.id !== undefined ? this.id : this.name;
+                                    var description = this.description;
 
-            if (field.defaultValue) {
-              $input.val(field.defaultValue);
-            }
-            if (field.id) {
-              $input.attr('id', field.id);
-            }
-          $input.addClass("disallowSpecialCharacters");
-          $input.datepicker({dateFormat: 'yy-mm-dd'});
+                                    if (args.descriptionField)
+                                        description = this[args.descriptionField];
+                                    else
+                                        description = this.description;
 
-        } else if(field.range) {//2 text fields on the same line (e.g. port range: startPort - endPort)
-          $input = $.merge(
-            // Range start
-            $('<input>').attr({
-              type: 'text',
-              name: field.range[0]
-            }),
+                                    var $option = $('<option>')
+                                        .appendTo($input)
+                                        .val(_s(id))
+                                        .html(_s(description));
+                                });
 
-            // Range end
-            $('<input>').attr({
-              type: 'text',
-              name: field.range[1]
-            })
-          ).appendTo(
-            $('<div>').addClass('range-edit').appendTo($value)
-          );
-          $input.wrap($('<div>').addClass('range-item'));
-          $input.addClass("disallowSpecialCharacters");
+                                if (field.defaultValue) {
+                                    $input.val(_s(field.defaultValue));
+                                }
 
-        } else { //text field
-          $input = $('<input>').attr({
-            name: key,
-            type: field.password || field.isPassword ? 'password' : 'text'
-          }).appendTo($value);
+                                $input.trigger('change');
 
-          if (field.defaultValue) {
-            $input.val(field.defaultValue);
-          }
-          if (field.id) {
-            $input.attr('id', field.id);
-          }
-          $input.addClass("disallowSpecialCharacters");
-        }
+                                if ((!isNoDialog) && isLastAsync(idx)) {
+                                    ret();
+                                }
+                            }
+                        }
+                    };
 
-        if(field.validation != null)
-          $input.data('validation-rules', field.validation);
-        else
-          $input.data('validation-rules', {});
+                    selectFn = field.select;
+                    $input = $('<select>')
+                        .attr({
+                            name: key
+                        })
+                        .data('dialog-select-fn', function(args) {
+                            selectFn(args ? $.extend(true, {}, selectArgs, args) : selectArgs);
+                        })
+                        .appendTo($value);
 
-        var fieldLabel = field.label;
+                    // Pass form item to provider for additional manipulation
+                    $.extend(selectArgs, {
+                        $select: $input,
+                        $form: $form,
+                        type: 'createForm'
+                    });
 
-        var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
+                    if (dependsOn) {
+                        $dependsOn = $input.closest('form').find('input, select').filter(function() {
+                            return $(this).attr('name') === dependsOn;
+                        });
 
-        $input.attr('id', inputId);
-        $name.find('label').attr('for', inputId);
+                        $dependsOn.bind('change', function(event) {
+                            var $target = $(this);
 
-        if(field.isDisabled)
-            $input.attr("disabled","disabled");
+                            if (!$dependsOn.is('select')) return true;
 
-        // Tooltip
-        if (field.docID) {
-          $input.toolTip({
-            docID: field.docID,
-            tooltip:'.tooltip-box',
-            mode:'focus',
-            attachTo: '.form-item'
-          });
-        }
+                            var dependsOnArgs = {};
+
+                            $input.find('option').remove();
+
+                            if (!$target.children().size()) return true;
+
+                            dependsOnArgs[dependsOn] = $target.val();
+
+                            selectFn($.extend(selectArgs, dependsOnArgs));
+
+                            return true;
+                        });
+
+                        if (!$dependsOn.is('select')) {
+                            selectFn(selectArgs);
+                        }
+                    } else {
+                        selectFn(selectArgs);
+                    }
+                } else if (field.isBoolean) {
+                    if (field.multiArray) {
+                        $input = $('<div>')
+                            .addClass('multi-array').addClass(key).appendTo($value);
+
+                        $.each(field.multiArray, function(itemKey, itemValue) {
+                            $input.append(
+                                $('<div>').addClass('item')
+                                .append(
+                                    $.merge(
+                                        $('<div>').addClass('name').html(_l(itemValue.label)),
+                                        $('<div>').addClass('value').append(
+                                            $('<input>').attr({
+                                                name: itemKey,
+                                                type: 'checkbox'
+                                            }).appendTo($value)
+                                        )
+                                    )
+                                )
+                            );
+                        });
+
+                    } else {
+                        $input = $('<input>').attr({
+                            name: key,
+                            type: 'checkbox'
+                        }).appendTo($value);
+                        if (field.isChecked) {
+                            $input.attr('checked', 'checked');
+                        } else {
+                            // This is mainly for IE compatibility
+                            setTimeout(function() {
+                                $input.attr('checked', false);
+                            }, 100);
+                        }
+                    }
+
+                    // Setup on click event
+                    if (field.onChange) {
+                        $input.click(function() {
+                            field.onChange({
+                                $checkbox: $input
+                            });
+                        });
+                    }
+                } else if (field.dynamic) {
+                    isAsync = true;
+                    // Generate a 'sub-create-form' -- append resulting fields
+                    $input = $('<div>').addClass('dynamic-input').appendTo($value);
+                    $form.hide();
+
+                    field.dynamic({
+                        response: {
+                            success: function(args) {
+                                var form = cloudStack.dialog.createForm({
+                                    noDialog: true,
+                                    form: {
+                                        title: '',
+                                        fields: args.fields
+                                    }
+                                });
+
+                                var $fields = form.$formContainer.find('.form-item').appendTo($input);
+                                $form.show();
+
+                                // Form should be slightly wider
+                                $form.closest(':ui-dialog').dialog('option', {
+                                    position: 'center',
+                                    closeOnEscape: false
+                                });
+                                if ((!isNoDialog) && isLastAsync(idx)) {
+                                    ret();
+                                }
+                            }
+                        }
+                    });
+                } else if (field.isTextarea) {
+                    $input = $('<textarea>').attr({
+                        name: key
+                    }).appendTo($value);
+
+                    if (field.defaultValue) {
+                        $input.val(field.defaultValue);
+                    }
+                } else if (field.isDatepicker) { //jQuery datepicker
+                    $input = $('<input>').attr({
+                        name: key,
+                        type: 'text'
+                    }).appendTo($value);
+
+                    if (field.defaultValue) {
+                        $input.val(field.defaultValue);
+                    }
+                    if (field.id) {
+                        $input.attr('id', field.id);
+                    }
+                    $input.addClass("disallowSpecialCharacters");
+                    $input.datepicker({
+                        dateFormat: 'yy-mm-dd'
+                    });
+
+                } else if (field.range) { //2 text fields on the same line (e.g. port range: startPort - endPort)
+                    $input = $.merge(
+                        // Range start
+                        $('<input>').attr({
+                            type: 'text',
+                            name: field.range[0]
+                        }),
+
+                        // Range end
+                        $('<input>').attr({
+                            type: 'text',
+                            name: field.range[1]
+                        })
+                    ).appendTo(
+                        $('<div>').addClass('range-edit').appendTo($value)
+                    );
+                    $input.wrap($('<div>').addClass('range-item'));
+                    $input.addClass("disallowSpecialCharacters");
+
+                } else { //text field
+                    $input = $('<input>').attr({
+                        name: key,
+                        type: field.password || field.isPassword ? 'password' : 'text'
+                    }).appendTo($value);
+
+                    if (field.defaultValue) {
+                        $input.val(field.defaultValue);
+                    }
+                    if (field.id) {
+                        $input.attr('id', field.id);
+                    }
+                    $input.addClass("disallowSpecialCharacters");
+                }
+
+                if (field.validation != null)
+                    $input.data('validation-rules', field.validation);
+                else
+                    $input.data('validation-rules', {});
+
+                var fieldLabel = field.label;
+
+                var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g, '_');
+
+                $input.attr('id', inputId);
+                $name.find('label').attr('for', inputId);
+
+                if (field.isDisabled)
+                    $input.attr("disabled", "disabled");
+
+                // Tooltip
+                if (field.docID) {
+                    $input.toolTip({
+                        docID: field.docID,
+                        tooltip: '.tooltip-box',
+                        mode: 'focus',
+                        attachTo: '.form-item'
+                    });
+                }
 
 
-        /*     $input.blur(function() {
+                /*     $input.blur(function() {
          console.log('tooltip remove->' + $input.attr('name'));
          });*/
-      });
+            });
 
 
-      var getFormValues = function() {
-        var formValues = {};
-        $.each(args.form.fields, function(key) {});
-      };
+            var getFormValues = function() {
+                var formValues = {};
+                $.each(args.form.fields, function(key) {});
+            };
 
-      // Setup form validation
-      $formContainer.find('form').validate();
-      $formContainer.find('input, select').each(function() {
-        if ($(this).data('validation-rules')) {
-          $(this).rules('add', $(this).data('validation-rules'));
-        }
-        else {
-          $(this).rules('add', {});
-        }
-      });
-      $form.find('select').trigger('change');
-
-
-      var complete = function($formContainer) {
-        var $form = $formContainer.find('form');
-        var data = cloudStack.serializeForm($form);
-
-        if (!$formContainer.find('form').valid()) {
-          // Ignore hidden field validation
-          if ($formContainer.find('input.error:visible, select.error:visible').size()) {
-            return false;
-          }
-        }
-
-        args.after({
-          data: data,
-          ref: args.ref, // For backwards compatibility; use context
-          context: args.context,
-          $form: $form
-        });
-
-        return true;
-      };
-
-      if (args.noDialog) {
-        return {
-          $formContainer: $formContainer,
-          completeAction: complete
-        };
-      } else if (!isAsync) {
-        return ret();
-      }
-    },
-
-    // Dialog with list view selector
-    listView: function(args) {
-      var listView = args.listView;
-      var after = args.after;
-      var context = args.context;
-      var $listView = $('<div>');
-
-      listView.actions = {
-        select: {
-          label: _l('label.select.instance'),
-          type: listView.type,
-          action: {
-            uiCustom: function(args) {
-              var $item = args.$item;
-              var $input = $item.find('td.actions input:visible');
-
-              if ($input.attr('type') == 'checkbox') {
-                if ($input.is(':checked'))
-                  $item.addClass('multi-edit-selected');
-                else
-                  $item.removeClass('multi-edit-selected');
-              } else {
-                $item.siblings().removeClass('multi-edit-selected');
-                $item.addClass('multi-edit-selected');
-              }
-            }
-          }
-        }
-      };
-
-      // Init list view
-      $listView = $('<div>').listView({
-        context: context,
-        uiCustom: true,
-        listView: listView
-      });
-
-      // Change action label
-      $listView.find('th.actions').html(_l('label.select'));
-      
-      $listView.dialog({
-        dialogClass: 'multi-edit-add-list panel',
-        width: 825,
-        title: _l('Select VM'),
-        buttons: [
-          {
-            text: _l('label.apply'),
-            'class': 'ok',
-            click: function() {
-              if (!$listView.find(
-                'input[type=radio]:checked, input[type=checkbox]:checked'
-              ).size()) {
-                cloudStack.dialog.notice({ message: _l('message.select.instance')});
-
-                return false;
-              }
-              
-              after({
-                context: $.extend(true, {}, context, {
-                  instances: $listView.find('tr.multi-edit-selected').map(function(index, row) {
-                    var $row = $(row);
-
-                    return $row.data('json-obj');
-                  })
-                })
-              });
-              
-              $listView.remove();
-
-              $('div.overlay').remove();
-            }
-          },
-          {
-            text: _l('label.cancel'),
-            'class': 'cancel',
-            click: function() {
-              $listView.fadeOut(function() {
-                $listView.remove();
-              });
-              $('div.overlay').fadeOut(function() {
-                $('div.overlay').remove();
-              });
-            }
-          }
-        ]
-      }).parent('.ui-dialog').overlay();
-    },
-
-    /**
-     * to change a property(e.g. validation) of a createForm field after a createForm is rendered
-     */
-    createFormField: {
-      validation: {
-        required: {
-          add: function($formField) {
-            var $input = $formField.find('input, select');
-            var validationRules = $input.data('validation-rules');
-
-            if(validationRules == null || validationRules.required == null || validationRules.required == false) {
-              $formField.find('.name').find('label').find('span.field-required').css('display', 'inline'); //show red asterisk
-
-              if(validationRules == null)
-                validationRules = {};
-              validationRules.required = true;
-              $input.data('validation-rules', validationRules);
-              $input.rules('add', { required: true });
-            }
-          },
-          remove: function($formField) {
-            var $input = $formField.find('input, select');
-            var validationRules = $input.data('validation-rules');
-
-            if(validationRules != null && validationRules.required != null && validationRules.required == true) {
-              $formField.find('.name').find('label').find('span.field-required').hide(); //hide red asterisk
-              delete validationRules.required;
-              $input.data('validation-rules', validationRules);
-
-              $input.rules('remove', 'required');
-              $formField.find('.value').find('label.error').hide();
-            }
-          }
-        }
-      }
-    },
-
-    /**
-     * Confirmation dialog
-     */
-    confirm: function(args) {
-      return $(
-        $('<span>').addClass('message').html(
-          _l(args.message)
-        )
-      ).dialog({
-        title: _l('label.confirmation'),
-        dialogClass: 'confirm',
-        closeOnEscape: false,
-        zIndex: 5000,
-        buttons: [
-          {
-            text: _l('label.no'),
-            'class': 'cancel',
-            click: function() {
-              $(this).dialog('destroy');
-              $('div.overlay').remove();
-              if (args.cancelAction) { args.cancelAction(); }
-              $('.hovered-elem').hide();
-            }
-          },
-          {
-            text: _l('label.yes'),
-            'class': 'ok',
-            click: function() {
-              args.action();
-              $(this).dialog('destroy');
-              $('div.overlay').remove();
-              $('.hovered-elem').hide();
-            }
-          }
-        ]
-      }).closest('.ui-dialog').overlay();
-    },
-
-    /**
-     * Notice dialog
-     */
-    notice: function(args) {
-      if (args.message) {
-        return $(
-          $('<span>').addClass('message').html(
-            _l(args.message)
-          )
-        ).dialog({
-            title: _l('label.status'),
-            dialogClass: 'notice',
-            closeOnEscape: false,
-            zIndex: 5000,
-            buttons: [
-              {
-                text: _l('Close'),
-                'class': 'close',
-                click: function() {
-                  $(this).dialog('destroy');
-                  if (args.clickAction) args.clickAction();
-                  $('.hovered-elem').hide();
+            // Setup form validation
+            $formContainer.find('form').validate();
+            $formContainer.find('input, select').each(function() {
+                if ($(this).data('validation-rules')) {
+                    $(this).rules('add', $(this).data('validation-rules'));
+                } else {
+                    $(this).rules('add', {});
                 }
-              }
-            ]
-          });
-      }
+            });
+            $form.find('select').trigger('change');
 
-      return false;
-    }
-  };
+
+            var complete = function($formContainer) {
+                var $form = $formContainer.find('form');
+                var data = cloudStack.serializeForm($form);
+
+                if (!$formContainer.find('form').valid()) {
+                    // Ignore hidden field validation
+                    if ($formContainer.find('input.error:visible, select.error:visible').size()) {
+                        return false;
+                    }
+                }
+
+                args.after({
+                    data: data,
+                    ref: args.ref, // For backwards compatibility; use context
+                    context: args.context,
+                    $form: $form
+                });
+
+                return true;
+            };
+
+            if (args.noDialog) {
+                return {
+                    $formContainer: $formContainer,
+                    completeAction: complete
+                };
+            } else if (!isAsync) {
+                return ret();
+            }
+        },
+
+        // Dialog with list view selector
+        listView: function(args) {
+            var listView = args.listView;
+            var after = args.after;
+            var context = args.context;
+            var $listView = $('<div>');
+
+            listView.actions = {
+                select: {
+                    label: _l('label.select.instance'),
+                    type: listView.type,
+                    action: {
+                        uiCustom: function(args) {
+                            var $item = args.$item;
+                            var $input = $item.find('td.actions input:visible');
+
+                            if ($input.attr('type') == 'checkbox') {
+                                if ($input.is(':checked'))
+                                    $item.addClass('multi-edit-selected');
+                                else
+                                    $item.removeClass('multi-edit-selected');
+                            } else {
+                                $item.siblings().removeClass('multi-edit-selected');
+                                $item.addClass('multi-edit-selected');
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Init list view
+            $listView = $('<div>').listView({
+                context: context,
+                uiCustom: true,
+                listView: listView
+            });
+
+            // Change action label
+            $listView.find('th.actions').html(_l('label.select'));
+
+            $listView.dialog({
+                dialogClass: 'multi-edit-add-list panel',
+                width: 825,
+                title: _l('Select VM'),
+                buttons: [{
+                    text: _l('label.apply'),
+                    'class': 'ok',
+                    click: function() {
+                        if (!$listView.find(
+                            'input[type=radio]:checked, input[type=checkbox]:checked'
+                        ).size()) {
+                            cloudStack.dialog.notice({
+                                message: _l('message.select.instance')
+                            });
+
+                            return false;
+                        }
+
+                        after({
+                            context: $.extend(true, {}, context, {
+                                instances: $listView.find('tr.multi-edit-selected').map(function(index, row) {
+                                    var $row = $(row);
+
+                                    return $row.data('json-obj');
+                                })
+                            })
+                        });
+
+                        $listView.remove();
+
+                        $('div.overlay').remove();
+                    }
+                }, {
+                    text: _l('label.cancel'),
+                    'class': 'cancel',
+                    click: function() {
+                        $listView.fadeOut(function() {
+                            $listView.remove();
+                        });
+                        $('div.overlay').fadeOut(function() {
+                            $('div.overlay').remove();
+                        });
+                    }
+                }]
+            }).parent('.ui-dialog').overlay();
+        },
+
+        /**
+         * to change a property(e.g. validation) of a createForm field after a createForm is rendered
+         */
+        createFormField: {
+            validation: {
+                required: {
+                    add: function($formField) {
+                        var $input = $formField.find('input, select');
+                        var validationRules = $input.data('validation-rules');
+
+                        if (validationRules == null || validationRules.required == null || validationRules.required == false) {
+                            $formField.find('.name').find('label').find('span.field-required').css('display', 'inline'); //show red asterisk
+
+                            if (validationRules == null)
+                                validationRules = {};
+                            validationRules.required = true;
+                            $input.data('validation-rules', validationRules);
+                            $input.rules('add', {
+                                required: true
+                            });
+                        }
+                    },
+                    remove: function($formField) {
+                        var $input = $formField.find('input, select');
+                        var validationRules = $input.data('validation-rules');
+
+                        if (validationRules != null && validationRules.required != null && validationRules.required == true) {
+                            $formField.find('.name').find('label').find('span.field-required').hide(); //hide red asterisk
+                            delete validationRules.required;
+                            $input.data('validation-rules', validationRules);
+
+                            $input.rules('remove', 'required');
+                            $formField.find('.value').find('label.error').hide();
+                        }
+                    }
+                }
+            }
+        },
+
+        /**
+         * Confirmation dialog
+         */
+        confirm: function(args) {
+            return $(
+                $('<span>').addClass('message').html(
+                    _l(args.message)
+                )
+            ).dialog({
+                title: _l('label.confirmation'),
+                dialogClass: 'confirm',
+                closeOnEscape: false,
+                zIndex: 5000,
+                buttons: [{
+                    text: _l('label.no'),
+                    'class': 'cancel',
+                    click: function() {
+                        $(this).dialog('destroy');
+                        $('div.overlay').remove();
+                        if (args.cancelAction) {
+                            args.cancelAction();
+                        }
+                        $('.hovered-elem').hide();
+                    }
+                }, {
+                    text: _l('label.yes'),
+                    'class': 'ok',
+                    click: function() {
+                        args.action();
+                        $(this).dialog('destroy');
+                        $('div.overlay').remove();
+                        $('.hovered-elem').hide();
+                    }
+                }]
+            }).closest('.ui-dialog').overlay();
+        },
+
+        /**
+         * Notice dialog
+         */
+        notice: function(args) {
+            if (args.message) {
+                return $(
+                    $('<span>').addClass('message').html(
+                        _l(args.message)
+                    )
+                ).dialog({
+                    title: _l('label.status'),
+                    dialogClass: 'notice',
+                    closeOnEscape: false,
+                    zIndex: 5000,
+                    buttons: [{
+                        text: _l('Close'),
+                        'class': 'close',
+                        click: function() {
+                            $(this).dialog('destroy');
+                            if (args.clickAction) args.clickAction();
+                            $('.hovered-elem').hide();
+                        }
+                    }]
+                });
+            }
+
+            return false;
+        }
+    };
 })(window.jQuery, window.cloudStack, _l);
