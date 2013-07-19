@@ -23,8 +23,8 @@ under the License.
     <xi:include href="Preface.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <chapter id="welcome-4.1">
         <title>Welcome to &PRODUCT; 4.1</title>
-        <para>Welcome to the 4.1.1 release of &PRODUCT;, the first major release from the &PRODUCT; project since its graduation from the Apache Incubator.</para>
-        <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.1/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.1/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
+        <para>Welcome to the 4.1.1 release of &PRODUCT;, the first bug fix release of &PRODUCT; in the 4.1.x line.</para>
+        <para>This document contains information specific to this release of &PRODUCT;, including upgrade instructions from prior releases and issues fixed in the release. For installation instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.1/html/Installation_Guide/index.html">Installation Guide</ulink>. For usage and administration instructions, please see the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.1/html/Admin_Guide/index.html">&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API will find instruction in the <ulink url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html">&PRODUCT; API Developer's Guide</ulink></para>
         <para>If you find any errors or problems in this guide, please see <xref linkend="feedback" />. We hope you enjoy working with &PRODUCT;!</para>
     </chapter>
     <chapter id="compatibility">
@@ -411,9 +411,1892 @@ under the License.
                     </thead>
                     <tbody>
                         <row>
-                            <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-XXXX">CLOUDSTACK-XXXX</ulink></para></entry>
-                            <entry><para>example bug</para>
-                                <para>description</para></entry>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-77">CLOUDSTACK-77</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>console proxy display issues</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-79">CLOUDSTACK-79</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack 3.0.4: firewall rules not restored on KVM host</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-83">CLOUDSTACK-83</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>hitting exception when trying to take two consecutive snapshot on same volume</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-107">CLOUDSTACK-107</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Network domain guest suffix is not getting programmed as part of hostnames on Guest VMs that are part of Isolated and Shared Guest Networks</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-124">CLOUDSTACK-124</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>NetworkGarbageCollector not cleaning up networks</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-155">CLOUDSTACK-155</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>HA checks lead to unnecessary Compute Node reboot when Primary Storage is in Maintenance Mode</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-216">CLOUDSTACK-216</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Templates' Source Location Information present on "template_host_ref" and "vm_template" tables should refer to Apache System Template Locations</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-231">CLOUDSTACK-231</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Tag creation using special charecters</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-237">CLOUDSTACK-237</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>StopVMCommand reported success in spite of failing to stop a VM which got stuck during installation from an ISO</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-238">CLOUDSTACK-238</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>vpn:fail to connect to vpnserver using non-sourceNAT IP</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-242">CLOUDSTACK-242</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>haproxy listens on all interfaces on VR</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-243">CLOUDSTACK-243</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>On management server, security for remote JMX connections is disabled</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-244">CLOUDSTACK-244</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>RPC port on SSVM is open on all interfaces</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-245">CLOUDSTACK-245</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>VPC ACLs are not stored and programmed consistently</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-252">CLOUDSTACK-252</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UpdateNetwork Operation on a guest network that is currently using Virtual Router for Lb services to a network offering that uses "F5" for Lb services Fails due to MySQLIntegrityConstraintViolationException.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-255">CLOUDSTACK-255</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Null pointer exception while creating portforwarding rule after performing UpdateNetworkCmd</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-270">CLOUDSTACK-270</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ui should not ask for a vlan range if the physical network isolation type is not VLAN</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-272">CLOUDSTACK-272</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Delete failure message for network with a VM is not informative</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-280">CLOUDSTACK-280</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Exception thrown on going to Step 5 of Add VM Instance - CloudRuntimeException: Tags are not defined for physical network in the zone id=1</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-282">CLOUDSTACK-282</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Virtual Routers do not properly resolve DNS SRV Records</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-285">CLOUDSTACK-285</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Snapshots fail to respect retention period if schedule is deleted and re-created.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-295">CLOUDSTACK-295</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add instructions to modify limits.conf in installation directions</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-298">CLOUDSTACK-298</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>putting host in maintenance mode while creating snapshot ,host resorce state stuck in "ErrorInMaintenance mode" and snapshot creation fail Unable to migrate due to Requested operation is not valid: cannot migrate domain with 1 snapshots</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-300">CLOUDSTACK-300</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Creation of compute offering allow combination of local storage + HA</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-310">CLOUDSTACK-310</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Failed to add host - Plugin error</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-315">CLOUDSTACK-315</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Infrastructure view does not show capacity values</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-324">CLOUDSTACK-324</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cannot edit default security group rules, default security group blocks all inbound traffic.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-338">CLOUDSTACK-338</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unique Names of Disk and Service Offerings in the database are prefixed with "Cloud.com" String</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-360">CLOUDSTACK-360</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>System VM template isn't copied from Secondary Storage to XenServer's local SR</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-371">CLOUDSTACK-371</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>When naming physical networks in the zone wizard, special characters like () break the wizard</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-375">CLOUDSTACK-375</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unable to delete physical network - because there are other networks attached</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-381">CLOUDSTACK-381</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Install Guide: Section 2.5: Notes that you can skip secondary storage if you are using local disks.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-382">CLOUDSTACK-382</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Install Guide: Network Type Descriptions</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-410">CLOUDSTACK-410</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>vnc_listen not configured in qemu.conf for Ubuntu KVM host</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-425">CLOUDSTACK-425</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Check image type is qcow2 before actually installing</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-429">CLOUDSTACK-429</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Agent rebalancing is broken</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-433">CLOUDSTACK-433</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>IP addresses can be left assigned and orphaned when static NAT assign fails</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-440">CLOUDSTACK-440</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>create networks in advanced zone with out VLAN isolation</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-458">CLOUDSTACK-458</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>xen:snapshots:Storage gc fail to clean the failed snapshot images from secondarystorage</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-463">CLOUDSTACK-463</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>mvn does not inject agent version into .JAR files.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-468">CLOUDSTACK-468</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Difficult to find API reference when there is no link to it from the Documentation landing page</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-469">CLOUDSTACK-469</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack Documentation Landing Page has Alignment Issues</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-470">CLOUDSTACK-470</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add vm does not list all vms when creating port forwards</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-482">CLOUDSTACK-482</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Installation Guide Doc Error Section 4.5.7</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-486">CLOUDSTACK-486</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Clicking UI notifications for System VM or Virtual Router opens Instances page</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-489">CLOUDSTACK-489</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Document how to use userdata feature for user vms</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-506">CLOUDSTACK-506</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[UI] Unable to execute API command liststoragepools</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-519">CLOUDSTACK-519</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cloudstack development environment on Windows using Cygwin references 'sudo' which is not available in Cygwin</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-525">CLOUDSTACK-525</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cloudstack Redundant Virtual Router issues both MASTER.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-526">CLOUDSTACK-526</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cloudstack Redundant Virtual Router issues with Port Forwarding</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-532">CLOUDSTACK-532</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Storage-template-cleanup corrupts templates</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-535">CLOUDSTACK-535</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Virtual Router DNS is restricted to UDP only</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-554">CLOUDSTACK-554</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cloudstack should virtualized 32bits CPUs for 32bits templates</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-561">CLOUDSTACK-561</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>createNetwork can block for long periods causing clients to time out when called at certain times</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-562">CLOUDSTACK-562</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unable to download DATA volume on CS4 and vSphere 5</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-563">CLOUDSTACK-563</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unable to create guest network in UI for Advanced Zone</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-568">CLOUDSTACK-568</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Source template id is recorded incorrectly.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-575">CLOUDSTACK-575</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cannot change memory size of the console.ram.size, ssvm.ram.size using web console</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-582">CLOUDSTACK-582</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cannot perform password reset for Windows instances on VMWare</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-586">CLOUDSTACK-586</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>exportfs -a gives 'no_subtree_check warning' when following the Installation guide</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-589">CLOUDSTACK-589</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Juniper SRX does not depend on f5 iControl jar</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-597">CLOUDSTACK-597</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Management Server Restart loses hosts</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-626">CLOUDSTACK-626</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>guest_os table does not have latest distro</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-649">CLOUDSTACK-649</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>KVM storage gc does not delete the invalid snapshots from physical storage</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-668">CLOUDSTACK-668</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Secondary storage host always remains in Alert status</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-688">CLOUDSTACK-688</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UI Russian language</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-696">CLOUDSTACK-696</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Networks with same name & VLAN are allowed in the same Zone</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-722">CLOUDSTACK-722</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Using a certificate chain for the Console Proxy is not documented</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-732">CLOUDSTACK-732</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add back KVM snapshot support</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-904">CLOUDSTACK-904</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack export the CPU as a socket not core</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-969">CLOUDSTACK-969</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>api: zone response lists vlan in it as "vlan range of zone" but the vlan belongs to physical network</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-970">CLOUDSTACK-970</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>when a template is deleted and then copied over again , it is still marked as "Removed" in template_zone_ref table.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-989">CLOUDSTACK-989</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>marvin: jsonHelper deserialization results in unfilled attributes</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-992">CLOUDSTACK-992</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Template creations dies after 2h for no reason</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-994">CLOUDSTACK-994</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Feature Request: Support VmWare Storage Pool</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1007">CLOUDSTACK-1007</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Not able to delete Shared network because of not being able to stop the router.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1018">CLOUDSTACK-1018</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>IPtables manipulation is EL-specific and doesn't cover Ubuntu</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1025">CLOUDSTACK-1025</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>If an ISO is deleted there is no check if the ISO is actually attached to a guest or not.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1048">CLOUDSTACK-1048</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Launching AutoScale: Documentation Flow is Incorrect</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1053">CLOUDSTACK-1053</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Start systemvm</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1069">CLOUDSTACK-1069</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Document workaround for: CS and LDAP user validation can't happen simultaneously</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1075">CLOUDSTACK-1075</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>create an utility in Marvin to support nsnitro</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1089">CLOUDSTACK-1089</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>API Problem with listAsyncJobs</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1090">CLOUDSTACK-1090</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>VM unable to obtain guest IP from a virtual router running on another XCP/XenServer hypervisor (Cloudstack Advanced Zone Setup)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1167">CLOUDSTACK-1167</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>arptables rules are not destroyed after vm is stopped in XenServer in basic zone</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1177">CLOUDSTACK-1177</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack always reports 'invalid username or password' when using IE10</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1194">CLOUDSTACK-1194</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Bug with the web interface (re isolation method)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1195">CLOUDSTACK-1195</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Wrong isolation method offered for KVM hypervisor</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1197">CLOUDSTACK-1197</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Basic zone DNS domain not offered by VR</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1199">CLOUDSTACK-1199</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>External DNS not being added to reslov.conf</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1225">CLOUDSTACK-1225</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Storage System vm id keeps on increasing</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1236">CLOUDSTACK-1236</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Warning while adding Xen 6.1 host [Unable to create local link network]</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1245">CLOUDSTACK-1245</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Not able to install Debian based PV Instances from ISO,only HVM instances is possible.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1249">CLOUDSTACK-1249</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack Service restart has inconsistent names</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1259">CLOUDSTACK-1259</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>NPE at service shutdown</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1282">CLOUDSTACK-1282</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UI - Tooltip - Missing tooltip for Projects page</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1283">CLOUDSTACK-1283</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UI - Tooltip - Need a clean way to differentiate between Alt Tag's and Tooltips.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1284">CLOUDSTACK-1284</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UI - Tooltip - Inconsistent tool tip rendering among installation wizards</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1285">CLOUDSTACK-1285</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UI -Tooltip - Lengthy and inconsistent description among toolips</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1302">CLOUDSTACK-1302</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add per storage setting for cache="none/writeback/writethrough" options for VMs on KVM hypervisor</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1304">CLOUDSTACK-1304</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"mvn -pl :cloud-client-ui jetty:run" strips permission of files in script/</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1306">CLOUDSTACK-1306</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Better Error message when trying to deploy Vm by passing static Ipv4 addresses that are assigned to another VM/IP4 address is outside the iprange.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1309">CLOUDSTACK-1309</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Large guest subnets downgrade performance</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1316">CLOUDSTACK-1316</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Documentation update for "cloud-set-guest-password" needed</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1327">CLOUDSTACK-1327</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cloudstack allows users to import huge templates from unauthorised URLs</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1358">CLOUDSTACK-1358</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Clarify format of url field of the createStoragePool API command</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1359">CLOUDSTACK-1359</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Clarify what we mean by GB in CloudStack documentation</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1389">CLOUDSTACK-1389</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Interactive Password Prompts during Management Server Startup</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1393">CLOUDSTACK-1393</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Install scripts shows wrong path to copy vhd-util</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1408">CLOUDSTACK-1408</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Error creating new instance with sufficient resources!</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1412">CLOUDSTACK-1412</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>listUsageRecords will loop data if requested page is beyond what is available</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1413">CLOUDSTACK-1413</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Need something to concretely identify the version of the code in a particular build</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1424">CLOUDSTACK-1424</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Failed with NPE while deleting account when there are snapshots created for this account instances</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1432">CLOUDSTACK-1432</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Inconsistent field names in "Add Cluster" dialog</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1458">CLOUDSTACK-1458</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add Zone wizard UI gets visually broken if additional browser toolbars are used.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1460">CLOUDSTACK-1460</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>UI : List Storage table has unused column name Actions</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1492">CLOUDSTACK-1492</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Missing Guide: Allocator Implementation Guide</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1497">CLOUDSTACK-1497</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Alien VM's are deleted on migration by xenserver.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1500">CLOUDSTACK-1500</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unable to connect to instances via View console</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1504">CLOUDSTACK-1504</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>VMWare is not using the VLAN tag for storage port-group</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1605">CLOUDSTACK-1605</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>No Documentation on Network Throttling</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1632">CLOUDSTACK-1632</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Mistakes in authorizeSecurityGroup* API docs</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1654">CLOUDSTACK-1654</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Management & Host installed on same machine, Management cannot get ID.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1660">CLOUDSTACK-1660</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack 4.1 RPM install Warning</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1702">CLOUDSTACK-1702</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Error messages returning numeric ID's in some places instead of UUIDs</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1703">CLOUDSTACK-1703</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Management Server access error: "Error while decrypting..."</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1712">CLOUDSTACK-1712</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Documentation for Creating a Template doesn't match what's presented in management server</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1717">CLOUDSTACK-1717</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS Regions - Local region entry that gets added by default should not include "/api" for its end_point.Also the endpoint should have the actual hostname instead of localhost.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1743">CLOUDSTACK-1743</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>No Section on About Password and Key Encryption Though Multiple References Appear in the Install Guide</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1775">CLOUDSTACK-1775</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Events related User/Domain/Account are not being generated expect for USER-DISABLE,DOMAIN-DELETE and ACCOUNT.DISABLE event.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1780">CLOUDSTACK-1780</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Client UI: i18N files (messages_xx_XX.properties) needs to be convert in ASCII with unicode char \uxxxx (and perhaps keys needs to be in alphabetical order)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1783">CLOUDSTACK-1783</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Alteration of some messages i18n files (ja, zh_CN ...) since last commit with transifex export files</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1790">CLOUDSTACK-1790</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Lock down ports for all system VMs</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1801">CLOUDSTACK-1801</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Upgrade from 3.0.2 to 4.0.1 Fails</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1807">CLOUDSTACK-1807</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CS4 AWS S3 support - List all buckets AWS API doesnot return correct response if not buckets are created on NFS mount</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1819">CLOUDSTACK-1819</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS Regions - Issues seen when trying to move a zone from 1 region to another.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1821">CLOUDSTACK-1821</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AWS S3 API -Get bucket by name - ACLs do not give user the required permission</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1835">CLOUDSTACK-1835</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>VMWare tries to use vSwitch0 when it shouldn't</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1868">CLOUDSTACK-1868</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>GetVmStatsCommand throws NullPointerException with VMWare</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1872">CLOUDSTACK-1872</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Do not accept OVAs with multiple VMDKs for uploaded volumes or templates</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1885">CLOUDSTACK-1885</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Broken testcases in 4.1</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1896">CLOUDSTACK-1896</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>S3-backed NFS secondary storage uses Db-based lock when DB is not available</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1899">CLOUDSTACK-1899</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>SRX firewall external devices - static NAT does not function</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1932">CLOUDSTACK-1932</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>AutoScale UI documentation doesn't mention the option appears only for NetScaler</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1965">CLOUDSTACK-1965</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>15.8. External Firewalls and Load Balancers Section is Incomplete</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1967">CLOUDSTACK-1967</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Maintenance mode not fully working with VMWare</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1969">CLOUDSTACK-1969</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ubuntu fresh Install- SystemIntegrityChecker looking for "schema-40to410.sql" wrong location and failed to start MS</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1970">CLOUDSTACK-1970</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ubuntu - "cloudstack-setup-management" not available in "/usr/bin"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1986">CLOUDSTACK-1986</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Key translation fails for the Japanese keyboard keys ¥_,\ |, Muhenkan, Henkan, Hiragana/Katakana, Kanji Key & Caps Loc</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1992">CLOUDSTACK-1992</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cannot deploy VM from template on VMWare, no issues when deploying from ISO</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1996">CLOUDSTACK-1996</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Storage tags ignored when using VMWare</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2015">CLOUDSTACK-2015</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CS3.0.2 VR is pending in starting state，when VR is recreated.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2018">CLOUDSTACK-2018</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[DOC] How system.vm passwords can be randomized</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2024">CLOUDSTACK-2024</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>cloudstack-setup-management with https not works (incorrect path and missing keystore file)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2025">CLOUDSTACK-2025</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Failed VM creation on Xen Server does not release shared IP address</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2047">CLOUDSTACK-2047</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cloudstack Management Server host key is set to localhost</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2050">CLOUDSTACK-2050</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>encode.api.response in global settings when set to true will create garbled % output int he gui and json output</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2053">CLOUDSTACK-2053</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[BUG] userdata.sh on router VM fixes for if else logic and missing meta-data</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2072">CLOUDSTACK-2072</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Virtual Routers Failover not working</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2075">CLOUDSTACK-2075</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>List capacity error causes UI to display status overlay</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2183">CLOUDSTACK-2183</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Database upgrade from 3.0.2 to 4.0.1 failed</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2203">CLOUDSTACK-2203</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>SSVM does not redeploy after destroyed</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2213">CLOUDSTACK-2213</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>russian language select failure</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2215">CLOUDSTACK-2215</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>SSVM does not use allocated storage ip range</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2216">CLOUDSTACK-2216</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>CloudStack Manager sends wrong validBackupUUIDs to Secondary Storage VM when clean up snapshot backup. This causes the snapshots backup not garbage collected correctly and gets the secondary storage filled up.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2217">CLOUDSTACK-2217</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Snapshots backups are not deleted according to CleanupSnapshotBackupCommand. Those snapshots backups that should be garbage collected but not get deleted can fill up the secondary storage.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2224">CLOUDSTACK-2224</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"filterwin2k" should not be set in dnsmasq.conf</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2299">CLOUDSTACK-2299</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Stale DHCP leases block IP reallocation</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2300">CLOUDSTACK-2300</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unexpected deletion of Snapshots backups</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2325">CLOUDSTACK-2325</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>incomplete sentence in installation guide</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2344">CLOUDSTACK-2344</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>not enough free memory on one host of the cluster</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2353">CLOUDSTACK-2353</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Figure out how spring can allow for inheritable component contexts</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2383">CLOUDSTACK-2383</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>"Entity already exists" error at automatic virtual router VM creation.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2388">CLOUDSTACK-2388</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>HA "Host Allocator returning 0 suitable hosts" but starting the VM manually finds one.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2446">CLOUDSTACK-2446</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>System Capacity Zone total memory calculation is wrong</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2448">CLOUDSTACK-2448</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>XenServer Guest OS Corrections</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2455">CLOUDSTACK-2455</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cannot add a Debian host to a KVM cluster</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2530">CLOUDSTACK-2530</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>fix npe if no network isolation methods</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2532">CLOUDSTACK-2532</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>remove bogus self assign to parent</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2535">CLOUDSTACK-2535</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Cleanup port-profiles that gets created on Nexus switch as part of network cleanup</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2574">CLOUDSTACK-2574</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Release note pdf link</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2608">CLOUDSTACK-2608</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Vmware network labels are ignored when creating a Zone using advance networking</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2610">CLOUDSTACK-2610</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unable to add host due to missing setiptables plugin</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2616">CLOUDSTACK-2616</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>com.mysql.jdbc.exceptions.jdbc4.CommunicationsException error is displayed in management server log after long time of inactive mysql connection</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2654">CLOUDSTACK-2654</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>VPC UI Missing information</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2692">CLOUDSTACK-2692</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[MIPN][Enhancement] Add load balancing support for MIPN</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2694">CLOUDSTACK-2694</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[Firewall Rule] Able to configure duplicate firewall rule with protocol and no ports</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2702">CLOUDSTACK-2702</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>unable to install XenServer Support Package (CSP) on Xen cloud platform 1.6</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2721">CLOUDSTACK-2721</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Marvin cloudstackConnection fails if no port is specified</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2722">CLOUDSTACK-2722</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>KVM Hypervisor host install instructions say to set up VLANs for Basic networking</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2780">CLOUDSTACK-2780</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>primary storage is already mounted but not found in pool-list</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2791">CLOUDSTACK-2791</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Installation instruction wrong</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2795">CLOUDSTACK-2795</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Create template failed</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2804">CLOUDSTACK-2804</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>getEthByIp function in vpc_func.sh can return the wrong network interface</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2845">CLOUDSTACK-2845</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Duplicate entries in the database since upgrade to 4.1.0</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2860">CLOUDSTACK-2860</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add new host into VMWare Cluster failed</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2872">CLOUDSTACK-2872</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>ubuntu 12.4 kvm issue CS 4.1 libvirt complaint and not able to start systemvm</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2895">CLOUDSTACK-2895</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Can't start a VM with 3 volumes attached [VMWare]</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2896">CLOUDSTACK-2896</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>pt-BR docs without index.html</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2897">CLOUDSTACK-2897</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Storage migration has left volumes on secondary storage</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2907">CLOUDSTACK-2907</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>In the case of a VMware HyperVisor,Sample Template (CentOS 5.3(64-bit) no GUI (vSphere)) download does not start.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2908">CLOUDSTACK-2908</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>An automatic start setup is not carried out after cloudstack-usage installation.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2913">CLOUDSTACK-2913</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Spurious error message during install at the end of the RPM build process.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2926">CLOUDSTACK-2926</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>An virtual machine instance cannot be started in a mixed hypervisor environment.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2929">CLOUDSTACK-2929</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>unable to upgrade from version 3.0.6.20121222035904</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2996">CLOUDSTACK-2996</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Nullpointer exception on view console on vmware</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3008">CLOUDSTACK-3008</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Section 4.5.3.2 of the 4.1.0 documentation is incorrect cloud-client does not seem to exist</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3048">CLOUDSTACK-3048</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Memory not reported correctly</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3061">CLOUDSTACK-3061</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>listHosts API doesn't has cpuused</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3098">CLOUDSTACK-3098</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Location to copy vhd-util is wrong in docs</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3138">CLOUDSTACK-3138</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Flaws in upgrade documentation from 3.0.2 -> 4.1.0</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3143">CLOUDSTACK-3143</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>revoke securitygroup ingress/egress does not return correct response</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3163">CLOUDSTACK-3163</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>KVM Virtual Router startup time is painfully long</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3195">CLOUDSTACK-3195</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>cannot view/delete forward rules if underlying/target VM is destroyed first</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3216">CLOUDSTACK-3216</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Logs in the Software router are not being rotated</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3243">CLOUDSTACK-3243</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Wrong NFS mount point in documentation</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3272">CLOUDSTACK-3272</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>EventBus: add global config parameters to specify which category of events are published on event bus.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3330">CLOUDSTACK-3330</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Autoscaling needs a VR to work</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3350">CLOUDSTACK-3350</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Snapshots not deleted from swift</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3366">CLOUDSTACK-3366</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Autoscaling won't scale down</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3367">CLOUDSTACK-3367</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>When one primary storage fails, all XenServer hosts get rebooted, killing all VMs, even those not on this primary storage.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3369">CLOUDSTACK-3369</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Autoscaling: Deleting an isolated network of an account deletes also the autoscaling rule for a network associated with another account</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3381">CLOUDSTACK-3381</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Wrong instruction in CloudStack release notes</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3383">CLOUDSTACK-3383</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>GetHostStatsCommand fails when agent is running Ubuntu 13.04 (raring)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3401">CLOUDSTACK-3401</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Small page sizes return duplicate results</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3421">CLOUDSTACK-3421</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>When hypervisor is down, no HA occurs with log output "Agent state cannot be determined, do nothing"</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3471">CLOUDSTACK-3471</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Provide an API to extract the log statements of a given jobid</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3503">CLOUDSTACK-3503</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>KVM Agent writes to agent.properties</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3535">CLOUDSTACK-3535</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>No HA actions are performed when a KVM host goes offline</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3542">CLOUDSTACK-3542</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Ceph RBD provides wrong usage info to CloudStack</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3543">CLOUDSTACK-3543</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>the cpvm and ssvm' state is still running when the computer node was crashed</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3546">CLOUDSTACK-3546</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>[DOC] Update 4.2 Developer Guide</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3556">CLOUDSTACK-3556</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Add NIC icon is not appearing in UI</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3578">CLOUDSTACK-3578</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Unable to add Physical Dom0 as host, to cloudstack domU.</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3593">CLOUDSTACK-3593</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Wrong Resource capacity for primary storage (Double the amount)</para>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>
+                                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3625">CLOUDSTACK-3625</ulink></para>
+                            </entry>
+                            <entry>
+                                <para>Non CloudStack VM's = Alien VM's are deleted</para>
+                            </entry>
                         </row>
                     </tbody>
                 </tgroup>
