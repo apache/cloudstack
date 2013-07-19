@@ -1457,6 +1457,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
+        boolean  isDynamicScalingEnabled = cmd.isDynamicallyScalable();
         // check whether template owner can create public templates
         boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(),
                 Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
@@ -1497,6 +1498,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
                 throw new CloudRuntimeException(msg);
             }
+
             hyperType = this._volumeDao.getHypervisorType(volumeId);
         } else { // create template from snapshot
             snapshot = _snapshotDao.findById(snapshotId);
@@ -1568,6 +1570,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER,
                 null, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description, passwordEnabledValue, guestOS.getId(), true,
                 hyperType, templateTag, cmd.getDetails());
+        privateTemplate.setDynamicallyScalable(isDynamicScalingEnabled);
+
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("This template is getting created from other template, setting source template Id to: " + sourceTemplateId);
