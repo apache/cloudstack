@@ -293,6 +293,41 @@ class VirtualMachine:
         if securitygroupids:
             cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
 
+        if mode.lower() == 'basic':
+            list_security_groups = SecurityGroup.list(
+                                                      apiclient,
+                                                      securitygroupname="basic_sec_grp"
+                                                      )
+
+            if not isinstance(list_security_groups, list):
+                basic_mode_security_group = SecurityGroup.create(
+                                                            apiclient,
+                                                            {"name":"basic_sec_grp"}
+                                                            )
+                sec_grp_services = {"protocol": "TCP",
+                                    "startport": 22,
+                                    "endport":22,
+                                    "cidrlist": "0.0.0.0/0"
+                                   }
+
+                #Authorize security group for above ingress rule
+                cmd_auth = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
+                cmd_auth.domainid = cmd.domainid
+                cmd_auth.account = cmd.account
+                cmd_auth.securitygroupid = basic_mode_security_group.id
+                cmd_auth.protocol = sec_grp_services["protocol"]
+                cmd_auth.startport = sec_grp_services["startport"]
+                cmd_auth.endport = sec_grp_services["endport"]
+                cmd_auth.cidrlist = sec_grp_services["cidrlist"]
+                apiclient.authorizeSecurityGroupIngress(cmd_auth)
+
+            else:
+                basic_mode_security_group = list_security_groups[0]
+
+            if isinstance(cmd.securitygroupids, list):
+                cmd.securitygroupids.append(basic_mode_security_group.id)
+            else:
+                cmd.securitygroupids = [basic_mode_security_group.id]
 
         if "affinitygroupnames" in services:
             cmd.affinitygroupnames  = services["affinitygroupnames"]
