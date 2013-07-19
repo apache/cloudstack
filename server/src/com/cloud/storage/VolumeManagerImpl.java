@@ -1998,6 +1998,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             cmd.setManaged(volumePool.isManaged());
 
+            cmd.setStorageHost(volumePool.getHostAddress());
+            cmd.setStoragePort(volumePool.getPort());
+
             cmd.set_iScsiName(volume.get_iScsiName());
 
             try {

@@ -777,8 +777,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
     }
 
-    private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName) {
-        return attachVolume(cmd, disk, isAttach, isManaged, vmName, null, null, 0, null, null, null, null);
+    private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName, String iScsiName, String storageHost, int storagePort) {
+        return attachVolume(cmd, disk, isAttach, isManaged, vmName, iScsiName, storageHost, storagePort, null, null, null, null);
     }
 
 	private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName,
@@ -803,7 +803,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             initiatorUsername, initiatorPassword, targetUsername, targetPassword);
             }
             else {
-                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
+                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
             }
 
             if (morDs == null) {
@@ -813,7 +813,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
 			DatastoreMO dsMo = new DatastoreMO(this.hostService.getServiceContext(null), morDs);
-			String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeTO.getPath());
+			String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), isManaged ? dsMo.getName() : volumeTO.getPath());
 
             disk.setVdiUuid(datastoreVolumePath);
 
@@ -944,7 +944,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
 	@Override
 	public Answer dettachVolume(DettachCommand cmd) {
-		return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName());
+		return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort());
 	}
 
 	protected VirtualMachineMO prepareVolumeHostDummyVm(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {

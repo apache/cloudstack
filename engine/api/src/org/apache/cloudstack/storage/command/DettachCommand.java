@@ -26,6 +26,8 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
     private String vmName;
     private boolean _managed;
     private String _iScsiName;
+    private String _storageHost;
+    private int _storagePort;
 
     public DettachCommand(DiskTO disk, String vmName) {
         super();
@@ -68,5 +70,21 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
 
     public String get_iScsiName() {
         return _iScsiName;
+    }
+
+    public void setStorageHost(String storageHost) {
+        _storageHost = storageHost;
+    }
+
+    public String getStorageHost() {
+        return _storageHost;
+    }
+
+    public void setStoragePort(int storagePort) {
+        _storagePort = storagePort;
+    }
+
+    public int getStoragePort() {
+        return _storagePort;
     }
 }

@@ -4069,13 +4069,44 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    public static String getDatastoreName(String str) {
+        return str.replace('/', '-');
+    }
+
+    // This methd can be used to determine if the datastore is active yet.
+    // When an iSCSI target is created on a host and that target already contains
+    // the metadata that represents a datastore, the datastore shows up within
+    // vCenter as existent, but not necessarily active.
+    // Call this method and pass in the datastore's name to wait, if necessary,
+    // for the datastore to become active.
+    private boolean datastoreFileExists(DatastoreMO dsMo, String volumeDatastorePath) {
+        for (int i = 0; i < 10; i++) {
+            try {
+                return dsMo.fileExists(volumeDatastorePath);
+            }
+            catch (Exception e) {
+                if (!e.getMessage().contains("is not accessible")) {
+                    break;
+                }
+            }
+
+            try {
+                Thread.sleep(5000);
+            }
+            catch (Exception e) {
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
             String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        ManagedObjectReference morDs = createVmfsDatastore(hyperHost, iqn,
+        ManagedObjectReference morDs = createVmfsDatastore(hyperHost, getDatastoreName(iqn),
                 storageHost, storagePort, iqn,
                 initiatorUsername, initiatorPassword,
                 targetUsername, targetPassword);
@@ -4084,7 +4115,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
 
-        if (!dsMo.fileExists(volumeDatastorePath)) {
+        if (!datastoreFileExists(dsMo, volumeDatastorePath)) {
             String dummyVmName = getWorkerName(context, cmd, 0);
 
             VirtualMachineMO vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
@@ -4096,6 +4127,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dsMo.getSummary().getFreeSpace()),
                     morDs, vmMo.getScsiDeviceControllerKey());
             vmMo.detachDisk(volumeDatastorePath, false);
+            vmMo.destroy();
         }
 
         return morDs;
@@ -4106,7 +4138,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        deleteVmfsDatastore(hyperHost, iqn, storageHost, storagePort, iqn);
+        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, iqn);
     }
 
     protected Answer execute(AttachVolumeCommand cmd) {
@@ -4240,6 +4272,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 hss.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
 
                                 hss.rescanHba(iScsiHbaDevice);
+                                hss.rescanVmfs();
                             }
                             catch (Exception ex) {
                                 synchronized (exceptions) {
@@ -4268,7 +4301,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             throw new Exception(exceptions.get(0).getMessage());
         }
 
-        ManagedObjectReference morDs = hostDatastoreSystem.findDatastore(iqn);
+        ManagedObjectReference morDs = hostDatastoreSystem.findDatastoreByName(iqn);
 
         if (morDs != null) {
             return morDs;
@@ -4348,6 +4381,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 hostStorageSystem.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
 
                                 hostStorageSystem.rescanHba(iScsiHbaDevice);
+                                hostStorageSystem.rescanVmfs();
                             }
                             catch (Exception ex) {
                                 exceptions.add(ex);
