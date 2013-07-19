@@ -24,6 +24,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -140,6 +141,11 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 stickyMethod, serviceType, regionId, gslbOwner.getId(), gslbOwner.getDomainId(),
                 GlobalLoadBalancerRule.State.Staged);
         _gslbRuleDao.persist(newGslbRule);
+
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_CREATE, newGslbRule.getAccountId(),
+                0, newGslbRule.getId(), name, GlobalLoadBalancerRule.class.getName(),
+                newGslbRule.getUuid());
+
         txn.commit();
 
         s_logger.debug("successfully created new global load balancer rule for the account " + gslbOwner.getId());
@@ -438,6 +444,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 s_logger.debug("Rule Id: " + gslbRuleId + " is still in Staged state so just removing it.");
             }
             _gslbRuleDao.remove(gslbRuleId);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(),
+                    0, gslbRule.getId(), gslbRule.getName(), GlobalLoadBalancerRule.class.getName(),
+                    gslbRule.getUuid());
             return;
         } else  if (gslbRule.getState() == GlobalLoadBalancerRule.State.Add || gslbRule.getState() == GlobalLoadBalancerRule.State.Active) {
             //mark the GSlb rule to be in revoke state
@@ -479,6 +488,10 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
         //remove the GSLB rule itself
         _gslbRuleDao.remove(gslbRuleId);
+
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(),
+                0, gslbRule.getId(), gslbRule.getName(), GlobalLoadBalancerRule.class.getName(),
+                gslbRule.getUuid());
 
         txn.commit();
     }
