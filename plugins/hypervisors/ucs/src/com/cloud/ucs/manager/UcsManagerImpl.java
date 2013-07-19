@@ -22,13 +22,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
@@ -39,7 +39,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
+import org.apache.log4j.Logger;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -54,6 +57,7 @@ import com.cloud.ucs.database.UcsManagerVO;
 import com.cloud.ucs.structure.ComputeBlade;
 import com.cloud.ucs.structure.UcsCookie;
 import com.cloud.ucs.structure.UcsProfile;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -83,11 +87,86 @@ public class UcsManagerImpl implements UcsManager {
     private HostDao hostDao;
     @Inject
     private DataCenterDao dcDao;
+    @Inject
+    private ConfigurationDao configDao;
 
     private final Map<Long, UcsCookie> cookies = new HashMap<Long, UcsCookie>();
     private String name;
     private int runLevel;
     private Map<String, Object> params;
+    private ScheduledExecutorService syncBladesExecutor;
+    private int syncBladeInterval;
+
+    private class SyncBladesThread implements Runnable {
+
+		private void discoverNewBlades(Map<String, UcsBladeVO> previous,
+				Map<String, ComputeBlade> now, UcsManagerVO mgr) {
+			for (Map.Entry<String, ComputeBlade> e : now.entrySet()) {
+				String dn = e.getKey();
+				if (previous.keySet().contains(dn)) {
+					continue;
+				}
+
+				ComputeBlade nc = e.getValue();
+				UcsBladeVO vo = new UcsBladeVO();
+				vo.setDn(nc.getDn());
+				vo.setUcsManagerId(mgr.getId());
+				vo.setUuid(UUID.randomUUID().toString());
+				bladeDao.persist(vo);
+				s_logger.debug(String.format("discovered a new UCS blade[dn:%s] during sync", nc.getDn()));
+			}
+		}
+		
+		private void decommissionFadedBlade(Map<String, UcsBladeVO> previous, Map<String, ComputeBlade> now) {
+			for (Map.Entry<String, UcsBladeVO> e : previous.entrySet()) {
+				String dn = e.getKey();
+				if (now.keySet().contains(dn)) {
+					continue;
+				}
+				
+				UcsBladeVO vo = e.getValue();
+				bladeDao.remove(vo.getId());
+				s_logger.debug(String.format("decommission faded blade[dn:%s] during sync", vo.getDn()));
+			}
+		}
+
+    	private void syncBlades(UcsManagerVO mgr) {
+    		SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
+    		q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, mgr.getId());
+    		List<UcsBladeVO> pblades = q.list();
+    		if (pblades.isEmpty()) {
+    			return;
+    		}
+
+    		
+    		Map<String, UcsBladeVO> previousBlades = new HashMap<String, UcsBladeVO>(pblades.size());
+    		for (UcsBladeVO b : pblades) {
+    			previousBlades.put(b.getDn(), b);
+    		}
+
+    		List<ComputeBlade> cblades = listBlades(mgr.getId());
+    		Map<String, ComputeBlade> currentBlades = new HashMap<String, ComputeBlade>(cblades.size());
+    		for (ComputeBlade c : cblades) {
+    			currentBlades.put(c.getDn(), c);
+    		}
+    		
+    		discoverNewBlades(previousBlades, currentBlades, mgr);
+    		decommissionFadedBlade(previousBlades, currentBlades);
+    	}
+
+		@Override
+		public void run() {
+			try {
+				List<UcsManagerVO> mgrs = ucsDao.listAll();
+				for (UcsManagerVO mgr : mgrs) {
+					syncBlades(mgr);
+				}
+			} catch (Throwable t) {
+				s_logger.warn(t.getMessage(), t);
+			}
+		}
+
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -96,6 +175,9 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public boolean start() {
+    	syncBladeInterval = Integer.valueOf(configDao.getValue(Config.UCSSyncBladeInterval.key()));
+    	syncBladesExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("UCS-SyncBlades"));
+    	syncBladesExecutor.scheduleAtFixedRate(new SyncBladesThread(), syncBladeInterval, syncBladeInterval, TimeUnit.SECONDS);
         return true;
     }
 

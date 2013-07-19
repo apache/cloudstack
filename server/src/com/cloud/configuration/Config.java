@@ -437,7 +437,9 @@ public enum Config {
     ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side." +
     		" If set to false, these commands become asynchronous. Default value is false.", null),
     ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." + 
-            " If set to false, these commands become asynchronous. Default value is false.", null);
+            " If set to false, these commands become asynchronous. Default value is false.", null),
+	
+	UCSSyncBladeInterval("Advanced", ManagementServer.class, Integer.class, "ucs.sync.blade.interval", "3600", "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;
