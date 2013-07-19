@@ -586,7 +586,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_03_VPC_CreateLBRuleInMultipleNetworks(self):
-        """ Test case no 212 : Create LB rules for 1 network which is part of a two/multiple virtual networks of a
+        """ Test Create LB rules for 1 network which is part of a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
         """
 
@@ -671,7 +671,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_06_VPC_CreateAndDeleteLBRuleVRStopppedState(self):
-        """ Test case no 224 : Delete few(not all) LB rules for a single virtual network of 
+        """ Test Delete few(not all) LB rules for a single virtual network of
             a VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
         """
 
@@ -702,7 +702,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_07_VPC_CreateAndDeleteAllLBRule(self):
-        """ Test case no 215 : Delete all LB rules for a single virtual network of a
+        """ Test Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
         """
 
@@ -735,7 +735,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_08_VPC_CreateAndDeleteAllLBRuleVRStoppedState(self):
-        """ Test case no 225 and 226 : Delete all LB rules for a single virtual network of a 
+        """ Test Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
         """
 
@@ -768,7 +768,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     
     @attr(tags=["advanced", "intervlan"])
     def test_09_VPC_LBRuleCreateFailMultipleVPC(self):
-        """ Test case no 234 : User should not be allowed to create a LB rule for a VM that belongs to a different VPC.
+        """ Test User should not be allowed to create a LB rule for a VM that belongs to a different VPC.
         """
 
         # Validate the following
@@ -806,7 +806,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_10_VPC_FailedToCreateLBRuleNonVPCNetwork(self):
-        """ Test case no 216 and 235: User should not be allowed to create a LB rule for a VM that does not belong to any VPC.
+        """ Test User should not be allowed to create a LB rule for a VM that does not belong to any VPC.
         """
 
         # Validate the following
@@ -881,7 +881,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_12_VPC_LBRuleCreateFailForRouterIP(self):
-        """ Test case no 218 and 237: User should not be allowed to create a LB rule on an Ipaddress that Source Nat enabled.
+        """ Test User should not be allowed to create a LB rule on an Ipaddress that Source Nat enabled.
         """
 
         # Validate the following
@@ -909,7 +909,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_13_VPC_LBRuleCreateFailForPFSourceNATIP(self):
-        """ Test case no 219 : User should not be allowed to create a LB rule on an Ipaddress that already has a PF rule.
+        """ Test User should not be allowed to create a LB rule on an Ipaddress that already has a PF rule.
         """
 
         # Validate the following
@@ -939,7 +939,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_14_VPC_LBRuleCreateFailForStaticNatRule(self):
-        """ Test case no 220 : User should not be allowed to create a LB rule on an Ipaddress that already has a Static Nat rule.
+        """ Test User should not be allowed to create a LB rule on an Ipaddress that already has a Static Nat rule.
         """
 
         # Validate the following
@@ -968,8 +968,8 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    def test_15_VPC_RleaseIPForLBRuleCreated(self):
-        """ Test case no 221 : Release Ip address that has a LB rule assigned to it.
+    def test_15_VPC_ReleaseIPForLBRuleCreated(self):
+        """ Test release Ip address that has a LB rule assigned to it.
         """
 
         # Validate the following
@@ -988,7 +988,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_2 = self.create_VM_in_Network(network_1)
         public_ip_1 = self.acquire_Public_IP(network_1)
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_2, vm_1])
-        public_ip_1.delete()
+        public_ip_1.delete(self.apiclient)
         lb_rules = LoadBalancerRule.list(self.apiclient,
                                         id=lb_rule.id,
                                         listall=True
