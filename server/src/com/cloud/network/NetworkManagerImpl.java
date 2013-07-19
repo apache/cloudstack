@@ -1429,6 +1429,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null);
             offering.setState(NetworkOffering.State.Enabled);
             offering.setInternalLb(true);
+            offering.setPublicLb(false);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
