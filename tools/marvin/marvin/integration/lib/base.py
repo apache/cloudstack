@@ -1803,7 +1803,7 @@ class Network:
     def create(cls, apiclient, services, accountid=None, domainid=None,
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
-               gateway=None, netmask=None, vpcid=None, aclid=None, guestcidr=None):
+               gateway=None, netmask=None, vpcid=None, aclid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -1845,8 +1845,6 @@ class Network:
             cmd.domainid = domainid
         if projectid:
             cmd.projectid = projectid
-        if guestcidr:
-            cmd.guestcidr = guestcidr
         if vpcid:
             cmd.vpcid = vpcid
         if aclid:
