@@ -1659,7 +1659,10 @@ class TestVpnUsage(cloudstackTestCase):
 
         # Remove VPN user
         self.debug("Deleting VPN user: %s" % vpnuser.id)
-        vpnuser.delete(self.apiclient)
+        vpnuser.delete(
+                       self.apiclient,
+                       projectid=self.project.id
+                       )
 
         # Delete VPN access
         self.debug("Deleting VPN: %s" % vpn.publicipid)

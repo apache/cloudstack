@@ -2100,13 +2100,16 @@ class VpnUser:
             cmd.projectid = projectid
         return VpnUser(apiclient.addVpnUser(cmd).__dict__)
 
-    def delete(self, apiclient):
+    def delete(self, apiclient, projectid=None):
         """Remove VPN user"""
 
         cmd = removeVpnUser.removeVpnUserCmd()
         cmd.username = self.username
-        cmd.account = self.account
-        cmd.domainid = self.domainid
+        if projectid:
+            cmd.projectid = projectid
+        else:
+            cmd.account = self.account
+            cmd.domainid = self.domainid
         apiclient.removeVpnUser(cmd)
 
     @classmethod
