@@ -112,8 +112,10 @@ AcceptEnv LC_IDENTIFICATION LC_ALL
 #ShowPatchLevel no
 UseDNS no
 #PidFile /var/run/sshd.pid
-#MaxStartups 10
 #PermitTunnel no
+
+MaxStartups 1000
+MaxSessions 1000
 
 # no default banner path
 #Banner /some/path
