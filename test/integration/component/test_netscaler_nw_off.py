@@ -157,7 +157,7 @@ class Services:
                                     "publicport": 22,
                                     "openfirewall": False,
                          },
-                         "ostype": 'Cent OS 5.3 (64 bit)',
+                         "ostype": 'CentOS 5.3 (64-bit)',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
