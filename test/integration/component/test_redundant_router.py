@@ -478,7 +478,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
         self._cleanup.insert(0, self.account)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns"])
     def test_createRvRNetwork(self):
         """Test create network with non-default guest cidr with redundant routers
         """
@@ -507,7 +507,8 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
                                 domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
-                                guestcidr=' 192.168.2.0/23'
+                                netmask='255.255.254.0',
+                                gateway='192.168.2.1'
                                 )
         self.debug("Created network with ID: %s" % network.id)
 
@@ -537,7 +538,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
         self.assertEqual(
                          nw_response.cidr,
                          '192.168.2.0/23',
-                         "Guest cidr should be 192.168.2.0/23"
+                         "Guest cidr should be 192.168.2.0/23 but is %s" % nw_response.cidr
                          )
 
         self.debug("Listing routers for network: %s" % network.name)
@@ -992,7 +993,7 @@ class TestRvRRedundancy(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "ssh"])
     def test_stopMasterRvR(self):
-        """Test stop MASTER RVR
+        """Test stop master RVR
         """
 
         # Steps to validate
@@ -1116,7 +1117,7 @@ class TestRvRRedundancy(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "ssh"])
     def test_stopBackupRvR(self):
-        """Test stop BACKUP RVR
+        """Test stop backup RVR
         """
 
         # Steps to validate
