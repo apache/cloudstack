@@ -29,11 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-@Service("NetworkRestService")
-@Component
 @Produces("application/json")
 public class NetworkRestService {
     @PUT @Path("/network/create")

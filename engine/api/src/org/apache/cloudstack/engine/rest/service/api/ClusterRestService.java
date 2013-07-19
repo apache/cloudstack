@@ -30,11 +30,7 @@ import javax.ws.rs.QueryParam;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-@Component
-@Service("ClusterRestService")
 @Produces("application/json")
 public class ClusterRestService {
 //    @Inject

@@ -28,11 +28,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-@Component
-@Service("VirtualMachineRestService")
 @Produces("application/xml")
 public class VirtualMachineRestService {
 

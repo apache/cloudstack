@@ -24,6 +24,11 @@
       <version>${cs.commons-io.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>${org.springframework.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-core</artifactId>
       <version>${project.version}</version>
@@ -81,14 +86,21 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
       <version>0.9.8</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-api</artifactId>
+      <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>      
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>

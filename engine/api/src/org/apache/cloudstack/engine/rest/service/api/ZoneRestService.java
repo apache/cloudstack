@@ -31,11 +31,7 @@ import javax.ws.rs.QueryParam;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-@Component
-@Service("zoneService")
 @Produces({"application/json"})
 public class ZoneRestService {
 //    @Inject

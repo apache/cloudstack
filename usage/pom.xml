@@ -28,6 +28,13 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>      
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -44,14 +51,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-      <testResources>
-          <testResource>
-              <directory>test/resources</directory>
-          </testResource>
-      </testResources>
     <resources>
       <resource>
           <directory>resources</directory>
