@@ -39,8 +39,8 @@
             <note><para>As with all query string parameters of field-value pairs, the "field" component is case insensitive while all "value" values are case sensitive.</para></note>
             <programlisting>command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ</programlisting>
         </listitem>
-        <listitem><para>Signature: This is the hashed signature of the Base URL that is generated using a combination of the user’s Secret Key and the HMAC SHA-1 hashing algorithm.</para>
-            <para>&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</para>
+        <listitem><para>Signature: This is the signature of the command string that is generated using a combination of the user’s Secret Key and the HMAC SHA-1 hashing algorithm.</para>
+            <programlisting>&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
         </listitem>
     </itemizedlist>
     <para>Every API request has the format Base URL+API Path+Command String+Signature.</para>
