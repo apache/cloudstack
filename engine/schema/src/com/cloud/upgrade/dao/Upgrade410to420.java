@@ -90,6 +90,7 @@ public class Upgrade410to420 implements DbUpgrade {
         correctExternalNetworkDevicesSetup(conn);
         removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
         fix22xKVMSnapshots(conn);
+	setKVMSnapshotFlag(conn);
         addIndexForAlert(conn);
         fixBaremetalForeignKeys(conn);
         // storage refactor related migration
@@ -297,9 +298,46 @@ public class Upgrade410to420 implements DbUpgrade {
          */
     }
 
-    private void updatePrimaryStore(Connection conn) {
-        PreparedStatement sql = null;
-        PreparedStatement sql2 = null;
+        //KVM snapshot flag: only turn on if Customers is using snapshot;
+    private void setKVMSnapshotFlag(Connection conn) {
+        s_logger.debug("Verify and set the KVM snapshot flag if snapshot was used. ");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+                int numRows = 0;
+                pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
+            rs = pstmt.executeQuery();
+            if(rs.next()){
+                numRows = rs.getInt(1);
+            }
+            rs.close();
+            pstmt.close();
+            if (numRows > 0){
+              //Add the configuration flag
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'KVM.snapshot.enabled'");
+                pstmt.setString(1, "true");
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to read the snapshot table for KVM upgrade. ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done set KVM snapshot flag. ");
+    }
+
+	private void updatePrimaryStore(Connection conn) {
+	    PreparedStatement sql = null;
+	    PreparedStatement sql2 = null;
         try {
             sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
             sql.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
