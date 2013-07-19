@@ -181,6 +181,11 @@
         <artifactId>mysql-connector-java</artifactId>
         <version>${cs.mysql.version}</version>
       </dependency>
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>${cs.log4j.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -193,7 +198,12 @@
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring-core</artifactId>
+      <artifactId>spring-aop</artifactId>
+      <version>${org.springframework.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
       <version>${org.springframework.version}</version>
     </dependency>
     <dependency>

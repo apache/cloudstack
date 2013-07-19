@@ -89,18 +89,13 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
       <version>0.9.8</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-utils</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>      
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
