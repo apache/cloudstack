@@ -943,7 +943,7 @@ under the License.
                                 <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-696">CLOUDSTACK-696</ulink></para>
                             </entry>
                             <entry>
-                                <para>Networks with same name & VLAN are allowed in the same Zone</para>
+                                <para>Networks with same name and VLAN are allowed in the same Zone</para>
                             </entry>
                         </row>
                         <row>
@@ -1391,7 +1391,7 @@ under the License.
                                 <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1654">CLOUDSTACK-1654</ulink></para>
                             </entry>
                             <entry>
-                                <para>Management & Host installed on same machine, Management cannot get ID.</para>
+                                <para>Management and Host installed on same machine, Management cannot get ID.</para>
                             </entry>
                         </row>
                         <row>
@@ -1599,7 +1599,7 @@ under the License.
                                 <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1986">CLOUDSTACK-1986</ulink></para>
                             </entry>
                             <entry>
-                                <para>Key translation fails for the Japanese keyboard keys ¥_,\ |, Muhenkan, Henkan, Hiragana/Katakana, Kanji Key & Caps Loc</para>
+                                <para>Key translation fails for the Japanese keyboard keys ¥_,\ |, Muhenkan, Henkan, Hiragana/Katakana, Kanji Key and Caps Loc</para>
                             </entry>
                         </row>
                         <row>
@@ -2095,7 +2095,7 @@ under the License.
                                 <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3138">CLOUDSTACK-3138</ulink></para>
                             </entry>
                             <entry>
-                                <para>Flaws in upgrade documentation from 3.0.2 -> 4.1.0</para>
+                                <para>Flaws in upgrade documentation from 3.0.2 -&gt; 4.1.0</para>
                             </entry>
                         </row>
                         <row>
