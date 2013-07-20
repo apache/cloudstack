@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +50,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
+    private String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? " +
+                                    " and store_role = ? and volume_id = ? and state = 'Ready'" +
+                                    " order by created DESC " +
+                                    " limit 1";
+
+
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -146,7 +155,32 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_id", storeId);
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", role);
-        return findOneIncludingRemovedBy(sc);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = txn.prepareStatement(parentSearch);
+            pstmt.setLong(1, storeId);
+            pstmt.setString(2, role.toString());
+            pstmt.setLong(3, volumeId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long sid = rs.getLong(1);
+                String rl = rs.getString(2);
+                long snid = rs.getLong(3);
+                return this.findByStoreSnapshot(role, sid, snid);
+            }
+        } catch (SQLException e) {
+           s_logger.debug("Failed to find parent snapshot: " + e.toString());
+        } finally {
+            txn.close();
+        }
+        return null;
     }
 
     @Override

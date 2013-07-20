@@ -198,6 +198,7 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `update_count` bigint unsigned,
   `ref_cnt` bigint unsigned,
   `updated` datetime,   
+  `volume_id` bigint unsigned,
   PRIMARY KEY  (`id`),
   INDEX `i_snapshot_store_ref__store_id`(`store_id`),
   CONSTRAINT `fk_snapshot_store_ref__snapshot_id` FOREIGN KEY `fk_snapshot_store_ref__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`),

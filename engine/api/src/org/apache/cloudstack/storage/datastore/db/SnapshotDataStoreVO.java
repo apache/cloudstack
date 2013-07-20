@@ -95,6 +95,9 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "ref_cnt")
     Long refCnt = 0L;
 
+    @Column(name = "volume_id")
+    Long volumeId;
+
     public String getInstallPath() {
         return installPath;
     }
@@ -256,5 +259,13 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void decrRefCnt() {
         this.refCnt--;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
     }
 }
