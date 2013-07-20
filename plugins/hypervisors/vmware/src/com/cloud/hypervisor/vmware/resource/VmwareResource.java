@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.concurrent.*;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -4114,7 +4115,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
 
-        if (!datastoreFileExists(dsMo, volumeDatastorePath)) {
+        if (!dsMo.fileExists(volumeDatastorePath)) {
             String dummyVmName = getWorkerName(context, cmd, 0);
 
             VirtualMachineMO vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
@@ -4204,6 +4205,126 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private void addRemoveInternetScsiTargetsToAllHosts(final boolean add, final List<HostInternetScsiHbaStaticTarget> lstTargets,
+            final List<Pair<ManagedObjectReference, String>> lstHosts) throws Exception {
+        VmwareContext context = getServiceContext();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(lstHosts.size());
+
+        final List<Exception> exceptions = new ArrayList<Exception>();
+
+        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
+            HostMO host = new HostMO(context, hostPair.first());
+            HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
+
+            boolean iScsiHbaConfigured = false;
+
+            for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
+                if (hba instanceof HostInternetScsiHba) {
+                    // just finding an instance of HostInternetScsiHba means that we have found at least one configured iSCSI HBA
+                    // at least one iSCSI HBA must be configured before a CloudStack user can use this host for iSCSI storage
+                    iScsiHbaConfigured = true;
+
+                    final String iScsiHbaDevice = hba.getDevice();
+
+                    final HostStorageSystemMO hss = hostStorageSystem;
+
+                    executorService.submit(new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (add) {
+                                    hss.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
+                                }
+                                else {
+                                    hss.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
+                                }
+
+                                hss.rescanHba(iScsiHbaDevice);
+                                hss.rescanVmfs();
+                            }
+                            catch (Exception ex) {
+                                synchronized (exceptions) {
+                                    exceptions.add(ex);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            if (!iScsiHbaConfigured) {
+                throw new Exception("An iSCSI HBA must be configured before a host can use iSCSI storage.");
+            }
+        }
+
+        executorService.shutdown();
+
+        if (!executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
+            throw new Exception("The system timed out before completing the task 'rescanAllHosts'.");
+        }
+
+        if (exceptions.size() > 0) {
+            throw new Exception(exceptions.get(0).getMessage());
+        }
+    }
+
+    private void rescanAllHosts(final List<Pair<ManagedObjectReference, String>> lstHosts) throws Exception {
+        VmwareContext context = getServiceContext();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(lstHosts.size());
+
+        final List<Exception> exceptions = new ArrayList<Exception>();
+
+        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
+            HostMO host = new HostMO(context, hostPair.first());
+            HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
+
+            boolean iScsiHbaConfigured = false;
+
+            for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
+                if (hba instanceof HostInternetScsiHba) {
+                    // just finding an instance of HostInternetScsiHba means that we have found at least one configured iSCSI HBA
+                    // at least one iSCSI HBA must be configured before a CloudStack user can use this host for iSCSI storage
+                    iScsiHbaConfigured = true;
+
+                    final String iScsiHbaDevice = hba.getDevice();
+
+                    final HostStorageSystemMO hss = hostStorageSystem;
+
+                    executorService.submit(new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                hss.rescanHba(iScsiHbaDevice);
+                                hss.rescanVmfs();
+                            }
+                            catch (Exception ex) {
+                                synchronized (exceptions) {
+                                    exceptions.add(ex);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            if (!iScsiHbaConfigured) {
+                throw new Exception("An iSCSI HBA must be configured before a host can use iSCSI storage.");
+            }
+        }
+
+        executorService.shutdown();
+
+        if (!executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
+            throw new Exception("The system timed out before completing the task 'rescanAllHosts'.");
+        }
+
+        if (exceptions.size() > 0) {
+            throw new Exception(exceptions.get(0).getMessage());
+        }
+    }
+
     private ManagedObjectReference createVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress,
             int storagePortNumber, String iqn, String chapName, String chapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
         VmwareContext context = getServiceContext();
@@ -4237,64 +4358,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         lstTargets.add(target);
 
-        HostDatastoreSystemMO hostDatastoreSystem = null;
-        HostStorageSystemMO hostStorageSystem = null;
+        addRemoveInternetScsiTargetsToAllHosts(true, lstTargets, lstHosts);
 
-        final List<Thread> threads = new ArrayList<Thread>();
-        final List<Exception> exceptions = new ArrayList<Exception>();
+        rescanAllHosts(lstHosts);
 
-        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
-            HostMO host = new HostMO(context, hostPair.first());
-            hostDatastoreSystem = host.getHostDatastoreSystemMO();
-            hostStorageSystem = host.getHostStorageSystemMO();
-
-            boolean iScsiHbaConfigured = false;
-
-            for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
-                if (hba instanceof HostInternetScsiHba) {
-                    // just finding an instance of HostInternetScsiHba means that we have found at least one configured iSCSI HBA
-                    // at least one iSCSI HBA must be configured before a CloudStack user can use this host for iSCSI storage
-                    iScsiHbaConfigured = true;
-
-                    final String iScsiHbaDevice = hba.getDevice();
-
-                    final HostStorageSystemMO hss = hostStorageSystem;
-
-                    threads.add(new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                hss.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
-
-                                hss.rescanHba(iScsiHbaDevice);
-                                hss.rescanVmfs();
-                            }
-                            catch (Exception ex) {
-                                synchronized (exceptions) {
-                                    exceptions.add(ex);
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-
-            if (!iScsiHbaConfigured) {
-                throw new Exception("An iSCSI HBA must be configured before a host can use iSCSI storage.");
-            }
-        }
-
-        for (Thread thread : threads) {
-            thread.start();
-        }
-
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        if (exceptions.size() > 0) {
-            throw new Exception(exceptions.get(0).getMessage());
-        }
+        HostMO host = new HostMO(context, lstHosts.get(0).first());
+        HostDatastoreSystemMO hostDatastoreSystem = host.getHostDatastoreSystemMO();
 
         ManagedObjectReference morDs = hostDatastoreSystem.findDatastoreByName(datastoreName);
 
@@ -4302,15 +4371,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return morDs;
         }
 
+        rescanAllHosts(lstHosts);
+
+        HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
         List<HostScsiDisk> lstHostScsiDisks = hostDatastoreSystem.queryAvailableDisksForVmfs();
 
         HostScsiDisk hostScsiDisk = getHostScsiDisk(hostStorageSystem.getStorageDeviceInfo().getScsiTopology(), lstHostScsiDisks, iqn);
 
         if (hostScsiDisk == null) {
+            // check to see if the datastore actually does exist already
+            morDs = hostDatastoreSystem.findDatastoreByName(datastoreName);
+
+            if (morDs != null) {
+                return morDs;
+            }
+
             throw new Exception("A relevant SCSI disk could not be located to use to create a datastore.");
         }
 
-        return hostDatastoreSystem.createVmfsDatastore(datastoreName, hostScsiDisk);
+        morDs = hostDatastoreSystem.createVmfsDatastore(datastoreName, hostScsiDisk);
+
+        if (morDs != null) {
+            rescanAllHosts(lstHosts);
+
+            return morDs;
+        }
+
+        throw new Exception("Unable to create a datastore");
     }
 
     // the purpose of this method is to find the HostScsiDisk in the passed-in array that exists (if any) because
@@ -4358,46 +4445,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         lstTargets.add(target);
 
-        final List<Thread> threads = new ArrayList<Thread>();
-        final List<Exception> exceptions = new ArrayList<Exception>();
+        addRemoveInternetScsiTargetsToAllHosts(false, lstTargets, lstHosts);
 
-        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
-            final HostMO host = new HostMO(context, hostPair.first());
-            final HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
-
-            for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
-                if (hba instanceof HostInternetScsiHba) {
-                    final String iScsiHbaDevice = hba.getDevice();
-
-                    Thread thread = new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                hostStorageSystem.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
-
-                                hostStorageSystem.rescanHba(iScsiHbaDevice);
-                                hostStorageSystem.rescanVmfs();
-                            }
-                            catch (Exception ex) {
-                                exceptions.add(ex);
-                            }
-                        }
-                    };
-
-                    threads.add(thread);
-
-                    thread.start();
-                }
-            }
-        }
-
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        if (exceptions.size() > 0) {
-            throw new Exception(exceptions.get(0).getMessage());
-        }
+        rescanAllHosts(lstHosts);
     }
 
     protected Answer execute(AttachIsoCommand cmd) {
