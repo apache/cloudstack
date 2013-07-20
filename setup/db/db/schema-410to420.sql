@@ -2253,3 +2253,5 @@ CREATE VIEW `cloud`.`project_view` AS
         
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size` smallint(6) NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size_limit` smallint(6) NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ucs.sync.blade.interval', '3600', 'the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack');
