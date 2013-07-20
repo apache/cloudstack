@@ -15,22 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from cloudstackAPI import *
 import unittest
-import cloudstackTestClient
-
-#class UserName(object):
-#    def __init__(self, account, domain, type=0):
-#        self.account = account
-#        self.domain = domain
-#        self.accounttype = type
-#    def __call__(self, cls):
-#        class Wrapped(cls):
-#            cls.UserName = self.account
-#            cls.DomainName = self.domain
-#            cls.AcctType = self.accounttype
-#        return Wrapped
-
 
 def user(Name, DomainName, AcctType):
     def wrapper(cls):
@@ -51,7 +36,6 @@ class cloudstackTestCase(unittest.case.TestCase):
 
     def __init__(self, args):
         unittest.case.TestCase.__init__(self, args)
-#        self.testClient = cloudstackTestClient.cloudstackTestClient()
 
     @classmethod
     def getClsTestClient(cls):
