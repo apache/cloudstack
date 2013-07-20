@@ -90,6 +90,7 @@ import java.util.UUID;
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
     protected CitrixResourceBase hypervisorResource;
+    private String BaseMountPointOnHost = "/var/run/cloud_mount";
 
     public XenServerStorageProcessor(CitrixResourceBase resource) {
         this.hypervisorResource = resource;
@@ -1043,10 +1044,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return false;
     }
 
-    protected String deleteSnapshotBackup(Connection conn, String path, String secondaryStorageMountPath, String backupUUID) {
+    protected String deleteSnapshotBackup(Connection conn, String localMountPoint, String path, String secondaryStorageMountPath, String backupUUID) {
 
         // If anybody modifies the formatting below again, I'll skin them
-        String result = hypervisorResource.callHostPlugin(conn, "vmopsSnapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath);
+        String result = hypervisorResource.callHostPlugin(conn, "vmopsSnapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath, "localMountPoint", localMountPoint);
 
         return result;
     }
@@ -1147,7 +1148,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     }
 
-    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
+    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String localMountPoint, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
         String backupSnapshotUuid = null;
 
         if (prevBackupUuid == null) {
@@ -1159,7 +1160,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         String backupUuid = UUID.randomUUID().toString();
         String results = hypervisorResource.callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", wait,
                 "primaryStorageSRUuid", primaryStorageSRUuid, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath,
-                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString());
+                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString(), "localMountPath", localMountPoint);
         String errMsg = null;
         if (results == null || results.isEmpty()) {
             errMsg = "Could not copy backupUuid: " + backupSnapshotUuid
@@ -1282,6 +1283,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             DataStoreTO destStore = destData.getDataStore();
             String folder = destPath;
             String finalPath = null;
+
+            String localMountPoint =  BaseMountPointOnHost + File.separator + UUID.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
             if (fullbackup) {
                 // the first snapshot is always a full snapshot
 
@@ -1300,11 +1303,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     if( destStore instanceof SwiftTO) {
                         try {
                             String container = "S-" + snapshotTO.getVolume().getVolumeId().toString();
-                            snapshotBackupUuid = swiftBackupSnapshot(conn, (SwiftTO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, container, false, wait);
-                            String swiftPath = container + File.separator + snapshotBackupUuid;
-                            finalPath = container + File.separator + swiftPath;
+                            String destSnapshotName = swiftBackupSnapshot(conn, (SwiftTO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, container, false, wait);
+                            String swiftPath = container + File.separator + destSnapshotName;
+                            finalPath = swiftPath;
                         } finally {
-                            deleteSnapshotBackup(conn, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                            deleteSnapshotBackup(conn, localMountPoint, folder, secondaryStorageMountPath, snapshotBackupUuid);
                         }
 
                     } else if (destStore instanceof S3TO) {
@@ -1312,7 +1315,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                             backupSnapshotToS3(conn, (S3TO)destStore, snapshotSr.getUuid(conn), snapshotBackupUuid, isISCSI, wait);
                             snapshotBackupUuid = snapshotBackupUuid + ".vhd";
                         } finally {
-                            deleteSnapshotBackup(conn, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                            deleteSnapshotBackup(conn, localMountPoint, folder, secondaryStorageMountPath, snapshotBackupUuid);
                         }
                         finalPath = folder + File.separator + snapshotBackupUuid;
                     } else {
@@ -1334,8 +1337,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     backupSnapshotToS3(conn, (S3TO)destStore, primaryStorageSRUuid, snapshotPaUuid, isISCSI, wait);
                     finalPath = folder + File.separator + snapshotPaUuid;
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, folder + File.separator + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes())
-                             , secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
+                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
+                             secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
                     finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }

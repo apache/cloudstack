@@ -24,6 +24,8 @@ import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class SwiftUtil {
@@ -45,8 +47,34 @@ public class SwiftUtil {
         return swiftCLI;
     }
 
-    public static String putObject(SwiftClientCfg cfg, File srcFile, String container) {
+    public static boolean postMeta(SwiftClientCfg cfg, String container, String object, Map<String, String> metas) {
         String swiftCli = getSwiftCLIPath();
+        StringBuilder cms = new StringBuilder();
+        for(Map.Entry<String, String> entry : metas.entrySet()) {
+            cms.append(" -m ");
+            cms.append(entry.getKey());
+            cms.append(":");
+            cms.append(entry.getValue());
+            cms.append(" ");
+        }
+        Script command = new Script("/bin/bash", logger);
+        command.add("-c");
+        command.add("/usr/bin/python " + swiftCli + " -A "
+                + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() + " -K "
+                + cfg.getKey() + " post " + container + " " + object + " " + cms.toString());
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String result = command.execute(parser);
+        if (result != null) {
+            throw new CloudRuntimeException("Failed to post meta" + result);
+        }
+        return true;
+    }
+
+    public static String putObject(SwiftClientCfg cfg, File srcFile, String container, String fileName) {
+        String swiftCli = getSwiftCLIPath();
+        if (fileName == null) {
+            fileName = srcFile.getName();
+        }
         String srcDirectory = srcFile.getParent();
         Script command = new Script("/bin/bash", logger);
         long size = srcFile.length();
@@ -55,12 +83,12 @@ public class SwiftUtil {
             command.add("cd " + srcDirectory
                     + ";/usr/bin/python " + swiftCli + " -A "
                     + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() + " -K "
-                    + cfg.getKey() + " upload " + container + " " + srcFile.getName());
+                    + cfg.getKey() + " upload " + container + " " + fileName);
         } else {
             command.add("cd " + srcDirectory
                     + ";/usr/bin/python " + swiftCli + " -A "
                     + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() + " -K "
-                    + cfg.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + srcFile.getName());
+                    + cfg.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + fileName);
         }
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
@@ -71,19 +99,74 @@ public class SwiftUtil {
         if (parser.getLines() != null) {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
-                if (line.contains("Errno") || line.contains("failed")) {
+                if (line.contains("Errno") || line.contains("failed") || line.contains("not found")) {
                     throw new CloudRuntimeException("Failed to upload file: " + lines.toString());
                 }
             }
         }
+
         return container + File.separator + srcFile.getName();
+    }
+
+    private static StringBuilder buildSwiftCmd(SwiftClientCfg swift) {
+        String swiftCli = getSwiftCLIPath();
+        StringBuilder sb = new StringBuilder();
+        sb.append(" /usr/bin/python ");
+        sb.append(swiftCli);
+        sb.append(" -A ");
+        sb.append(swift.getEndPoint());
+        sb.append(" -U ");
+        sb.append(swift.getAccount());
+        sb.append(":");
+        sb.append(swift.getUserName());
+        sb.append(" -K ");
+        sb.append(swift.getKey());
+        sb.append(" ");
+        return sb;
+    }
+
+    public static String[] list(SwiftClientCfg swift, String container, String rFilename) {
+        String swiftCli = getSwiftCLIPath();
+        Script command = new Script("/bin/bash", logger);
+        command.add("-c");
+
+        StringBuilder swiftCmdBuilder = buildSwiftCmd(swift);
+        swiftCmdBuilder.append(" list ");
+        swiftCmdBuilder.append(container);
+
+        if (rFilename != null) {
+            swiftCmdBuilder.append(" -p ");
+            swiftCmdBuilder.append(rFilename);
+        }
+
+        command.add(swiftCmdBuilder.toString());
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result == null && parser.getLines() != null && !parser.getLines().equalsIgnoreCase("")) {
+            String[] lines = parser.getLines().split("\\n");
+            return lines;
+        } else {
+            if (result != null) {
+                String errMsg = "swiftList failed , err=" + result;
+                logger.debug("Failed to list " + errMsg);
+            } else {
+                String errMsg = "swiftList failed, no lines returns";
+                logger.debug("Failed to list " + errMsg);
+            }
+        }
+        return new String[0];
     }
 
     public static File getObject(SwiftClientCfg cfg, File destDirectory, String swiftPath) {
         int firstIndexOfSeparator = swiftPath.indexOf(File.separator);
         String container = swiftPath.substring(0, firstIndexOfSeparator);
         String srcPath = swiftPath.substring(firstIndexOfSeparator + 1);
-        String destFilePath = destDirectory.getAbsolutePath() + File.separator + srcPath;
+        String destFilePath = null;
+        if (destDirectory.isDirectory()) {
+            destFilePath = destDirectory.getAbsolutePath() + File.separator + srcPath;
+        } else {
+            destFilePath = destDirectory.getAbsolutePath();
+        }
         String swiftCli = getSwiftCLIPath();
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
@@ -108,5 +191,16 @@ public class SwiftUtil {
             }
         }
         return new File(destFilePath);
+    }
+
+    public static String getContainerName(String type, Long id) {
+        if (type.startsWith("T")) {
+            return "T-" + id;
+        } else if (type.startsWith("S")) {
+            return "S-" + id;
+        } else if (type.startsWith("V")) {
+            return "V-" + id;
+        }
+        return null;
     }
 }

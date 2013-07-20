@@ -373,6 +373,7 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.debug("Acquire lock on VMTemplateStoragePool " + templatePoolRefId + " with timeout " + storagePoolMaxWaitSeconds + " seconds");
         }
         templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
+
         if (templatePoolRef == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId);

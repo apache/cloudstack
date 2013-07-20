@@ -161,7 +161,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `destroyed` tinyint(1) COMMENT 'indicates whether the template_store entry was destroyed by the user or not',
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
   `update_count` bigint unsigned,
-  `ref_cnt` bigint unsigned,
+  `ref_cnt` bigint unsigned DEFAULT 0,
   `updated` datetime, 
   PRIMARY KEY  (`id`),
 --  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
