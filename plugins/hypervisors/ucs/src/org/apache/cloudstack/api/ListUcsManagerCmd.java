@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -50,7 +51,7 @@ import com.cloud.user.Account;
 public class ListUcsManagerCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the zone id", required=true)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, description="the zone id", entityType=ZoneResponse.class, required=true)
     private Long zoneId;
 
     @Inject
