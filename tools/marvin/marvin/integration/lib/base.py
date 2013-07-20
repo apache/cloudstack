@@ -98,7 +98,7 @@ class Account:
         cmd.lastname = services["lastname"]
 
         cmd.password = services["password"]
-        cmd.username = "-".join([services["username"], random_gen()])
+        cmd.username = "-".join([services["username"], random_gen(id=apiclient.id)])
 
         if "accountUUID" in services:
             cmd.accountid =  "-".join([services["accountUUID"],random_gen()])
