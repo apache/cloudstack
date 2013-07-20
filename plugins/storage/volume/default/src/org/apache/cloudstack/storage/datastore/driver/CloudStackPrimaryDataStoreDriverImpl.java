@@ -155,6 +155,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         try {
             DataTO snapshotTO = snapshot.getTO();
 
+
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = this.epSelector.select(snapshot);
             Answer answer = ep.sendMessage(cmd);

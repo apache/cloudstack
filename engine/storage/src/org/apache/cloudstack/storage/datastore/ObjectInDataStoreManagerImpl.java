@@ -107,10 +107,16 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId());
                 vo = templatePoolDao.persist(vo);
             } else if (obj.getType() == DataObjectType.SNAPSHOT) {
+                SnapshotInfo snapshotInfo = (SnapshotInfo)obj;
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
+                ss.setVolumeId(snapshotInfo.getVolumeId());
+                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(),snapshotInfo.getVolumeId());
+                if (snapshotDataStoreVO != null) {
+                    ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                }
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
             }
@@ -148,6 +154,11 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
                 ss.setRole(dataStore.getRole());
+                ss.setVolumeId(snapshot.getVolumeId());
+                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(),snapshot.getVolumeId());
+                if (snapshotDataStoreVO != null) {
+                    ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                }
                 ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/"
                         + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId());
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);

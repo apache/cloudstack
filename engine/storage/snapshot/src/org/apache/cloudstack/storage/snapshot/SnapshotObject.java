@@ -22,12 +22,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -92,18 +87,18 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
+
         SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(),
                 this.store.getId(), this.snapshot.getId());
-        if (snapStoreVO == null) {
-            return null;
+        Long parentId = null;
+        if (snapStoreVO != null) {
+            parentId = snapStoreVO.getParentSnapshotId();
+            if (parentId != null && parentId != 0) {
+                return this.snapshotFactory.getSnapshot(parentId, store);
+            }
         }
 
-        long parentId = snapStoreVO.getParentSnapshotId();
-        if (parentId == 0) {
-            return null;
-        }
-
-        return this.snapshotFactory.getSnapshot(parentId, store);
+        return null;
     }
 
     @Override
@@ -181,7 +176,11 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getPath() {
-        return this.objectInStoreMgr.findObject(this, getDataStore()).getInstallPath();
+        DataObjectInStore objectInStore = this.objectInStoreMgr.findObject(this, getDataStore());
+        if (objectInStore != null) {
+            return objectInStore.getInstallPath();
+        }
+        return null;
     }
 
     @Override

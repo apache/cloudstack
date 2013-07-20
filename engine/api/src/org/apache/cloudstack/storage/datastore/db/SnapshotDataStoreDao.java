@@ -33,6 +33,7 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
     void deletePrimaryRecordsForStore(long id);
 
     SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId);
+    SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
     SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
 

@@ -199,6 +199,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
+                snapshot.processEvent(Event.OperationFailed);
             } catch (NoTransitionException e1) {
                 s_logger.debug("Failed to change state for event: OperationFailed", e);
             }
@@ -237,6 +238,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             // find the image store where the parent snapshot backup is located
             SnapshotDataStoreVO parentSnapshotOnBackupStore = _snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
                     DataStoreRole.Image);
+            if (parentSnapshotOnBackupStore == null) {
+                return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
+            }
             return dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(),
                     parentSnapshotOnBackupStore.getRole());
         }

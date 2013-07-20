@@ -42,8 +42,9 @@ public class SnapshotObjectTO implements DataTO {
         this.setId(snapshot.getId());
         this.volume = (VolumeObjectTO) snapshot.getBaseVolume().getTO();
         this.setVmName(snapshot.getBaseVolume().getAttachedVmName());
-        if (snapshot.getParent() != null) {
-            this.parentSnapshotPath = snapshot.getParent().getPath();
+        SnapshotInfo parentSnapshot = snapshot.getParent();
+        if (parentSnapshot != null) {
+            this.parentSnapshotPath = parentSnapshot.getPath();
         }
         this.dataStore = snapshot.getDataStore().getTO();
         this.setName(snapshot.getName());

@@ -18,13 +18,9 @@ package org.apache.cloudstack.storage.snapshot;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -65,7 +61,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
         SnapshotInfo parentSnapshot = snapshot.getParent();
-        if (parentSnapshot != null && parentSnapshot.getPath().equalsIgnoreCase(snapshot.getPath())) {
+
+        if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
             s_logger.debug("backup an empty snapshot");
             // don't need to backup this snapshot
             SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(
@@ -79,6 +76,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
                 SnapshotObjectTO snapTO = new SnapshotObjectTO();
                 snapTO.setPath(parentSnapshotOnBackupStore.getInstallPath());
+
                 CreateObjectAnswer createSnapshotAnswer = new CreateObjectAnswer(snapTO);
 
                 snapshotOnImageStore.processEvent(Event.OperationSuccessed, createSnapshotAnswer);
@@ -109,7 +107,9 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             for (i = 1; i < deltaSnap; i++) {
                 parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
                         DataStoreRole.Image);
-
+                if (parentSnapshotOnBackupStore == null) {
+                    break;
+                }
                 Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
 
                 if (prevBackupId == 0) {
@@ -193,8 +193,39 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
-        snapshot = snapshotSvr.takeSnapshot(snapshot).getSnashot();
-        return this.backupSnapshot(snapshot);
+        SnapshotResult result =  snapshotSvr.takeSnapshot(snapshot);
+        if (result.isFailed()) {
+            s_logger.debug("Failed to take snapshot: " + result.getResult());
+            throw new CloudRuntimeException(result.getResult());
+        }
+        snapshot = result.getSnashot();
+        DataStore primaryStore = snapshot.getDataStore();
+
+        SnapshotInfo backupedSnapshot = this.backupSnapshot(snapshot);
+        try {
+            SnapshotInfo parent = snapshot.getParent();
+            if (backupedSnapshot != null && parent != null) {
+                Long parentSnapshotId = parent.getId();
+                while (parentSnapshotId != null && parentSnapshotId != 0L) {
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(),primaryStore.getId(), parentSnapshotId);
+                    if (snapshotDataStoreVO != null) {
+                        parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
+                        snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                    } else {
+                        parentSnapshotId = null;
+                    }
+                }
+                SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(),
+                        snapshot.getId());
+                if (snapshotDataStoreVO != null) {
+                    snapshotDataStoreVO.setParentSnapshotId(0L);
+                    snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
+                }
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to clean up snapshots on primary storage", e);
+        }
+        return backupedSnapshot;
     }
 
     @Override
