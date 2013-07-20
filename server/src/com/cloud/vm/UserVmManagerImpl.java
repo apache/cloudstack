@@ -4588,7 +4588,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (needRestart) {
             try {
-                _itMgr.start(vm, null, user, caller);
+                _itMgr.start(vm.getUuid(), null);
             } catch (Exception e) {
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(
@@ -4598,8 +4598,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        s_logger.debug("Restore VM " + vmId + " with template "
-                + template.getUuid() + " done successfully");
+        s_logger.debug("Restore VM " + vmId + " with template " + template.getUuid() + " done successfully");
         return vm;
 
     }

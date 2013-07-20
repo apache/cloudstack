@@ -198,7 +198,6 @@ public class UserVmManagerTest {
         doReturn(3L).when(_volumeMock).getTemplateId();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
-        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
@@ -237,7 +236,6 @@ public class UserVmManagerTest {
         doNothing().when(_vmMock).setGuestOSId(anyLong());
         doNothing().when(_vmMock).setTemplateId(3L);
         when(_vmDao.update(314L, _vmMock)).thenReturn(true);
-        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
@@ -278,7 +276,6 @@ public class UserVmManagerTest {
         doNothing().when(_vmMock).setGuestOSId(anyLong());
         doNothing().when(_vmMock).setTemplateId(3L);
         when(_vmDao.update(314L, _vmMock)).thenReturn(true);
-        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);

@@ -538,11 +538,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
-        if (_itMgr.start(elbVm, params, user, caller) != null) {
-            return _routerDao.findById(elbVm.getId());
-        } else {
-            return null;
-        }
+        _itMgr.start(elbVm.getUuid(), params);
+        return _routerDao.findById(elbVm.getId());
     }
     
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {

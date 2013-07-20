@@ -65,6 +65,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -110,7 +111,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -540,8 +540,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startProxy(long proxyVmId) {
         try {
             ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
-            Account systemAcct = _accountMgr.getSystemAccount();
-            User systemUser = _accountMgr.getSystemUser();
             if (proxy.getState() == VirtualMachine.State.Running) {
                 return proxy;
             }
@@ -552,7 +550,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                return _itMgr.start(proxy, null, systemUser, systemAcct);
+                _itMgr.advanceStart(proxy.getUuid(), null);
+                proxy = _consoleProxyDao.findById(proxy.getId());
             }
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null
@@ -572,6 +571,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
         } catch (CloudRuntimeException e) {
+            s_logger.warn("Runtime Exception while trying to start console proxy", e);
+            return null;
+        } catch (ConcurrentOperationException e) {
+            s_logger.warn("Runtime Exception while trying to start console proxy", e);
+            return null;
+        } catch (OperationTimedoutException e) {
             s_logger.warn("Runtime Exception while trying to start console proxy", e);
             return null;
         }

@@ -39,6 +39,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -603,17 +604,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
-        return start(vm, params, caller, account, null);
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) {
+        start(vmUuid, params, null);
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-    ResourceUnavailableException {
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) {
         try {
-            return advanceStart(vm, params, caller, account, planToDeploy);
+            advanceStart(vmUuid, params, planToDeploy);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e);
+            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
+        } catch (InsufficientCapacityException e) {
+            throw new CloudRuntimeException("Unable to start a VM due to insufficient capacity", e).add(VirtualMachine.class, vmUuid);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
         }
     }
 
@@ -651,7 +655,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @DB
-    protected <T extends VMInstanceVO> Ternary<T, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
+    protected Ternary<VMInstanceVO, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru vmGuru, VMInstanceVO vm, User caller, Account account)
             throws ConcurrentOperationException {
         long vmId = vm.getId();
 
@@ -659,7 +663,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         int retry = _lockStateRetry;
         while (retry-- != 0) {
             Transaction txn = Transaction.currentTxn();
-            Ternary<T, ReservationContext, ItWorkVO> result = null;
+            Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result = null;
             txn.start();
             try {
                 Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
@@ -670,7 +674,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
                     }
-                    result = new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
+                    result = new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(vm, context, work);
                     txn.commit();
                     return result;
                 }
@@ -744,28 +748,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
-        return advanceStart(vm, params, caller, account, null);
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        advanceStart(vmUuid, params, null);
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        long vmId = vm.getId();
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        CallContext cctxt = CallContext.current();
+        Account account = cctxt.getCallingAccount();
+        User caller = cctxt.getCallingUser();
+        
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-        vm = vmGuru.findById(vm.getId());
-        Ternary<T, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
+        long vmId = vm.getId();
+        VirtualMachineGuru<?> vmGuru = getVmGuru(vm);
+
+        Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
         if (start == null) {
-            return vmGuru.findById(vmId);
+            return;
         }
 
         vm = start.first();
         ReservationContext ctx = start.second();
         ItWorkVO work = start.third();
 
-        T startedVm = null;
+        VMInstanceVO startedVm = null;
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
@@ -845,7 +854,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                     }
                                 }
                                 plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null, ctx);
-                            }else{
+                            } else {
                                 plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null, ctx);
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
@@ -856,7 +865,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
@@ -955,7 +964,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);
                             }
-                            return startedVm;
+                            return;
                         } else {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
@@ -1037,7 +1046,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     + "' (" + vm.getUuid() + "), see management server log for details");
         }
 
-        return startedVm;
+        return;
     }
 
     @Override
@@ -1075,8 +1084,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return true;
     }
 
-    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, ItWorkVO work, Event event, boolean force, User user, Account account) {
-        T vm = profile.getVirtualMachine();
+    protected boolean cleanup(VirtualMachineGuru guru, VirtualMachineProfile profile, ItWorkVO work, Event event, boolean force, User user, Account account) {
+        VirtualMachine vm = profile.getVirtualMachine();
         State state = vm.getState();
         s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
         if (state == State.Starting) {

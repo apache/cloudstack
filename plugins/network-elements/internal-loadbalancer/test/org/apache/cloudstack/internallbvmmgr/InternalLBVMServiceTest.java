@@ -17,7 +17,6 @@
 package org.apache.cloudstack.internallbvmmgr;
 
 import java.lang.reflect.Field;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -34,7 +33,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 
-import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -112,17 +110,6 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(validVm);
         Mockito.when(_domainRouterDao.findById(nonExistingVmId)).thenReturn(null);
         Mockito.when(_domainRouterDao.findById(nonInternalLbVmId)).thenReturn(nonInternalLbVm);
-        
-        try {
-            Mockito.when(_itMgr.start(Mockito.any(DomainRouterVO.class),
-                    Mockito.any(Map.class), Mockito.any(User.class), Mockito.any(Account.class), Mockito.any(DeploymentPlan.class))).thenReturn(validVm);
-        } catch (InsufficientCapacityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         
         try {
             Mockito.when(_itMgr.advanceStop(Mockito.any(DomainRouterVO.class), Mockito.any(Boolean.class), Mockito.any(User.class), Mockito.any(Account.class))).thenReturn(true);

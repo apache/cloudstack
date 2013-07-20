@@ -467,7 +467,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             maxconn = offering.getConcurrentConnections().toString();
         }
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(),
-                guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), 
+                guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(),
                 _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn);
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
@@ -815,16 +815,13 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
-        if (_itMgr.start(internalLbVm, params, _accountMgr.getUserIncludingRemoved(callerUserId), caller, null) != null) {
-            if (internalLbVm.isStopPending()) {
-                s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
-                internalLbVm.setStopPending(false);
-                internalLbVm = _internalLbVmDao.persist(internalLbVm);
-            }
-            return _internalLbVmDao.findById(internalLbVm.getId());
-        } else {
-            return null;
+        _itMgr.start(internalLbVm.getUuid(), params, null);
+        if (internalLbVm.isStopPending()) {
+            s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
+            internalLbVm.setStopPending(false);
+            internalLbVm = _internalLbVmDao.persist(internalLbVm);
         }
+        return _internalLbVmDao.findById(internalLbVm.getId());
     }
     
     
