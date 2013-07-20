@@ -395,6 +395,7 @@ public class VolumeServiceImpl implements VolumeService {
         int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(
                 configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
+
         if (templatePoolRef == null) {
             templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
             if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {

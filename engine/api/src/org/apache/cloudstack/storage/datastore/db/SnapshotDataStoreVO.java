@@ -93,7 +93,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     ObjectInDataStoreStateMachine.State state;
 
     @Column(name = "ref_cnt")
-    Long refCnt;
+    Long refCnt = 0L;
 
     public String getInstallPath() {
         return installPath;

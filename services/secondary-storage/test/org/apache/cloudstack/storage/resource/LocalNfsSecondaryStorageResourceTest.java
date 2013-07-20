@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.resource;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.SwiftTO;
@@ -28,9 +30,11 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.SwiftUtil;
 import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +43,7 @@ import org.mockito.Mockito;
 
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
+import java.util.UUID;
 
 public class LocalNfsSecondaryStorageResourceTest extends TestCase {
     LocalNfsSecondaryStorageResource resource;
@@ -46,6 +51,8 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
     @Override
     public void setUp() throws ConfigurationException {
         resource = new LocalNfsSecondaryStorageResource();
+        resource.setInSystemVM(true);
+
         resource.setParentPath("/mnt");
         System.setProperty("paths.script", "/Users/edison/develop/asf-master/script");
         //resource.configure("test", new HashMap<String, Object>());
@@ -59,14 +66,15 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         Mockito.when(swift.getEndPoint()).thenReturn("https://objects.dreamhost.com/auth");
         Mockito.when(swift.getAccount()).thenReturn("cloudstack");
         Mockito.when(swift.getUserName()).thenReturn("images");
-        //Mockito.when(swift.getKey()).thenReturn("something");
+        Mockito.when(swift.getKey()).thenReturn("oxvELQaOD1U5_VyosGfA-wpZ7uBWEff-CUBGCM0u");
 
         Mockito.when(template.getDataStore()).thenReturn(swift);
         Mockito.when(template.getPath()).thenReturn("template/1/1/");
         Mockito.when(template.isRequiresHvm()).thenReturn(true);
         Mockito.when(template.getId()).thenReturn(1L);
         Mockito.when(template.getFormat()).thenReturn(Storage.ImageFormat.VHD);
-        Mockito.when(template.getOrigUrl()).thenReturn("http://nfs1.lab.vmops.com/templates/ttylinux_pv.vhd");
+        Mockito.when(template.getOrigUrl()).thenReturn("http://nfs1.lab.vmops.com/templates/test.bz2");
+        Mockito.when(template.getName()).thenReturn(UUID.randomUUID().toString());
         Mockito.when(template.getObjectType()).thenReturn(DataObjectType.TEMPLATE);
 
         DownloadCommand cmd = new DownloadCommand(template, 100000L);
@@ -86,5 +94,11 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         CopyCmdAnswer copyCmdAnswer = (CopyCmdAnswer)resource.executeRequest(cpyCmd);
         Assert.assertTrue(copyCmdAnswer.getResult());
 
+        //list template
+        ListTemplateCommand listCmd = new ListTemplateCommand(swift);
+        ListTemplateAnswer listAnswer = (ListTemplateAnswer)resource.executeRequest(listCmd);
+
+        Assert.assertTrue(listAnswer.getTemplateInfo().size() > 0);
     }
+
 }

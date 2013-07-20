@@ -113,7 +113,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     ObjectInDataStoreStateMachine.State state;
 
     @Column(name = "ref_cnt")
-    Long refCnt;
+    Long refCnt = 0L;
 
     public TemplateDataStoreVO(Long hostId, long templateId) {
         super();

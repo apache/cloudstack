@@ -164,6 +164,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     public void disconnected() {
     }
 
+    public void setInSystemVM(boolean inSystemVM) {
+        this._inSystemVM = inSystemVM;
+    }
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
@@ -215,6 +219,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
 
     protected CopyCmdAnswer postProcessing(File destFile, String downloadPath, String destPath, DataTO srcData, DataTO destData) throws ConfigurationException {
+        if (destData.getObjectType() == DataObjectType.SNAPSHOT) {
+            SnapshotObjectTO snapshot = new SnapshotObjectTO();
+            snapshot.setPath(destPath + File.separator + destFile.getName());
+
+            CopyCmdAnswer answer = new CopyCmdAnswer(snapshot);
+            return answer;
+        }
         // do post processing to unzip the file if it is compressed
         String scriptsDir = "scripts/storage/secondary";
         String createTmpltScr = Script.findScript(scriptsDir, "createtmplt.sh");
@@ -238,7 +249,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String extension = null;
         if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
             extension = ((TemplateObjectTO) srcData).getFormat().getFileExtension();
-        } else {
+        } else if (srcData.getObjectType() == DataObjectType.VOLUME) {
             extension = ((VolumeObjectTO) srcData).getFormat().getFileExtension();
         }
 
@@ -403,9 +414,49 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         if (srcData.getHypervisorType() == HypervisorType.XenServer) {
             return copySnapshotToTemplateFromNfsToNfsXenserver(cmd, srcData, srcDataStore, destData, destDataStore);
+        } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
+            File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
+            File destFile = getFile(destData.getPath(), destDataStore.getUrl());
+            s_logger.debug("copy snapshot to template");
+            Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFile.getAbsolutePath());
+            QCOW2Processor processor = new QCOW2Processor();
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            try {
+                processor.configure("qcow2 processor", params);
+                String destPath = destFile.getAbsolutePath();
+                String templateName = srcFile.getName();
+                FormatInfo info = processor.process(destPath, null, templateName);
+                TemplateLocation loc = new TemplateLocation(_storage, destPath);
+                loc.create(1, true, srcFile.getName());
+                loc.addFormat(info);
+                loc.save();
+                TemplateProp prop = loc.getTemplateInfo();
+                TemplateObjectTO newTemplate = new TemplateObjectTO();
+                newTemplate.setPath(destData.getPath() + File.separator + templateName);
+                newTemplate.setFormat(ImageFormat.VHD);
+                newTemplate.setSize(prop.getSize());
+                return new CopyCmdAnswer(newTemplate);
+            } catch (ConfigurationException e) {
+                s_logger.debug("Failed to create template:" + e.toString());
+                return new CopyCmdAnswer(e.toString());
+            } catch (IOException e) {
+                s_logger.debug("Failed to create template:" + e.toString());
+                return new CopyCmdAnswer(e.toString());
+            }
         }
 
         return new CopyCmdAnswer("");
+    }
+
+    protected File getFile(String path, String nfsPath) {
+        String filePath = getRootDir(nfsPath) + File.separator + path;
+        File f = new File(filePath);
+        if (!f.exists()) {
+            _storage.mkdirs(filePath);
+            f = new File(filePath);
+        }
+        return f;
     }
 
     protected Answer createTemplateFromSnapshot(CopyCommand cmd) {
@@ -422,8 +473,32 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (destDataStore instanceof NfsTO) {
                 return copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO) srcDataStore,
                         (TemplateObjectTO) destData, (NfsTO) destDataStore);
-            }
+            } else if (destDataStore instanceof SwiftTO) {
+                //create template on the same data store
+                CopyCmdAnswer answer = (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO) srcDataStore,
+                        (TemplateObjectTO) destData, (NfsTO) srcDataStore);
+                if (!answer.getResult()) {
+                    return answer;
+                }
+                s_logger.debug("starting copy template to swift");
+                DataTO newTemplate = (DataTO)answer.getNewData();
+                File templateFile = getFile(newTemplate.getPath(), ((NfsTO) srcDataStore).getUrl());
+                SwiftTO swift = (SwiftTO)destDataStore;
+                String containterName = SwiftUtil.getContainerName(destData.getObjectType().toString(), destData.getId());
+                String swiftPath = SwiftUtil.putObject(swift, templateFile, containterName, templateFile.getName());
+                //upload template.properties
+                File properties = new File(templateFile.getParent() + File.separator + _tmpltpp);
+                if (properties.exists()) {
+                    SwiftUtil.putObject(swift, properties, containterName, _tmpltpp);
+                }
 
+                TemplateObjectTO template = new TemplateObjectTO();
+                template.setPath(swiftPath);
+                template.setSize(templateFile.length());
+                SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
+                template.setFormat(snapshot.getVolume().getFormat());
+                return new CopyCmdAnswer(template);
+            }
         }
         return new CopyCmdAnswer("");
     }
@@ -581,9 +656,29 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         File file = null;
         try {
             NfsTO nfsCacheStore = (NfsTO)cacheStore;
-            String fileName = UUID.randomUUID().toString() + "." + cmd.getFormat().getFileExtension();
+            String fileName = cmd.getName() + "." + cmd.getFormat().getFileExtension();
             file = downloadFromUrlToNfs(cmd.getUrl(), nfsCacheStore, path, fileName);
-            String swiftPath = SwiftUtil.putObject(swiftTO, file, "T-" + cmd.getId());
+            String container = "T-" + cmd.getId();
+            String swiftPath = SwiftUtil.putObject(swiftTO, file, container, null);
+
+            //put metda file
+            File uniqDir = _storage.createUniqDir();
+            String metaFileName = uniqDir.getAbsolutePath() + File.separator + "template.properties";
+            _storage.create(uniqDir.getAbsolutePath(), "template.properties");
+            File metaFile = new File(metaFileName);
+            FileWriter writer = new FileWriter(metaFile);
+            BufferedWriter bufferWriter = new BufferedWriter(writer);
+            bufferWriter.write("uniquename=" + cmd.getName());
+            bufferWriter.write("\n");
+            bufferWriter.write("filename=" + fileName);
+            bufferWriter.write("\n");
+            bufferWriter.write("size=" + file.length());
+            bufferWriter.close();
+            writer.close();
+
+            SwiftUtil.putObject(swiftTO, metaFile, container, "template.properties");
+            metaFile.delete();
+            uniqDir.delete();
             String md5sum = null;
             try {
                 md5sum = DigestUtils.md5Hex(new FileInputStream(file));
@@ -1361,32 +1456,52 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
-        String[] containers = swiftList(swift, "", "");
+        String[] containers = SwiftUtil.list(swift, "", null);
         if (containers == null) {
             return null;
         }
         Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
         for (String container : containers) {
             if (container.startsWith("T-")) {
-                String ldir = _tmpltDir + "/" + UUID.randomUUID().toString();
-                createLocalDir(ldir);
-                String lFullPath = ldir + "/" + _tmpltpp;
-                swiftDownload(swift, container, _tmpltpp, lFullPath);
-                TemplateLocation loc = new TemplateLocation(_storage, ldir);
-                try {
-                    if (!loc.load()) {
-                        s_logger.warn("Can not parse template.properties file for template " + container);
-                        continue;
-                    }
-                } catch (IOException e) {
-                    s_logger.warn("Unable to load template location " + ldir + " due to " + e.toString(), e);
+                String[] files = SwiftUtil.list(swift, container, "template.properties");
+                if (files.length != 1) {
                     continue;
                 }
-                TemplateProp tInfo = loc.getTemplateInfo();
-                tInfo.setInstallPath(container);
-                tmpltInfos.put(tInfo.getTemplateName(), tInfo);
-                loc.purge();
-                deleteLocalDir(ldir);
+                try {
+                    File tempFile = File.createTempFile("template", ".tmp");
+                    File tmpFile = SwiftUtil.getObject(swift, tempFile, container + File.separator + "template.properties");
+                    if (tmpFile == null) {
+                        continue;
+                    }
+                    FileReader fr = new FileReader(tmpFile);
+                    BufferedReader brf = new BufferedReader(fr);
+                    String line = null;
+                    String uniqName = null;
+                    Long size = null;
+                    String name = null;
+                    while ((line = brf.readLine()) != null) {
+                        if (line.startsWith("uniquename=")) {
+                            uniqName = line.split("=")[1];
+                        } else if (line.startsWith("size=")) {
+                            size = Long.parseLong(line.split("=")[1]);
+                        } else if (line.startsWith("filename=")) {
+                            name = line.split("=")[1];
+                        }
+                    }
+                    brf.close();
+                    tempFile.delete();
+                    if (uniqName != null) {
+                        TemplateProp prop = new TemplateProp(uniqName, container + File.separator + name, size, size, true, false);
+                        tmpltInfos.put(uniqName, prop);
+                    }
+
+                } catch (IOException e) {
+                    s_logger.debug("Failed to create templ file:" + e.toString());
+                    continue;
+                } catch (Exception e) {
+                    s_logger.debug("Failed to get properties: " + e.toString());
+                    continue;
+                }
             }
         }
         return tmpltInfos;
@@ -1612,7 +1727,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
-        String rootDir = getRootDir(cmd.getSecUrl());
+        DataStoreTO store = cmd.getStore();
+        if (store instanceof S3TO || store instanceof SwiftTO) {
+            long infinity = Integer.MAX_VALUE;
+            return new GetStorageStatsAnswer(cmd, infinity, 0L);
+        }
+
+        String rootDir = getRootDir(((NfsTO) store).getUrl());
         final long usedSize = getUsedSize(rootDir);
         final long totalSize = getTotalSize(rootDir);
         if (usedSize == -1 || totalSize == -1) {

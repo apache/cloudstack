@@ -534,7 +534,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     if ( store.getUri() == null ) {
                         continue;
                     }
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getUri());
+
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO());
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());
