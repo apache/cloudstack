@@ -189,14 +189,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public static ApiServer getInstance() {
         return s_instance;
     }
-    
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		init();
-		return true;
-	}
- 
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params)
+            throws ConfigurationException {
+        init();
+        return true;
+    }
+
     public void init() {
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
@@ -293,12 +293,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 parameterMap.put(param.getName(), new String[] { param.getValue() });
             }
 
-	    // Get the type of http method being used.
+            // Get the type of http method being used.
             parameterMap.put("httpmethod", new String[] { request.getRequestLine().getMethod() });
 
             // Check responseType, if not among valid types, fallback to JSON
-            if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML)))
+            if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML))) {
                 responseType = BaseCmd.RESPONSE_TYPE_XML;
+            }
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
@@ -318,7 +319,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw e;
             }
         } finally {
-            s_accessLogger.info(sb.toString());
+            s_accessLogger.info(StringUtils.cleanString(sb.toString()));
             CallContext.unregister();
         }
     }
@@ -370,7 +371,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     cmdObj.configure();
                     cmdObj.setFullUrlParams(paramMap);
                     cmdObj.setResponseType(responseType);
-		    cmdObj.setHttpMethod(paramMap.get("httpmethod").toString());
+                    cmdObj.setHttpMethod(paramMap.get("httpmethod").toString());
 
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);

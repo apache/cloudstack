@@ -63,9 +63,9 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
+        SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         processRequest(req, resp);
@@ -77,8 +77,9 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
-        if (req.getQueryString() == null)
+        if (req.getQueryString() == null) {
             return;
+        }
 
         String[] paramsInQueryString = req.getQueryString().split("&");
         if (paramsInQueryString != null) {
@@ -325,14 +326,14 @@ public class ApiServlet extends HttpServlet {
             }
         } catch (ServerApiException se) {
             String serializedResponseText = _apiServer.getSerializedApiError(se, params, responseType);
-                resp.setHeader("X-Description", se.getDescription());
+            resp.setHeader("X-Description", se.getDescription());
             writeResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType);
-                auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
+            auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (Exception ex) {
-                s_logger.error("unknown exception writing api response", ex);
-                auditTrailSb.append(" unknown exception writing api response");
+            s_logger.error("unknown exception writing api response", ex);
+            auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            s_accessLogger.info(auditTrailSb.toString());
+            s_accessLogger.info(StringUtils.cleanString(auditTrailSb.toString()));
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
             }
