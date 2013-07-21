@@ -504,7 +504,7 @@ def backupSnapshot(session, args):
     # on it.
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, localMountPoint, path)
     util.SMlog("Backups dir " + backupsDir)
-
+    prevBackupUuid = prevBackupUuid.split("/")[-1]
     # Check existence of snapshot on primary storage
     isfile(baseCopyPath, isISCSI)
     if prevBackupUuid:
