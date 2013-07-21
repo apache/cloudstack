@@ -203,4 +203,39 @@ public class SwiftUtil {
         }
         return null;
     }
+
+    public static String[] splitSwiftPath(String path) {
+        int index = path.indexOf(File.separator);
+        if (index == -1) {
+            return null;
+        }
+        String[] paths = new String[2];
+        paths[0] = path.substring(0, index);
+        paths[1] = path.substring(index + 1);
+        return paths;
+    }
+
+    public static boolean deleteObject(SwiftClientCfg cfg, String path) {
+        Script command = new Script("/bin/bash", logger);
+        command.add("-c");
+
+        String[] paths = splitSwiftPath(path);
+        if (paths == null) {
+            return false;
+        }
+        String container = paths[0];
+        String objectName = paths[1];
+
+        StringBuilder swiftCmdBuilder = buildSwiftCmd(cfg);
+        swiftCmdBuilder.append(" delete ");
+        swiftCmdBuilder.append(container);
+        swiftCmdBuilder.append(" ");
+        swiftCmdBuilder.append(objectName);
+
+
+        command.add(swiftCmdBuilder.toString());
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        return true;
+    }
 }

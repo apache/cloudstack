@@ -1160,7 +1160,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         String backupUuid = UUID.randomUUID().toString();
         String results = hypervisorResource.callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", wait,
                 "primaryStorageSRUuid", primaryStorageSRUuid, "path", path, "secondaryStorageMountPath", secondaryStorageMountPath,
-                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString(), "localMountPath", localMountPoint);
+                "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "backupUuid", backupUuid, "isISCSI", isISCSI.toString(), "localMountPoint", localMountPoint);
         String errMsg = null;
         if (results == null || results.isEmpty()) {
             errMsg = "Could not copy backupUuid: " + backupSnapshotUuid

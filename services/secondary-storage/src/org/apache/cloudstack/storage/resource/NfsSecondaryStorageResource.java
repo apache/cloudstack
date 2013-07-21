@@ -1429,25 +1429,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new Answer(cmd, false, errorMessage);
             }
         } else if (dstore instanceof SwiftTO) {
+            SwiftTO swiftTO = (SwiftTO)dstore;
             String path = obj.getPath();
-            String filename = StringUtils.substringAfterLast(path, "/"); // assuming
-            // that
-            // the
-            // filename
-            // is
-            // the
-            // last
-            // section
-            // in
-            // the
-            // path
-            String volumeId = StringUtils.substringAfterLast(StringUtils.substringBeforeLast(path, "/"), "/");
-            String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId, filename);
-            if (result != null) {
-                String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
-                s_logger.warn(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
+            SwiftUtil.deleteObject(swiftTO, path);
+
             return new Answer(cmd, true, "Deleted snapshot " + path + " from swift");
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);

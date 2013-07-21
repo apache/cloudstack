@@ -334,18 +334,25 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     protected Void deleteSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback,
             DeleteSnapshotContext<CommandResult> context) {
+
         CommandResult result = callback.getResult();
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotInfo snapshot = context.snapshot;
-        if (result.isFailed()) {
-            s_logger.debug("delete snapshot failed" + result.getResult());
-            snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
-            SnapshotResult res = new SnapshotResult(context.snapshot, null);
-            future.complete(res);
-            return null;
+        SnapshotResult res = null;
+        try {
+            if (result.isFailed()) {
+                s_logger.debug("delete snapshot failed" + result.getResult());
+                snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                res = new SnapshotResult(context.snapshot, null);
+                res.setResult(result.getResult());
+            } else {
+                snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+                res = new SnapshotResult(context.snapshot, null);
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to in deleteSnapshotCallback", e);
+            res.setResult(e.toString());
         }
-        snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
-        SnapshotResult res = new SnapshotResult(context.snapshot, null);
         future.complete(res);
         return null;
     }
