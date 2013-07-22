@@ -254,7 +254,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
-public class UserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
+public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService {
     private static final Logger s_logger = Logger
             .getLogger(UserVmManagerImpl.class);
 
@@ -3083,12 +3083,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public void finalizeExpunge(UserVmVO vm) {
-    }
-
-    @Override
-    public UserVmVO findById(long id) {
-        return _vmDao.findById(id);
+    public void finalizeExpunge(VirtualMachine vm) {
     }
 
     @Override

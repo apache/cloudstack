@@ -120,7 +120,7 @@ import com.cloud.vm.dao.NicDao;
 @Component
 @Local(value = { InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
-    InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
+        InternalLoadBalancerVMManager, VirtualMachineGuru {
     private static final Logger s_logger = Logger
             .getLogger(InternalLoadBalancerVMManagerImpl.class);
     static final private String _internalLbVmNamePrefix = "b";
@@ -149,11 +149,6 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     @Inject VMTemplateDao _templateDao;
     @Inject ResourceManager _resourceMgr;
     @Inject ConfigurationServer _configServer;
-
-    @Override
-    public DomainRouterVO findById(long id) {
-        return _internalLbVmDao.findById(id);
-    }
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile,
@@ -339,7 +334,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
     }
 
     @Override

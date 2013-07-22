@@ -80,7 +80,7 @@ public interface VirtualMachineManager extends Manager {
 
     <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
 
-    <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
+    void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
 
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 

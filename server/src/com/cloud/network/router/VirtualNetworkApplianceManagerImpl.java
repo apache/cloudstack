@@ -261,7 +261,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService,
-                            VirtualMachineGuru<DomainRouterVO>, Listener {
+        VirtualMachineGuru, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -2639,7 +2639,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
     }
 
 
@@ -3063,11 +3063,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
 
         return result;
-    }
-
-    @Override
-    public DomainRouterVO findById(long id) {
-        return _routerDao.findById(id);
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "starting router Vm", async = true)

@@ -139,10 +139,8 @@ import com.cloud.vm.dao.NicDao;
 
 @Component
 @Local(value = { ElasticLoadBalancerManager.class })
-public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
-ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
-    private static final Logger s_logger = Logger
-            .getLogger(ElasticLoadBalancerManagerImpl.class);
+public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
+    private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerManagerImpl.class);
     
     @Inject
     IPAddressDao _ipAddressDao;
@@ -777,11 +775,6 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public DomainRouterVO findById(long id) {
-        return _routerDao.findById(id);
-    }
-
-    @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         
         List<NicProfile> elbNics = profile.getNics();
@@ -960,7 +953,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
         // no-op
         
     }

@@ -155,7 +155,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
 public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager,
-        VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+        VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -1468,18 +1468,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void finalizeExpunge(ConsoleProxyVO proxy) {
+    public void finalizeExpunge(VirtualMachine vm) {
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vm.getId());
         proxy.setPublicIpAddress(null);
         proxy.setPublicMacAddress(null);
         proxy.setPublicNetmask(null);
         proxy.setPrivateMacAddress(null);
         proxy.setPrivateIpAddress(null);
         _consoleProxyDao.update(proxy.getId(), proxy);
-    }
-
-    @Override
-    public ConsoleProxyVO findById(long id) {
-        return _consoleProxyDao.findById(id);
     }
 
     @Override

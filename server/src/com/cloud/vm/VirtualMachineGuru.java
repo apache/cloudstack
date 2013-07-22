@@ -25,8 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
  */
-public interface VirtualMachineGuru<T extends VirtualMachine> {
-    T findById(long id);
+public interface VirtualMachineGuru {
     
     boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context);
     
@@ -52,7 +51,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
     
     void finalizeStop(VirtualMachineProfile profile, StopAnswer answer);
     
-    void finalizeExpunge(T vm);
+    void finalizeExpunge(VirtualMachine vm);
     
     /**
      * Prepare Vm for Stop

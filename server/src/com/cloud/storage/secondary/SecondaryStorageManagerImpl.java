@@ -155,7 +155,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -1003,11 +1003,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public SecondaryStorageVmVO findById(long id) {
-        return _secStorageVmDao.findById(id);
-    }
-
-    @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         SecondaryStorageVmVO vm = _secStorageVmDao.findById(profile.getId());
@@ -1197,11 +1192,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public void finalizeExpunge(SecondaryStorageVmVO vm) {
-        vm.setPublicIpAddress(null);
-        vm.setPublicMacAddress(null);
-        vm.setPublicNetmask(null);
-        _secStorageVmDao.update(vm.getId(), vm);
+    public void finalizeExpunge(VirtualMachine vm) {
+        SecondaryStorageVmVO ssvm = _secStorageVmDao.findByUuid(vm.getUuid());
+
+        ssvm.setPublicIpAddress(null);
+        ssvm.setPublicMacAddress(null);
+        ssvm.setPublicNetmask(null);
+        _secStorageVmDao.update(ssvm.getId(), ssvm);
     }
 
     @Override

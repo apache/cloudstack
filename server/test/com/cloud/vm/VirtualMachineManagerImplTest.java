@@ -223,6 +223,7 @@ public class VirtualMachineManagerImplTest {
             when(_workDao.update("1", _work)).thenReturn(true);
             when(_work.getId()).thenReturn("1");
             doNothing().when(_work).setStep(ItWorkVO.Step.Done);
+        when(_vmInstanceDao.findByUuid(any(String.class))).thenReturn(_vmMock);
             //doNothing().when(_volsDao).detachVolume(anyLong());
             //when(_work.setStep(ItWorkVO.Step.Done)).thenReturn("1");
 
@@ -332,10 +333,9 @@ public class VirtualMachineManagerImplTest {
         doNothing().when(_work).setStep(ItWorkVO.Step.Done);
 
         // Mock the vm guru and the user vm object that gets returned.
-        _vmMgr._vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
+        _vmMgr._vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
         UserVmManagerImpl userVmManager = mock(UserVmManagerImpl.class);
         _vmMgr.registerGuru(VirtualMachine.Type.User, userVmManager);
-        when(userVmManager.findById(anyLong())).thenReturn(_vmMock);
 
         // Mock the iteration over all the volumes of an instance.
         Iterator<VolumeVO> volumeIterator = mock(Iterator.class);
