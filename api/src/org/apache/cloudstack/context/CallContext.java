@@ -110,7 +110,9 @@ public class CallContext {
         CallContext callingContext = new CallContext(callingUser, callingAccount, contextId);
         s_currentContext.set(callingContext);
         NDC.push("ctx-" + UuidUtils.first(contextId));
-        s_logger.debug("Setting calling context: " + callingContext);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Registered: " + callingContext);
+        }
         return callingContext;
     }
 
@@ -161,11 +163,13 @@ public class CallContext {
     public static CallContext unregister() {
         CallContext context = s_currentContext.get();
         if (context == null) {
-            s_logger.trace("No context to remove");
+            s_logger.debug("No context to remove");
             return null;
         }
         s_currentContext.remove();
-        s_logger.debug("Context removed " + context);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Unregistered: " + context);
+        }
         String contextId = context.getContextId();
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
@@ -210,9 +214,9 @@ public class CallContext {
 
     @Override
     public String toString() {
-        return new StringBuffer("CallContext[acct=").append(account.getId())
+        return new StringBuffer("CCtxt[acct=").append(account.getId())
                 .append("; user=").append(user.getId())
-                .append("; session=").append(contextId)
+                .append("; id=").append(contextId)
                 .append("]").toString();
     }
 }
