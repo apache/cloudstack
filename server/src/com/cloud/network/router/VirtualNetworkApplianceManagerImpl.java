@@ -1320,7 +1320,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
         }
     }
-
+    
     protected class CheckRouterTask implements Runnable {
 
         public CheckRouterTask() {
@@ -1588,12 +1588,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             Long vpcId, List<Pair<NetworkVO, NicProfile>> networks, boolean startRouter, List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
-
-        if(s_logger.isTraceEnabled()) {
-            s_logger.trace("deployRouter(" + owner.getAccountName() + ", " + dest.getHost() + ", " + plan.toString() + ", " + params.toString()
-                    + ", " + isRedundant + ", " + vrProvider.getUuid() + ", " + svcOffId + ", " + vpcId
-                    + ", list_of_" + networks.size() + "networks, " + startRouter + ", " + supportedHypervisors + ")");
-        }
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
@@ -1872,11 +1866,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
-
-        if(s_logger.isTraceEnabled()) {
-            s_logger.trace("startVirtualRouter(" + router.getHostName() + ", " + user.getUsername() + ", " + caller.getAccountName() + ", " + params.toString() + ")");
-        }
-
+        
         if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
             return this.start(router, user, caller, params, null);
         }
@@ -2510,7 +2500,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     createIpAlias(router, activeIpAliasTOs, guestNetworkId, cmds);
                     configDnsMasq(router, _networkDao.findById(guestNetworkId), cmds);
                 }
-
             }
         }
     }
@@ -2912,9 +2901,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public boolean applyDhcpEntry(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile,
             DeployDestination dest, List<DomainRouterVO> routers)
             throws ResourceUnavailableException {
-        if(s_logger.isTraceEnabled()) {
-            s_logger.trace("applyDhcpEntry(" + network.getCidr() + ", " + nic.getMacAddress() + ", " + profile.getUuid() + ", " + dest.getHost() + ", " + routers + ")");
-        }
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
         
         final VirtualMachineProfile<UserVm> updatedProfile = profile;
@@ -3448,9 +3434,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     private void configDnsMasq(VirtualRouter router, Network network, Commands cmds) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("configDnsMasq(" + router.getHostName() + ", " + network.getNetworkDomain() + ", " + cmds + ")");
-        }
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
         List<DhcpTO> ipList = new ArrayList<DhcpTO>();
@@ -3482,7 +3465,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         dnsMasqConfigCmd.setDomainSuffix(domain_suffix);
         dnsMasqConfigCmd.setIfDnsProvided(dnsProvided);
         cmds.addCommand("dnsMasqConfig" ,dnsMasqConfigCmd);
-        //To change body of created methods use File | Settings | File Templates.
     }
 
 
