@@ -11300,21 +11300,12 @@
                                 action: function(args) {
                                     var array1 = [];
 
-                                    if (args.data.cpuovercommitratio != "" && args.data.cpuovercommitratio > 0)
-                                        array1.push("&cpuovercommitratio=" + args.data.cpuovercommitratio);
-
-                                    if (args.data.memoryovercommitratio != "" && args.data.memoryovercommitratio > 0)
-                                        array1.push("&memoryovercommitratio=" + args.data.memoryovercommitratio);
-
                                     $.ajax({
-
                                         url: createURL("updateCluster&id=" + args.context.clusters[0].id + array1.join("")),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
                                             var item = json.updateclusterresponse.cluster;
-                                            args.context.clusters[0].cpuovercommitratio = item.cpuovercommitratio;
-                                            args.context.clusters[0].memoryovercommitratio = item.memoryovercommitratio;
                                             addExtraPropertiesToClusterObject(item);
                                             args.response.success({
                                                 actionFilter: clusterActionfilter,
@@ -16319,12 +16310,12 @@
         if (jsonObj.state == "Enabled") { //managed, allocation enabled
             allowedActions.push("unmanage");
             allowedActions.push("disable");
-            allowedActions.push("edit");
+            //allowedActions.push("edit"); // No fields to edit
 
         } else if (jsonObj.state == "Disabled") { //managed, allocation disabled
             allowedActions.push("unmanage");
             allowedActions.push("enable");
-            allowedActions.push("edit");
+            //allowedActions.push("edit"); // No fields to edit
 
         } else { //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
             allowedActions.push("manage");
