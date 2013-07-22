@@ -24,8 +24,7 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin import remoteSSHClient
 from nose.plugins.attrib import attr
-import datetime
-
+from marvin.cloudstackException import cloudstackAPIException
 
 class Services:
     """Test Account Services
@@ -831,12 +830,12 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
         return
 
 
-class TesttemplateHierarchy(cloudstackTestCase):
+class TestTemplateHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TesttemplateHierarchy,
+                               TestTemplateHierarchy,
                                cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone settings
@@ -1788,18 +1787,13 @@ class TestDomainForceRemove(cloudstackTestCase):
         # Sleep to ensure that all resources are deleted
         time.sleep(int(configurations[0].value) * 2)
         self.debug("Checking if the resources in domain are deleted or not..")
-        accounts = Account.list(
-                                self.apiclient,
-                                name=self.account_1.name,
-                                domainid=self.account_1.domainid,
-                                listall=True
-                                )
-
-        self.assertEqual(
-            accounts,
-            None,
-            "Account should get automatically deleted after domain removal"
-            )
+        with self.assertRaises(cloudstackAPIException):
+            Account.list(
+                        self.apiclient,
+                        name=self.account_1.name,
+                        domainid=self.account_1.domainid,
+                        listall=True
+                        )
         return
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator"])
