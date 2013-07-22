@@ -2108,6 +2108,7 @@ div.detail-group.actions td {
   display: block;
   width: 99%;
   border-bottom: 1px solid #AAAAAA;
+  float: left;
 }
 
 .detail-group table td.detail-actions .action.text {
