@@ -191,8 +191,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // we can arbitrarily pick one ssvm to do that task
         List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty()) {
+            s_logger.info("No running ssvm is found, so command will be sent to LocalHostEndPoint");
             return LocalHostEndpoint.getEndpoint(); // use local host as endpoint in
-                                            // case of no ssvm existing
+            // case of no ssvm existing
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
