@@ -67,6 +67,14 @@ public class UsageEventUtils {
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId,
+                                        long resourceId, String resourceName,
+                                        Long offeringId, Long templateId, Long size, Long virtualSize,
+                                        String entityType, String entityUUID) {
+        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize);
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId,
                                          String resourceName, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName);
@@ -97,6 +105,9 @@ public class UsageEventUtils {
         _usageEventDao.persist( new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size));
     }
 
+    public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size, Long virtualSize) {
+        _usageEventDao.persist( new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize));
+    }
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName) {
         _usageEventDao.persist( new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName));
     }

@@ -3369,6 +3369,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 			usageRecResponse.setUsageId(tmpl.getUuid());
 			//Template/ISO Size
 			usageRecResponse.setSize(usageRecord.getSize());
+			if(usageRecord.getUsageType() == UsageTypes.ISO) {
+			    usageRecResponse.setVirtualSize(usageRecord.getSize());
+			} else {
+			    usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+			}
 
 		} else if(usageRecord.getUsageType() == UsageTypes.SNAPSHOT){
 			//Snapshot ID

@@ -148,6 +148,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -279,6 +280,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     EndPointSelector _epSelector;
     @Inject
     UserVmJoinDao _userVmJoinDao;
+    @Inject
+    VMTemplateHostDao _vmTemplateHostDao;
 
     @Inject
     ConfigurationServer _configServer;
@@ -655,7 +658,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
                 if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
-                    UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getSize(),
+                    UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getPhysicalSize(), srcTmpltStore.getSize(),
                             template.getClass().getName(), template.getUuid());
                 }
                 return true;
@@ -1369,8 +1372,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 this._tmpltZoneDao.persist(templateZone);
 
                 privateTemplate = this._tmpltDao.findById(templateId);
+                TemplateDataStoreVO srcTmpltStore = this._tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId,
-                        privateTemplate.getId(), privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), privateTemplate.getSize());
+                        privateTemplate.getId(), privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), privateTemplate.getSize());
                 _usageEventDao.persist(usageEvent);
             } catch (InterruptedException e) {
                 s_logger.debug("Failed to create template", e);

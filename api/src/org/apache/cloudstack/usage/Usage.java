@@ -66,4 +66,6 @@ public interface Usage {
 	public Date getStartDate();
 
 	public Date getEndDate();
+
+    public Long getVirtualSize();
 }

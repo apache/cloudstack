@@ -79,7 +79,10 @@ public class UsageVO implements Usage, InternalIdentity {
 
     @Column(name="size")
     private Long size = null;
-    
+
+    @Column(name="virtual_size")
+    private Long virtualSize;
+
     @Column(name="network_id")
     private Long networkId = null;
 
@@ -114,7 +117,28 @@ public class UsageVO implements Usage, InternalIdentity {
 		this.startDate = startDate;
 		this.endDate = endDate;
 	}
-	
+
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay,
+            int usageType, Double rawUsage, Long vmId, String vmName, Long offeringId, Long templateId,
+            Long usageId, Long size, Long virtualSize, Date startDate, Date endDate) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.description = description;
+        this.usageDisplay = usageDisplay;
+        this.usageType = usageType;
+        this.rawUsage = rawUsage;
+        this.vmInstanceId = vmId;
+        this.vmName = vmName;
+        this.offeringId = offeringId;
+        this.templateId = templateId;
+        this.usageId = usageId;
+        this.size = size;
+        this.virtualSize = virtualSize;
+        this.startDate = startDate;
+        this.endDate = endDate;
+}
+
 	public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, 
 	        int usageType, Double rawUsage, Long usageId, String type, Long networkId, Date startDate, Date endDate) {
 	    this.zoneId = zoneId;
@@ -247,7 +271,11 @@ public class UsageVO implements Usage, InternalIdentity {
     public Long getSize() {
         return size;
     }
-    
+
+    public Long getVirtualSize() {
+        return virtualSize;
+    }
+
 	@Override
 	public Date getStartDate() {
 		return startDate;
