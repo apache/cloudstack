@@ -76,8 +76,9 @@ add_an_ip () {
   if [ $old_state -eq 0 ]
   then
     sudo ip link set $ethDev up
-    sudo arping -c 3 -I $ethDev -A -U -s $pubIp $pubIp
   fi
+  sudo arping -c 1 -I $ethDev -A -U -s $pubIp $pubIp
+  sudo arping -c 1 -I $ethDev -A -U -s $pubIp $pubIp
   local tableNo=${ethDev:3} 
   sudo iptables-save -t mangle | grep  "PREROUTING -i $ethDev -m state --state NEW -j CONNMARK --set-xmark" 2>/dev/null
   if [ $? -gt 0 ]
