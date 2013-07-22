@@ -1083,12 +1083,12 @@ class TestResourceTags(cloudstackTestCase):
                          'CentOS',
                          'The tag should have original value'
                          )
-        
         isos = Iso.list(
                         self.apiclient,
-                        listall=True,
                         key='OS',
-                        value='CentOS'
+                        value='CentOS',
+                        account=self.account.name,
+                        domainid=self.account.domainid
                     )
 
         self.assertEqual(
@@ -1096,7 +1096,7 @@ class TestResourceTags(cloudstackTestCase):
                          True,
                          "List isos should not return an empty response"
                          )
-    
+
         self.debug("Deleting the created tag..")
         try:
             tag.delete(
@@ -1454,14 +1454,14 @@ class TestResourceTags(cloudstackTestCase):
 
         self.debug("Available hosts: ")
         for host in hosts:
-            self.debug("Host: %s", host.id)
+            self.debug("Host: %s" % host.id)
 
             # Filtering out the source host from list host response
             temp_hosts = [host for host in hosts if host.id != source_host]
             dest_host = temp_hosts[0]
 
             self.debug("Destination host is: %s" % dest_host.id)
-            self.debug("Source host is: %s" % source_host.id)
+            self.debug("Source host is: %s" % source_host)
 
         self.debug("Creating a tag for user VM")
         tag = Tag.create(
