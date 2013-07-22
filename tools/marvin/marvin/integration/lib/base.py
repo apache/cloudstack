@@ -148,10 +148,7 @@ class User:
         if "userUUID" in services:
             cmd.userid = "-".join([services["userUUID"],random_gen()])
 
-        # Password Encoding
-        mdf = hashlib.md5()
-        mdf.update(services["password"])
-        cmd.password = mdf.hexdigest()
+        cmd.password = services["password"]
         cmd.username = "-".join([services["username"], random_gen()])
         user = apiclient.createUser(cmd)
 
@@ -201,14 +198,11 @@ class User:
 
         cmd = login.loginCmd()
         cmd.username = username
-        # MD5 hashcoded password
-        mdf = hashlib.md5()
-        mdf.update(password)
-        cmd.password = mdf.hexdigest()
+        cmd.password = password
         if domain:
             cmd.domain = domain
         if domainid:
-            cmd.domainid = domainid
+            cmd.domainId = domainid
         return apiclient.login(cmd)
 
 

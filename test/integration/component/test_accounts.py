@@ -1559,9 +1559,8 @@ class TestUserLogin(cloudstackTestCase):
         respose = User.login(
                              self.apiclient,
                              username=self.account.name,
-                             password=self.services["account"]["password"]
-                             )
-        self.assertEqual(respose, None, "Login response should not be none")
+                             password=self.services["account"]["password"],
+                             domainid=domain.id)
         self.debug("Login API response: %s" % respose)
 
         self.assertNotEqual(
