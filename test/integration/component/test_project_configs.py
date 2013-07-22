@@ -537,7 +537,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
         project.addAccount(
                            self.apiclient,
                            self.user.name,
-                           self.user.email
+                           self.user.user[0].email
                            )
 
         # listProjectAccount to verify the user is added to project or not
@@ -690,7 +690,7 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         project.addAccount(
                            self.apiclient,
                            self.user.name,
-                           self.user.email
+                           self.user.user[0].email
                            )
 
         # listProjectAccount to verify the user is added to project or not
@@ -859,7 +859,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         project.addAccount(
                            self.apiclient,
                            self.user.name,
-                           self.user.email
+                           self.user.user[0].email
                            )
 
         # listProjectAccount to verify the user is added to project or not
