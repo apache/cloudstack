@@ -143,11 +143,11 @@ class Services:
                                     # Any network (For creating FW rule)
                                     "protocol": "TCP"
                                 },
-                         "http_rule": {
-                                    "startport": 80,
-                                    "endport": 80,
+                         "icmp_rule": {
+                                    "icmptype": -1,
+                                    "icmpcode": -1,
                                     "cidrlist": '0.0.0.0/0',
-                                    "protocol": "TCP"
+                                    "protocol": "ICMP"
                                 },
                          "virtual_machine": {
                                     "displayname": "Test VM",
@@ -1066,13 +1066,13 @@ class TestVPC(cloudstackTestCase):
         nwacl_internet_1 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_1.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
         nwacl_internet_2 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_2.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
 
@@ -1411,13 +1411,13 @@ class TestVPC(cloudstackTestCase):
         nwacl_internet_1 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_1.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
         nwacl_internet_2 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_2.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
 
