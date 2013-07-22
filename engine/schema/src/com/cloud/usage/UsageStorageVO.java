@@ -59,6 +59,9 @@ public class UsageStorageVO implements InternalIdentity {
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date deleted = null;
 
+	@Column(name="virtual_size")
+	private Long virtualSize;
+
 	protected UsageStorageVO() {
 	}
 
@@ -72,6 +75,19 @@ public class UsageStorageVO implements InternalIdentity {
 		this.size = size;
 		this.created = created;
 		this.deleted = deleted;
+	}
+
+	public UsageStorageVO(long id, long zoneId, long accountId, long domainId, int storageType, Long sourceId, long size, Long virtualSize, Date created, Date deleted) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.id = id;
+        this.storageType = storageType;
+        this.sourceId = sourceId;
+        this.size = size;
+        this.virtualSize = virtualSize;
+        this.created = created;
+        this.deleted = deleted;
 	}
 
 	public long getZoneId() {
@@ -101,7 +117,11 @@ public class UsageStorageVO implements InternalIdentity {
 	public long getSize(){
 		return size;
 	}
-	
+
+    public Long getVirtualSize() {
+        return virtualSize;
+    }
+
 	public Date getCreated() {
 		return created;
 	}

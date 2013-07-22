@@ -1297,7 +1297,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO(templateId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.TEMPLATE, event.getTemplateId(),
-                                        templateSize, event.getCreateDate(), null);
+                                        templateSize, event.getVirtualSize(), event.getCreateDate(), null);
             m_usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_TEMPLATE_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;
@@ -1339,7 +1339,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
              }
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO( isoId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.ISO, null,
-                    isoSize, event.getCreateDate(), null);
+                    isoSize, isoSize, event.getCreateDate(), null);
             m_usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_ISO_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;

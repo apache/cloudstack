@@ -69,6 +69,9 @@ public class UsageEventVO implements UsageEvent {
     @Column(name="processed")
     boolean processed;
 
+    @Column(name="virtual_size")
+    private Long virtualSize;
+
     
 	public UsageEventVO() {
 	}
@@ -103,7 +106,20 @@ public class UsageEventVO implements UsageEvent {
         this.resourceType = guestType;
         this.templateId = (isSystem ? 1L : 0L);
     }
-	
+	//Snapshot usage event
+    //Snapshots have size as the actual (physical) size and virtual_size as the allocated size
+    public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size, Long virtualSize) {
+        this.type = usageType;
+        this.accountId = accountId;
+        this.zoneId = zoneId;
+        this.resourceId = resourceId;
+        this.resourceName = resourceName;
+        this.offeringId = offeringId;
+        this.templateId = templateId;
+        this.size = size;
+        this.virtualSize = virtualSize;
+    }
+
 	public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, String resourceType) {
 	    this.type = usageType;
 	    this.accountId = accountId;
@@ -213,4 +229,12 @@ public class UsageEventVO implements UsageEvent {
         return resourceType;
     }
 
-}
+    public Long getVirtualSize() {
+        return virtualSize;
+    }
+
+    public void setVirtualSize(Long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
+
+ }
