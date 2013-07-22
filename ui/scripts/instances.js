@@ -1831,10 +1831,10 @@
                                             cpuused: jsonObj.cpuused,
                                             networkkbsread: (jsonObj.networkkbsread == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                                             networkkbswrite: (jsonObj.networkkbswrite == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),
-                                            diskkbsread: (jsonObj.diskkbsread == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024),
-                                            diskkbswrite: (jsonObj.diskkbswrite == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.diskkbswrite * 1024),
-                                            diskioread: (jsonObj.diskioread == null) ? "N/A" : jsonObj.diskioread,
-                                            diskiowrite: (jsonObj.diskiowrite == null) ? "N/A" : jsonObj.diskiowrite
+                                            diskkbsread: (jsonObj.diskkbsread == null) ? "N/A" : ((jsonObj.hypervisor == "KVM") ? cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024) : ((jsonObj.hypervisor == "XenServer") ? cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024) + "/s" : "N/A")),
+                                            diskkbswrite: (jsonObj.diskkbswrite == null) ? "N/A" : ((jsonObj.hypervisor == "KVM") ? cloudStack.converters.convertBytes(jsonObj.diskkbswrite * 1024) : ((jsonObj.hypervisor == "XenServer") ? cloudStack.converters.convertBytes(jsonObj.diskkbswrite * 1024) + "/s" : "N/A")),
+                                            diskioread: (jsonObj.diskioread == null) ? "N/A" : ((jsonObj.hypervisor == "KVM") ? jsonObj.diskioread : "N/A"),
+                                            diskiowrite: (jsonObj.diskiowrite == null) ? "N/A" : ((jsonObj.hypervisor == "KVM") ? jsonObj.diskiowrite : "N/A")
                                         }
                                     });
                                 }
