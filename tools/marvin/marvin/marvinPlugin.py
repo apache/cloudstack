@@ -110,12 +110,16 @@ class MarvinPlugin(Plugin):
         return self.testrunner
 
     def wantClass(self, cls):
+        if cls.__name__ == 'cloudstackTestCase':
+            return False
         if issubclass(cls, cloudstackTestCase):
             return True
         return None
 
     def loadTestsFromTestCase(self, cls):
-        self._injectClients(cls)
+        if cls.__name__ != 'cloudstackTestCase':
+            self.testclient.identifier = cls.__name__
+            self._injectClients(cls)
 
     def setClient(self, client):
         if client is not None:
@@ -126,11 +130,14 @@ class MarvinPlugin(Plugin):
             self.config = config
 
     def beforeTest(self, test):
-        self.testclient.identifier = test.__str__().split()[0]
+        testname = test.__str__().split()[0]
+        self.testclient.identifier = '-'.join([self.testclient.identifier, testname])
 
     def _injectClients(self, test):
         testcaselogger = logging.getLogger("testclient.testcase.%s" %
                                            test.__name__)
+
+
         self.debug_stream. \
             setFormatter(logging.
                          Formatter("%(asctime)s - %(levelname)s - %(name)s" +
