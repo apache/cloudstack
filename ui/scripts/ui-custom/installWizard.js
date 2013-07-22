@@ -763,6 +763,16 @@
                             required: true
                         }
                     },
+                    provider: {
+                        label: 'label.provider',
+                        select: function(args) {
+                            args.response.success({
+                                data: [
+                                    { id: 'NFS', description: 'NFS' }
+                                ]
+                            });
+                        }
+                    },
                     path: {
                         label: 'label.path',
                         validation: {
