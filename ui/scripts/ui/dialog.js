@@ -37,18 +37,21 @@
          */
         createForm: function(args) {
             var $formContainer = $('<div>').addClass('form-container');
-            var $message = $('<span>').addClass('message').appendTo($formContainer).html(
+            var $form = $('<form>').appendTo($formContainer)
+                    .submit(function() {
+                        $(this).closest('.ui-dialog').find('button.ok').click();
+
+                        return false;
+                    });
+            var createLabel = _l(args.form.createLabel);
+
+            // Description text
+            $('<span>').addClass('message').prependTo($formContainer).html(
                 _l(args.form.desc)
             );
-            var $form = $('<form>').appendTo($formContainer)
-                .submit(function() {
-                    $(this).closest('.ui-dialog').find('button.ok').click();
 
-                    return false;
-                });
-
-            var createLabel = _l(args.form.createLabel);
-            var $submit = $('<input>')
+            // Submit button
+            $('<input>')
                 .attr({
                     type: 'submit'
                 })
@@ -58,7 +61,7 @@
             // Render fields and events
             var fields = $.map(args.form.fields, function(value, key) {
                 return key;
-            })
+            });
 
             var ret = function() {
                 $('.overlay').remove();
@@ -127,10 +130,10 @@
                 var field = args.form.fields[key];
 
                 var $formItem = $('<div>')
-                    .addClass('form-item')
-                    .attr({
-                        rel: key
-                    });
+                        .addClass('form-item')
+                        .attr({
+                            rel: key
+                        });
 
                 if (field.isHidden != null) {
                     if (typeof(field.isHidden) == 'boolean' && field.isHidden == true)
@@ -143,31 +146,31 @@
 
                 //Handling Escape KeyPress events
                 /*   $('.ui-dialog').keypress(function(event) {
-         if ( event.which == 27 ) {
-         event.stopPropagation();
-         }
-         });
+                 if ( event.which == 27 ) {
+                 event.stopPropagation();
+                 }
+                 });
 
-         $(document).ready(function(){
-         $('.ui-dialog').keydown(function(event) {
-         if(event.keyCode == 27)
-         {
-         alert("you pressed the Escape key");
-         event.preventdefault();
-         }
-         })
-         });
+                 $(document).ready(function(){
+                 $('.ui-dialog').keydown(function(event) {
+                 if(event.keyCode == 27)
+                 {
+                 alert("you pressed the Escape key");
+                 event.preventdefault();
+                 }
+                 })
+                 });
 
-         $(':ui-dialog').dialog({
-         closeOnEscape: false
-         }); */
+                 $(':ui-dialog').dialog({
+                 closeOnEscape: false
+                 }); */
                 // Label field
 
                 var $name = $('<div>').addClass('name')
-                    .appendTo($formItem)
-                    .append(
-                        $('<label>').html(_l(field.label) + ':')
-                );
+                        .appendTo($formItem)
+                        .append(
+                            $('<label>').html(_l(field.label) + ':')
+                        );
 
                 // red asterisk
                 var $astersikSpan = $('<span>').addClass('field-required').html('*');
@@ -186,7 +189,7 @@
 
                 // Input area
                 var $value = $('<div>').addClass('value')
-                    .appendTo($formItem);
+                        .appendTo($formItem);
                 var $input, $dependsOn, selectFn, selectArgs;
                 var dependsOn = field.dependsOn;
 
@@ -194,7 +197,9 @@
                 if (field.dependsOn) {
                     $formItem.attr('depends-on', dependsOn);
                     $dependsOn = $form.find('input, select').filter(function() {
-                        return $(this).attr('name') === dependsOn;
+                        return $.isArray(dependsOn) ?
+                            $.inArray($(this).attr('name'), dependsOn) > -1 :
+                            $(this).attr('name') === dependsOn;
                     });
 
                     if ($dependsOn.is('[type=checkbox]')) {
@@ -214,7 +219,7 @@
                                     }
                                 });
                             } else if (($target.is(':unchecked') && !isReverse) ||
-                                ($target.is(':checked') && isReverse)) {
+                                       ($target.is(':checked') && isReverse)) {
                                 $dependent.hide();
                             }
 
@@ -253,9 +258,9 @@
                                         description = this.description;
 
                                     var $option = $('<option>')
-                                        .appendTo($input)
-                                        .val(_s(id))
-                                        .html(_s(description));
+                                            .appendTo($input)
+                                            .val(_s(id))
+                                            .html(_s(description));
                                 });
 
                                 if (field.defaultValue) {
@@ -290,25 +295,42 @@
 
                     if (dependsOn) {
                         $dependsOn = $input.closest('form').find('input, select').filter(function() {
-                            return $(this).attr('name') === dependsOn;
+                            return $.isArray(dependsOn) ?
+                                $.inArray($(this).attr('name'), dependsOn) > -1 :
+                                $(this).attr('name') === dependsOn;
                         });
 
-                        $dependsOn.bind('change', function(event) {
-                            var $target = $(this);
+                        // Reload selects linked to in dependsOn
+                        $dependsOn.each(function() {
+                            var $targetDependsOn = $(this);
 
-                            if (!$dependsOn.is('select')) return true;
+                            $targetDependsOn.bind('change', function(event) {
+                                var formData = cloudStack.serializeForm($form);
+                                var dependsOnLoaded;
 
-                            var dependsOnArgs = {};
+                                // Make sure all data is loaded to pass to select fn
+                                dependsOnLoaded = $.inArray(
+                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').size() ? true : false; })
+                                ) > -1;
 
-                            $input.find('option').remove();
+                                if (!dependsOnLoaded) {
+                                    return false;
+                                }
 
-                            if (!$target.children().size()) return true;
+                                var $target = $(this);
 
-                            dependsOnArgs[dependsOn] = $target.val();
+                                if (!$target.is('select')) {
+                                    return true;
+                                }
 
-                            selectFn($.extend(selectArgs, dependsOnArgs));
+                                $input.find('option').remove();
 
-                            return true;
+                                // Re-execute select
+                                selectFn($.extend(selectArgs, formData, {
+                                    data: formData
+                                }));
+                                return true;
+                            });
                         });
 
                         if (!$dependsOn.is('select')) {
@@ -325,17 +347,17 @@
                         $.each(field.multiArray, function(itemKey, itemValue) {
                             $input.append(
                                 $('<div>').addClass('item')
-                                .append(
-                                    $.merge(
-                                        $('<div>').addClass('name').html(_l(itemValue.label)),
-                                        $('<div>').addClass('value').append(
-                                            $('<input>').attr({
-                                                name: itemKey,
-                                                type: 'checkbox'
-                                            }).appendTo($value)
+                                    .append(
+                                        $.merge(
+                                            $('<div>').addClass('name').html(_l(itemValue.label)),
+                                            $('<div>').addClass('value').append(
+                                                $('<input>').attr({
+                                                    name: itemKey,
+                                                    type: 'checkbox'
+                                                }).appendTo($value)
+                                            )
                                         )
                                     )
-                                )
                             );
                         });
 
@@ -479,8 +501,8 @@
 
 
                 /*     $input.blur(function() {
-         console.log('tooltip remove->' + $input.attr('name'));
-         });*/
+                 console.log('tooltip remove->' + $input.attr('name'));
+                 });*/
             });
 
 
