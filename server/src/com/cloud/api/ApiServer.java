@@ -385,16 +385,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     }
                 }
             }
-        }
-        catch (InvalidParameterValueException ex){
+        } catch (InvalidParameterValueException ex){
             s_logger.info(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage(), ex);
-        }
-        catch (IllegalArgumentException ex){
+        } catch (IllegalArgumentException ex){
             s_logger.info(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage(), ex);
-        }
-        catch (PermissionDeniedException ex){
+        } catch (PermissionDeniedException ex){
             ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
                 StringBuffer buf = new StringBuffer();
@@ -409,31 +406,21 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 s_logger.info("PermissionDenied: " + ex.getMessage());
             }
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, ex.getMessage(), ex);
-        }
-        catch (AccountLimitException ex){
+        } catch (AccountLimitException ex){
             s_logger.info(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.ACCOUNT_RESOURCE_LIMIT_ERROR, ex.getMessage(), ex);
-        }
-        catch (InsufficientCapacityException ex){
+        } catch (InsufficientCapacityException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
             if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
-
             }
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg, ex);
-        }
-        catch (ResourceAllocationException ex){
+        } catch (ResourceAllocationException ex){
             s_logger.info(ex.getMessage());
-            String errorMsg = ex.getMessage();
-            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
-                // hide internal details to non-admin user for security reason
-                errorMsg = BaseCmd.USER_ERROR_MESSAGE;
-            }
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, errorMsg, ex);
-        }
-        catch (ResourceUnavailableException ex){
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage(), ex);
+        } catch (ResourceUnavailableException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
             if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
@@ -441,16 +428,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, errorMsg, ex);
-        }
-        catch (AsyncCommandQueued ex){
+        } catch (AsyncCommandQueued ex){
             s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal server error, unable to execute request.");
-        }
-        catch (ServerApiException ex){
+        } catch (ServerApiException ex){
             s_logger.info(ex.getDescription());
             throw ex;
-        }
-        catch (Exception ex){
+        } catch (Exception ex){
             s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
             String errorMsg = ex.getMessage();
             if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
