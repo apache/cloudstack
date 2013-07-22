@@ -55,6 +55,7 @@ import com.cloud.agent.api.storage.Proxy;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.RegisterVolumePayload;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
@@ -215,7 +216,15 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         if (isTemplateUpdateable(templateId, store.getId())) {
             if (template != null && template.getUri() != null) {
                 initiateTemplateDownload(template, callback);
+            } else {
+                s_logger.info("Template url is null, cannot download");
+                DownloadAnswer ans = new DownloadAnswer("Template url is null", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
+                callback.complete(ans);
             }
+        } else {
+            s_logger.info("Template download is already in progress or already downloaded");
+            DownloadAnswer ans = new DownloadAnswer("Template download is already in progress or already downloaded", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
+            callback.complete(ans);
         }
     }
 
