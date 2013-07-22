@@ -337,26 +337,14 @@ public abstract class AgentAttache {
         checkAvailability(req.getCommands());
 
         long seq = req.getSequence();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Request seq: " + seq);
-        }
-
         if (listener != null) {
             registerListener(seq, listener);
         } else if (s_logger.isDebugEnabled()) {
             s_logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("waiting to send " + seq);
-        }
-
         synchronized(this) {
             try {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("entering synchronize block for sending " + seq);
-                }
-
                 if (isClosed()) {
                     throw new AgentUnavailableException("The link to the agent has been closed", _id);
                 }

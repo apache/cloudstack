@@ -538,9 +538,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
         Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("AgentManager sending request");
-        }
+
         agent.send(req, listener);
         return req.getSequence();
     }
