@@ -1341,6 +1341,7 @@
                         array1.push("&interval=" + args.data.interval);
                         array1.push("&scaleuppolicyids=" + args.scaleUpPolicyResponse.id);
                         array1.push("&scaledownpolicyids=" + args.scaleDownPolicyResponse.id);
+                        
                         $.ajax({
                             url: createURL('createAutoScaleVmGroup' + array1.join("")),
                             dataType: 'json',
@@ -1414,8 +1415,35 @@
                     }
                 };
 
-                //*** API calls start!!! ********
-                scaleUp(args);
+                // Get hypervisor;
+                // if VMware, show notification to user about additional configuration required
+                $.ajax({
+                    url: createURL('listTemplates'),
+                    data: {
+                        id: args.data.templateNames,
+                        templatefilter: 'all'
+                    },
+                    async: false,
+                    success: function(json) {
+                        var template = json.listtemplatesresponse.template;
+
+                        if (template && template[0].hypervisor === 'VMware') {
+                            cloudStack.dialog.confirm({
+                                message: 'For VMware-based VMs, please read the dynamic scaling section in the admin guide before scaling. Would you like to continue?,',
+                                action: function() {
+                                    //*** API calls start!!! ********
+                                    scaleUp(args);
+                                },
+                                cancelAction: function() {
+                                    $('.loading-overlay').remove();
+                                }
+                            });
+                        } else {
+                            //*** API calls start!!! ********
+                            scaleUp(args);
+                        }
+                    }
+                });
 
             },
             destroy: function(args) {
