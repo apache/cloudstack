@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -45,20 +46,6 @@ import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 
 import com.cloud.storage.dao.*;
 import org.apache.cloudstack.api.command.user.volume.*;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -2767,6 +2754,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
 
+        // Check if the url already exists
+        VolumeDataStoreVO volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
+        if(volumeStoreRef != null && volumeStoreRef.getExtractUrl() != null){
+            return volumeStoreRef.getExtractUrl();
+        }
+
         // Clean up code to remove all those previous uploadVO and uploadMonitor code. Previous code is trying to fake an async operation purely in
         // db table with uploadVO and async_job entry, but internal implementation is actually synchronous.
         StoragePool srcPool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
@@ -2811,7 +2804,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 s_logger.debug("Storage unavailable");
             }
         }
-        return secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat());
+        String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat());
+        volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
+        volumeStoreRef.setExtractUrl(extractUrl);
+        _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
+
+        return extractUrl;
     }
 
     private String getFormatForPool(StoragePool pool) {
