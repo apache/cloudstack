@@ -14128,30 +14128,33 @@
                             label: 'label.url'
                         }
                     },
-                    dataProvider: function(args) {
-                        /*
-            $.ajax({
-              url: createURL('listUcsManager'),
-              data: {
-                zoneid: args.context.physicalResources[0].id
-              },
-              success: function(json) {
-
-              }
-            });
-            */
-
-                        args.response.success({
-                            data: [{
-                                id: '11',
-                                name: 'UCS Manager 1',
-                                url: '10.196.72.1'
-                            }, {
-                                id: '11',
-                                name: 'UCS Manager 2',
-                                url: '10.196.72.2'
-                            }]
-                        });
+                    dataProvider: function(args) {                       
+			            $.ajax({
+			              url: createURL('listUcsManager'),
+			              data: {
+			                zoneid: args.context.physicalResources[0].id
+			              },
+			              success: function(json) {	
+			            	  /*	            	  
+			            	  json = //override json (for testing only)
+			            	  {
+			            	      "listucsmanagerreponse": {
+			            		      "count": 1,
+			            		      "ucsmanager": [
+			            		          {
+			            		              "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+			            		              "name": "ucsmanager",
+			            		              "url": "10.223.184.2",
+			            		              "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
+			            		          }
+			            		      ]
+			            	      }
+			            	  };
+			            	  */			            	  
+			            	  var items = json.listucsmanagerreponse.ucsmanager;
+			            	  args.response.success({ data: items });			            	  
+			              }
+			            });
                     },
                     actions: {
                         add: {
@@ -14362,7 +14365,17 @@
                                                         bladeid: args.context.blades[0].id
                                                     },
                                                     success: function(json) {
-                                                        //json.associateucsprofiletobladeresponse.ucsblade
+                                                        /*
+                                                    	{
+														    "associateucsprofiletobladeresponse": {
+														        "ucsblade": {
+														            "id": "8f63030a-033c-458e-890f-b2c8863d9542",
+														            "ucsmanagerid": "9d8566c0-f870-4e89-9864-7a3e0b332558",
+														            "bladedn": "sys/chassis-1/blade-2"
+														        }
+														    }
+														}   
+														*/                                                     	
                                                         args.response.success({
                                                             data: {
                                                                 associatedProfileDn: args.data.profiledn
