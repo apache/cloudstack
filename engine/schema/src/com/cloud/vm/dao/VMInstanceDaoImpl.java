@@ -398,6 +398,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	Long oldHostId = vmi.getHostId();
     	Long oldUpdated = vmi.getUpdated();
     	Date oldUpdateDate = vmi.getUpdateTime();
+    	if ( newState.equals(oldState) && newHostId != null && newHostId.equals(oldHostId) ) {
+    	    // state is same, don't need to update
+    	    return true;
+    	}
 
     	SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
     	sc.setParameters("id", vmi.getId());
