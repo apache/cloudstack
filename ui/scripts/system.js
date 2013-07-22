@@ -10126,7 +10126,9 @@
                                                                 jobId: jid
                                                             },
                                                             notification: {
-                                                                poll: pollAsyncJobResult
+                                                                poll: pollAsyncJobResult,
+                                                                interval: 4500,
+                                                                desc: "Dedicate Pod"    
                                                             },
 
                                                             data: item
@@ -10141,12 +10143,10 @@
                                                 });
 
                                             }
-                                        } else {
-                                            args.response.success({
-                                                data: item
-                                            });
                                         }
-
+                                        args.response.success({
+                                            data: item
+                                        });
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -11226,7 +11226,9 @@
                                                                 jobId: jid
                                                             },
                                                             notification: {
-                                                                poll: pollAsyncJobResult
+                                                                poll: pollAsyncJobResult,
+                                                                interval: 4500,
+                                                                desc: "Dedicate Cluster"
                                                             },
 
                                                             data: $.extend(item, {
@@ -11240,11 +11242,10 @@
                                                     }
                                                 });
                                             }
-                                        } else {
-                                            args.response.success({
-                                                data: item
-                                            });
                                         }
+                                        args.response.success({
+                                            data: item
+                                        });
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -12458,7 +12459,9 @@
                                                                 jobId: jid
                                                             },
                                                             notification: {
-                                                                poll: pollAsyncJobResult
+                                                                poll: pollAsyncJobResult,
+                                                                interval: 4500,
+                                                                desc: "Dedicate Host"
                                                             },
 
                                                             data: item
@@ -12472,12 +12475,10 @@
                                                     }
                                                 });
                                             }
-                                        } else {
-                                            args.response.success({
-                                                data: item
-                                            });
                                         }
-
+                                        args.response.success({
+                                            data: item
+                                        });
                                     },
 
                                     error: function(XMLHttpResponse) {
