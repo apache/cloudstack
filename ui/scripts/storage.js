@@ -1075,6 +1075,10 @@
                                         isFeatured: {
                                             label: "label.featured",
                                             isBoolean: true
+                                        },
+                                        isdynamicallyscalable: {
+                                            label: "Dynamically Scalable",
+                                            isBoolean: true
                                         }
                                     }
                                 },
@@ -1085,7 +1089,9 @@
                                         displayText: args.data.displayText,
                                         osTypeId: args.data.osTypeId,
                                         isPublic: (args.data.isPublic == "on"),
-                                        passwordEnabled: (args.data.isPasswordEnabled == "on")
+                                        passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                                        isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
+
                                     };
 
                                     if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
@@ -1660,6 +1666,10 @@
                                         isPasswordEnabled: {
                                             label: 'label.password.enabled',
                                             isBoolean: true
+                                        },
+                                        isdynamicallyscalable: {
+                                            label: "Dynamically Scalable",
+                                            isBoolean: true
                                         }
                                     }
                                 },
@@ -1670,7 +1680,8 @@
                                         displayText: args.data.displayText,
                                         osTypeId: args.data.osTypeId,
                                         isPublic: (args.data.isPublic == "on"),
-                                        passwordEnabled: (args.data.isPasswordEnabled == "on")
+                                        passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                                        isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
 
                                     $.ajax({
