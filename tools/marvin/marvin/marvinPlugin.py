@@ -150,6 +150,8 @@ class MarvinPlugin(Plugin):
         setattr(test, "testClient", self.testclient)
         setattr(test, "config", self.config)
         setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
+        if self.testclient.identifier is None:
+            self.testclient.identifier = self.identifier
         setattr(test, "clstestclient", self.testclient)
         if hasattr(test, "user"):
             # when the class-level attr applied. all test runs as 'user'
