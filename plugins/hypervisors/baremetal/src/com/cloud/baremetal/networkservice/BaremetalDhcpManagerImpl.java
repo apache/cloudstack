@@ -133,7 +133,7 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
     }
 
     @Override
-    public boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> profile,
+    public boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile profile,
             DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
         Long zoneId = profile.getVirtualMachine().getDataCenterId();
         Long podId = profile.getVirtualMachine().getPodIdToDeployIn();

@@ -1615,7 +1615,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks)
+    public void allocate(VirtualMachineProfile vm, List<Pair<NetworkVO, NicProfile>> networks)
             throws InsufficientCapacityException, ConcurrentOperationException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1690,7 +1690,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @DB
     @Override
     public Pair<NicProfile,Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic,
-            int deviceId, VirtualMachineProfile<? extends VMInstanceVO> vm) throws InsufficientVirtualNetworkCapcityException,
+            int deviceId, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException{
 
         NetworkVO ntwkVO = _networksDao.findById(network.getId());
@@ -1997,7 +1997,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     protected boolean prepareElement(NetworkElement element, NetworkVO network,
-            NicProfile profile, VirtualMachineProfile<? extends VMInstanceVO> vmProfile,
+            NicProfile profile, VirtualMachineProfile vmProfile,
             DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         element.prepare(network, profile, vmProfile, dest, context);
@@ -2044,7 +2044,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
+    public void prepare(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
 
@@ -2072,7 +2072,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination
+    public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination
             dest, ReservationContext context, long nicId, NetworkVO network)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
@@ -2136,7 +2136,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public void prepareNicForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest) {
+    public void prepareNicForMigration(VirtualMachineProfile vm, DeployDestination dest) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
         for (NicVO nic : nics) {
@@ -2163,7 +2163,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
-    private NicProfile findNicProfileById(VirtualMachineProfile<? extends VMInstanceVO> vm, long id){
+    private NicProfile findNicProfileById(VirtualMachineProfile vm, long id){
         for(NicProfile nic: vm.getNics()){
             if(nic.getId() == id){
                 return nic;
@@ -2174,8 +2174,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     public void commitNicForMigration(
-            VirtualMachineProfile<? extends VMInstanceVO> src,
-            VirtualMachineProfile<? extends VMInstanceVO> dst) {
+            VirtualMachineProfile src,
+            VirtualMachineProfile dst) {
         for(NicProfile nicSrc: src.getNics()){
             NetworkVO network = _networksDao.findById(nicSrc.getNetworkId());
             NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
@@ -2200,8 +2200,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     public void rollbackNicForMigration(
-            VirtualMachineProfile<? extends VMInstanceVO> src,
-            VirtualMachineProfile<? extends VMInstanceVO> dst) {
+            VirtualMachineProfile src,
+            VirtualMachineProfile dst) {
         for(NicProfile nicDst: dst.getNics()){
             NetworkVO network = _networksDao.findById(nicDst.getNetworkId());
             NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
@@ -2222,7 +2222,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced) throws
+    public void release(VirtualMachineProfile vmProfile, boolean forced) throws
             ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
@@ -2233,14 +2233,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic)
+    public void releaseNic(VirtualMachineProfile vmProfile, Nic nic)
             throws ConcurrentOperationException, ResourceUnavailableException {
         NicVO nicVO = _nicDao.findById(nic.getId());
         releaseNic(vmProfile, nicVO);
     }
 
     @DB
-    protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nicVO)
+    protected void releaseNic(VirtualMachineProfile vmProfile, NicVO nicVO)
             throws ConcurrentOperationException, ResourceUnavailableException {
         //lock the nic
         Transaction txn = Transaction.currentTxn();
@@ -2292,7 +2292,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+    public void cleanupNics(VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Cleaning network for vm: " + vm.getId());
         }
@@ -2305,12 +2305,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
 
     @Override
-    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
+    public void removeNic(VirtualMachineProfile vm, Nic nic) {
         removeNic(vm, _nicDao.findById(nic.getId()));
     }
 
 
-    protected void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, NicVO nic) {
+    protected void removeNic(VirtualMachineProfile vm, NicVO nic) {
         nic.setState(Nic.State.Deallocating);
         _nicDao.update(nic.getId(), nic);
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
@@ -2347,7 +2347,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+    public void expungeNics(VirtualMachineProfile vm) {
         List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vm.getId());
         for (NicVO nic : nics) {
             _nicDao.expunge(nic.getId());
@@ -3704,7 +3704,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @DB
     @Override
-    public boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
+    public boolean reallocate(VirtualMachineProfile vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
         VMInstanceVO vmInstance = _vmDao.findById(vm.getId());
         DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == NetworkType.Basic) {
@@ -4198,7 +4198,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network,
+    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network,
     							 String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         //This method allocates direct ip for the Shared network in Advance zones
@@ -4300,7 +4300,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
     
     @Override
-    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
+    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
                 

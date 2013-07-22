@@ -145,7 +145,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network,
-                        VirtualMachineProfile<? extends VirtualMachine> vm,
+                        VirtualMachineProfile vm,
                         DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
@@ -156,7 +156,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic,
-                           VirtualMachineProfile<? extends VirtualMachine> vm,
+                           VirtualMachineProfile vm,
                            String reservationId) {
         s_logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
         return super.release(nic, vm, reservationId);

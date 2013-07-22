@@ -539,7 +539,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
             NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
-            VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
             UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
@@ -656,7 +656,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
                 _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
-        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
         if (template != null && template.getEnablePassword()) {
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
@@ -1831,7 +1831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                  _networkModel.isSecurityGroupSupportedInNetwork(network),
                  _networkModel.getNetworkTag(template.getHypervisorType(), network));
 
-             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>((VMInstanceVO)vm);
+             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
 
              UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
              if (element == null) {
@@ -2888,10 +2888,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(
-            VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
-            ReservationContext context) {
-        UserVmVO vm = profile.getVirtualMachine();
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
+        UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
@@ -2959,9 +2957,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean finalizeDeployment(Commands cmds,
-            VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
+            VirtualMachineProfile profile, DeployDestination dest,
             ReservationContext context) {
-        UserVmVO userVm = profile.getVirtualMachine();
+        UserVmVO userVm = _vmDao.findById(profile.getId());
         List<NicVO> nics = _nicDao.listByVmId(userVm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
@@ -2987,14 +2985,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds,
-            VirtualMachineProfile<UserVmVO> profile) {
+            VirtualMachineProfile profile) {
         return true;
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile,
+    public boolean finalizeStart(VirtualMachineProfile profile,
             long hostId, Commands cmds, ReservationContext context) {
-        UserVmVO vm = profile.getVirtualMachine();
+        UserVmVO vm = _vmDao.findById(profile.getId());
 
         Answer[] answersToCmds = cmds.getAnswers();
         if (answersToCmds == null) {
@@ -3055,7 +3053,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
         if (ipChanged) {
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
-            UserVmVO userVm = profile.getVirtualMachine();
+            UserVmVO userVm = _vmDao.findById(profile.getId());
             // dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
             if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(
                     guestNetwork.getId(), Service.Dhcp,
@@ -3135,8 +3133,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<UserVmVO> profile,
-            StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
+        VirtualMachine vm = profile.getVirtualMachine();
         // release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
@@ -3156,7 +3154,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        VMInstanceVO vm = profile.getVirtualMachine();
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
@@ -4210,7 +4207,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         txn.commit();
 
         VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-        VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
+        VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(
                 vmoi);
 
         // OS 3: update the network
@@ -4288,7 +4285,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     profile));
 
             VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-            VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
+            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(
                     vmi);
             _networkMgr.allocate(vmProfile, networks);
 
@@ -4423,7 +4420,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
                 VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(),
                         vm.getId());
-                VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(
                         vmi);
                 _networkMgr.allocate(vmProfile, networks);
                 s_logger.debug("AssignVM: Advance virtual, adding networks no "
@@ -4604,7 +4601,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
         UserVmVO vm = _vmDao.findById(profile.getId());
         if (vm.getState() == State.Running)
             collectVmDiskStatistics(vm);

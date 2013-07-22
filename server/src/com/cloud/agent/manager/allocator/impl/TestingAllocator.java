@@ -42,19 +42,19 @@ public class TestingAllocator extends AdapterBase implements HostAllocator {
     Long _routingHost;
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, considerReservedCapacity);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
         List<Host> availableHosts = new ArrayList<Host>();
         Host host = null;

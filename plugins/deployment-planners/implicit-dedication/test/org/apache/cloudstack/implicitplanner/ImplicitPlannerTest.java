@@ -176,8 +176,7 @@ public class ImplicitPlannerTest {
     public void checkWhenDcInAvoidList() throws InsufficientServerCapacityException {
         DataCenterVO mockDc = mock(DataCenterVO.class);
         ExcludeList avoids = mock(ExcludeList.class);
-        @SuppressWarnings("unchecked")
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = mock(VirtualMachineProfileImpl.class);
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
         VMInstanceVO vm = mock(VMInstanceVO.class);
         DataCenterDeployment plan = mock(DataCenterDeployment.class);
 
@@ -193,8 +192,7 @@ public class ImplicitPlannerTest {
 
     @Test
     public void checkStrictModeWithCurrentAccountVmsPresent() throws InsufficientServerCapacityException {
-        @SuppressWarnings("unchecked")
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = mock(VirtualMachineProfileImpl.class);
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
         DataCenterDeployment plan = mock(DataCenterDeployment.class);
         ExcludeList avoids = new ExcludeList();
 
@@ -230,7 +228,7 @@ public class ImplicitPlannerTest {
     @Test
     public void checkStrictModeHostWithCurrentAccountVmsFull() throws InsufficientServerCapacityException {
         @SuppressWarnings("unchecked")
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = mock(VirtualMachineProfileImpl.class);
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
         DataCenterDeployment plan = mock(DataCenterDeployment.class);
         ExcludeList avoids = new ExcludeList();
 
@@ -268,7 +266,7 @@ public class ImplicitPlannerTest {
     @Test
     public void checkStrictModeNoHostsAvailable() throws InsufficientServerCapacityException {
         @SuppressWarnings("unchecked")
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = mock(VirtualMachineProfileImpl.class);
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
         DataCenterDeployment plan = mock(DataCenterDeployment.class);
         ExcludeList avoids = new ExcludeList();
 
@@ -289,7 +287,7 @@ public class ImplicitPlannerTest {
     @Test
     public void checkPreferredModePreferredHostAvailable() throws InsufficientServerCapacityException {
         @SuppressWarnings("unchecked")
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = mock(VirtualMachineProfileImpl.class);
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
         DataCenterDeployment plan = mock(DataCenterDeployment.class);
         ExcludeList avoids = new ExcludeList();
 
@@ -328,7 +326,7 @@ public class ImplicitPlannerTest {
     @Test
     public void checkPreferredModeNoHostsAvailable() throws InsufficientServerCapacityException {
         @SuppressWarnings("unchecked")
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = mock(VirtualMachineProfileImpl.class);
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
         DataCenterDeployment plan = mock(DataCenterDeployment.class);
         ExcludeList avoids = new ExcludeList();
 
@@ -347,7 +345,7 @@ public class ImplicitPlannerTest {
         assertTrue("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
     }
 
-    private void initializeForTest(VirtualMachineProfileImpl<VMInstanceVO> vmProfile, DataCenterDeployment plan) {
+    private void initializeForTest(VirtualMachineProfileImpl vmProfile, DataCenterDeployment plan) {
         DataCenterVO mockDc = mock(DataCenterVO.class);
         VMInstanceVO vm = mock(VMInstanceVO.class);
         UserVmVO userVm = mock(UserVmVO.class);

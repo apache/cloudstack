@@ -21,7 +21,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface AffinityGroupProcessor extends Adapter {
@@ -37,7 +36,7 @@ public interface AffinityGroupProcessor extends Adapter {
      * @param avoid
      *            avoid these data centers, pods, clusters, or hosts.
      */
-    void process(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid)
+    void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid)
             throws AffinityConflictException;
 
     /**
@@ -57,6 +56,6 @@ public interface AffinityGroupProcessor extends Adapter {
      * @param plannedDestination
      *            deployment destination where VM is planned to be deployed
      */
-    boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination plannedDestination)
+    boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination)
             throws AffinityConflictException;
 }

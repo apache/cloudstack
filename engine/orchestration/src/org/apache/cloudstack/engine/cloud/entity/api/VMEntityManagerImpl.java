@@ -129,7 +129,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
 	}
 
-    protected boolean areAffinityGroupsAssociated(VirtualMachineProfile<? extends VirtualMachine> vmProfile) {
+    protected boolean areAffinityGroupsAssociated(VirtualMachineProfile vmProfile) {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
@@ -147,7 +147,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         //load vm instance and offerings and call virtualMachineManagerImpl
         //FIXME: profile should work on VirtualMachineEntity
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm);
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null);
         if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId());
@@ -256,8 +256,6 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
          VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
          return _itMgr.destroy(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
-
-
     }
 
 }

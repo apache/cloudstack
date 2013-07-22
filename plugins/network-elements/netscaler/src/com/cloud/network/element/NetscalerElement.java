@@ -200,13 +200,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
     InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
     @Override
-    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
+    public boolean release(Network config, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) {
         return true;
     }
 

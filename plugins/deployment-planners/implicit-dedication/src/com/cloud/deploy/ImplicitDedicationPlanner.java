@@ -67,7 +67,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
     }
 
     @Override
-    public List<Long> orderClusters(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public List<Long> orderClusters(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         List<Long> clusterList = super.orderClusters(vmProfile, plan, avoid);
         Set<Long> hostsToAvoid = avoid.getHostsToAvoid();
@@ -251,7 +251,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
     }
 
     @Override
-    public PlannerResourceUsage getResourceUsage(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public PlannerResourceUsage getResourceUsage(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         // Check if strict or preferred mode should be used.
         boolean preferred = isServiceOfferingUsingPlannerInPreferredMode(vmProfile.getServiceOfferingId());

@@ -25,10 +25,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -36,7 +37,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -49,7 +49,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     DiskOfferingDao _diskOfferingDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
@@ -91,7 +91,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             if (suitablePools.size() == returnUpTo) {
                 break;
             }
-            StoragePool pol = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+            StoragePool pol = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, pol, dskCh, plan)) {
                 suitablePools.add(pol);
             } else {

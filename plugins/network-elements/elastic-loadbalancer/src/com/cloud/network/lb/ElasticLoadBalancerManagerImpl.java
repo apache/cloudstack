@@ -127,7 +127,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
@@ -783,8 +782,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
-        DomainRouterVO elbVm = profile.getVirtualMachine();
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         
         List<NicProfile> elbNics = profile.getNics();
         Long guestNtwkId = null;
@@ -864,8 +862,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
-        DomainRouterVO elbVm = profile.getVirtualMachine();
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+        DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
 
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -885,7 +883,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to ssh to the ELB VM: " + answer.getDetails());
@@ -896,8 +894,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
-        DomainRouterVO elbVm = profile.getVirtualMachine();
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+        DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
         DataCenterVO dcVo = _dcDao.findById(elbVm.getDataCenterId());
 
         NicProfile controlNic = null;
@@ -950,10 +948,9 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         if (answer != null) {
-            VMInstanceVO vm = profile.getVirtualMachine();
-            DomainRouterVO elbVm = _routerDao.findById(vm.getId());
+            DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
             processStopOrRebootAnswer(elbVm, answer);
         }
     }
@@ -969,7 +966,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
 
 }

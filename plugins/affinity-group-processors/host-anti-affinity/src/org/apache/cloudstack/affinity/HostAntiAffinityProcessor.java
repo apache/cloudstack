@@ -66,7 +66,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     protected VMReservationDao _reservationDao;
 
     @Override
-    public void process(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan,
             ExcludeList avoid)
             throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -118,7 +118,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     }
 
     @Override
-    public boolean check(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination plannedDestination)
+    public boolean check(VirtualMachineProfile vmProfile, DeployDestination plannedDestination)
             throws AffinityConflictException {
 
         if (plannedDestination.getHost() == null) {

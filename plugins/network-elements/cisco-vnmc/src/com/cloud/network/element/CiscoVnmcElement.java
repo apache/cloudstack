@@ -422,7 +422,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     @Override
     public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
@@ -441,7 +441,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     @Override
     public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         return true;

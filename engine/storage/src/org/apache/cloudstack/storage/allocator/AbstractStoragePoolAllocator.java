@@ -27,10 +27,11 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
@@ -49,7 +50,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
@@ -99,12 +99,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     protected abstract List<StoragePool> select(DiskProfile dskCh,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             int returnUpTo);
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             int returnUpTo) {
         List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
         return reOrder(pools, vmProfile, plan);
@@ -144,7 +144,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     protected List<StoragePool> reOrder(List<StoragePool> pools,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan) {
+            VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         if (pools == null) {
             return null;
         }

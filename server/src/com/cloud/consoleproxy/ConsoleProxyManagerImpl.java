@@ -1310,9 +1310,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
-        ConsoleProxyVO vm = profile.getVirtualMachine();
+        ConsoleProxyVO vm = _consoleProxyDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
@@ -1388,11 +1388,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         finalizeCommandsOnStart(cmds, profile);
 
-        ConsoleProxyVO proxy = profile.getVirtualMachine();
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(profile.getId());
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -1411,7 +1411,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
         NicProfile controlNic = null;
@@ -1438,7 +1438,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
             if (answer != null) {
@@ -1454,7 +1454,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
             IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
             if (ipaddr != null && ipaddr.getSystem()) {
-                ConsoleProxyVO consoleVm = profile.getVirtualMachine();
+                ConsoleProxyVO consoleVm = _consoleProxyDao.findById(profile.getId());
                 // override CPVM guest IP with EIP, so that console url's will be prepared with EIP
                 consoleVm.setPublicIpAddress(ipaddr.getAddress().addr());
                 _consoleProxyDao.update(consoleVm.getId(), consoleVm);
@@ -1483,7 +1483,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         //release elastic IP here if assigned
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
@@ -1685,7 +1685,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
 
 }

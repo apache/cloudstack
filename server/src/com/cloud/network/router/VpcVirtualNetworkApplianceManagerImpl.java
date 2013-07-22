@@ -27,7 +27,6 @@ import java.util.TreeSet;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.configuration.ZoneConfig;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -38,14 +37,12 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
-import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -599,10 +596,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     
     
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest,
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest,
             ReservationContext context) {
+        DomainRouterVO vr = _routerDao.findById(profile.getId());
         
-        if (profile.getVirtualMachine().getVpcId() != null) {
+        if (vr.getVpcId() != null) {
             String defaultDns1 = null;
             String defaultDns2 = null;
             //remove public and guest nics as we will plug them later
@@ -623,7 +621,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             
             //add vpc cidr/dns/networkdomain to the boot load args
             StringBuilder buf = profile.getBootArgsBuilder();
-            Vpc vpc = _vpcMgr.getVpc(profile.getVirtualMachine().getVpcId());
+            Vpc vpc = _vpcMgr.getVpc(vr.getVpcId());
             buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
             
             buf.append(" dns1=").append(defaultDns1);
@@ -695,8 +693,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
-        DomainRouterVO router = profile.getVirtualMachine();
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+        DomainRouterVO router = _routerDao.findById(profile.getId());
 
         boolean isVpc = (router.getVpcId() != null);
         if (!isVpc) {
@@ -1319,10 +1317,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     @Override
-    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         super.finalizeStop(profile, answer);
         //Mark VPN connections as Disconnected
-        DomainRouterVO router = profile.getVirtualMachine();
+        DomainRouterVO router = _routerDao.findById(profile.getId());
         Long vpcId = router.getVpcId();
         if (vpcId != null) {
             _s2sVpnMgr.markDisconnectVpnConnByVpc(vpcId);

@@ -1060,7 +1060,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Check if the vm is using any disks on local storage.
-        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
         List<VolumeVO> volumes = _volumeDao.findCreatedByInstance(vmProfile.getId());
         boolean usesLocal = false;
         for (VolumeVO volume : volumes) {
@@ -1156,7 +1156,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 suitableHosts, requiresStorageMotion);
     }
 
-    private Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile<VMInstanceVO> vmProfile,
+    private Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile,
             Host host) {
         List<VolumeVO> volumes = _volumeDao.findCreatedByInstance(vmProfile.getId());
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
@@ -1284,7 +1284,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             // Volume stays in the same cluster after migration.
             DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(),
                     srcVolumePool.getClusterId(), null, null, null);
-            VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
             DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());

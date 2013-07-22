@@ -270,7 +270,7 @@ public class VirtualMachineManagerImplTest {
     @Test (expected=CloudRuntimeException.class)
     public void testScaleVM3()  throws Exception {
 
-        /*VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        /*VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
         Long srcHostId = vm.getHostId();
         Long oldSvcOfferingId = vm.getServiceOfferingId();

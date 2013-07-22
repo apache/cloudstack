@@ -403,7 +403,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, Pod pod, Long clusterId, Long hostId, VMInstanceVO vm,
                                        final Set<StoragePool> avoid) {
 
-        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
 
             ExcludeList avoidList = new ExcludeList();

@@ -69,7 +69,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject ResourceManager _resourceMgr;
     
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm,DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vm,DeploymentPlan plan, Type type,
 			ExcludeList avoid, int returnUpTo) {
     	
     	List<Host> hosts = super.allocateTo(vm, plan, type, avoid, returnUpTo);

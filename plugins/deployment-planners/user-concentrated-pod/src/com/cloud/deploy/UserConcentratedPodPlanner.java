@@ -41,7 +41,7 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
      * @return List<Long> ordered list of Cluster Ids
      */
     @Override
-    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan){
         List<Long> clusterIdsByCapacity = clusterCapacityInfo.first();
         if(vmProfile.getOwner() == null || !isZone){
             return clusterIdsByCapacity;
@@ -118,7 +118,7 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
      * @return List<Long> ordered list of Pod Ids
      */
     @Override
-    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan){
         List<Long> podIdsByCapacity = podCapacityInfo.first();
         if(vmProfile.getOwner() == null){
             return podIdsByCapacity;

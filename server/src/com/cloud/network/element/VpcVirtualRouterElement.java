@@ -185,7 +185,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, 
             DeployDestination dest, ReservationContext context) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 

@@ -179,7 +179,7 @@ public interface VirtualMachineManager extends Manager {
      * @param hvGuru
      * @return
      */
-    VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile);
+    VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
 
     VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost)

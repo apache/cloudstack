@@ -21,7 +21,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class AffinityProcessorBase extends AdapterBase implements AffinityGroupProcessor {
@@ -29,7 +28,7 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
     protected String _type;
 
     @Override
-    public void process(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid)
+    public void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid)
             throws AffinityConflictException {
 
     }
@@ -44,7 +43,7 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
     }
 
     @Override
-    public boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination plannedDestination)
+    public boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination)
             throws AffinityConflictException {
         return true;
     }
