@@ -49,6 +49,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -64,6 +66,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeManager;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -330,6 +333,30 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     }
 
+    protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
+        VolumeInfo volume = (VolumeInfo)srcData;
+        StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
+        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool);
+        EndPoint ep = selector.select(volume.getDataStore());
+        MigrateVolumeAnswer answer = (MigrateVolumeAnswer) ep.sendMessage(command);
+
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException("Failed to migrate volume " + volume + " to storage pool " + destPool);
+        } else {
+            // Update the volume details after migration.
+            VolumeVO volumeVo = this.volDao.findById(volume.getId());
+            Long oldPoolId = volume.getPoolId();
+            volumeVo.setPath(answer.getVolumePath());
+            volumeVo.setFolder(destPool.getPath());
+            volumeVo.setPodId(destPool.getPodId());
+            volumeVo.setPoolId(destPool.getId());
+            volumeVo.setLastPoolId(oldPoolId);
+            this.volDao.update(volume.getId(), volumeVo);
+        }
+
+        return answer;
+    }
+
     @Override
     public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
@@ -347,7 +374,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             } else if (destData.getType() == DataObjectType.VOLUME && srcData.getType() == DataObjectType.VOLUME
                     && srcData.getDataStore().getRole() == DataStoreRole.Primary
                     && destData.getDataStore().getRole() == DataStoreRole.Primary) {
-                answer = copyVolumeBetweenPools(srcData, destData);
+                if (srcData.getId() == destData.getId()) {
+                    // The volume has to be migrated across storage pools.
+                    answer = migrateVolumeToPool(srcData, destData);
+                } else {
+                    answer = copyVolumeBetweenPools(srcData, destData);
+                }
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
                 answer = copySnapshot(srcData, destData);
             } else {
