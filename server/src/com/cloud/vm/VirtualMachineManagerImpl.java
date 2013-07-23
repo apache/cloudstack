@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -81,7 +82,6 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -94,11 +94,9 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.dao.DomainDao;
@@ -145,7 +143,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -164,7 +161,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -198,8 +194,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
 
     @Inject
-    protected StorageManager _storageMgr;
-    @Inject
     DataStoreManager dataStoreMgr;
     @Inject
     protected NetworkManager _networkMgr;
@@ -216,13 +210,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject
-    protected UserDao _userDao;
-    @Inject
     protected AccountDao _accountDao;
     @Inject
     protected DomainDao _domainDao;
-    @Inject
-    protected ClusterManager _clusterMgr;
     @Inject
     protected ItWorkDao _workDao;
     @Inject
@@ -278,19 +268,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected IPAddressDao _publicIpAddressDao;
     @Inject
-    protected VlanDao _vlanDao;
-    @Inject
     protected NicIpAliasDao _nicIpAliasDao;
     @Inject
     protected EntityManager _entityMgr;
-
-    protected List<DeploymentPlanner> _planners;
-    public List<DeploymentPlanner> getPlanners() {
-        return _planners;
-    }
-    public void setPlanners(List<DeploymentPlanner> _planners) {
-        this._planners = _planners;
-    }
 
     protected List<HostAllocator> _hostAllocators;
     public List<HostAllocator> getHostAllocators() {
@@ -574,8 +554,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 10);
 
-        ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
-        VirtualMachineProfileImpl.setComponents(_offeringDao, _templateDao, _accountDao);
+        ReservationContextImpl.init(_entityMgr);
+        VirtualMachineProfileImpl.init(_entityMgr);
 
         _cancelWait = NumbersUtil.parseLong(params.get(Config.VmOpCancelInterval.key()), 3600);
         _cleanupWait = NumbersUtil.parseLong(params.get(Config.VmOpCleanupWait.key()), 3600);
@@ -586,7 +566,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _forceStop = Boolean.parseBoolean(params.get(Config.VmDestroyForcestop.key()));
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
-        _nodeId = _clusterMgr.getManagementNodeId();
+        _nodeId = ManagementServerNode.getManagementServerId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
 
@@ -2854,17 +2834,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceUnavailableException, InsufficientCapacityException {
 
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
-        VMInstanceVO vmVO;
-        if (vm.getType() == VirtualMachine.Type.User) {
-            vmVO = _userVmDao.findById(vm.getId());
-        } else {
-            vmVO = _vmDao.findById(vm.getId());
-        }
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null,
-                null, null, null);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null, null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());

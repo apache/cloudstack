@@ -189,7 +189,6 @@ public class VirtualMachineManagerImplTest {
             _vmMgr._volsDao = _volsDao;
             _vmMgr.volumeMgr = _storageMgr;
             _vmMgr._accountDao = _accountDao;
-            _vmMgr._userDao = _userDao;
             _vmMgr._accountMgr = _accountMgr;
             _vmMgr._configMgr = _configMgr;
             _vmMgr._capacityMgr = _capacityMgr;
