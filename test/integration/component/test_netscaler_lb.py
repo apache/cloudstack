@@ -2756,6 +2756,8 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("Rebooting VM instance: %s" % self.vm_2.name)
         self.vm_2.reboot(self.apiclient)
         self.debug("Rebooting VM: %s" % self.vm_2.name)
+        self.debug("Waiting for Netscaler to get the service up")
+        time.sleep( 120 )
 
         try:
             self.debug(
