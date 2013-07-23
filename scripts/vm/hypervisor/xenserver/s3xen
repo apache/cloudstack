@@ -42,6 +42,8 @@ import util
 NULL = 'null'
 
 # Value conversion utility functions ...
+
+
 def to_none(value):
 
     if value is None:
@@ -50,13 +52,14 @@ def to_none(value):
         return None
     return value
 
+
 def to_bool(value):
 
     if to_none(value) is None:
         return False
     if isinstance(value, basestring) and value.strip().lower() == 'true':
         return True
-    if isinstance(value, int) and value == True:
+    if isinstance(value, int) and value:
         return True
     return False
 
@@ -67,11 +70,13 @@ def to_integer(value, default):
         return default
     return int(value)
 
+
 def optional_str_value(value, default):
 
     if is_not_blank(value):
         return value
     return default
+
 
 def is_not_blank(value):
 
@@ -85,13 +90,14 @@ def is_not_blank(value):
 def get_optional_key(map, key, default=''):
 
     if key in map:
-      return map[key]
+        return map[key]
     return default
 
 
 def log(message):
 
     util.SMlog('#### VMOPS %s ####' % message)
+
 
 def echo(fn):
     def wrapped(*v, **k):
@@ -115,7 +121,8 @@ def retry(max_attempts, fn):
 
     attempts = 1
     while attempts <= max_attempts:
-        log("Attempting execution " + str(attempts) + "/" + str(max_attempts) + " of " + fn.__name__)
+        log("Attempting execution " + str(attempts) + "/" + str(
+            max_attempts) + " of " + fn.__name__)
         try:
             return fn()
         except:
@@ -131,16 +138,16 @@ def compute_md5(filename, buffer_size=8192):
     file = open(filename, 'rb')
     try:
 
-      data = file.read(buffer_size)
-      while data != "":
-          hasher.update(data)
-          data = file.read(buffer_size)
+        data = file.read(buffer_size)
+        while data != "":
+            hasher.update(data)
+            data = file.read(buffer_size)
 
-      return base64.encodestring(hasher.digest())[:-1]
+        return base64.encodestring(hasher.digest())[:-1]
 
     finally:
 
-      file.close()
+        file.close()
 
 
 class S3Client(object):
@@ -193,7 +200,8 @@ class S3Client(object):
         headers['Date'] = request_date
 
         def perform_request():
-            print "method=", method, ", uri=", uri, ", headers=", headers, " endpoint=", self.end_point
+            print "method=", method, ", uri=", uri, ", headers=", headers,
+            " endpoint=", self.end_point
 
             connection = None
             if self.https_flag:
@@ -205,21 +213,24 @@ class S3Client(object):
                 connection.timeout = self.socket_timeout
                 connection.putrequest(method, uri)
 
-                for k,v in headers.items():
-                    connection.putheader(k,v)
+                for k, v in headers.items():
+                    connection.putheader(k, v)
                 connection.endheaders()
 
                 fn_send_body(connection)
 
                 response = connection.getresponse()
-                log("Sent " + method + " request to " + self.end_point + "/" + uri + " with headers " + str(headers) + ".  Received response status " + str(response.status) + ": " + response.reason)
+                log("Sent " + method + " request to " + self.end_point + "/" +
+                    uri + " with headers " + str(headers) +
+                    ".  Received response status " + str(response.status) +
+                    ": " + response.reason)
+
                 return fn_read(response)
-            
+
             finally:
                 connection.close()
 
         return retry(self.max_error_retry, perform_request)
-
 
     '''
     See http://bit.ly/MMC5de for more information regarding the creation of
@@ -280,7 +291,7 @@ class S3Client(object):
                     file.write(block)
             except:
 
-              file.close()
+                file.close()
 
         return self.do_operation('GET', bucket, key, fn_read=read)
 
@@ -337,10 +348,10 @@ def s3(session, args):
         return 'true'
 
     except:
-        log("Operation " + operation + " on file " + filename + " from/in bucket " + bucket + " key " + key)
+        log("Operation " + operation + " on file " + filename +
+            " from/in bucket " + bucket + " key " + key)
         log(traceback.format_exc())
         return 'false'
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"s3": s3})
-
