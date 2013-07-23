@@ -349,7 +349,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId,
             Long destPoolPodId, Long destPoolClusterId,
             HypervisorType dataDiskHyperType)
-            throws ConcurrentOperationException {
+                    throws ConcurrentOperationException {
 
         // Find a destination storage pool with the specified criteria
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume
@@ -411,7 +411,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     private boolean validateVolume(Account caller, long ownerId, Long zoneId,
             String volumeName, String url, String format)
-            throws ResourceAllocationException {
+                    throws ResourceAllocationException {
 
         // permission check
         _accountMgr.checkAccess(caller, null, true,
@@ -480,17 +480,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         && !url.toLowerCase().endsWith("qcow2.zip")
                         && !url.toLowerCase().endsWith("qcow2.bz2") && !url
                         .toLowerCase().endsWith("qcow2.gz")))
-                || (format.equalsIgnoreCase("ova") && (!url.toLowerCase()
-                        .endsWith(".ova")
-                        && !url.toLowerCase().endsWith("ova.zip")
-                        && !url.toLowerCase().endsWith("ova.bz2") && !url
-                        .toLowerCase().endsWith("ova.gz")))
-                || (format.equalsIgnoreCase("raw") && (!url.toLowerCase()
-                        .endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
+                        || (format.equalsIgnoreCase("ova") && (!url.toLowerCase()
+                                .endsWith(".ova")
+                                && !url.toLowerCase().endsWith("ova.zip")
+                                && !url.toLowerCase().endsWith("ova.bz2") && !url
+                                .toLowerCase().endsWith("ova.gz")))
+                                || (format.equalsIgnoreCase("raw") && (!url.toLowerCase()
+                                        .endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
             throw new InvalidParameterValueException(
                     "Please specify a valid URL. URL:" + url
-                            + " is an invalid for the format "
-                            + format.toLowerCase());
+                    + " is an invalid for the format "
+                    + format.toLowerCase());
         }
         UriUtils.validateUrl(url);
 
@@ -908,26 +908,26 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             if (isCustomizedIops != null) {
                 if (isCustomizedIops) {
-                	minIops = cmd.getMinIops();
-                	maxIops = cmd.getMaxIops();
+                    minIops = cmd.getMinIops();
+                    maxIops = cmd.getMaxIops();
 
-                	if (minIops == null && maxIops == null) {
-                	    minIops = 0L;
-                	    maxIops = 0L;
-                	}
-                	else {
+                    if (minIops == null && maxIops == null) {
+                        minIops = 0L;
+                        maxIops = 0L;
+                    }
+                    else {
                         if (minIops == null || minIops <= 0) {
                             throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
                         }
 
-                    	if (maxIops == null) {
-            	        	maxIops = 0L;
-            	        }
+                        if (maxIops == null) {
+                            maxIops = 0L;
+                        }
 
-                    	if (minIops > maxIops) {
-                    		throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
-                    	}
-                	}
+                        if (minIops > maxIops) {
+                            throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
+                        }
+                    }
                 }
                 else {
                     minIops = diskOffering.getMinIops();
@@ -936,10 +936,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
 
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
-                                                 // for validation
+                // for validation
                 throw new InvalidParameterValueException(
                         "Invalid size for custom volume creation: " + size
-                                + " ,max volume size is:" + _maxVolumeSizeInGb);
+                        + " ,max volume size is:" + _maxVolumeSizeInGb);
             }
         } else { // create volume from snapshot
             Long snapshotId = cmd.getSnapshotId();
@@ -960,7 +960,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
             zoneId = snapshotCheck.getDataCenterId();
             size = snapshotCheck.getSize(); // ; disk offering is used for tags
-                                            // purposes
+            // purposes
 
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
@@ -1314,7 +1314,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         _accountMgr.checkAccess(caller, null, true, volume);
 
-           if (volume.getInstanceId() != null) {
+        if (volume.getInstanceId() != null) {
             throw new InvalidParameterValueException(
                     "Please specify a volume that is not attached to any VM.");
         }
@@ -1358,9 +1358,20 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     _usageEventDao.persist(usageEvent);
                 }
             }
-            AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(volume.getId()));
-            future.get();
-
+            // expunge volume from primary if volume is on primary
+            VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
+            if (volOnPrimary != null) {
+                s_logger.info("Expunging volume " + volume.getId() + " from primary data store");
+                AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
+                future.get();
+            }
+            // expunge volume from secondary if volume is on image store
+            VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
+            if (volOnSecondary != null) {
+                s_logger.info("Expunging volume " + volume.getId() + " from secondary data store");
+                AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
+                future2.get();
+            }
         } catch (Exception e) {
             s_logger.warn("Failed to expunge volume:", e);
             return false;
@@ -1647,7 +1658,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
                 if (volumeToAttachStoragePool.isManaged() &&
-                    volumeToAttach.getPath() == null) {
+                        volumeToAttach.getPath() == null) {
                     volumeToAttach.setPath(answer.getDisk().getVdiUuid());
 
                     _volsDao.update(volumeToAttach.getId(), volumeToAttach);
@@ -1659,8 +1670,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             // insert record for disk I/O statistics
             VmDiskStatisticsVO diskstats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volumeToAttach.getId());
             if (diskstats == null) {
-               diskstats = new VmDiskStatisticsVO(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volumeToAttach.getId());
-               _vmDiskStatsDao.persist(diskstats);
+                diskstats = new VmDiskStatisticsVO(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volumeToAttach.getId());
+                _vmDiskStatsDao.persist(diskstats);
             }
 
             return _volsDao.findById(volumeToAttach.getId());
@@ -2033,7 +2044,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @DB
     protected VolumeVO switchVolume(VolumeVO existingVolume,
             VirtualMachineProfile<? extends VirtualMachine> vm)
-            throws StorageUnavailableException {
+                    throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
 
         Long templateIdToUse = null;
@@ -2340,14 +2351,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         MIGRATE
     }
     private static class VolumeTask {
-         final VolumeTaskType type;
-         final StoragePoolVO pool;
-         final VolumeVO volume;
-         VolumeTask(VolumeTaskType type, VolumeVO volume, StoragePoolVO pool) {
-             this.type = type;
-             this.pool = pool;
-             this.volume = volume;
-         }
+        final VolumeTaskType type;
+        final StoragePoolVO pool;
+        final VolumeVO volume;
+        VolumeTask(VolumeTaskType type, VolumeVO volume, StoragePoolVO pool) {
+            this.type = type;
+            this.pool = pool;
+            this.volume = volume;
+        }
     }
 
     private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols) throws StorageUnavailableException {
@@ -2448,7 +2459,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         DataStore destPool = null;
         if (recreate
                 && (dest.getStorageForDisks() == null || dest
-                        .getStorageForDisks().get(vol) == null)) {
+                .getStorageForDisks().get(vol) == null)) {
             destPool = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
             s_logger.debug("existing pool: " + destPool.getId());
         } else {
@@ -2605,8 +2616,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 .getValue(Config.CustomDiskOfferingMinSize.toString());
         _customDiskOfferingMinSize = NumbersUtil.parseInt(
                 _customDiskOfferingMinSizeStr, Integer
-                        .parseInt(Config.CustomDiskOfferingMinSize
-                                .getDefaultValue()));
+                .parseInt(Config.CustomDiskOfferingMinSize
+                        .getDefaultValue()));
 
         String maxVolumeSizeInGbString = _configDao
                 .getValue("storage.max.volume.size");
