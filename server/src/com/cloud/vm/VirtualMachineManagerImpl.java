@@ -2298,7 +2298,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (vm != null) {
                 map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vm, entry.getValue().second(), entry.getValue().first()));
                 is_alien_vm = false;
-                break;
             }
             // alien VMs
             if (is_alien_vm){
