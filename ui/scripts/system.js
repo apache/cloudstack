@@ -7420,34 +7420,29 @@
                                             listAll: true
                                         },
                                         success: function(json) {
-                                            var items = json.listsystemvmsresponse.systemvm;
-                                            if (items != null) {
+                                            var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            if (systemvmObjs != null) {
                                                 $.ajax({
-                                                    url: createURL("listHosts&listAll=true"),
-                                                    async: false,
+                                                    url: createURL("listHosts&listAll=true"),                                                    
                                                     success: function(json) {
-
-                                                        var hostObj = json.listhostsresponse.host;
-
-                                                        $(hostObj).each(function(index) {
-
-                                                            $.extend(items[index], {
-                                                                agentstate: hostObj[index].state
-                                                            });
-
-                                                        });
+                                                        var hostObjs = json.listhostsresponse.host;
+                                                        for (var i = 0; i < systemvmObjs.length; i++) {
+                                                        	for (var k = 0; k < hostObjs.length; k++) {
+                                                        		if (hostObjs[k].name == systemvmObjs[i].name) {
+                                                        			systemvmObjs[i].agentstate = hostObjs[k].state;
+                                                        			break;
+                                                        		}
+                                                        	}
+                                                        }    
                                                         args.response.success({
-                                                            data: items
+                                                            data: systemvmObjs
                                                         });
                                                     },
                                                     error: function(json) {
                                                         args.response.error(parseXMLHttpResponse(json));
-
                                                     }
                                                 });
                                             }
-
-                                            // args.response.success({ data: json.listsystemvmsresponse.systemvm });
                                         },
                                         error: function(json) {
                                             args.response.error(parseXMLHttpResponse(json));
