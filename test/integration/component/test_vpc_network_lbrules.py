@@ -42,6 +42,7 @@ from marvin.integration.lib.common import (get_domain,
                                         get_template,
                                         cleanup_resources,
                                         list_routers)
+import socket
 
 class Services:
     """Test VPC network services Load Balancing Rules Test data
@@ -179,6 +180,9 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        # We want to fail quicker if it's failure
+        socket.setdefaulttimeout(60)
+
         cls.api_client = super(
                             TestVPCNetworkLBRules,
                             cls
@@ -294,6 +298,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     def start_VPC_VRouter(self, router):
         # Start the VPC Router
+        self.debug("Starting router ID: %s" % router.id)
         cmd = startRouter.startRouterCmd()
         cmd.id = router.id
         self.apiclient.startRouter(cmd)
@@ -665,7 +670,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.debug('lb_rule_http=%s' % lb_rule_http.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
-        lb_rule_nat.delete()
+        lb_rule_nat.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         return
 
@@ -696,7 +701,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.debug('lb_rule_http=%s' % lb_rule_http.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
-        lb_rule_nat.delete()
+        lb_rule_nat.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         return    
 
@@ -727,8 +732,8 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.debug('lb_rule_http=%s' % lb_rule_http.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
-        lb_rule_nat.delete()
-        lb_rule_http.delete()
+        lb_rule_nat.delete(self.apiclient)
+        lb_rule_http.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
@@ -760,8 +765,8 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.debug('lb_rule_http=%s' % lb_rule_http.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
-        lb_rule_nat.delete()
-        lb_rule_http.delete()
+        lb_rule_nat.delete(self.apiclient)
+        lb_rule_http.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
