@@ -568,7 +568,7 @@
                                     args.response.success({
                                         data: {
                                             name: 'CiscoVnmc',
-                                            state: 'Disabled'
+                                            state: 'Absent'
                                         },
                                         actionFilter: vnmcActionFilter
                                     });

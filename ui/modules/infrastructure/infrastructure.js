@@ -55,7 +55,7 @@
             nspHardcodingArray.push({
               id: id,
               name: name,
-              state: selectedProviderObj? selectedProviderObj.state : 'Disabled'
+              state: selectedProviderObj? selectedProviderObj.state : 'Absent'
             });
           } 
         });
