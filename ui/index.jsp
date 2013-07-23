@@ -289,7 +289,7 @@ under the License.
                                 <div class="field name hide-if-unselected">
                                   <div class="name"> <span class="field-required">*</span> <fmt:message key="label.name"/></div>
                                   <div class="value">
-                                    <input type="text" class="required" name="new-network-name" />
+                                    <input type="text" class="required disallowSpecialCharacters" name="new-network-name" />
                                   </div>
                                 </div>
 
@@ -339,7 +339,7 @@ under the License.
                       <span><fmt:message key="label.name"/> (<fmt:message key="label.optional"/>)</span>
                     </div>
                     <div class="value">
-                      <input type="text" name="displayname" />
+                      <input type="text" name="displayname" class="disallowSpecialCharacters" />
                     </div>
                   </div>
                   <!-- Add to group -->
@@ -348,7 +348,7 @@ under the License.
                       <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/>)</span>
                     </div>
                     <div class="value">
-                      <input type="text" name="groupname" />
+                      <input type="text" name="groupname" class="disallowSpecialCharacters" />
                     </div>
                   </div>
                   <!-- Zone -->

@@ -790,6 +790,7 @@
 
           $(field.range).each(function() {  //e.g. field.range = ['privateport', 'privateendport'];
             var $input = $('<input>')
+                  .addClass('disallowSpecialCharacters')
                   .attr({
                     name: this,
                     type: 'text'
@@ -814,6 +815,7 @@
                   type: field.isPassword ? 'password' : 'text'
                 })
                 .addClass(!field.isOptional ? 'required' : null)
+                .addClass('disallowSpecialCharacters')
                 .attr('disabled', field.isDisabled ? 'disabled' : false)
                 .appendTo($td);
 

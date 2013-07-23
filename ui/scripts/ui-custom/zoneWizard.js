@@ -576,7 +576,7 @@
           $('<label>').html('Physical network name')
 				),
 				$('<div>').addClass('value').append(
-					$('<input>').attr({ type: 'text' }).addClass('required')
+					$('<input>').attr({ type: 'text' }).addClass('required disallowSpecialCharacters')
         )				
       );	
 

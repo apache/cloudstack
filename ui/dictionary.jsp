@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'message.validate.invalid.characters': '<fmt:message key="message.validate.invalid.characters" />',
 'label.enable.s3': '<fmt:message key="label.enable.s3"/>',
 'confirm.enable.s3': '<fmt:message key="confirm.enable.s3"/>',
 'message.after.enable.s3': '<fmt:message key="message.after.enable.s3"/>',
