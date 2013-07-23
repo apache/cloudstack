@@ -75,7 +75,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setPodId(pool.getPodUuid());
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
-        poolResponse.setScope(pool.getScope().toString());
+        if (pool.getScope() != null) {
+            poolResponse.setScope(pool.getScope().toString());
+        }
         if (pool.getHypervisor() != null) {
             poolResponse.setHypervisor(pool.getHypervisor().toString());
         }
