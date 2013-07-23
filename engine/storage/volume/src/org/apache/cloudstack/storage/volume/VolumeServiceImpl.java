@@ -1047,7 +1047,9 @@ public class VolumeServiceImpl implements VolumeService {
             VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
             if (volume == null ){
                 s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId
-                        + ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted");
+                        + ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
+                volumeStore.setDestroyed(true);
+                _volumeStoreDao.update(volumeStore.getId(), volumeStore);
                 continue;
             }
             // Exists then don't download
