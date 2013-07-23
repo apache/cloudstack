@@ -608,7 +608,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @DB
     public boolean copy(long userId, VMTemplateVO template, DataStore srcSecStore, DataCenterVO dstZone) throws StorageUnavailableException,
-            ResourceAllocationException {
+    ResourceAllocationException {
         long tmpltId = template.getId();
         long dstZoneId = dstZone.getId();
         // find all eligible image stores for the destination zone
@@ -910,7 +910,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         boolean result = attachISOToVM(vmId, userId, isoId, false); // attach=false
-                                                                    // => detach
+        // => detach
         if (result) {
             return result;
         } else {
@@ -1253,14 +1253,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (isExtractable != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {// Only
-                                                                                      // ROOT
-                                                                                      // admins
-                                                                                      // allowed
-                                                                                      // to
-                                                                                      // change
-                                                                                      // this
-                                                                                      // powerful
-                                                                                      // attribute
+            // ROOT
+            // admins
+            // allowed
+            // to
+            // change
+            // this
+            // powerful
+            // attribute
             updatedTemplate.setExtractable(isExtractable.booleanValue());
         } else if (isExtractable != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
@@ -1276,7 +1276,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 if (permittedAccount != null) {
                     if (permittedAccount.getId() == caller.getId()) {
                         continue; // don't grant permission to the template
-                                  // owner, they implicitly have permission
+                        // owner, they implicitly have permission
                     }
                     LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId());
                     if (existingPermission == null) {
@@ -1333,7 +1333,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         try {
             TemplateInfo tmplInfo = this._tmplFactory.getTemplate(templateId, DataStoreRole.Image);
-            Long zoneId = null;
+            long zoneId = 0;
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
                 zoneId = snapshot.getDataCenterId();
@@ -1341,18 +1341,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 volume = _volumeDao.findById(volumeId);
                 zoneId = volume.getDataCenterId();
             }
-            ZoneScope scope = new ZoneScope(zoneId);
-            List<DataStore> store = this._dataStoreMgr.getImageStoresByScope(scope);
-            if (store.size() > 1) {
-                throw new CloudRuntimeException("muliple image data store, don't know which one to use");
+            DataStore store = this._dataStoreMgr.getImageStore(zoneId);
+            if (store == null) {
+                throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
             AsyncCallFuture<TemplateApiResult> future = null;
             if (snapshotId != null) {
                 SnapshotInfo snapInfo = this._snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
-                future = this._tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
+                future = this._tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = this._volFactory.getVolume(volumeId);
-                future = this._tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
+                future = this._tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store);
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");
             }
@@ -1553,8 +1552,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (template != null) {
                 sourceTemplateId = template.getId();
             } else if (volume.getVolumeType() == Volume.Type.ROOT) { // vm
-                                                                     // created
-                                                                     // out
+                // created
+                // out
                 // of blank
                 // template
                 UserVm userVm = ApiDBUtils.findUserVmById(volume.getInstanceId());
