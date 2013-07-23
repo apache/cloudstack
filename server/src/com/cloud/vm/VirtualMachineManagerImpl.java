@@ -41,7 +41,6 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -253,8 +252,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected StoragePoolHostDao _poolHostDao;
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
-    @Inject
-    protected VolumeDataFactory volFactory;
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
     @Inject
