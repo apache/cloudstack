@@ -2148,3 +2148,6 @@ ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size` smallint(6) NOT NULL DEFAUL
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size_limit` smallint(6) NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ucs.sync.blade.interval', '3600', 'the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmsnapshot.max', '10', 'Maximum vm snapshots for a VM');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmsnapshot.create.wait', '1800','In second, timeout for create vm snapshot');
