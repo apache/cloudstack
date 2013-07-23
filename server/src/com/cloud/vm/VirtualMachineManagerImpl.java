@@ -2017,11 +2017,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return rebootedVm;
     }
 
-    @Override
-    public VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId) {
-        return _vmDao.findById(vmId);
-    }
-
     public Command cleanup(VirtualMachine vm) {
         return new StopCommand(vm, _mgmtServer.getExecuteInSequence());
     }

@@ -25,13 +25,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value={Investigator.class})
@@ -39,13 +39,13 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(ManagementIPSystemVMInvestigator.class);
 
     private String _name = null;
-    @Inject private HostDao _hostDao = null;
-    @Inject private NetworkModel _networkMgr = null;
+    @Inject private final HostDao _hostDao = null;
+    @Inject private final NetworkModel _networkMgr = null;
 
 
     @Override
-    public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
-        if (!VirtualMachine.Type.isSystemVM(vm.getType())) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+        if (!vm.getType().isUsedBySystem()) {
             s_logger.debug("Not a System Vm, unable to determine state of " + vm + " returning null");
         }
 
@@ -110,7 +110,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     }
 
     @Override
-    public Status isAgentAlive(HostVO agent) {
+    public Status isAgentAlive(Host agent) {
     	return null;
     }
 

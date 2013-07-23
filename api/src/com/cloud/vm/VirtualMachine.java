@@ -158,7 +158,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         }
     }
 
-    public static final String IsDynamicScalingEnabled = "enable.dynamic.scaling";
+    static final String IsDynamicScalingEnabled = "enable.dynamic.scaling";
 
     public enum Event {
         CreateRequested,
@@ -182,27 +182,28 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     };
 
     public enum Type {
-        User,
-        DomainRouter,
-        ConsoleProxy,
-        SecondaryStorageVm,
-        ElasticIpVm,
-        ElasticLoadBalancerVm,
-        InternalLoadBalancerVm,
+        User(false),
+        DomainRouter(true),
+        ConsoleProxy(true),
+        SecondaryStorageVm(true),
+        ElasticIpVm(true),
+        ElasticLoadBalancerVm(true),
+        InternalLoadBalancerVm(true),
 
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
          * VM with this type. UserBareMetal should treat exactly as User.
          */
-        UserBareMetal;
+        UserBareMetal(false);
 
-        public static boolean isSystemVM(VirtualMachine.Type vmtype) {
-            if (DomainRouter.equals(vmtype)
-                    || ConsoleProxy.equals(vmtype)
-                    || SecondaryStorageVm.equals(vmtype) || InternalLoadBalancerVm.equals(vmtype)) {
-                return true;
-            }
-            return false;
+        boolean _isUsedBySystem;
+
+        private Type(boolean isUsedBySystem) {
+            _isUsedBySystem = isUsedBySystem;
+        }
+
+        public boolean isUsedBySystem() {
+            return _isUsedBySystem;
         }
     }
 
@@ -211,39 +212,39 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
      *         reference this VM. You can build names that starts with this name and it
      *         guarantees uniqueness for things related to the VM.
      */
-    public String getInstanceName();
+    String getInstanceName();
 
     /**
      * @return the host name of the virtual machine. If the user did not
      *         specify the host name when creating the virtual machine then it is
      *         defaults to the instance name.
      */
-    public String getHostName();
+    String getHostName();
 
     /**
      * @return the ip address of the virtual machine.
      */
-    public String getPrivateIpAddress();
+    String getPrivateIpAddress();
 
     /**
      * @return mac address.
      */
-    public String getPrivateMacAddress();
+    String getPrivateMacAddress();
 
     /**
      * @return password of the host for vnc purposes.
      */
-    public String getVncPassword();
+    String getVncPassword();
 
     /**
      * @return the state of the virtual machine
      */
-    // public State getState();
+    // State getState();
 
     /**
      * @return template id.
      */
-    public long getTemplateId();
+    long getTemplateId();
 
 
 
@@ -252,49 +253,51 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
      * 
      * @return guestOSId
      */
-    public long getGuestOSId();
+    long getGuestOSId();
 
     /**
      * @return pod id.
      */
-    public Long getPodIdToDeployIn();
+    Long getPodIdToDeployIn();
 
     /**
      * @return data center id.
      */
-    public long getDataCenterId();
+    long getDataCenterId();
 
     /**
      * @return id of the host it was assigned last time.
      */
-    public Long getLastHostId();
+    Long getLastHostId();
 
     @Override
-    public Long getHostId();
+    Long getHostId();
 
     /**
      * @return should HA be enabled for this machine?
      */
-    public boolean isHaEnabled();
+    boolean isHaEnabled();
 
     /**
      * @return should limit CPU usage to the service offering?
      */
-    public boolean limitCpuUse();
+    boolean limitCpuUse();
 
     /**
      * @return date when machine was created
      */
-    public Date getCreated();
+    Date getCreated();
 
-    public long getServiceOfferingId();
+    long getServiceOfferingId();
     
-    public Long getDiskOfferingId();
+    Long getDiskOfferingId();
 
     Type getType();
 
     HypervisorType getHypervisorType();
 
-    public Map<String, String> getDetails();
+    Map<String, String> getDetails();
+
+    long getUpdated();
 
 }

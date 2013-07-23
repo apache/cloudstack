@@ -4201,9 +4201,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         txn.commit();
 
-        VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-        VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(
-                vmoi);
+        VirtualMachine vmoi = _itMgr.findById(vm.getId());
+        VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);
 
         // OS 3: update the network
         List<Long> networkIdList = cmd.getNetworkIds();
@@ -4279,9 +4278,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             networks.add(new Pair<NetworkVO, NicProfile>(networkList.get(0),
                     profile));
 
-            VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(
-                    vmi);
+            VirtualMachine vmi = _itMgr.findById(vm.getId());
+            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
             _networkMgr.allocate(vmProfile, networks);
 
             _securityGroupMgr.addInstanceToGroups(vm.getId(),
@@ -4413,10 +4411,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     networks.add(new Pair<NetworkVO, NicProfile>(appNet,
                             defaultNic));
                 }
-                VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(),
-                        vm.getId());
-                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(
-                        vmi);
+                VirtualMachine vmi = _itMgr.findById(vm.getId());
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
                 _networkMgr.allocate(vmProfile, networks);
                 s_logger.debug("AssignVM: Advance virtual, adding networks no "
                         + networks.size() + " to " + vm.getInstanceName());

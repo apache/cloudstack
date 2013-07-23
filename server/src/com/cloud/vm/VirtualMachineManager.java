@@ -108,8 +108,6 @@ public interface VirtualMachineManager extends Manager {
 
     <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId);
-
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering
      * 
@@ -119,7 +117,7 @@ public interface VirtualMachineManager extends Manager {
      */
     boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
     
-    VMInstanceVO findById(long vmId);
+    VirtualMachine findById(long vmId);
 
 	<T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId);
 
