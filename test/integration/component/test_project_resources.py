@@ -1044,7 +1044,6 @@ class TestPublicIpAddress(cloudstackTestCase):
                                           public_ip.ipaddress.id,
                                           projectid=self.project.id
                                           )
-        self.cleanup.append(lb_rule)
         self.debug("Assigning VM: %s to LB rule: %s" % (
                                                     self.virtual_machine.name,
                                                     lb_rule.id
