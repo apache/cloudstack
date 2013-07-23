@@ -192,6 +192,14 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self._cleanup.insert(0, self.account)
         return
 
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            self.debug("Warning: Exception during cleanup : %s" % e)
+            #raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     @attr(tags=["advanced", "advancedns", "ssh"])
     def test_restart_ntwk_no_cleanup(self):
         """Test restarting RvR network without cleanup

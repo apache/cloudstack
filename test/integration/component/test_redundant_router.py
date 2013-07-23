@@ -165,7 +165,6 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -285,6 +284,13 @@ class TestCreateRvRNetwork(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self._cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -476,6 +482,13 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self._cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "advancedns"])
@@ -676,6 +689,13 @@ class TestRVRInternals(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self._cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -989,6 +1009,13 @@ class TestRvRRedundancy(cloudstackTestCase):
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
         self._cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])

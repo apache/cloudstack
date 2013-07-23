@@ -230,6 +230,14 @@ class TestVPCNetwork(cloudstackTestCase):
         self._cleanup.insert(0, self.account)
         return
 
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            self.debug("Warning: Exception during cleanup : %s" % e)
+            #raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     def validate_vpc_offering(self, vpc_offering):
         """Validates the VPC offering"""
 
@@ -1078,6 +1086,14 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         self._cleanup.insert(0, self.account)
         return
 
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            self.debug("Warning: Exception during cleanup : %s" % e)
+            #raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     def validate_vpc_offering(self, vpc_offering):
         """Validates the VPC offering"""
 
@@ -1571,6 +1587,14 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self._cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            self.debug("Warning: Exception during cleanup : %s" % e)
+            #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def validate_vpc_offering(self, vpc_offering):

@@ -160,6 +160,14 @@ class TestAttachVolume(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            self.debug("Warning: Exception during cleanup : %s" % e)
+            #raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_attach(self):
         """Test Attach volumes (max capacity)
