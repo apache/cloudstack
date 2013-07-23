@@ -1264,7 +1264,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.accountA.account.name
+        cls.services["account"] = cls.accountA.name
         cls._cleanup = [
                         cls.accountA,
                         cls.accountB,
@@ -1308,16 +1308,16 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid
                                         )
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                         self.apiclient,
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid
                                         )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1335,13 +1335,13 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
                 "Authorizing egress rule for sec group ID: %s for ssh access"
                                                         % security_group.id)
         # Authorize to only account not CIDR
-        user_secgrp_list = {self.accountB.account.name: 'default'}
+        user_secgrp_list = {self.accountB.name: 'default'}
 
         egress_rule = security_group.authorizeEgress(
                                         self.apiclient,
                                         self.services["sg_account"],
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid,
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid,
                                         user_secgrp_list=user_secgrp_list
                                         )
 
@@ -1359,8 +1359,8 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid
                                         )
 
         self.assertEqual(
@@ -1374,13 +1374,13 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         self.virtual_machineA = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.accountA.account.name,
-                                    domainid=self.accountA.account.domainid,
+                                    accountid=self.accountA.name,
+                                    domainid=self.accountA.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
         self.cleanup.append(self.virtual_machineA)
-        self.debug("Deploying VM in account: %s" % self.accountA.account.name)
+        self.debug("Deploying VM in account: %s" % self.accountA.name)
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   id=self.virtual_machineA.id,
@@ -1402,12 +1402,12 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         self.virtual_machineB = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.accountB.account.name,
-                                    domainid=self.accountB.account.domainid,
+                                    accountid=self.accountB.name,
+                                    domainid=self.accountB.domainid,
                                     serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(self.virtual_machineB)
-        self.debug("Deploying VM in account: %s" % self.accountB.account.name)
+        self.debug("Deploying VM in account: %s" % self.accountB.name)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -1512,7 +1512,7 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.accountA.account.name
+        cls.services["account"] = cls.accountA.name
         cls._cleanup = [
                         cls.accountA,
                         cls.accountB,
@@ -1556,16 +1556,16 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         security_groupA = SecurityGroup.create(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid
                                         )
         self.debug("Created security group with ID: %s" % security_groupA.id)
 
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                         self.apiclient,
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid
                                         )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1582,16 +1582,16 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         security_groupB = SecurityGroup.create(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.accountB.account.name,
-                                        domainid=self.accountB.account.domainid
+                                        account=self.accountB.name,
+                                        domainid=self.accountB.domainid
                                         )
         self.debug("Created security group with ID: %s" % security_groupB.id)
 
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                     self.apiclient,
-                                    account=self.accountB.account.name,
-                                    domainid=self.accountB.account.domainid
+                                    account=self.accountB.name,
+                                    domainid=self.accountB.domainid
                                     )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1610,13 +1610,13 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
                 "Authorizing egress rule for sec group ID: %s for ssh access"
                                                         % security_groupA.id)
         # Authorize to only account not CIDR
-        user_secgrp_list = {self.accountB.account.name: security_groupB.name}
+        user_secgrp_list = {self.accountB.name: security_groupB.name}
 
         egress_rule = security_groupA.authorizeEgress(
                                         self.apiclient,
                                         self.services["sg_account"],
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid,
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid,
                                         user_secgrp_list=user_secgrp_list
                                         )
 
@@ -1634,8 +1634,8 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         ingress_ruleA = security_groupA.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.accountA.account.name,
-                                        domainid=self.accountA.account.domainid
+                                        account=self.accountA.name,
+                                        domainid=self.accountA.domainid
                                         )
 
         self.assertEqual(
@@ -1649,13 +1649,13 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         self.virtual_machineA = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.accountA.account.name,
-                                    domainid=self.accountA.account.domainid,
+                                    accountid=self.accountA.name,
+                                    domainid=self.accountA.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_groupA.id]
                                 )
         self.cleanup.append(self.virtual_machineA)
-        self.debug("Deploying VM in account: %s" % self.accountA.account.name)
+        self.debug("Deploying VM in account: %s" % self.accountA.name)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -1682,8 +1682,8 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         ingress_ruleB = security_groupB.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.accountB.account.name,
-                                        domainid=self.accountB.account.domainid
+                                        account=self.accountB.name,
+                                        domainid=self.accountB.domainid
                                         )
 
         self.assertEqual(
@@ -1697,13 +1697,13 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         self.virtual_machineB = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.accountB.account.name,
-                                    domainid=self.accountB.account.domainid,
+                                    accountid=self.accountB.name,
+                                    domainid=self.accountB.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_groupB.id]
                                 )
         self.cleanup.append(self.virtual_machineB)
-        self.debug("Deploying VM in account: %s" % self.accountB.account.name)
+        self.debug("Deploying VM in account: %s" % self.accountB.name)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
