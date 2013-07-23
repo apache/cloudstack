@@ -192,6 +192,13 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         self._cleanup.insert(0, self.account)
         return
 
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     @attr(tags=["advanced", "advancedns", "ssh"])
     def test_upgradeVR_to_redundantVR(self):
         """Test upgrade virtual router to redundant virtual router
