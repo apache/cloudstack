@@ -245,17 +245,16 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
     @Override
     public boolean stopvirtualmachine(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException {
-
-        VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-        return _itMgr.stop(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
-
+        _itMgr.stop(vmEntityVO.getUuid());
+        return true;
     }
 
     @Override
     public boolean destroyVirtualMachine(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException{
 
          VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-         return _itMgr.destroy(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+        _itMgr.destroy(vm.getUuid());
+        return true;
     }
 
 }

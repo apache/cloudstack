@@ -444,11 +444,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return true;
         }
 
-        if (!this.advanceStop(vm, false, caller, account)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to stop the VM so we can't expunge it.");
-            }
-        }
+        advanceStop(vm, false);
 
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
@@ -1014,10 +1010,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         _workDao.updateStep(work, Step.Release);
                         // If previous step was started/ing && we got a valid answer
                         if((prevStep == Step.Started || prevStep == Step.Starting) && (startAnswer != null && startAnswer.getResult())){  //TODO check the response of cleanup and record it in DB for retry
-                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
+                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false);
                         } else {
                             //if step is not starting/started, send cleanup command with force=true
-                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, true, caller, account);
+                            cleanup(vmGuru, vmProfile, work, Event.OperationFailed, true);
                         }
                     }
                 }
@@ -1045,11 +1041,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> boolean stop(T vm, User user, Account account) throws ResourceUnavailableException {
+    public void stop(String vmUuid) throws ResourceUnavailableException {
         try {
-            return advanceStop(vm, false, user, account);
+            advanceStop(vmUuid, false);
         } catch (OperationTimedoutException e) {
-            throw new AgentUnavailableException("Unable to stop vm because the operation to stop timed out", vm.getHostId(), e);
+            throw new AgentUnavailableException("Unable to stop vm because the operation to stop timed out", e.getAgentId(), e);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to stop vm because of a concurrent operation", e);
         }
@@ -1079,20 +1075,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return true;
     }
 
-    protected boolean cleanup(VirtualMachineGuru guru, VirtualMachineProfile profile, ItWorkVO work, Event event, boolean force, User user, Account account) {
+    protected boolean cleanup(VirtualMachineGuru guru, VirtualMachineProfile profile, ItWorkVO work, Event event, boolean cleanUpEvenIfUnableToStop) {
         VirtualMachine vm = profile.getVirtualMachine();
         State state = vm.getState();
         s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
         if (state == State.Starting) {
             Step step = work.getStep();
-            if (step == Step.Starting && !force) {
+            if (step == Step.Starting && !cleanUpEvenIfUnableToStop) {
                 s_logger.warn("Unable to cleanup vm " + vm + "; work state is incorrect: " + step);
                 return false;
             }
 
             if (step == Step.Started || step == Step.Starting || step == Step.Release) {
                 if (vm.getHostId() != null) {
-                    if (!sendStop(guru, profile, force)) {
+                    if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
                         s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
                         return false;
                     }
@@ -1105,33 +1101,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         } else if (state == State.Stopping) {
             if (vm.getHostId() != null) {
-                if (!sendStop(guru, profile, force)) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
                     s_logger.warn("Failed to stop vm " + vm + " in " + State.Stopping + " state as a part of cleanup process");
                     return false;
                 }
             }
         } else if (state == State.Migrating) {
             if (vm.getHostId() != null) {
-                if (!sendStop(guru, profile, force)) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
                     s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
                     return false;
                 }
             }
             if (vm.getLastHostId() != null) {
-                if (!sendStop(guru, profile, force)) {
+                if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
                     s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
                     return false;
                 }
             }
         } else if (state == State.Running) {
-            if (!sendStop(guru, profile, force)) {
+            if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop)) {
                 s_logger.warn("Failed to stop vm " + vm + " in " + State.Running + " state as a part of cleanup process");
                 return false;
             }
         }
 
         try {
-            _networkMgr.release(profile, force);
+            _networkMgr.release(profile, cleanUpEvenIfUnableToStop);
             s_logger.debug("Successfully released network resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release some network resources.", e);
@@ -1143,20 +1139,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public void advanceStop(String vmUuid, boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    }
+
+    private void advanceStop(VMInstanceVO vm, boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         State state = vm.getState();
         if (state == State.Stopped) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is already stopped: " + vm);
             }
-            return true;
+            return;
         }
 
         if (state == State.Destroyed || state == State.Expunging || state == State.Error) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Stopped called on " + vm + " but the state is " + state);
             }
-            return true;
+            return;
         }
         // grab outstanding work item if any
         ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
@@ -1167,11 +1166,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         Long hostId = vm.getHostId();
         if (hostId == null) {
-            if (!forced) {
+            if (!cleanUpEvenIfUnableToStop) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("HostId is null but this is not a forced stop, cannot stop vm " + vm + " with state:" + vm.getState());
                 }
-                return false;
+                throw new CloudRuntimeException("Unable to stop " + vm);
             }
             try {
                 stateTransitTo(vm, Event.AgentReportStopped, null, null);
@@ -1186,7 +1185,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 work.setStep(Step.Done);
                 _workDao.update(work.getId(), work);
             }
-            return true;
+            return;
         }
 
         VirtualMachineGuru vmGuru = getVmGuru(vm);
@@ -1197,7 +1196,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new ConcurrentOperationException("VM is being operated on.");
             }
         } catch (NoTransitionException e1) {
-            if (!forced) {
+            if (!cleanUpEvenIfUnableToStop) {
                 throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
             }
             boolean doCleanup = false;
@@ -1218,15 +1217,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             if (doCleanup) {
-                if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, forced, user, account)) {
+                if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, cleanUpEvenIfUnableToStop)) {
                     try {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Updating work item to Done, id:" + work.getId());
                         }
-                        return changeState(vm, Event.AgentReportStopped, null, work, Step.Done);
+                        if (!changeState(vm, Event.AgentReportStopped, null, work, Step.Done)) {
+                            throw new CloudRuntimeException("Unable to stop " + vm);
+                        }
                     } catch (NoTransitionException e) {
                         s_logger.warn("Unable to cleanup " + vm);
-                        return false;
+                        throw new CloudRuntimeException("Unable to stop " + vm, e);
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
@@ -1271,14 +1272,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw e;
         } finally {
             if (!stopped) {
-                if (!forced) {
+                if (!cleanUpEvenIfUnableToStop) {
                     s_logger.warn("Unable to stop vm " + vm);
                     try {
                         stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
                     } catch (NoTransitionException e) {
                         s_logger.warn("Unable to transition the state " + vm);
                     }
-                    return false;
+                    throw new CloudRuntimeException("Unable to stop " + vm);
                 } else {
                     s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
                     vmGuru.finalizeStop(profile, answer);
@@ -1291,7 +1292,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         try {
-            _networkMgr.release(profile, forced);
+            _networkMgr.release(profile, cleanUpEvenIfUnableToStop);
             s_logger.debug("Successfully released network resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release some network resources.", e);
@@ -1315,10 +1316,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
 
-            return stateTransitTo(vm, Event.OperationSucceeded, null);
+            if (!stateTransitTo(vm, Event.OperationSucceeded, null)) {
+                throw new CloudRuntimeException("unable to stop " + vm);
+            }
         } catch (NoTransitionException e) {
             s_logger.warn(e.getMessage());
-            return false;
+            throw new CloudRuntimeException("Unable to stop " + vm);
         }
     }
 
@@ -1358,38 +1361,35 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> boolean destroy(T vm, User user, Account caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vm);
-        }
+    public void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
             }
-            return true;
+            return;
         }
 
-        if (!advanceStop(vm, _forceStop, user, caller)) {
-            s_logger.debug("Unable to stop " + vm);
-            return false;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destroying vm " + vm);
         }
+
+        advanceStop(vm, _forceStop);
 
         if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(),null)){
             s_logger.debug("Unable to delete all snapshots for " + vm);
-            return false;
+            throw new CloudRuntimeException("Unable to delete vm snapshots for " + vm);
         }
 
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
                 s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                return false;
+                throw new CloudRuntimeException("Unable to destroy " + vm);
             }
         } catch (NoTransitionException e) {
             s_logger.debug(e.getMessage());
-            return false;
+            throw new CloudRuntimeException("Unable to destroy " + vm, e);
         }
-
-        return true;
     }
 
     //list all the nics which belong to this vm and are the last nics  in the subnets.
@@ -1605,7 +1605,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     return null;
                 }
             } catch (OperationTimedoutException e) {
@@ -1791,8 +1791,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true,
-                            _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     return null;
                 }
             } catch (OperationTimedoutException e) {
@@ -1935,8 +1934,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
             try {
-                boolean result = advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                return result;
+                advanceStop(vm, true);
+                return true;
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());
             } catch (ConcurrentOperationException e) {
@@ -2461,7 +2460,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (agentState == State.Shutdowned) {
             if (serverState == State.Running || serverState == State.Starting || serverState == State.Stopping) {
                 try {
-                    advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                    advanceStop(vm, true);
                 } catch (AgentUnavailableException e) {
                     assert (false) : "How do we hit this with forced on?";
                     return null;
@@ -3241,7 +3240,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     return null;
                 }
             } catch (OperationTimedoutException e) {

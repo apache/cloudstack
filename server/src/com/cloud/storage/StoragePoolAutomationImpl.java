@@ -234,19 +234,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(
                         VirtualMachine.Type.ConsoleProxy)) {
                     // call the consoleproxymanager
-                    ConsoleProxyVO consoleProxy = _consoleProxyDao
-                            .findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(consoleProxy, true, user, account)) {
-                        String errorMsg = "There was an error stopping the console proxy id: "
-                                + vmInstance.getId()
-                                + " ,cannot enable storage maintenance";
-                        s_logger.warn(errorMsg);
-                        throw new CloudRuntimeException(errorMsg);
-                    } else {
-                        // update work status
-                        work.setStoppedForMaintenance(true);
-                        _storagePoolWorkDao.update(work.getId(), work);
-                    }
+                    ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(vmInstance.getId());
+                    vmMgr.advanceStop(consoleProxy.getUuid(), false);
+                    // update work status
+                    work.setStoppedForMaintenance(true);
+                    _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
 
@@ -260,36 +252,21 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 // if the instance is of type uservm, call the user vm manager
                 if (vmInstance.getType() == VirtualMachine.Type.User) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(userVm, true, user, account)) {
-                        String errorMsg = "There was an error stopping the user vm id: "
-                                + vmInstance.getId()
-                                + " ,cannot enable storage maintenance";
-                        s_logger.warn(errorMsg);
-                        throw new CloudRuntimeException(errorMsg);
-                    } else {
-                        // update work status
-                        work.setStoppedForMaintenance(true);
-                        _storagePoolWorkDao.update(work.getId(), work);
-                    }
+                    vmMgr.advanceStop(userVm.getUuid(), false);
+                    // update work status
+                    work.setStoppedForMaintenance(true);
+                    _storagePoolWorkDao.update(work.getId(), work);
                 }
 
                 // if the instance is of type secondary storage vm, call the
                 // secondary storage vm manager
                 if (vmInstance.getType().equals(
                         VirtualMachine.Type.SecondaryStorageVm)) {
-                    SecondaryStorageVmVO secStrgVm = _secStrgDao
-                            .findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(secStrgVm, true, user, account)) {
-                        String errorMsg = "There was an error stopping the ssvm id: "
-                                + vmInstance.getId()
-                                + " ,cannot enable storage maintenance";
-                        s_logger.warn(errorMsg);
-                        throw new CloudRuntimeException(errorMsg);
-                    } else {
-                        // update work status
-                        work.setStoppedForMaintenance(true);
-                        _storagePoolWorkDao.update(work.getId(), work);
-                    }
+                    SecondaryStorageVmVO secStrgVm = _secStrgDao.findById(vmInstance.getId());
+                    vmMgr.advanceStop(secStrgVm.getUuid(), false);
+                    // update work status
+                    work.setStoppedForMaintenance(true);
+                    _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
                         vmMgr.advanceStart(secStrgVm.getUuid(), null);
@@ -304,17 +281,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(
                         VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(domR, true, user, account)) {
-                        String errorMsg = "There was an error stopping the domain router id: "
-                                + vmInstance.getId()
-                                + " ,cannot enable primary storage maintenance";
-                        s_logger.warn(errorMsg);
-                        throw new CloudRuntimeException(errorMsg);
-                    } else {
-                        // update work status
-                        work.setStoppedForMaintenance(true);
-                        _storagePoolWorkDao.update(work.getId(), work);
-                    }
+                    vmMgr.advanceStop(domR.getUuid(), false);
+                    // update work status
+                    work.setStoppedForMaintenance(true);
+                    _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
                         vmMgr.advanceStart(domR.getUuid(), null);

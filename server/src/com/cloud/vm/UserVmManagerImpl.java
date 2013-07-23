@@ -4523,7 +4523,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (needRestart) {
             try {
-                _itMgr.stop(vm, user, caller);
+                _itMgr.stop(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
                 CloudRuntimeException ex = new CloudRuntimeException(

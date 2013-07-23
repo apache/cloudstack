@@ -534,11 +534,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     protected VirtualRouter stopInternalLbVm(DomainRouterVO internalLbVm, boolean forced, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.debug("Stopping internal lb vm " + internalLbVm);
         try {
-            if (_itMgr.advanceStop(internalLbVm, forced, _accountMgr.getActiveUser(callerUserId), caller)) {
-                return _internalLbVmDao.findById(internalLbVm.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(internalLbVm.getUuid(), forced);
+            return _internalLbVmDao.findById(internalLbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + internalLbVm, e);
         }

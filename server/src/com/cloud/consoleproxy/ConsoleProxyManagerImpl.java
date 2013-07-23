@@ -1025,9 +1025,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         try {
-            return _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            _itMgr.stop(proxy.getUuid());
+            return true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception " + e.toString());
+            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception ", e);
+            return false;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to stop proxy ", e);
             return false;
         }
     }

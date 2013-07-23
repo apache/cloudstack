@@ -74,7 +74,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -664,11 +663,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     "VM Snapshot reverting failed due to vm snapshot is not in the state of Created.");
         }
 
-        UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
-        
         UserVmVO vm = null;
         Long hostId = null;
-        Account owner = _accountDao.findById(vmSnapshotVo.getAccountId());
         
         // start or stop VM first, if revert from stopped state to running state, or from running to stopped
         if(userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory){
@@ -683,7 +679,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }else {
             if(userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk){
                 try {
-    			    _itMgr.advanceStop(userVm, true, callerUser, owner);
+                    _itMgr.advanceStop(userVm.getUuid(), true);
                 } catch (Exception e) {
                     s_logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
     			    throw new CloudRuntimeException(e.getMessage());

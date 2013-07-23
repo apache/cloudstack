@@ -197,7 +197,6 @@ public class UserVmManagerTest {
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
         doReturn(3L).when(_volumeMock).getTemplateId();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
@@ -230,7 +229,6 @@ public class UserVmManagerTest {
         doReturn(ImageFormat.VHD).when(_templateMock).getFormat();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
-        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, 14L)).thenReturn(_volumeMock);
         when(_templateMock.getGuestOSId()).thenReturn(5L);
         doNothing().when(_vmMock).setGuestOSId(anyLong());
@@ -269,7 +267,6 @@ public class UserVmManagerTest {
         doReturn(ImageFormat.ISO).when(_templateMock).getFormat();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
-        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_vmMock).setIsoId(14L);
         when(_templateMock.getGuestOSId()).thenReturn(5L);

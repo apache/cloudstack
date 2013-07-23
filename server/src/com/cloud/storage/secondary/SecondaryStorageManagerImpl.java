@@ -905,11 +905,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 try {
                     if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                         try {
-                            boolean result = _itMgr.stop(secStorageVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                            if (result) {
-                            }
-
-                            return result;
+                            _itMgr.stop(secStorageVm.getUuid());
+                            return true;
                         } finally {
                             secStorageVmLock.unlock();
                         }

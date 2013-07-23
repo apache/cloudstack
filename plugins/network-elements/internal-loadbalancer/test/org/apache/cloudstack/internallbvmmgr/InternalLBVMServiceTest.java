@@ -36,7 +36,6 @@ import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -44,10 +43,8 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
@@ -110,20 +107,6 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(validVm);
         Mockito.when(_domainRouterDao.findById(nonExistingVmId)).thenReturn(null);
         Mockito.when(_domainRouterDao.findById(nonInternalLbVmId)).thenReturn(nonInternalLbVm);
-        
-        try {
-            Mockito.when(_itMgr.advanceStop(Mockito.any(DomainRouterVO.class), Mockito.any(Boolean.class), Mockito.any(User.class), Mockito.any(Account.class))).thenReturn(true);
-        } catch (ResourceUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
     }
     
     @Override
