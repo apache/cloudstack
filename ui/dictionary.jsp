@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'message.validate.invalid.characters': '<fmt:message key="message.validate.invalid.characters" />',
 'label.about': '<fmt:message key="label.about" />',
 'label.about.app': '<fmt:message key="label.about.app" />',
 'label.app.name': '<fmt:message key="label.app.name" />',

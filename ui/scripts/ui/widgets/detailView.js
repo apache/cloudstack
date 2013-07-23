@@ -588,7 +588,7 @@
                             type: 'text',
                             value: data
                         })
-                        .data('original-value', data)
+                        .addClass('disallowSpecialCharacters').data('original-value', data)
                     );
 
                     // Make option values from given array
@@ -617,7 +617,7 @@
                             name: name,
                             type: 'text',
                             value: data
-                        }).data('original-value', data)
+                        }).addClass('disallowSpecialCharacters').data('original-value', data)
                     );
                 }
 
