@@ -2085,10 +2085,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         txn.start();
         for (VolumeVO vol : volumesForVm) {
             if (vol.getVolumeType().equals(Type.ROOT)) {
-                // This check is for VM in Error state (volume is already
-                // destroyed)
-                if (!vol.getState().equals(Volume.State.Destroy)) {
+                // Destroy volume if not already destroyed
+                boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || 
+                        vol.getState() == Volume.State.Expunged ||
+                        vol.getState() == Volume.State.Expunging);
+                if (!volumeAlreadyDestroyed) {
                     volService.destroyVolume(vol.getId());
+                } else {
+                    s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
                 }
                 toBeExpunged.add(vol);
             } else {
