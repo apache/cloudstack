@@ -75,6 +75,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume.State;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -210,13 +211,34 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
+    // check if a volume is expunged on both primary and secondary
+    private boolean canVolumeBeRemoved(long volumeId) {
+        VolumeVO vol = volDao.findById(volumeId);
+        if (vol == null) {
+            // already removed from volumes table
+            return false;
+        }
+        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volumeId);
+        if (vol.getState() == State.Expunged && volumeStore == null) {
+            // volume is expunged from primary, as well as on secondary
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
     @DB
     @Override
     public AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
         VolumeApiResult result = new VolumeApiResult(volume);
         if (volume.getDataStore() == null) {
-            volDao.remove(volume.getId());
+            s_logger.info("Expunge volume with no data store specified");
+            if (canVolumeBeRemoved(volume.getId())) {
+                s_logger.info("Volume " + volume.getId() + " is not referred anywhere, remove it from volumes table");
+                volDao.remove(volume.getId());
+            }
             future.complete(result);
             return future;
         }
@@ -245,7 +267,11 @@ public class VolumeServiceImpl implements VolumeService {
         }
         VolumeObject vo = (VolumeObject) volume;
 
-        volume.processEvent(Event.ExpungeRequested);
+        if (volume.getDataStore().getRole() == DataStoreRole.Image) {
+            volume.processEvent(Event.DestroyRequested);
+        } else if (volume.getDataStore().getRole() == DataStoreRole.Primary) {
+            volume.processEvent(Event.ExpungeRequested);
+        }
 
         DeleteVolumeContext<VolumeApiResult> context = new DeleteVolumeContext<VolumeApiResult>(null, vo, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -255,6 +281,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
+
     public Void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback,
             DeleteVolumeContext<VolumeApiResult> context) {
         CommandResult result = callback.getResult();
@@ -262,7 +289,10 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult apiResult = new VolumeApiResult(vo);
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed);
-            volDao.remove(vo.getId());
+            if (canVolumeBeRemoved(vo.getId())) {
+                s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
+                volDao.remove(vo.getId());
+            }
         } else {
             vo.processEvent(Event.OperationFailed);
             apiResult.setResult(result.getResult());

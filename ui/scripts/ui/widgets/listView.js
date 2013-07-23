@@ -533,6 +533,11 @@
             if (!$editInput.is(':visible') || !(typeof(args.action) == 'undefined')) { //click Edit button
                 showEditField();
             } else if ($editInput.val() != $label.html()) { //click Save button with changed value
+                if ($editInput.val().match(/<|>/)) {
+                    cloudStack.dialog.notice({ message: 'message.validate.invalid.characters' }); 
+                    return false;
+                }
+                
                 $edit.animate({
                     opacity: 0.5
                 });
