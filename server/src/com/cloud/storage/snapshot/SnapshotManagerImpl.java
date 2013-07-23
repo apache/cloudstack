@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -78,9 +79,10 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
@@ -1145,7 +1147,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
         String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
 
-        HypervisorType hypervisorType = volume.getHypervisorType();
+        HypervisorType hypervisorType = HypervisorType.None;
+        StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
+        if (storagePool.getScope() == ScopeType.ZONE) {
+            hypervisorType = storagePool.getHypervisor();
+        } else {
+            hypervisorType = volume.getHypervisorType();
+        }
+
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
 
