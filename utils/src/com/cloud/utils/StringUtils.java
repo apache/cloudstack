@@ -91,10 +91,10 @@ public class StringUtils {
                     tags += ",";
                 }
             }
-        } 
+        }
 
         return tags;
-    }        
+    }
 
     public static String getExceptionStackInfo(Throwable e) {
         StringBuffer sb = new StringBuffer();
@@ -131,22 +131,24 @@ public class StringUtils {
     }
 
     public static String getMaskedPasswordForDisplay(String password) {
-        if(password == null || password.isEmpty())
+        if(password == null || password.isEmpty()) {
             return "*";
+        }
 
         StringBuffer sb = new StringBuffer();
         sb.append(password.charAt(0));
-        for(int i = 1; i < password.length(); i++)
+        for(int i = 1; i < password.length(); i++) {
             sb.append("*");
+        }
 
         return sb.toString();
     }
 
     // removes a password request param and it's value
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("&?password=.*?(?=[&'\"])");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("&?(password|accesskey|secretkey)=.*?(?=[&'\"])");
 
-    // removes a password property from a response json object
-    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"password\":\".*?\",?");
+    // removes a password/accesskey/ property from a response json object
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(password|accesskey|secretkey)\":\".*?\",?");
 
     // Responsible for stripping sensitive content from request and response strings
     public static String cleanString(String stringToClean){

@@ -207,7 +207,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @Override
-    public DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public DeployDestination planDeployment(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException,
             AffinityConflictException {
 
@@ -449,7 +449,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return dest;
     }
 
-    private void checkForNonDedicatedResources(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DataCenter dc, ExcludeList avoids) {
+    private void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         boolean isExplicit = false;
         VirtualMachine vm = vmProfile.getVirtualMachine();
         // check affinity group of type Explicit dedication exists
@@ -534,7 +534,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
     }
 
-    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException {
+    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException {
         if (planner != null && planner instanceof DeploymentClusterPlanner) {
             return ((DeploymentClusterPlanner) planner).getResourceUsage(vmProfile, plan, avoids);
         } else {
@@ -843,7 +843,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
     // /refactoring planner methods
     private DeployDestination checkClustersforDestination(List<Long> clusterList,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             DataCenter dc, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, ExcludeList PlannerAvoidOutput) {
 
         if (s_logger.isTraceEnabled()) {
@@ -1035,7 +1035,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return hostCanAccessSPool;
     }
 
-    protected List<Host> findSuitableHosts(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<Host> suitableHosts = new ArrayList<Host>();
         for (HostAllocator allocator : _hostAllocators) {
@@ -1052,7 +1052,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             int returnUpTo) {
         List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
@@ -1219,7 +1219,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     @DB
     @Override
     public String finalizeReservation(DeployDestination plannedDestination,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids)
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
         VirtualMachine vm = vmProfile.getVirtualMachine();

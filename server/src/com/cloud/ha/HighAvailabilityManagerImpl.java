@@ -32,6 +32,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import org.apache.cloudstack.context.ServerContexts;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
@@ -284,7 +286,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         if (hostId == null) {
             try {
                 s_logger.debug("Found a vm that is scheduled to be restarted but has no host id: " + vm);
-                _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                _itMgr.advanceStop(vm.getUuid(), true);
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -294,7 +296,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             } catch (ConcurrentOperationException e) {
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
-            }            
+            }
             return;
         }
 
@@ -328,7 +330,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
 
             try {
-                _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                _itMgr.advanceStop(vm.getUuid(), true);
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -338,7 +340,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             } catch (ConcurrentOperationException e) {
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
-            }        
+            }
         }
 
         List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
@@ -386,7 +388,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         long vmId = work.getInstanceId();
 
-        VMInstanceVO vm = _itMgr.findByIdAndType(work.getType(), work.getInstanceId());
+        VirtualMachine vm = _itMgr.findById(work.getInstanceId());
         if (vm == null) {
             s_logger.info("Unable to find vm: " + vmId);
             return null;
@@ -473,7 +475,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 }
 
                 try {
-                    _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                    _itMgr.advanceStop(vm.getUuid(), true);
                 } catch (ResourceUnavailableException e) {
                     assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -490,7 +492,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             } else {
                 s_logger.debug("How come that HA step is Investigating and the host is removed? Calling forced Stop on Vm anyways");
                 try {
-                    _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                    _itMgr.advanceStop(vm.getUuid(), true);
                 } catch (ResourceUnavailableException e) {
                     assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -504,7 +506,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
 
-        vm = _itMgr.findByIdAndType(vm.getType(), vm.getId());
+        vm = _itMgr.findById(vm.getId());
 
         if (!_forceHA && !vm.isHaEnabled()) {
             if (s_logger.isDebugEnabled()) {
@@ -513,7 +515,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return null; // VM doesn't require HA
         }
 
-        if (!this.volumeMgr.canVmRestartOnAnotherServer(vm.getId())) {
+        if (!volumeMgr.canVmRestartOnAnotherServer(vm.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM can not restart on another server.");
             }
@@ -530,9 +532,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             if (_haTag != null) {
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
-            VMInstanceVO started = _itMgr.advanceStart(vm, params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-
-            if (started != null) {
+            _itMgr.advanceStart(vm.getUuid(), params);
+            
+            VMInstanceVO started = _instanceDao.findById(vm.getId());
+            if (started != null && started.getState() == VirtualMachine.State.Running) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
             }
@@ -557,7 +560,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
                     "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
         }
-        vm = _itMgr.findByIdAndType(vm.getType(), vm.getId());
+        vm = _itMgr.findById(vm.getId());
         work.setUpdateTime(vm.getUpdated());
         work.setPreviousState(vm.getState());
         return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
@@ -603,7 +606,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     }
 
     protected Long destroyVM(HaWorkVO work) {
-        final VMInstanceVO vm = _itMgr.findByIdAndType(work.getType(), work.getInstanceId());
+        final VirtualMachine vm = _itMgr.findById(work.getInstanceId());
         s_logger.info("Destroying " + vm.toString());
         try {
             if (vm.getState() != State.Destroyed) {
@@ -612,11 +615,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
 
             if (vm.getHostId() != null) {
-                if (_itMgr.destroy(vm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Successfully destroy " + vm);
-                    return null;
-                }
-                s_logger.debug("Stop for " + vm + " was unsuccessful.");
+                _itMgr.destroy(vm.getUuid());
+                s_logger.info("Successfully destroy " + vm);
+                return null;
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(vm + " has already been stopped");
@@ -636,7 +637,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     }
 
     protected Long stopVM(final HaWorkVO work) throws ConcurrentOperationException {
-        VMInstanceVO vm = _itMgr.findByIdAndType(work.getType(), work.getInstanceId());
+        VirtualMachine vm = _itMgr.findById(work.getInstanceId());
         if (vm == null) {
             s_logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
             work.setStep(Step.Done);
@@ -645,28 +646,25 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         s_logger.info("Stopping " + vm);
         try {
             if (work.getWorkType() == WorkType.Stop) {
-                if (_itMgr.advanceStop(vm, false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Successfully stopped " + vm);
-                    return null;
-                }
+                _itMgr.advanceStop(vm.getUuid(), false);
+                s_logger.info("Successfully stopped " + vm);
+                return null;
             } else if (work.getWorkType() == WorkType.CheckStop) {
                 if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null || vm.getHostId().longValue() != work.getHostId()) {
                     s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
-                if (_itMgr.advanceStop(vm, false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Stop for " + vm + " was successful");
-                    return null;
-                }
+                _itMgr.advanceStop(vm.getUuid(), false);
+                s_logger.info("Stop for " + vm + " was successful");
+                return null;
             } else if (work.getWorkType() == WorkType.ForceStop) {
                 if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null || vm.getHostId().longValue() != work.getHostId()) {
                     s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
-                if (_itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Stop for " + vm + " was successful");
-                    return null;
-                }
+                _itMgr.advanceStop(vm.getUuid(), true);
+                s_logger.info("Stop for " + vm + " was successful");
+                return null;
             } else {
                 assert false : "Who decided there's other steps but didn't modify the guy who does the work?";
             }
@@ -801,66 +799,71 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         @Override
         public void run() {
-            s_logger.info("Starting work");
-            while (!_stopped) {
-                HaWorkVO work = null;
-                try {
-                    s_logger.trace("Checking the database");
-                    work = _haDao.take(_serverId);
-                    if (work == null) {
+            ServerContexts.registerSystemContext();
+            try {
+                s_logger.info("Starting work");
+                while (!_stopped) {
+                    HaWorkVO work = null;
                         try {
-                            synchronized (this) {
-                                wait(_timeToSleep);
+                        s_logger.trace("Checking the database");
+                        work = _haDao.take(_serverId);
+                        if (work == null) {
+                            try {
+                                synchronized (this) {
+                                    wait(_timeToSleep);
+                                }
+                                continue;
+                            } catch (final InterruptedException e) {
+                                s_logger.info("Interrupted");
+                                continue;
                             }
-                            continue;
-                        } catch (final InterruptedException e) {
-                            s_logger.info("Interrupted");
-                            continue;
-                        }
-                    }
-
-                    NDC.push("work-" + work.getId());
-                    s_logger.info("Processing " + work);
-
-                    try {
-                        final WorkType wt = work.getWorkType();
-                        Long nextTime = null;
-                        if (wt == WorkType.Migration) {
-                            nextTime = migrate(work);
-                        } else if (wt == WorkType.HA) {
-                            nextTime = restart(work);
-                        } else if (wt == WorkType.Stop || wt == WorkType.CheckStop || wt == WorkType.ForceStop) {
-                            nextTime = stopVM(work);
-                        } else if (wt == WorkType.Destroy) {
-                            nextTime = destroyVM(work);
-                        } else {
-                            assert false : "How did we get here with " + wt.toString();
-                        continue;
                         }
 
-                        if (nextTime == null) {
-                            s_logger.info("Completed " + work);
-                            work.setStep(Step.Done);
-                        } else {
-                            s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
-                            work.setTimeToTry(nextTime);
-                            work.setServerId(null);
-                            work.setDateTaken(null);
+                        NDC.push("work-" + work.getId());
+                        s_logger.info("Processing " + work);
+
+                        try {
+                            final WorkType wt = work.getWorkType();
+                            Long nextTime = null;
+                            if (wt == WorkType.Migration) {
+                                nextTime = migrate(work);
+                            } else if (wt == WorkType.HA) {
+                                nextTime = restart(work);
+                            } else if (wt == WorkType.Stop || wt == WorkType.CheckStop || wt == WorkType.ForceStop) {
+                                nextTime = stopVM(work);
+                            } else if (wt == WorkType.Destroy) {
+                                nextTime = destroyVM(work);
+                            } else {
+                                assert false : "How did we get here with " + wt.toString();
+                                continue;
+                            }
+
+                            if (nextTime == null) {
+                                s_logger.info("Completed " + work);
+                                work.setStep(Step.Done);
+                            } else {
+                                s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
+                                work.setTimeToTry(nextTime);
+                                work.setServerId(null);
+                                work.setDateTaken(null);
+                            }
+                        } catch (Exception e) {
+                            s_logger.error("Terminating " + work, e);
+                            work.setStep(Step.Error);
                         }
-                    } catch (Exception e) {
-                        s_logger.error("Terminating " + work, e);
-                        work.setStep(Step.Error);
+                        _haDao.update(work.getId(), work);
+                    } catch (final Throwable th) {
+                        s_logger.error("Caught this throwable, ", th);
+                    } finally {
+                        if (work != null) {
+                            NDC.pop();
+                            }
+                        }
                     }
-                    _haDao.update(work.getId(), work);
-                } catch (final Throwable th) {
-                    s_logger.error("Caught this throwable, ", th);
-                } finally {
-                    if (work != null) {
-                        NDC.pop();
-                    }
-                }
+                s_logger.info("Time to go home!");
+            } finally {
+                ServerContexts.unregisterSystemContext();
             }
-            s_logger.info("Time to go home!");
         }
 
         public synchronized void wakup() {

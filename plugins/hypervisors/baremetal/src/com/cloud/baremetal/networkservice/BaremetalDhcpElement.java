@@ -103,7 +103,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
 
     @Override
     @DB
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Host host = dest.getHost();
         if (vm.getType() != Type.User || vm.getHypervisorType() != HypervisorType.BareMetal) {
@@ -122,7 +122,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context)
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
@@ -158,7 +158,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         return true;
     }
     
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (vm.getHypervisorType() != HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
             return false;
@@ -167,7 +167,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     }
 
     @Override
-    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
     	//TODO Add support for baremetal
         return true;
     }

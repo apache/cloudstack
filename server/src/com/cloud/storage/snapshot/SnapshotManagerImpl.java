@@ -910,6 +910,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 		if (host.getHypervisorType() != HypervisorType.KVM) {
 			return true;
 		}
+
+        //Turn off snapshot by default for KVM, unless it is set in the global flag
+        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+        if (!snapshotEnabled) {
+             return false;
+        }
 		// Determine host capabilities
 		String caps = host.getCapabilities();
 

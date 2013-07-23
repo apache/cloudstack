@@ -143,9 +143,9 @@ class Services:
                                     # Any network (For creating FW rule)
                                     "protocol": "TCP"
                                 },
-                         "http_rule": {
-                                    "startport": 80,
-                                    "endport": 80,
+                         "icmp_rule": {
+                                    "icmptype": -1,
+                                    "icmpcode": -1,
                                     "cidrlist": '0.0.0.0/0',
                                     "protocol": "ICMP"
                                 },
@@ -275,9 +275,189 @@ class TestVPC(cloudstackTestCase):
                 )
         self.debug("VPC network validated - %s" % network.name)
         return
-    
+
+    #list_vpc_apis should be the first case otherwise the vpc counts would be wrong
     @attr(tags=["advanced", "intervlan"])
-    def test_01_restart_vpc_no_networks(self):
+    def test_01_list_vpc_apis(self):
+        """ Test list VPC APIs
+        """
+
+        # Validate the following
+        # 1. Create multiple VPCs
+        # 2. listVPCs() by name. VPC with the provided name should be listed.
+        # 3. listVPCs() by displayText. VPC with the provided displayText
+        #    should be listed.
+        # 4. listVPCs() by cidr. All the VPCs with the provided cidr should
+        #    be listed.
+        # 5. listVPCs() by vpcofferingId.All the VPCs with the vpcofferingId
+        #    should be listed.
+        # 6. listVPCs() by supported Services(). All the VPCs that provide the
+        #    list of services should be listed.
+        # 7. listVPCs() by restartRequired (set to true). All the VPCs that
+        #    require restart should be listed.
+
+        self.services["vpc"]["cidr"] = "10.1.1.1/16"
+        self.debug("creating a VPC network in the account: %s" %
+                                                    self.account.name)
+        vpc_1 = VPC.create(
+                         self.apiclient,
+                         self.services["vpc"],
+                         vpcofferingid=self.vpc_off.id,
+                         zoneid=self.zone.id,
+                         account=self.account.name,
+                         domainid=self.account.domainid
+                         )
+        self.validate_vpc_network(vpc_1)
+
+        self.services["vpc"]["cidr"] = "10.1.46.1/16"
+        vpc_2 = VPC.create(
+                         self.apiclient,
+                         self.services["vpc"],
+                         vpcofferingid=self.vpc_off.id,
+                         zoneid=self.zone.id,
+                         account=self.account.name,
+                         domainid=self.account.domainid
+                         )
+        self.validate_vpc_network(vpc_2)
+
+        self.debug("Check list VPC API by Name?")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        name=vpc_1.name,
+                        listall=True
+                        )
+        self.assertEqual(
+                        isinstance(vpcs, list),
+                        True,
+                        "List VPC shall return a valid resposne"
+                        )
+        vpc = vpcs[0]
+        self.assertEqual(
+                         vpc.name,
+                         vpc_1.name,
+                         "VPC name should match with the existing one"
+                         )
+
+        self.debug("Check list VPC API by displayText?")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        displaytext=vpc_1.displaytext,
+                        listall=True
+                        )
+        self.assertEqual(
+                        isinstance(vpcs, list),
+                        True,
+                        "List VPC shall return a valid resposne"
+                        )
+        vpc = vpcs[0]
+        self.assertEqual(
+                         vpc.displaytext,
+                         vpc_1.displaytext,
+                         "VPC displaytext should match with the existing one"
+                         )
+
+        self.debug("Check list VPC API by cidr?")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        cidr=vpc_2.cidr,
+                        listall=True
+                        )
+        self.assertEqual(
+                        isinstance(vpcs, list),
+                        True,
+                        "List VPC shall return a valid resposne"
+                        )
+        vpc = vpcs[0]
+        self.assertEqual(
+                         vpc.cidr,
+                         vpc_2.cidr,
+                         "VPC cidr should match with the existing one"
+                         )
+        self.debug("Validating list VPC by Id")
+        self.validate_vpc_network(vpc_1)
+
+        self.debug("Validating list VPC by vpcofferingId")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        vpcofferingid=self.vpc_off.id,
+                        listall=True
+                        )
+        self.assertEqual(
+                        isinstance(vpcs, list),
+                        True,
+                        "List VPC by vpcofferingId should return a valid response"
+                    )
+        self.debug("Length of list VPC response: %s" % len(vpcs))
+        self.assertEqual(
+                        len(vpcs),
+                        2,
+                        "List VPC should return 2 enabled VPCs"
+                        )
+        for vpc in vpcs:
+            self.assertEqual(
+                            vpc.vpcofferingid,
+                            self.vpc_off.id,
+                            "VPC offering ID should match with that of resposne"
+                            )
+
+        self.debug("Validating list VPC by supportedservices")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        supportedservices='Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
+                        listall=True,
+                        account=self.account.name,
+                        domainid=self.account.domainid
+                        )
+        self.assertEqual(
+                        isinstance(vpcs, list),
+                        True,
+                        "List VPC by vpcofferingId should return a valid response"
+                    )
+        for vpc in vpcs:
+            self.assertIn(
+                            vpc.id,
+                            [vpc_1.id, vpc_2.id],
+                            "VPC offering ID should match with that of resposne"
+                            )
+        self.debug("Validating list VPC by restart required")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        restartrequired=True,
+                        listall=True,
+                        account=self.account.name,
+                        domainid=self.account.domainid
+                        )
+        if vpcs is not None:
+            for vpc in vpcs:
+                self.assertEqual(
+                            vpc.restartrequired,
+                            True,
+                            "RestartRequired should be set as True"
+                            )
+        self.debug("Validating list VPC by restart required")
+        vpcs = VPC.list(
+                        self.apiclient,
+                        restartrequired=False,
+                        listall=True,
+                        account=self.account.name,
+                        domainid=self.account.domainid
+                        )
+        self.assertEqual(
+                        isinstance(vpcs, list),
+                        True,
+                        "List VPC by vpcofferingId should return a valid response"
+                    )
+        if vpcs is not None:
+            for vpc in vpcs:
+                self.assertEqual(
+                            vpc.restartrequired,
+                            False,
+                            "RestartRequired should be set as False"
+                            )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_02_restart_vpc_no_networks(self):
         """ Test restart VPC having no networks
         """
 
@@ -308,7 +488,7 @@ class TestVPC(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    def test_02_restart_vpc_with_networks(self):
+    def test_03_restart_vpc_with_networks(self):
         """ Test restart VPC having networks
         """
 
@@ -393,7 +573,7 @@ class TestVPC(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    def test_03_delete_vpc_no_networks(self):
+    def test_04_delete_vpc_no_networks(self):
         """ Test delete VPC having no networks
         """
 
@@ -433,7 +613,7 @@ class TestVPC(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    def test_04_delete_vpc_with_networks(self):
+    def test_05_delete_vpc_with_networks(self):
         """ Test delete VPC having networks
         """
 
@@ -561,185 +741,6 @@ class TestVPC(cloudstackTestCase):
                         None,
                         "List Routers for the account should not return any response"
                         )
-        return
-
-    @attr(tags=["advanced", "intervlan"])
-    def test_05_list_vpc_apis(self):
-        """ Test list VPC APIs
-        """
-
-        # Validate the following
-        # 1. Create multiple VPCs
-        # 2. listVPCs() by name. VPC with the provided name should be listed.
-        # 3. listVPCs() by displayText. VPC with the provided displayText
-        #    should be listed.
-        # 4. listVPCs() by cidr. All the VPCs with the provided cidr should
-        #    be listed.
-        # 5. listVPCs() by vpcofferingId.All the VPCs with the vpcofferingId
-        #    should be listed.
-        # 6. listVPCs() by supported Services(). All the VPCs that provide the
-        #    list of services should be listed.
-        # 7. listVPCs() by restartRequired (set to true). All the VPCs that
-        #    require restart should be listed.
-
-        self.services["vpc"]["cidr"] = "10.1.1.1/16"
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
-        vpc_1 = VPC.create(
-                         self.apiclient,
-                         self.services["vpc"],
-                         vpcofferingid=self.vpc_off.id,
-                         zoneid=self.zone.id,
-                         account=self.account.name,
-                         domainid=self.account.domainid
-                         )
-        self.validate_vpc_network(vpc_1)
-
-        self.services["vpc"]["cidr"] = "10.1.46.1/16"
-        vpc_2 = VPC.create(
-                         self.apiclient,
-                         self.services["vpc"],
-                         vpcofferingid=self.vpc_off.id,
-                         zoneid=self.zone.id,
-                         account=self.account.name,
-                         domainid=self.account.domainid
-                         )
-        self.validate_vpc_network(vpc_2)
-
-        self.debug("Check list VPC API by Name?")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        name=vpc_1.name,
-                        listall=True
-                        )
-        self.assertEqual(
-                        isinstance(vpcs, list),
-                        True,
-                        "List VPC shall return a valid resposne"
-                        )
-        vpc = vpcs[0]
-        self.assertEqual(
-                         vpc.name,
-                         vpc_1.name,
-                         "VPC name should match with the existing one"
-                         )
-
-        self.debug("Check list VPC API by displayText?")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        displaytext=vpc_1.displaytext,
-                        listall=True
-                        )
-        self.assertEqual(
-                        isinstance(vpcs, list),
-                        True,
-                        "List VPC shall return a valid resposne"
-                        )
-        vpc = vpcs[0]
-        self.assertEqual(
-                         vpc.displaytext,
-                         vpc_1.displaytext,
-                         "VPC displaytext should match with the existing one"
-                         )
-
-        self.debug("Check list VPC API by cidr?")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        cidr=vpc_2.cidr,
-                        listall=True
-                        )
-        self.assertEqual(
-                        isinstance(vpcs, list),
-                        True,
-                        "List VPC shall return a valid resposne"
-                        )
-        vpc = vpcs[0]
-        self.assertEqual(
-                         vpc.cidr,
-                         vpc_2.cidr,
-                         "VPC cidr should match with the existing one"
-                         )
-        self.debug("Validating list VPC by Id")
-        self.validate_vpc_network(vpc_1)
-
-        self.debug("Validating list VPC by vpcofferingId")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        vpcofferingid=self.vpc_off.id,
-                        listall=True
-                        )
-        self.assertEqual(
-                        isinstance(vpcs, list),
-                        True,
-                        "List VPC by vpcofferingId should return a valid response"
-                    )
-        self.debug("Length of list VPC response: %s" % len(vpcs))
-        self.assertEqual(
-                        len(vpcs),
-                        2,
-                        "List VPC should return 3 enabled VPCs"
-                        )
-        for vpc in vpcs:
-            self.assertEqual(
-                            vpc.vpcofferingid,
-                            self.vpc_off.id,
-                            "VPC offering ID should match with that of resposne"
-                            )
-
-        self.debug("Validating list VPC by supportedservices")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        supportedservices='Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
-                        listall=True,
-                        account=self.account.name,
-                        domainid=self.account.domainid
-                        )
-        self.assertEqual(
-                        isinstance(vpcs, list),
-                        True,
-                        "List VPC by vpcofferingId should return a valid response"
-                    )
-        for vpc in vpcs:
-            self.assertIn(
-                            vpc.id,
-                            [vpc_1.id, vpc_2.id],
-                            "VPC offering ID should match with that of resposne"
-                            )
-        self.debug("Validating list VPC by restart required")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        restartrequired=True,
-                        listall=True,
-                        account=self.account.name,
-                        domainid=self.account.domainid
-                        )
-        if vpcs is not None:
-            for vpc in vpcs:
-                self.assertEqual(
-                            vpc.restartrequired,
-                            True,
-                            "RestartRequired should be set as True"
-                            )
-        self.debug("Validating list VPC by restart required")
-        vpcs = VPC.list(
-                        self.apiclient,
-                        restartrequired=False,
-                        listall=True,
-                        account=self.account.name,
-                        domainid=self.account.domainid
-                        )
-        self.assertEqual(
-                        isinstance(vpcs, list),
-                        True,
-                        "List VPC by vpcofferingId should return a valid response"
-                    )
-        if vpcs is not None:
-            for vpc in vpcs:
-                self.assertEqual(
-                            vpc.restartrequired,
-                            False,
-                            "RestartRequired should be set as False"
-                            )
         return
 
     @attr(tags=["advanced", "intervlan"])
@@ -1065,13 +1066,13 @@ class TestVPC(cloudstackTestCase):
         nwacl_internet_1 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_1.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
         nwacl_internet_2 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_2.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
 
@@ -1410,13 +1411,13 @@ class TestVPC(cloudstackTestCase):
         nwacl_internet_1 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_1.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
         nwacl_internet_2 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_2.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
 

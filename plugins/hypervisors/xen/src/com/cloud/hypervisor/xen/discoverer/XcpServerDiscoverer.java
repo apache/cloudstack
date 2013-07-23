@@ -579,7 +579,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             cluster.setGuid(startup.getPool());
             _clusterDao.update(cluster.getId(), cluster);
         } else if (! cluster.getGuid().equals(startup.getPool()) ) {
-            String msg = "pool uuid for cluster " + cluster.getId() + " changed from " + cluster.getGuid() + " to " + cmd.getPod();
+            String msg = "pool uuid for cluster " + cluster.getId() + " changed from " + cluster.getGuid() + " to " + startup.getPool();
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }

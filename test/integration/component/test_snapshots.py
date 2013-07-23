@@ -375,8 +375,8 @@ class TestSnapshots(cloudstackTestCase):
         #6. Mount/Attach volume to another server
         #7. Compare data
 
-        random_data_0 = random_gen(100)
-        random_data_1 = random_gen(100)
+        random_data_0 = random_gen(size=100)
+        random_data_1 = random_gen(size=100)
 
         volume = Volume.create(
                                self.apiclient,
@@ -644,8 +644,8 @@ class TestSnapshots(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         volume = volumes[0]
-        random_data_0 = random_gen(100)
-        random_data_1 = random_gen(100)
+        random_data_0 = random_gen(size=100)
+        random_data_1 = random_gen(size=100)
         try:
             ssh_client = self.virtual_machine.get_ssh_client()
 
@@ -838,8 +838,8 @@ class TestSnapshots(cloudstackTestCase):
         #5. Login to newly created virtual machine
         #6. Compare data
 
-        random_data_0 = random_gen(100)
-        random_data_1 = random_gen(100)
+        random_data_0 = random_gen(size=100)
+        random_data_1 = random_gen(size=100)
 
         try:
             #Login to virtual machine

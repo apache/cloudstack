@@ -23,7 +23,11 @@ import java.util.Map;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.exception.*;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
@@ -34,7 +38,7 @@ import com.cloud.utils.Pair;
  *
  * 
  */
-public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmService{
+public interface UserVmManager extends UserVmService {
 
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**

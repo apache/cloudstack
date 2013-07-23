@@ -97,8 +97,8 @@ public class MidoNetElementTest extends TestCase {
 
         //mockVm
         @SuppressWarnings("unchecked")
-        VirtualMachineProfile<? extends VirtualMachine> mockVm =
-                (VirtualMachineProfile<? extends VirtualMachine>)mock(VirtualMachineProfile.class);
+        VirtualMachineProfile mockVm =
+                (VirtualMachineProfile)mock(VirtualMachineProfile.class);
         when(mockVm.getType()).thenReturn(VirtualMachine.Type.User);
 
         MidoNetElement elem = new MidoNetElement();

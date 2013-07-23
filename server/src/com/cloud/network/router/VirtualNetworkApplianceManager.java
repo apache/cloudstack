@@ -61,13 +61,13 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
      * @param routers TODO
      * 
      */
-    boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, 
+    boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, 
             List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
-    boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile,
+    boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile profile,
             List<? extends VirtualRouter> routers, String SSHPublicKey) throws ResourceUnavailableException;
 
-    boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile,
+    boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile,
             List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
 	List<DomainRouterVO> deployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner, 
@@ -99,16 +99,16 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     boolean applyStaticNats(Network network, final List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) 
             throws ResourceUnavailableException;
     
-	boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, 
+	boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, 
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
 	
-	boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, 
+	boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, 
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
     boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
 
-    boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile<UserVm> uservm, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException ;
+    boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile uservm, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException ;
 
     boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 

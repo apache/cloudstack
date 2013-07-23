@@ -47,7 +47,7 @@ public interface HostAllocator extends Adapter {
 	* @return List<Host> List of hosts that are suitable for VM allocation
 	**/
 	
-	public List<Host> allocateTo(VirtualMachineProfile<?extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo);
+	public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo);
 	
     /**
     * Determines which physical hosts are suitable to
@@ -62,7 +62,7 @@ public interface HostAllocator extends Adapter {
     * @return List<Host> List of hosts that are suitable for VM allocation
     **/
     
-    public List<Host> allocateTo(VirtualMachineProfile<?extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity);
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity);
 
     /**
      * Determines which physical hosts are suitable to
@@ -77,7 +77,7 @@ public interface HostAllocator extends Adapter {
      * @param boolean considerReservedCapacity (default should be true, set to false if host capacity calculation should not look at reserved capacity)
      * @return List<Host> List of hosts that are suitable for VM allocation
      **/
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts,
             int returnUpTo, boolean considerReservedCapacity);
 
      public static int RETURN_UPTO_ALL = -1;

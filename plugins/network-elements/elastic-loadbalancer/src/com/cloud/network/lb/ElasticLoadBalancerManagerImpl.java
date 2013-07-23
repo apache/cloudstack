@@ -127,7 +127,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
@@ -140,10 +139,8 @@ import com.cloud.vm.dao.NicDao;
 
 @Component
 @Local(value = { ElasticLoadBalancerManager.class })
-public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
-ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
-    private static final Logger s_logger = Logger
-            .getLogger(ElasticLoadBalancerManagerImpl.class);
+public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
+    private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerManagerImpl.class);
     
     @Inject
     IPAddressDao _ipAddressDao;
@@ -538,21 +535,15 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
-        if (_itMgr.start(elbVm, params, user, caller) != null) {
-            return _routerDao.findById(elbVm.getId());
-        } else {
-            return null;
-        }
+        _itMgr.start(elbVm.getUuid(), params);
+        return _routerDao.findById(elbVm.getId());
     }
     
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping ELB vm " + elbVm);
         try {
-            if (_itMgr.advanceStop( elbVm, forced, user, caller)) {
-                return _routerDao.findById(elbVm.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(elbVm.getUuid(), forced);
+            return _routerDao.findById(elbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + elbVm, e);
         }
@@ -781,13 +772,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public DomainRouterVO findById(long id) {
-        return _routerDao.findById(id);
-    }
-
-    @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
-        DomainRouterVO elbVm = profile.getVirtualMachine();
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         
         List<NicProfile> elbNics = profile.getNics();
         Long guestNtwkId = null;
@@ -867,8 +852,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
-        DomainRouterVO elbVm = profile.getVirtualMachine();
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+        DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
 
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -888,7 +873,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to ssh to the ELB VM: " + answer.getDetails());
@@ -899,8 +884,8 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
-        DomainRouterVO elbVm = profile.getVirtualMachine();
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+        DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
         DataCenterVO dcVo = _dcDao.findById(elbVm.getDataCenterId());
 
         NicProfile controlNic = null;
@@ -953,10 +938,9 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         if (answer != null) {
-            VMInstanceVO vm = profile.getVirtualMachine();
-            DomainRouterVO elbVm = _routerDao.findById(vm.getId());
+            DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
             processStopOrRebootAnswer(elbVm, answer);
         }
     }
@@ -966,13 +950,13 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
         // no-op
         
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
 
 }

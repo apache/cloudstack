@@ -107,7 +107,6 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -156,7 +155,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -257,9 +256,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
         try {
             SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
-            Account systemAcct = _accountMgr.getSystemAccount();
-            User systemUser = _accountMgr.getSystemUser();
-            return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
+            _itMgr.advanceStart(secStorageVm.getUuid(), null);
+            return _secStorageVmDao.findById(secStorageVm.getId());
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
             return null;
@@ -907,11 +905,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 try {
                     if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                         try {
-                            boolean result = _itMgr.stop(secStorageVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                            if (result) {
-                            }
-
-                            return result;
+                            _itMgr.stop(secStorageVm.getUuid());
+                            return true;
                         } finally {
                             secStorageVmLock.unlock();
                         }
@@ -1005,14 +1000,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public SecondaryStorageVmVO findById(long id) {
-        return _secStorageVmDao.findById(id);
-    }
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
-    @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
-
-    	SecondaryStorageVmVO vm = profile.getVirtualMachine();
+        SecondaryStorageVmVO vm = _secStorageVmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
@@ -1043,7 +1033,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
-        buf.append(" role=").append(profile.getVirtualMachine().getRole().toString());
+        buf.append(" role=").append(vm.getRole().toString());
         buf.append(" mtu=").append(_secStorageVmMtuSize);
 
         boolean externalDhcp = false;
@@ -1109,11 +1099,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         finalizeCommandsOnStart(cmds, profile);
 
-        SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+        SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -1132,7 +1122,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
         NicProfile controlNic = null;
@@ -1159,7 +1149,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (!answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
@@ -1171,7 +1161,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
             IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
             if (ipaddr != null && ipaddr.getSystem()) {
-                SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+                SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
                 // override SSVM guest IP with EIP, so that download url's with be prepared with EIP
                 secVm.setPublicIpAddress(ipaddr.getAddress().addr());
                 _secStorageVmDao.update(secVm.getId(), secVm);
@@ -1185,7 +1175,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<SecondaryStorageVmVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         //release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
@@ -1199,11 +1189,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public void finalizeExpunge(SecondaryStorageVmVO vm) {
-        vm.setPublicIpAddress(null);
-        vm.setPublicMacAddress(null);
-        vm.setPublicNetmask(null);
-        _secStorageVmDao.update(vm.getId(), vm);
+    public void finalizeExpunge(VirtualMachine vm) {
+        SecondaryStorageVmVO ssvm = _secStorageVmDao.findByUuid(vm.getUuid());
+
+        ssvm.setPublicIpAddress(null);
+        ssvm.setPublicMacAddress(null);
+        ssvm.setPublicNetmask(null);
+        _secStorageVmDao.update(ssvm.getId(), ssvm);
     }
 
     @Override
@@ -1380,7 +1372,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
 	@Override
-	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+	public void prepareStop(VirtualMachineProfile profile) {
 
 	}
 }

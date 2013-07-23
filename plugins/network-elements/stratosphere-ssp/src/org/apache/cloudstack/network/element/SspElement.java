@@ -509,7 +509,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      */
     @Override
     public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
                     throws ConcurrentOperationException, ResourceUnavailableException,
                     InsufficientCapacityException {
@@ -526,7 +526,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      */
     @Override
     public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         s_logger.trace("release");
@@ -569,7 +569,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public boolean prepareMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context) {
         try {
             prepare(network, nic, vm, dest, context);
@@ -588,7 +588,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public void rollbackMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext src, ReservationContext dst) {
         try {
             release(network, nic, vm, dst);
@@ -601,7 +601,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public void commitMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext src, ReservationContext dst) {
         try {
             release(network, nic, vm, src);

@@ -323,11 +323,11 @@ class TestLoadBalance(cloudstackTestCase):
 
 
         hostnames = []
-        self.try_ssh(src_nat_ip_addr, hostnames)
-        self.try_ssh(src_nat_ip_addr, hostnames)
-        self.try_ssh(src_nat_ip_addr, hostnames)
-        self.try_ssh(src_nat_ip_addr, hostnames)
-        self.try_ssh(src_nat_ip_addr, hostnames)
+        self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
+        self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
+        self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
+        self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
+        self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
 
         self.debug("Hostnames: %s" % str(hostnames))
         self.assertIn(
@@ -354,7 +354,7 @@ class TestLoadBalance(cloudstackTestCase):
                                              self.vm_2.id
                                              ))
 
-            self.try_ssh(src_nat_ip_addr, hostnames)
+            self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
             self.assertIn(
                           self.vm_1.name,
                           hostnames,
@@ -368,7 +368,7 @@ class TestLoadBalance(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             self.debug("Removed all VMs, trying to SSH")
-            self.try_ssh(src_nat_ip_addr, hostnames)
+            self.try_ssh(src_nat_ip_addr.ipaddress, hostnames)
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
@@ -440,11 +440,11 @@ class TestLoadBalance(cloudstackTestCase):
         )
         try:
             hostnames = []
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
 
             self.debug("Hostnames: %s" % str(hostnames))
             self.assertIn(
@@ -468,7 +468,7 @@ class TestLoadBalance(cloudstackTestCase):
             # Making host list empty
             hostnames[:] = []
 
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
             self.assertIn(
                 self.vm_1.name,
                 hostnames,
@@ -486,7 +486,7 @@ class TestLoadBalance(cloudstackTestCase):
                            self.non_src_nat_ip.ipaddress.ipaddress,
                            self.vm_1.id
                            ))
-            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
@@ -535,11 +535,11 @@ class TestLoadBalance(cloudstackTestCase):
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
 
         hostnames = []
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
 
         self.debug("Hostnames: %s" % str(hostnames))
         self.assertIn(
@@ -561,10 +561,10 @@ class TestLoadBalance(cloudstackTestCase):
         try:
             self.debug("SSHing again into IP address: %s with VM (ID: %s) added to LB rule" %
                                             (
-                                             self.non_src_nat_ip.ipaddress,
+                                             self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_1.id,
                                              ))
-            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
 
             self.assertIn(
                           self.vm_1.name,
@@ -573,17 +573,17 @@ class TestLoadBalance(cloudstackTestCase):
                           )
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s" %
-                                    self.non_src_nat_ip.ipaddress)
+                                    self.non_src_nat_ip.ipaddress.ipaddress)
 
         lb_rule.assign(self.apiclient, [self.vm_3])
 
 #        # Making hostnames list empty
         hostnames[:] = []
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
-        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, hostnames)
         self.debug("Hostnames: %s" % str(hostnames))
         self.assertIn(
                   self.vm_1.name,

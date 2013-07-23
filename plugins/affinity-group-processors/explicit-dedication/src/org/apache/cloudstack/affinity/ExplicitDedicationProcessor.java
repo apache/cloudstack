@@ -23,9 +23,10 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -82,7 +83,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
      * This IncludeList is then used to update the avoid list for a given data center.
      */
     @Override
-    public void process(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan,
             ExcludeList avoid) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());

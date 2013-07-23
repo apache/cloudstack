@@ -56,7 +56,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
 	@Override
 	protected List<StoragePool> select(DiskProfile dskCh,
-			VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+			VirtualMachineProfile vmProfile,
 			DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 	    s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
 		List<StoragePool> suitablePools = new ArrayList<StoragePool>();

@@ -38,7 +38,7 @@ public interface NetworkMigrationResponder {
      * @param context
      * @return true when operation was successful.
      */
-    public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context);
+    public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context);
 
     /**
      * Cancel for migration preparation.
@@ -52,7 +52,7 @@ public interface NetworkMigrationResponder {
      * @param src The context nic migrates from.
      * @param dst The context nic migrates to.
      */
-    public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext src, ReservationContext dst);
+    public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst);
 
     /**
      * Commit the migration resource.
@@ -66,5 +66,5 @@ public interface NetworkMigrationResponder {
      * @param src the context nic migrates from.
      * @param dst the context nic migrates to.
      */
-    public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext src, ReservationContext dst);
+    public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst);
 }

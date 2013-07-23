@@ -47,13 +47,13 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
     @Inject private ResourceManager _resourceMgr;
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
@@ -109,7 +109,7 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
 
         long dcId = plan.getDataCenterId();

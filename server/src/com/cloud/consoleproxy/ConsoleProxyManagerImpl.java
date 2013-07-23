@@ -65,6 +65,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -110,7 +111,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -155,7 +155,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
 public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager,
-        VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+        VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -540,8 +540,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startProxy(long proxyVmId) {
         try {
             ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
-            Account systemAcct = _accountMgr.getSystemAccount();
-            User systemUser = _accountMgr.getSystemUser();
             if (proxy.getState() == VirtualMachine.State.Running) {
                 return proxy;
             }
@@ -552,7 +550,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                return _itMgr.start(proxy, null, systemUser, systemAcct);
+                _itMgr.advanceStart(proxy.getUuid(), null);
+                proxy = _consoleProxyDao.findById(proxy.getId());
             }
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null
@@ -572,6 +571,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
         } catch (CloudRuntimeException e) {
+            s_logger.warn("Runtime Exception while trying to start console proxy", e);
+            return null;
+        } catch (ConcurrentOperationException e) {
+            s_logger.warn("Runtime Exception while trying to start console proxy", e);
+            return null;
+        } catch (OperationTimedoutException e) {
             s_logger.warn("Runtime Exception while trying to start console proxy", e);
             return null;
         }
@@ -1020,9 +1025,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         try {
-            return _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            _itMgr.stop(proxy.getUuid());
+            return true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception " + e.toString());
+            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception ", e);
+            return false;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to stop proxy ", e);
             return false;
         }
     }
@@ -1305,9 +1314,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
-        ConsoleProxyVO vm = profile.getVirtualMachine();
+        ConsoleProxyVO vm = _consoleProxyDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
@@ -1383,11 +1392,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         finalizeCommandsOnStart(cmds, profile);
 
-        ConsoleProxyVO proxy = profile.getVirtualMachine();
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(profile.getId());
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -1406,7 +1415,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
         NicProfile controlNic = null;
@@ -1433,7 +1442,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
             if (answer != null) {
@@ -1449,7 +1458,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
             IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
             if (ipaddr != null && ipaddr.getSystem()) {
-                ConsoleProxyVO consoleVm = profile.getVirtualMachine();
+                ConsoleProxyVO consoleVm = _consoleProxyDao.findById(profile.getId());
                 // override CPVM guest IP with EIP, so that console url's will be prepared with EIP
                 consoleVm.setPublicIpAddress(ipaddr.getAddress().addr());
                 _consoleProxyDao.update(consoleVm.getId(), consoleVm);
@@ -1463,7 +1472,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void finalizeExpunge(ConsoleProxyVO proxy) {
+    public void finalizeExpunge(VirtualMachine vm) {
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vm.getId());
         proxy.setPublicIpAddress(null);
         proxy.setPublicMacAddress(null);
         proxy.setPublicNetmask(null);
@@ -1473,12 +1483,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public ConsoleProxyVO findById(long id) {
-        return _consoleProxyDao.findById(id);
-    }
-
-    @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         //release elastic IP here if assigned
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
@@ -1680,7 +1685,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
 
 }

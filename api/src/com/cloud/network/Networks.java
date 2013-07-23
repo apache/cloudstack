@@ -23,7 +23,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Network includes all of the enums used within networking.
- *
+ * 
  */
 public class Networks {
 
@@ -66,8 +66,8 @@ public class Networks {
         Pvlan("pvlan", String.class),
         UnDecided(null, null);
 
-        private String scheme;
-        private Class<?> type;
+        private final String scheme;
+        private final Class<?> type;
 
         private BroadcastDomainType(String scheme, Class<?> type) {
             this.scheme = scheme;
@@ -75,14 +75,16 @@ public class Networks {
         }
 
         /**
-         * @return scheme to be used in broadcast uri. Null indicates that this type does not have broadcast tags.
+         * @return scheme to be used in broadcast uri. Null indicates that this
+         *         type does not have broadcast tags.
          */
         public String scheme() {
             return scheme;
         }
 
         /**
-         * @return type of the value in the broadcast uri. Null indicates that this type does not have broadcast tags.
+         * @return type of the value in the broadcast uri. Null indicates that
+         *         this type does not have broadcast tags.
          */
         public Class<?> type() {
             return type;
@@ -90,9 +92,56 @@ public class Networks {
 
         public <T> URI toUri(T value) {
             try {
-                return new URI(scheme + "://" + value);
+                // do we need to check that value does not contain a scheme
+                // part?
+                if (value.toString().contains(":"))
+                    return new URI(value.toString());
+                else
+                    return new URI(scheme, value.toString(), null);
             } catch (URISyntaxException e) {
-                throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
+                throw new CloudRuntimeException(
+                        "Unable to convert to broadcast URI: " + value);
+            }
+        }
+
+        public static BroadcastDomainType getTypeOf(URI uri) {
+            return getType(uri.getScheme());
+        }
+
+        public static BroadcastDomainType getTypeOf(String str)
+                throws URISyntaxException {
+            return getTypeOf(new URI(str));
+        }
+
+        public static BroadcastDomainType getType(String scheme) {
+            if (scheme == null) {
+                return UnDecided;
+            }
+            for (BroadcastDomainType type : values()) {
+                if (scheme.equalsIgnoreCase(type.scheme())) {
+                    return type;
+                }
+            }
+            return UnDecided;
+        }
+
+        public static String getValue(String uriString)
+                throws URISyntaxException {
+            return getValue(new URI(uriString));
+        }
+
+        public static String getValue(URI uri) {
+            BroadcastDomainType type = getTypeOf(uri);
+            if (type == Vlan) {
+                // do complicated stuff for backward compatibility
+                try {
+                    Long.parseLong(uri.getSchemeSpecificPart());
+                    return uri.getSchemeSpecificPart();
+                } catch (NumberFormatException e) {
+                    return uri.getHost();
+                }
+            } else {
+                return uri.getSchemeSpecificPart();
             }
         }
     };
@@ -110,8 +159,7 @@ public class Networks {
         Vpn;
 
         public static boolean isSystemNetwork(TrafficType trafficType) {
-            if (Storage.equals(trafficType)
-                    || Management.equals(trafficType)
+            if (Storage.equals(trafficType) || Management.equals(trafficType)
                     || Control.equals(trafficType)) {
                 return true;
             }
@@ -163,11 +211,18 @@ public class Networks {
 
         public <T> URI toUri(T value) {
             try {
-                // assert(this!=Vlan || value.getClass().isAssignableFrom(Integer.class)) :
+                // assert(this!=Vlan ||
+                // value.getClass().isAssignableFrom(Integer.class)) :
+                // do we need to check that value does not contain a scheme
+                // part?
                 // "Why are you putting non integer into vlan url";
-                return new URI(scheme + "://" + value.toString());
+                if (value.toString().contains(":"))
+                    return new URI(value.toString());
+                else
+                    return new URI(scheme, value.toString(), null);
             } catch (URISyntaxException e) {
-                throw new CloudRuntimeException("Unable to convert to isolation type URI: " + value);
+                throw new CloudRuntimeException(
+                        "Unable to convert to isolation type URI: " + value);
             }
         }
     }
@@ -176,7 +231,7 @@ public class Networks {
         Vlan("vlan"),
         VSwitch("vswitch");
 
-        private String scheme;
+        private final String scheme;
 
         private BroadcastScheme(String scheme) {
             this.scheme = scheme;

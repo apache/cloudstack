@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -25,10 +25,9 @@ import com.cloud.exception.ResourceUnavailableException;
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
  */
-public interface VirtualMachineGuru<T extends VirtualMachine> {
-    T findById(long id);
+public interface VirtualMachineGuru {
     
-    boolean finalizeVirtualMachineProfile(VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
+    boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context);
     
     /**
      * finalize the virtual machine deployment.
@@ -37,7 +36,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param dest destination to send the command.
      * @return true if everything checks out.  false if not and we should try again.
      */
-    boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException;
+    boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException;
     
     /**
      * Check the deployment results.
@@ -46,18 +45,18 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
      */
-    boolean finalizeStart(VirtualMachineProfile<T> profile, long hostId, Commands cmds, ReservationContext context);
+    boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context);
     
-    boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<T> profile);
+    boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile);
     
-    void finalizeStop(VirtualMachineProfile<T> profile, StopAnswer answer);
+    void finalizeStop(VirtualMachineProfile profile, StopAnswer answer);
     
-    void finalizeExpunge(T vm);
+    void finalizeExpunge(VirtualMachine vm);
     
     /**
      * Prepare Vm for Stop
      * @param profile
      * @return
      */
-    void prepareStop(VirtualMachineProfile<T> profile);
+    void prepareStop(VirtualMachineProfile profile);
 }

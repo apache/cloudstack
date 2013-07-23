@@ -24,8 +24,7 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin import remoteSSHClient
 from nose.plugins.attrib import attr
-import datetime
-
+from marvin.cloudstackException import cloudstackAPIException
 
 class Services:
     """Test Account Services
@@ -831,12 +830,12 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
         return
 
 
-class TesttemplateHierarchy(cloudstackTestCase):
+class TestTemplateHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TesttemplateHierarchy,
+                               TestTemplateHierarchy,
                                cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone settings
@@ -877,10 +876,17 @@ class TesttemplateHierarchy(cloudstackTestCase):
                                             account=cls.account_1.name,
                                             domainid=cls.domain_1.id
                                         )
+
+        # Wait for template to download
+        cls.template.download(cls.api_client)
+
+        # Wait for template status to be changed across
+        time.sleep(60)
+
         cls._cleanup = [
                         cls.account_2,
                         cls.domain_2,
-           cls.template,
+                        cls.template,
                         cls.account_1,
                         cls.domain_1,
                         ]
@@ -946,7 +952,8 @@ class TesttemplateHierarchy(cloudstackTestCase):
         # Verify private service offering is not visible to other domain
         templates = list_templates(
                                     self.apiclient,
-                                    templatefilter='self',
+                                    id=self.template.id,
+                                    templatefilter='all',
                                     account=self.account_2.name,
                                     domainid=self.domain_2.id
                                 )
@@ -1560,9 +1567,8 @@ class TestUserLogin(cloudstackTestCase):
         respose = User.login(
                              self.apiclient,
                              username=self.account.name,
-                             password=self.services["account"]["password"]
-                             )
-        self.assertEqual(respose, None, "Login response should not be none")
+                             password=self.services["account"]["password"],
+                             domainid=domain.id)
         self.debug("Login API response: %s" % respose)
 
         self.assertNotEqual(
@@ -1788,18 +1794,13 @@ class TestDomainForceRemove(cloudstackTestCase):
         # Sleep to ensure that all resources are deleted
         time.sleep(int(configurations[0].value) * 2)
         self.debug("Checking if the resources in domain are deleted or not..")
-        accounts = Account.list(
-                                self.apiclient,
-                                name=self.account_1.name,
-                                domainid=self.account_1.domainid,
-                                listall=True
-                                )
-
-        self.assertEqual(
-            accounts,
-            None,
-            "Account should get automatically deleted after domain removal"
-            )
+        with self.assertRaises(cloudstackAPIException):
+            Account.list(
+                        self.apiclient,
+                        name=self.account_1.name,
+                        domainid=self.account_1.domainid,
+                        listall=True
+                        )
         return
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator"])

@@ -100,7 +100,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     
     @Override
     public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
@@ -109,7 +109,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     
     @Override
     public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         return true;

@@ -78,7 +78,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         super();
     }
 
-    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
@@ -117,7 +117,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
@@ -148,7 +148,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (nic.getIp4Address() == null) {
@@ -157,7 +157,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         s_logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
         return true;
     }
@@ -189,7 +189,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override @DB
-    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         s_logger.debug("deallocate called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());

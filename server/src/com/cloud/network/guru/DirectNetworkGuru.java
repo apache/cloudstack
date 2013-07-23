@@ -188,7 +188,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());    
@@ -208,7 +208,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null && nic.getIp6Address() == null) {
             allocateDirectIp(nic, network, vm, dest.getDataCenter(), null, null);
@@ -217,7 +217,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @DB
-    protected void allocateDirectIp(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DataCenter dc, String requestedIp4Addr, String requestedIp6Addr)
+    protected void allocateDirectIp(NicProfile nic, Network network, VirtualMachineProfile vm, DataCenter dc, String requestedIp4Addr, String requestedIp6Addr)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         
@@ -236,7 +236,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         return true;
     }
 
@@ -246,7 +246,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override @DB
-    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
     	if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }

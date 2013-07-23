@@ -26,10 +26,10 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=Investigator.class)
@@ -42,12 +42,12 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
 	}
 	
 	@Override
-	public Status isAgentAlive(HostVO agent) {
+    public Status isAgentAlive(Host agent) {
 		return null;
 	}
 
 	@Override
-	public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) {
 		CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
 		try {
 			CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);

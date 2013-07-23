@@ -639,7 +639,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
-            srcVolume.getDataStore().delete(srcVolume);
+            // srcVolume.getDataStore().delete(srcVolume);
             future.complete(res);
         } catch (Exception e) {
             res.setResult(e.toString());
@@ -1045,6 +1045,13 @@ public class VolumeServiceImpl implements VolumeService {
         List<VolumeDataStoreVO> toBeDownloaded = new ArrayList<VolumeDataStoreVO>(dbVolumes);
         for (VolumeDataStoreVO volumeStore : dbVolumes) {
             VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
+            if (volume == null ){
+                s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId
+                        + ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
+                volumeStore.setDestroyed(true);
+                _volumeStoreDao.update(volumeStore.getId(), volumeStore);
+                continue;
+            }
             // Exists then don't download
             if (volumeInfos.containsKey(volume.getId())) {
                 TemplateProp volInfo = volumeInfos.remove(volume.getId());

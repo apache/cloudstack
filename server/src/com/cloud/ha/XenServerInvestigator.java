@@ -23,17 +23,18 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
-import com.cloud.agent.AgentManager;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value=Investigator.class)
 public class XenServerInvestigator extends AdapterBase implements Investigator {
@@ -46,7 +47,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
     }
     
     @Override
-    public Status isAgentAlive(HostVO agent) {
+    public Status isAgentAlive(Host agent) {
         if (agent.getHypervisorType() != HypervisorType.XenServer) {
             return null;
         }
@@ -72,7 +73,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) {
         Status status = isAgentAlive(host);
         if (status == null) {
             return null;

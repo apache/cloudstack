@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.ha;
 
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 public interface Investigator extends Adapter {
     /**
@@ -27,7 +27,7 @@ public interface Investigator extends Adapter {
      * 
      * @param vm to work on.
      */
-    public Boolean isVmAlive(VMInstanceVO vm, HostVO host);
+    public Boolean isVmAlive(VirtualMachine vm, Host host);
 
-    public Status isAgentAlive(HostVO agent);
+    public Status isAgentAlive(Host agent);
 }

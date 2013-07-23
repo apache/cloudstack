@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.ha;
@@ -31,13 +31,14 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value=FenceBuilder.class)
 public class XenServerFencer extends AdapterBase implements FenceBuilder {
@@ -49,7 +50,7 @@ public class XenServerFencer extends AdapterBase implements FenceBuilder {
     @Inject ResourceManager _resourceMgr;
 
     @Override
-    public Boolean fenceOff(VMInstanceVO vm, HostVO host) {
+    public Boolean fenceOff(VirtualMachine vm, Host host) {
         if (host.getHypervisorType() != HypervisorType.XenServer) {
             s_logger.debug("Don't know how to fence non XenServer hosts " + host.getHypervisorType());
             return null;

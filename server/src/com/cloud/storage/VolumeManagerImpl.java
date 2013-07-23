@@ -31,10 +31,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -73,7 +69,9 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
@@ -2031,7 +2029,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @DB
     protected VolumeVO switchVolume(VolumeVO existingVolume,
-            VirtualMachineProfile<? extends VirtualMachine> vm)
+            VirtualMachineProfile vm)
             throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
 
@@ -2070,7 +2068,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
 
     @Override
-    public void release(VirtualMachineProfile<? extends VMInstanceVO> profile) {
+    public void release(VirtualMachineProfile profile) {
         // add code here
     }
 
@@ -2269,7 +2267,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @Override
     public boolean storageMigration(
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             StoragePool destPool) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         List<Volume> volumesNeedToMigrate = new ArrayList<Volume>();
@@ -2307,7 +2305,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @Override
     public void prepareForMigration(
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
@@ -2320,13 +2318,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vm.addDisk(disk);
         }
 
-        if (vm.getType() == VirtualMachine.Type.User) {
-            UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
-            if (userVM.getIsoId() != null) {
-                DataTO dataTO = tmplFactory.getTemplate(userVM.getIsoId(), DataStoreRole.Image, userVM.getDataCenterId()).getTO();
-                DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
-                vm.addDisk(iso);
-            }
+        if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
+            DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
+            DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
+            vm.addDisk(iso);
         }
     }
 
@@ -2439,7 +2434,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return tasks;
     }
 
-    private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile<? extends VirtualMachine> vm,
+    private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm,
             DeployDestination dest) throws StorageUnavailableException {
         VolumeVO newVol;
         boolean recreate = _recreateSystemVmEnabled;
@@ -2506,7 +2501,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
     @Override
-    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm,
+    public void prepare(VirtualMachineProfile vm,
             DeployDestination dest) throws StorageUnavailableException,
             InsufficientStorageCapacityException, ConcurrentOperationException {
 

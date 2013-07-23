@@ -72,29 +72,31 @@ public interface VirtualMachineManager extends Manager {
             DeploymentPlan plan,
             HypervisorType hyperType) throws InsufficientCapacityException;
 
-    <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
-    <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException;
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
 
-    <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException;
+    void stop(String vmUuid) throws ResourceUnavailableException;
 
     <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
 
-    <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
+    void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
 
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
-    <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException;
 
-    <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     <T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
 
-    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException;
 
@@ -106,8 +108,6 @@ public interface VirtualMachineManager extends Manager {
 
     <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId);
-
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering
      * 
@@ -117,7 +117,7 @@ public interface VirtualMachineManager extends Manager {
      */
     boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
     
-    VMInstanceVO findById(long vmId);
+    VirtualMachine findById(long vmId);
 
 	<T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId);
 
@@ -177,7 +177,7 @@ public interface VirtualMachineManager extends Manager {
      * @param hvGuru
      * @return
      */
-    VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile);
+    VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
 
     VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost)

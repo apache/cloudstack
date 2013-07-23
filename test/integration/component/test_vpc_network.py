@@ -148,9 +148,9 @@ class Services:
                 # Any network (For creating FW rule)
                 "protocol": "TCP"
             },
-            "http_rule": {
-                "startport": 80,
-                "endport": 80,
+            "icmp_rule": {
+                "icmptype": -1,
+                "icmpcode": -1,
                 "cidrlist": '0.0.0.0/0',
                 "protocol": "ICMP"
             },
@@ -690,6 +690,7 @@ class TestVPCNetwork(cloudstackTestCase):
         self.debug("Network creation failed")
         return
 
+    @unittest.skip("skipped - RvR didn't support VPC currently ")
     @attr(tags=["advanced", "intervlan"])
     def test_06_create_network_with_rvr(self):
         """ Test create network with redundant router capability
@@ -1823,7 +1824,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         nwacl_internet_1 = NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_1.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
 
@@ -2212,7 +2213,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         cls.nwacl_internet_1 = NetworkACL.create(
                                 cls.api_client,
                                 networkid=cls.network_1.id,
-                                services=cls.services["http_rule"],
+                                services=cls.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
         cls._cleanup = [

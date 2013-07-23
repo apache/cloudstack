@@ -122,7 +122,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
+    public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(BootloaderType.HVM);
 

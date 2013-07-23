@@ -104,18 +104,23 @@ class MarvinPlugin(Plugin):
         Plugin.options(self, parser, env)
 
     def __init__(self):
+        self.identifier = None
         Plugin.__init__(self)
 
     def prepareTestRunner(self, runner):
         return self.testrunner
 
     def wantClass(self, cls):
+        if cls.__name__ == 'cloudstackTestCase':
+            return False
         if issubclass(cls, cloudstackTestCase):
             return True
         return None
 
     def loadTestsFromTestCase(self, cls):
-        self._injectClients(cls)
+        if cls.__name__ != 'cloudstackTestCase':
+            self.identifier = cls.__name__
+            self._injectClients(cls)
 
     def setClient(self, client):
         if client is not None:
@@ -125,19 +130,28 @@ class MarvinPlugin(Plugin):
         if config is not None:
             self.config = config
 
+    def beforeTest(self, test):
+        testname = test.__str__().split()[0]
+        self.testclient.identifier = '-'.join([self.identifier, testname])
+
     def _injectClients(self, test):
         testcaselogger = logging.getLogger("testclient.testcase.%s" %
                                            test.__name__)
+
+
         self.debug_stream. \
             setFormatter(logging.
                          Formatter("%(asctime)s - %(levelname)s - %(name)s" +
                                    " - %(message)s"))
+
         testcaselogger.addHandler(self.debug_stream)
         testcaselogger.setLevel(logging.DEBUG)
 
         setattr(test, "testClient", self.testclient)
         setattr(test, "config", self.config)
         setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
+        if self.testclient.identifier is None:
+            self.testclient.identifier = self.identifier
         setattr(test, "clstestclient", self.testclient)
         if hasattr(test, "user"):
             # when the class-level attr applied. all test runs as 'user'

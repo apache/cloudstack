@@ -212,7 +212,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, 
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == HypervisorType.BareMetal) {
@@ -232,7 +232,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
 
         @SuppressWarnings("unchecked")
-        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+        VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
         List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, 
                 _accountMgr.getAccount(network.getAccountId()),
                 uservm.getParameters(), offering.getRedundantRouter());
@@ -685,7 +685,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) 
+    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile vm) 
             throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
@@ -697,13 +697,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
 
         @SuppressWarnings("unchecked")
-        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+        VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
 
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey)
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String SSHPublicKey)
             throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
@@ -715,13 +715,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
 
         @SuppressWarnings("unchecked")
-        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+        VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
 
         return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, SSHPublicKey);
     }
 
     @Override
-    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws ResourceUnavailableException {
         if (!canHandle(network, null)) {
             return false;
@@ -733,7 +733,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
 
         @SuppressWarnings("unchecked")
-        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+        VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
 
         return _routerMgr.saveUserDataToRouter(network, nic, uservm, routers);
     }
@@ -848,21 +848,21 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         return true;
     }
 
     @Override
-    public  boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public  boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm,
                                                DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
             @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+            VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
 
@@ -893,7 +893,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, 
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.Dhcp)) {
@@ -902,7 +902,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             }
 
             @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+            VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
 
@@ -916,7 +916,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.UserData)) {
@@ -930,7 +930,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             }
 
             @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+            VirtualMachineProfile uservm = (VirtualMachineProfile) vm;
 
             List<DomainRouterVO> routers = getRouters(network, dest);
 
@@ -1049,7 +1049,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
 	@Override
 	public boolean prepareMigration(NicProfile nic, Network network,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
+			VirtualMachineProfile vm,
 			DeployDestination dest, ReservationContext context) {
 		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
 			return true;
@@ -1068,7 +1068,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
 	@Override
 	public void rollbackMigration(NicProfile nic, Network network,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
+			VirtualMachineProfile vm,
 			ReservationContext src, ReservationContext dst) {
 		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
 			return;
@@ -1086,7 +1086,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
 	@Override
 	public void commitMigration(NicProfile nic, Network network,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
+			VirtualMachineProfile vm,
 			ReservationContext src, ReservationContext dst) {
 		if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
 			return;

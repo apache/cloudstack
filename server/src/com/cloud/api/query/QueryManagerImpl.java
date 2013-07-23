@@ -2876,22 +2876,24 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sc.addAnd("state", SearchCriteria.Op.SC, readySc);
             }
 
-            if (zoneId != null) {
-                SearchCriteria<TemplateJoinVO> zoneSc = _templateJoinDao.createSearchCriteria();
-                zoneSc.addOr("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-                zoneSc.addOr("dataStoreScope", SearchCriteria.Op.EQ, ScopeType.REGION);
-                // handle the case where xs-tools.iso and vmware-tools.iso do not have data_center information in template_view
-                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
-                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
-                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
-                zoneSc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
-                sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
-            }
 
             if (!showDomr) {
                 // excluding system template
                 sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
             }
+        }
+
+        if (zoneId != null) {
+            SearchCriteria<TemplateJoinVO> zoneSc = _templateJoinDao.createSearchCriteria();
+            zoneSc.addOr("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            zoneSc.addOr("dataStoreScope", SearchCriteria.Op.EQ, ScopeType.REGION);
+            // handle the case where xs-tools.iso and vmware-tools.iso do not
+            // have data_center information in template_view
+            SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+            isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+            isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+            zoneSc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+            sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
         }
 
         // don't return removed template, this should not be needed since we

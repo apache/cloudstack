@@ -383,7 +383,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
     @Override
     public void VmCheckAndCreateTunnel(
-    		VirtualMachineProfile<? extends VirtualMachine> vm,
+    		VirtualMachineProfile vm,
     		Network nw, DeployDestination dest) {
         CheckAndCreateTunnel(vm.getVirtualMachine(), nw, dest);    
     }

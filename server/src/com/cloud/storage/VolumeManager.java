@@ -41,7 +41,6 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface VolumeManager extends VolumeApiService {
@@ -85,7 +84,7 @@ public interface VolumeManager extends VolumeApiService {
     @Override
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
-    void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
+    void release(VirtualMachineProfile profile);
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
@@ -95,15 +94,11 @@ public interface VolumeManager extends VolumeApiService {
     <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
             Map<VolumeVO, StoragePoolVO> volumeToPool);
 
-    boolean storageMigration(
-            VirtualMachineProfile<? extends VirtualMachine> vm,
-            StoragePool destPool);
+    boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool);
 
-    void prepareForMigration(
-            VirtualMachineProfile<? extends VirtualMachine> vm,
-            DeployDestination dest);
+    void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    void prepare(VirtualMachineProfile<? extends VirtualMachine> vm,
+    void prepare(VirtualMachineProfile vm,
             DeployDestination dest) throws StorageUnavailableException,
             InsufficientStorageCapacityException, ConcurrentOperationException;
 

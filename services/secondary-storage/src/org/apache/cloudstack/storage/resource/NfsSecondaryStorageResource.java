@@ -273,7 +273,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplTO.setSize(size);
             newDestTO = newTemplTO;
         } else {
-            return new CopyCmdAnswer("not implemented yet");
+            VolumeObjectTO newVolTO = new VolumeObjectTO();
+            newVolTO.setPath(finalDownloadPath);
+            newVolTO.setName(finalFileName);
+            newVolTO.setSize(size);
+            newDestTO = newVolTO;
         }
 
         return new CopyCmdAnswer(newDestTO);
@@ -313,11 +317,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             File destFile = S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), downloadDirectory,
                     new FileNamingStrategy() {
-                        @Override
-                        public String determineFileName(final String key) {
-                            return substringAfterLast(key, S3Utils.SEPARATOR);
-                        }
-                    });
+                @Override
+                public String determineFileName(final String key) {
+                    return substringAfterLast(key, S3Utils.SEPARATOR);
+                }
+            });
 
             if (destFile == null) {
                 return new CopyCmdAnswer("Can't find template");
@@ -589,10 +593,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
                     swiftPath, swiftPath, file.length(), file.length(), md5sum
-            );
+                    );
             return answer;
         } catch (Exception e) {
-             s_logger.debug("Failed to register template into swift", e);
+            s_logger.debug("Failed to register template into swift", e);
             return new DownloadAnswer(e.toString(), VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         } finally {
             if (file != null) {
@@ -650,16 +654,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             ext = filePath.substring(i + 1);
         }
         if (ext != null) {
-            if (ext.equalsIgnoreCase("vhd"))
+            if (ext.equalsIgnoreCase("vhd")) {
                 return ImageFormat.VHD;
-            else if (ext.equalsIgnoreCase("qcow2"))
+            } else if (ext.equalsIgnoreCase("qcow2")) {
                 return ImageFormat.QCOW2;
-            else if (ext.equalsIgnoreCase("ova"))
+            } else if (ext.equalsIgnoreCase("ova")) {
                 return ImageFormat.OVA;
-            else if (ext.equalsIgnoreCase("tar"))
+            } else if (ext.equalsIgnoreCase("tar")) {
                 return ImageFormat.TAR;
-            else if (ext.equalsIgnoreCase("img"))
+            } else if (ext.equalsIgnoreCase("img")) {
                 return ImageFormat.RAW;
+            }
         }
 
         return null;
@@ -921,16 +926,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (dstore instanceof SwiftTO) {
             String path = cmd.getDirectory();
             String volumeId = StringUtils.substringAfterLast(path, "/"); // assuming
-                                                                         // that
-                                                                         // the
-                                                                         // filename
-                                                                         // is
-                                                                         // the
-                                                                         // last
-                                                                         // section
-                                                                         // in
-                                                                         // the
-                                                                         // path
+            // that
+            // the
+            // filename
+            // is
+            // the
+            // last
+            // section
+            // in
+            // the
+            // path
             String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId.toString(), "");
             if (result != null) {
                 String errMsg = "failed to delete snapshot for volume " + volumeId + " , err=" + result;
@@ -971,12 +976,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     final File targetFile = S3Utils.getFile(s3, s3.getBucketName(), key,
                             _storage.getFile(directoryName), new FileNamingStrategy() {
 
-                                @Override
-                                public String determineFileName(String key) {
-                                    return snapshotFileName;
-                                }
+                        @Override
+                        public String determineFileName(String key) {
+                            return snapshotFileName;
+                        }
 
-                            });
+                    });
 
                     if (cmd.getParent() != null) {
 
@@ -1125,8 +1130,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, false, checksum);
         } finally {
             try {
-                if (is != null)
+                if (is != null) {
                     is.close();
+                }
             } catch (IOException e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Could not close the file " + absoluteTemplatePath);
@@ -1239,24 +1245,24 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String result = executeWithNoWaitLock(determineSnapshotLockId(accountId, volumeId),
                     new Callable<String>() {
 
-                        @Override
-                        public String call() throws Exception {
+                @Override
+                public String call() throws Exception {
 
-                            if (deleteAllFlag) {
-                                S3Utils.deleteDirectory(s3, bucket, determineSnapshotS3Directory(accountId, volumeId));
-                            } else {
-                                S3Utils.deleteObject(
-                                        s3,
-                                        bucket,
-                                        determineSnapshotS3Key(accountId, volumeId,
-                                                determineSnapshotBackupFilename(name)));
-                            }
+                    if (deleteAllFlag) {
+                        S3Utils.deleteDirectory(s3, bucket, determineSnapshotS3Directory(accountId, volumeId));
+                    } else {
+                        S3Utils.deleteObject(
+                                s3,
+                                bucket,
+                                determineSnapshotS3Key(accountId, volumeId,
+                                        determineSnapshotBackupFilename(name)));
+                    }
 
-                            return null;
+                    return null;
 
-                        }
+                }
 
-                    });
+            });
 
             return result;
 
@@ -1330,16 +1336,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (dstore instanceof SwiftTO) {
             String path = obj.getPath();
             String filename = StringUtils.substringAfterLast(path, "/"); // assuming
-                                                                         // that
-                                                                         // the
-                                                                         // filename
-                                                                         // is
-                                                                         // the
-                                                                         // last
-                                                                         // section
-                                                                         // in
-                                                                         // the
-                                                                         // path
+            // that
+            // the
+            // filename
+            // is
+            // the
+            // last
+            // section
+            // in
+            // the
+            // path
             String volumeId = StringUtils.substringAfterLast(StringUtils.substringBeforeLast(path, "/"), "/");
             String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId, filename);
             if (result != null) {
@@ -1391,8 +1397,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
         final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.TEMPLATE_ROOT_DIR);
-        if (objectSummaries == null)
+        if (objectSummaries == null) {
             return null;
+        }
         Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
         for (S3ObjectSummary objectSummary : objectSummaries) {
             String key = objectSummary.getKey();
@@ -1412,8 +1419,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
         final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.VOLUME_ROOT_DIR);
-        if (objectSummaries == null)
+        if (objectSummaries == null) {
             return null;
+        }
         Map<Long, TemplateProp> tmpltInfos = new HashMap<Long, TemplateProp>();
         for (S3ObjectSummary objectSummary : objectSummaries) {
             String key = objectSummary.getKey();
@@ -1596,8 +1604,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         boolean success = true;
         String result;
         result = configureIpFirewall(ipList, cmd.getIsAppendAIp());
-        if (result != null)
+        if (result != null) {
             success = false;
+        }
 
         return new Answer(cmd, success, result);
     }
@@ -1807,16 +1816,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             Long volumeId = obj.getId();
             String path = obj.getPath();
             String filename = StringUtils.substringAfterLast(path, "/"); // assuming
-                                                                         // that
-                                                                         // the
-                                                                         // filename
-                                                                         // is
-                                                                         // the
-                                                                         // last
-                                                                         // section
-                                                                         // in
-                                                                         // the
-                                                                         // path
+            // that
+            // the
+            // filename
+            // is
+            // the
+            // last
+            // section
+            // in
+            // the
+            // path
             String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId.toString(), filename);
             if (result != null) {
                 String errMsg = "failed to delete volume " + filename + " , err=" + result;
@@ -1882,8 +1891,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public Type getType() {
-        if (SecondaryStorageVm.Role.templateProcessor.toString().equals(_role))
+        if (SecondaryStorageVm.Role.templateProcessor.toString().equals(_role)) {
             return Host.Type.SecondaryStorage;
+        }
 
         return Host.Type.SecondaryStorageCmdExecutor;
     }
@@ -1946,8 +1956,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
 
-        if (_inSystemVM)
+        if (_inSystemVM) {
             _storage.mkdirs(_parent);
+        }
 
         _configSslScr = Script.findScript(getDefaultScriptsDir(), "config_ssl.sh");
         if (_configSslScr != null) {
@@ -1972,8 +1983,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         _role = (String) params.get("role");
-        if (_role == null)
+        if (_role == null) {
             _role = SecondaryStorageVm.Role.templateProcessor.toString();
+        }
         s_logger.info("Secondary storage runs in role " + _role);
 
         _guid = (String) params.get("guid");
@@ -2189,8 +2201,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (result != null) {
             s_logger.warn("Unable to mount " + nfsPath + " due to " + result);
             file = new File(root);
-            if (file.exists())
+            if (file.exists()) {
                 file.delete();
+            }
             return null;
         }
 
@@ -2223,8 +2236,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         final StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
         fillNetworkInformation(cmd);
-        if (_publicIp != null)
+        if (_publicIp != null) {
             cmd.setPublicIpAddress(_publicIp);
+        }
 
         if (_inSystemVM) {
             Script command = new Script("/bin/bash", s_logger);

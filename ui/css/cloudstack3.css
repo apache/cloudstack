@@ -2108,6 +2108,7 @@ div.detail-group.actions td {
   display: block;
   width: 99%;
   border-bottom: 1px solid #AAAAAA;
+  float: left;
 }
 
 .detail-group table td.detail-actions .action.text {
@@ -11820,11 +11821,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -169px -583px;
 }
 
-.stop .icon {
+.stop .icon,
+.removeVmwareDc .icon {
   background-position: 0px -31px;
 }
 
-.stop:hover .icon {
+.stop:hover .icon,
+.removeVmwareDc:hover .icon {
   background-position: 0px -613px;
 }
 
@@ -12055,11 +12058,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -100px -614px;
 }
 
-.addVlanRange .icon {
+.addVlanRange .icon,
+.addVmwareDc .icon {
   background-position: -37px -62px;
 }
 
-.addVlanRange:hover .icon {
+.addVlanRange:hover .icon,
+.addVmwareDc:hover .icon {
   background-position: -37px -62px;
 }
 

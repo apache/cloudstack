@@ -198,7 +198,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIpv4() != null) {
@@ -224,7 +224,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override @DB
-    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
         super.deallocate(config, nic, vm);
 
         if (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()))) {
@@ -241,7 +241,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
     	boolean _isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
@@ -278,7 +278,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
 
         if (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()))) {
             return true;

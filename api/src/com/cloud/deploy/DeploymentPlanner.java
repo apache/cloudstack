@@ -29,7 +29,6 @@ import com.cloud.host.Host;
 import com.cloud.org.Cluster;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -48,7 +47,7 @@ public interface DeploymentPlanner extends Adapter {
      * @return DeployDestination for that virtual machine.
      */
     @Deprecated
-    DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
+    DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
 
     /**
      * check() is called right before the virtual machine starts to make sure
@@ -65,7 +64,7 @@ public interface DeploymentPlanner extends Adapter {
      * @return true if it's okay to start; false if not. If false, the exclude list will include what should be
      *         excluded.
      */
-    boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
+    boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
 
     /**
      * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so
@@ -80,7 +79,7 @@ public interface DeploymentPlanner extends Adapter {
      *            avoid these data centers, pods, clusters, or hosts.
      * @return true if it's okay to allocate; false or not
      */
-    boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid);
+    boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid);
 
     public enum AllocationAlgorithm {
         random,

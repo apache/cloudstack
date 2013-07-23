@@ -6473,7 +6473,7 @@
                                                     });
 
                                                     $.ajax({
-                                                        url: createURL('listVmwareDcs'),
+                                                        url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
                                                         data: {
                                                             zoneid: args.context.physicalResources[0].id
                                                         },
@@ -6485,15 +6485,21 @@
                                                                 selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
                                                                 selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
                                                             }
+                                                        },
+                                                        error: function(XMLHttpResponse) { //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});                                                      	
+                                                        	if(parseXMLHttpResponse(XMLHttpResponse) == 'The given command does not exist or it is not available for user')
+                                                        		return; //do nothing
+                                                        	else 
+                                                        		cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)}); //pop up error dialog box if the error is not 'The given command does not exist or it is not available for user'
                                                         }
                                                     });
 
                                                     // for testing only (begin)
                                                     /*
-                          selectedZoneObj.vmwaredcName = "datacenter";
-                          selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
-                          selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
-                          */
+						                            selectedZoneObj.vmwaredcName = "datacenter";
+						                            selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
+						                            selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
+						                            */
                                                     // for testing only (end)
 
                                                     args.response.success({
@@ -7414,34 +7420,29 @@
                                             listAll: true
                                         },
                                         success: function(json) {
-                                            var items = json.listsystemvmsresponse.systemvm;
-                                            if (items != null) {
+                                            var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            if (systemvmObjs != null) {
                                                 $.ajax({
-                                                    url: createURL("listHosts&listAll=true"),
-                                                    async: false,
+                                                    url: createURL("listHosts&listAll=true"),                                                    
                                                     success: function(json) {
-
-                                                        var hostObj = json.listhostsresponse.host;
-
-                                                        $(hostObj).each(function(index) {
-
-                                                            $.extend(items[index], {
-                                                                agentstate: hostObj[index].state
-                                                            });
-
-                                                        });
+                                                        var hostObjs = json.listhostsresponse.host;
+                                                        for (var i = 0; i < systemvmObjs.length; i++) {
+                                                        	for (var k = 0; k < hostObjs.length; k++) {
+                                                        		if (hostObjs[k].name == systemvmObjs[i].name) {
+                                                        			systemvmObjs[i].agentstate = hostObjs[k].state;
+                                                        			break;
+                                                        		}
+                                                        	}
+                                                        }    
                                                         args.response.success({
-                                                            data: items
+                                                            data: systemvmObjs
                                                         });
                                                     },
                                                     error: function(json) {
                                                         args.response.error(parseXMLHttpResponse(json));
-
                                                     }
                                                 });
                                             }
-
-                                            // args.response.success({ data: json.listsystemvmsresponse.systemvm });
                                         },
                                         error: function(json) {
                                             args.response.error(parseXMLHttpResponse(json));
@@ -10120,7 +10121,9 @@
                                                                 jobId: jid
                                                             },
                                                             notification: {
-                                                                poll: pollAsyncJobResult
+                                                                poll: pollAsyncJobResult,
+                                                                interval: 4500,
+                                                                desc: "Dedicate Pod"    
                                                             },
 
                                                             data: item
@@ -10135,12 +10138,10 @@
                                                 });
 
                                             }
-                                        } else {
-                                            args.response.success({
-                                                data: item
-                                            });
                                         }
-
+                                        args.response.success({
+                                            data: item
+                                        });
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -11220,7 +11221,9 @@
                                                                 jobId: jid
                                                             },
                                                             notification: {
-                                                                poll: pollAsyncJobResult
+                                                                poll: pollAsyncJobResult,
+                                                                interval: 4500,
+                                                                desc: "Dedicate Cluster"
                                                             },
 
                                                             data: $.extend(item, {
@@ -11234,11 +11237,10 @@
                                                     }
                                                 });
                                             }
-                                        } else {
-                                            args.response.success({
-                                                data: item
-                                            });
                                         }
+                                        args.response.success({
+                                            data: item
+                                        });
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -11293,21 +11295,12 @@
                                 action: function(args) {
                                     var array1 = [];
 
-                                    if (args.data.cpuovercommitratio != "" && args.data.cpuovercommitratio > 0)
-                                        array1.push("&cpuovercommitratio=" + args.data.cpuovercommitratio);
-
-                                    if (args.data.memoryovercommitratio != "" && args.data.memoryovercommitratio > 0)
-                                        array1.push("&memoryovercommitratio=" + args.data.memoryovercommitratio);
-
                                     $.ajax({
-
                                         url: createURL("updateCluster&id=" + args.context.clusters[0].id + array1.join("")),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
                                             var item = json.updateclusterresponse.cluster;
-                                            args.context.clusters[0].cpuovercommitratio = item.cpuovercommitratio;
-                                            args.context.clusters[0].memoryovercommitratio = item.memoryovercommitratio;
                                             addExtraPropertiesToClusterObject(item);
                                             args.response.success({
                                                 actionFilter: clusterActionfilter,
@@ -12452,7 +12445,9 @@
                                                                 jobId: jid
                                                             },
                                                             notification: {
-                                                                poll: pollAsyncJobResult
+                                                                poll: pollAsyncJobResult,
+                                                                interval: 4500,
+                                                                desc: "Dedicate Host"
                                                             },
 
                                                             data: item
@@ -12466,12 +12461,10 @@
                                                     }
                                                 });
                                             }
-                                        } else {
-                                            args.response.success({
-                                                data: item
-                                            });
                                         }
-
+                                        args.response.success({
+                                            data: item
+                                        });
                                     },
 
                                     error: function(XMLHttpResponse) {
@@ -14121,30 +14114,33 @@
                             label: 'label.url'
                         }
                     },
-                    dataProvider: function(args) {
-                        /*
-            $.ajax({
-              url: createURL('listUcsManager'),
-              data: {
-                zoneid: args.context.physicalResources[0].id
-              },
-              success: function(json) {
-
-              }
-            });
-            */
-
-                        args.response.success({
-                            data: [{
-                                id: '11',
-                                name: 'UCS Manager 1',
-                                url: '10.196.72.1'
-                            }, {
-                                id: '11',
-                                name: 'UCS Manager 2',
-                                url: '10.196.72.2'
-                            }]
-                        });
+                    dataProvider: function(args) {                       
+			            $.ajax({
+			              url: createURL('listUcsManager'),
+			              data: {
+			                zoneid: args.context.physicalResources[0].id
+			              },
+			              success: function(json) {	
+			            	  /*	            	  
+			            	  json = //override json (for testing only)
+			            	  {
+			            	      "listucsmanagerreponse": {
+			            		      "count": 1,
+			            		      "ucsmanager": [
+			            		          {
+			            		              "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+			            		              "name": "ucsmanager",
+			            		              "url": "10.223.184.2",
+			            		              "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
+			            		          }
+			            		      ]
+			            	      }
+			            	  };
+			            	  */			            	  
+			            	  var items = json.listucsmanagerreponse.ucsmanager;
+			            	  args.response.success({ data: items });			            	  
+			              }
+			            });
                     },
                     actions: {
                         add: {
@@ -14355,7 +14351,17 @@
                                                         bladeid: args.context.blades[0].id
                                                     },
                                                     success: function(json) {
-                                                        //json.associateucsprofiletobladeresponse.ucsblade
+                                                        /*
+                                                    	{
+														    "associateucsprofiletobladeresponse": {
+														        "ucsblade": {
+														            "id": "8f63030a-033c-458e-890f-b2c8863d9542",
+														            "ucsmanagerid": "9d8566c0-f870-4e89-9864-7a3e0b332558",
+														            "bladedn": "sys/chassis-1/blade-2"
+														        }
+														    }
+														}   
+														*/                                                     	
                                                         args.response.success({
                                                             data: {
                                                                 associatedProfileDn: args.data.profiledn
@@ -16299,12 +16305,12 @@
         if (jsonObj.state == "Enabled") { //managed, allocation enabled
             allowedActions.push("unmanage");
             allowedActions.push("disable");
-            allowedActions.push("edit");
+            //allowedActions.push("edit"); // No fields to edit
 
         } else if (jsonObj.state == "Disabled") { //managed, allocation disabled
             allowedActions.push("unmanage");
             allowedActions.push("enable");
-            allowedActions.push("edit");
+            //allowedActions.push("edit"); // No fields to edit
 
         } else { //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
             allowedActions.push("manage");

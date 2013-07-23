@@ -95,9 +95,12 @@ def get_first_text_block(email_message_instance):
         return email_message_instance.get_payload()
 
 
-def random_gen(size=6, chars=string.ascii_uppercase + string.digits):
+def random_gen(id=None, size=6, chars=string.ascii_uppercase + string.digits):
     """Generate Random Strings of variable length"""
-    return ''.join(random.choice(chars) for x in range(size))
+    randomstr = ''.join(random.choice(chars) for x in range(size))
+    if id:
+        return ''.join([id, '-', randomstr])
+    return randomstr
 
 
 def cleanup_resources(api_client, resources):

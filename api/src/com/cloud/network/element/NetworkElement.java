@@ -71,7 +71,7 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      * @throws InsufficientNetworkCapacityException
      */
-    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, 
             DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
             ResourceUnavailableException, InsufficientCapacityException;
 
@@ -85,7 +85,7 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, 
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**

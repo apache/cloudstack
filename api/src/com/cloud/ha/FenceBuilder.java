@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.ha;
 
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 public interface FenceBuilder extends Adapter {
 	/**
@@ -27,5 +27,5 @@ public interface FenceBuilder extends Adapter {
 	 * @param vm vm
 	 * @param host host where the vm was running on.
 	 */
-    public Boolean fenceOff(VMInstanceVO vm, HostVO host);
+    public Boolean fenceOff(VirtualMachine vm, Host host);
 }

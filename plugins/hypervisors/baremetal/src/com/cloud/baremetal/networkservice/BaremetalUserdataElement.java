@@ -72,7 +72,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (!canHandle(dest)) {
             return false;
@@ -82,17 +82,17 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
             return false;
         }
 
-        return pxeMgr.addUserData(nic, (VirtualMachineProfile<UserVm>) vm);
+        return pxeMgr.addUserData(nic, (VirtualMachineProfile) vm);
     }
 
     @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException {
+    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey) throws ResourceUnavailableException {
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String SSHPublicKey) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -115,14 +115,14 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context)
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -154,7 +154,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
 
 
     @Override
-    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;

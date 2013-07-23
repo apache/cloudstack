@@ -20,7 +20,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface DeploymentPlanningManager extends Manager {
@@ -40,11 +39,11 @@ public interface DeploymentPlanningManager extends Manager {
      *
      *
      */
-    DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+    DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan,
             ExcludeList avoids) throws InsufficientServerCapacityException, AffinityConflictException;
 
     String finalizeReservation(DeployDestination plannedDestination,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids)
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
             throws InsufficientServerCapacityException, AffinityConflictException;
 
     void cleanupVMReservations();

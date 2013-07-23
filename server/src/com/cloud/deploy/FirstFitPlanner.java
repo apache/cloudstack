@@ -110,7 +110,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
 
     @Override
-    public List<Long> orderClusters(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public List<Long> orderClusters(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid)
                     throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -178,7 +178,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
     }
 
-    private List<Long> scanPodsForDestination(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
+    private List<Long> scanPodsForDestination(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid){
 
         ServiceOffering offering = vmProfile.getServiceOffering();
         int requiredCpu = offering.getCpu() * offering.getSpeed();
@@ -264,7 +264,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     }
 
     private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan) {
+            VirtualMachineProfile vmProfile, DeploymentPlan plan) {
 
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
@@ -302,7 +302,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     }
 
     private List<Long> scanClustersForDestinationInZoneOrPod(long id, boolean isZone,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid) {
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {
 
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
@@ -362,7 +362,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Cluster Ids
      */
-    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan){
         List<Long> reordersClusterIds = clusterCapacityInfo.first();
         return reordersClusterIds;
     }
@@ -374,7 +374,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Pod Ids
      */
-    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan){
         List<Long> podIdsByCapacity = podCapacityInfo.first();
         return podIdsByCapacity;
     }
@@ -476,14 +476,14 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     }
 
     @Override
-    public boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan,
+    public boolean check(VirtualMachineProfile vm, DeploymentPlan plan,
             DeployDestination dest, ExcludeList exclude) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         // check what the ServiceOffering says. If null, check the global config
         ServiceOffering offering = vm.getServiceOffering();
         if (vm.getHypervisorType() != HypervisorType.BareMetal) {
@@ -510,14 +510,14 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
 
 
     @Override
-    public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan,
+    public DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan,
             ExcludeList avoid) throws InsufficientServerCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public PlannerResourceUsage getResourceUsage(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public PlannerResourceUsage getResourceUsage(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         return PlannerResourceUsage.Shared;
     }

@@ -132,7 +132,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
@@ -153,7 +153,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -212,7 +212,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
@@ -222,7 +222,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         return true;
     }
 

@@ -65,7 +65,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
     ConfigurationDao _configDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
