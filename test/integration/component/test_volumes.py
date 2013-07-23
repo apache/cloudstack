@@ -162,11 +162,19 @@ class TestAttachVolume(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.api_client = super(TestAttachVolume, cls).getClsTestClient().getApiClient()
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_attach(self):
@@ -369,20 +377,6 @@ class TestAttachVolume(cloudstackTestCase):
                                                 volume
                                                 )
         return
-
-    def tearDown(self):
-        #Clean up, terminate the created volumes
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.api_client = super(TestAttachVolume, cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
 
 class TestAttachDetachVolume(cloudstackTestCase):
 

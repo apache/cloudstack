@@ -611,10 +611,7 @@ class TestRouterRestart(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        # No need
         return
 
     @attr(tags = ["advanced", "basic", "sg", "advancedns", "eip"])

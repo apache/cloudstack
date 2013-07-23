@@ -288,7 +288,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, self._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -486,7 +486,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, self._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -693,7 +693,7 @@ class TestRVRInternals(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, self._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1013,7 +1013,7 @@ class TestRvRRedundancy(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, self._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
