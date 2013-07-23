@@ -421,12 +421,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _accountMgr.checkAccess(caller, null, true, router);
 
-        boolean result = _itMgr.expunge(router, _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
-
-        if (result) {
-            return router;
-        }
-        return null;
+        _itMgr.expunge(router.getUuid());
+        _routerDao.remove(router.getId());
+        return router;
     }
 
     @Override

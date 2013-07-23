@@ -78,7 +78,7 @@ public interface VirtualMachineManager extends Manager {
 
     void stop(String vmUuid) throws ResourceUnavailableException;
 
-    <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
+    void expunge(String vmUuid) throws ResourceUnavailableException;
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
 
@@ -92,9 +92,7 @@ public interface VirtualMachineManager extends Manager {
 
     void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
-
-    <T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
+    void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 

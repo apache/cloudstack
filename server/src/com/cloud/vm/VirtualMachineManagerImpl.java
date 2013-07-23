@@ -83,7 +83,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -395,16 +394,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException {
+    public void expunge(String vmUuid) throws ResourceUnavailableException {
         try {
-            if (advanceExpunge(vm, caller, account)) {
-                // Mark vms as removed
-                remove(vm, caller, account);
-                return true;
-            } else {
-                s_logger.info("Did not expunge " + vm);
-                return false;
-            }
+            advanceExpunge(vmUuid);
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation timed out", e);
         } catch (ConcurrentOperationException e) {
@@ -413,12 +405,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+        advanceExpunge(vm);
+    }
+
+    protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
             }
-            return true;
+            return;
         }
 
         advanceStop(vm, false);
@@ -426,11 +423,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
                 s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                return false;
+                throw new CloudRuntimeException("Unable to destroy " + vm);
+
             }
         } catch (NoTransitionException e) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-            return false;
+            throw new CloudRuntimeException("Unable to destroy " + vm, e);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -450,7 +448,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _networkMgr.cleanupNics(profile);
 
         // Clean up volumes based on the vm's instance id
-        List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
         volumeMgr.cleanupVolumes(vm.getId());
 
         VirtualMachineGuru guru = getVmGuru(vm);
@@ -475,12 +472,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _agentMgr.send(hostId, cmds);
                 if(!cmds.isSuccessful()){
                     for (Answer answer : cmds.getAnswers()){
-                        if(answer != null && !answer.getResult()){
+                        if (!answer.getResult()) {
                             s_logger.warn("Failed to expunge vm due to: " + answer.getDetails());
-                            break;
+                            throw new CloudRuntimeException("Unable to expunge " + vm + " due to " + answer.getDetails());
                         }
                     }
-                    return false;
                 }
             }
         }
@@ -489,13 +485,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Expunged " + vm);
         }
 
-        // Update Resource count
-        if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
-            _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume);
-            _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.primary_storage,
-                    new Long(rootVol.get(0).getSize()));
-        }
-        return true;
     }
 
     @DB
@@ -1333,11 +1322,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
         return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
-    }
-
-    @Override
-    public <T extends VMInstanceVO> boolean remove(T vm, User user, Account caller) {
-        return _vmDao.remove(vm.getId());
     }
 
     @Override

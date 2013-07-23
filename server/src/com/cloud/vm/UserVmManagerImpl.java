@@ -1503,10 +1503,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
         try {
+            List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
-            if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
-                s_logger.info("Did not expunge " + vm);
-                return false;
+            _itMgr.advanceExpunge(vm.getUuid());
+            // Update Resource count
+            if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.primary_storage,
+                        new Long(rootVol.get(0).getSize()));
             }
 
             // Only if vm is not expunged already, cleanup it's resources
@@ -1524,7 +1528,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return false;
                 }
 
-                _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
+                _vmDao.remove(vm.getId());
             }
 
             return true;

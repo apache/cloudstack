@@ -733,7 +733,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             if (gceed) {
                 try {
                     s_logger.info("Attempting to destroy ELB VM: " + elbVm);
-                    _itMgr.expunge(elbVm, user, _systemAcct);
+                    _itMgr.expunge(elbVm.getUuid());
+                    _routerDao.remove(elbVm.getId());
                 } catch (ResourceUnavailableException e) {
                     s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                     gceed = false;

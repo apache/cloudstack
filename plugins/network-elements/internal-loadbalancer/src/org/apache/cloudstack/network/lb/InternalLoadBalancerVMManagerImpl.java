@@ -513,7 +513,9 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
 
         _accountMgr.checkAccess(caller, null, true, internalLbVm);
 
-        return _itMgr.expunge(internalLbVm, _accountMgr.getActiveUser(callerUserId), caller);
+        _itMgr.expunge(internalLbVm.getUuid());
+        _internalLbVmDao.remove(internalLbVm.getId());
+        return true;
     }
 
     
