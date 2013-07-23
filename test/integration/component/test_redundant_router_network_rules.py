@@ -188,7 +188,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self._clean.insert(0, self.account)
+        self._cleanup.insert(0, self.account)
         return
 
     def tearDown(self):
