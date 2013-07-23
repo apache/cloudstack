@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+
+import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -31,6 +33,7 @@ public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostRes
 
     private SearchBuilder<PlannerHostReservationVO> _hostIdSearch;
     private SearchBuilder<PlannerHostReservationVO> _reservedHostSearch;
+    private SearchBuilder<PlannerHostReservationVO> _dedicatedHostSearch;;
 
     public PlannerHostReservationDaoImpl() {
 
@@ -45,6 +48,10 @@ public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostRes
         _reservedHostSearch = createSearchBuilder();
         _reservedHostSearch.and("usage", _reservedHostSearch.entity().getResourceUsage(), SearchCriteria.Op.NNULL);
         _reservedHostSearch.done();
+
+        _dedicatedHostSearch = createSearchBuilder();
+        _dedicatedHostSearch.and("usage", _dedicatedHostSearch.entity().getResourceUsage(), SearchCriteria.Op.EQ);
+        _dedicatedHostSearch.done();
     }
 
     @Override
@@ -60,4 +67,10 @@ public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostRes
         return listBy(sc);
     }
 
+    @Override
+    public List<PlannerHostReservationVO> listAllDedicatedHosts() {
+        SearchCriteria<PlannerHostReservationVO> sc = _dedicatedHostSearch.create();
+        sc.setParameters("usage", PlannerResourceUsage.Dedicated);
+        return listBy(sc);
+    }
 }
