@@ -111,8 +111,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             // com.cloud.storage.VolumeHostVO volumeHostRef =
             // ApiDBUtils.findVolumeHostRef(volume.getId(),
             // volume.getDataCenterId());
-            volResponse.setSize(volume.getVolumeHostSize());
-            volResponse.setCreated(volume.getVolumeHostCreated());
+            volResponse.setSize(volume.getVolumeStoreSize());
+            volResponse.setCreated(volume.getCreatedOnStore());
 
             if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
                 volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getFormat()).toString());
