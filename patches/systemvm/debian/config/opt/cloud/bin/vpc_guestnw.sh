@@ -159,6 +159,50 @@ create_guest_network() {
   setup_dnsmasq
   setup_apache2
   setup_passwdsvcs
+
+  #enable rps, rfs
+  enable_rpsrfs $dev
+}
+
+enable_rpsrfs() {
+
+    if [  -f /etc/rpsrfsenable ]
+    then
+        enable=$(cat /etc/rpsrfsenable)
+        if [ $enable -eq 0 ]
+        then
+            return 0
+        fi
+    else
+        return 0
+    fi
+
+    proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+    if [ $proc -le 1 ]
+    then
+        return 0
+    fi
+    dev=$1
+
+    num=1
+    num=$(($num<<$proc))
+    num=$(($num-1));
+    echo $num;
+    hex=$(printf "%x\n" $num)
+    echo $hex;
+    #enable rps
+    echo $hex > /sys/class/net/$dev/queues/rx-0/rps_cpus
+
+    #enble rfs
+    rps_flow_entries=$(cat /proc/sys/net/core/rps_sock_flow_entries)
+
+    if [ $rps_flow_entries -eq 0 ]
+    then
+        echo 256 > /proc/sys/net/core/rps_sock_flow_entries
+    fi
+
+    echo 256 > /sys/class/net/$dev/queues/rx-0/rps_flow_cnt
+
 }
 
 destroy_guest_network() {
