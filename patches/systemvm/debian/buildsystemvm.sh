@@ -202,7 +202,7 @@ fixfstab() {
   cat > etc/fstab << EOF
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
 proc            /proc           proc    defaults        0       0
-LABEL=ROOT      /               ext3    errors=remount-ro 0       1
+LABEL=ROOT      /               ext3    errors=remount-ro,sync,noatime 0       1
 EOF
 }
 
