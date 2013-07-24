@@ -358,10 +358,10 @@ def setLoadBalancerRule(session, args):
 @echo
 def configdnsmasq(session, args):
     routerip = args['routerip']
-    filepath = args['filepath']
+    args = args['filepath']
     target   = "root@"+routerip
     try:
-       util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',filepath])
+       util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',args])
        txt='success'
     except:
        util.SMlog("failed to config dnsmasq server")

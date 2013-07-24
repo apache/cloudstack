@@ -21,73 +21,15 @@ import com.cloud.agent.api.to.DhcpTO;
 import java.util.List;
 
 public class DnsMasqConfigCommand extends NetworkElementCommand {
-    String domain;
-    String dns1;
-    String dns2;
-    String internal_dns1;
-    String internal_dns2;
     List<DhcpTO> dhcpTOs;
-    boolean useExternal_dns;
-    String domain_suffix;
-    boolean dns;
 
-    public DnsMasqConfigCommand(String domain, List<DhcpTO> dhcpTOs, String dns1, String dns2, String internal_dns1, String internal_dns2) {
-        this.domain = domain;
+    public DnsMasqConfigCommand(List<DhcpTO> dhcpTOs) {
         this.dhcpTOs = dhcpTOs;
-        this.dns1= dns1;
-        this.dns2= dns2;
-        this.internal_dns1 = internal_dns1;
-        this.internal_dns2 = internal_dns2;
 
     }
 
     public List<DhcpTO> getIps() {
         return dhcpTOs;
     }
-
-    public  String getDomain() {
-        return domain;
-    }
-
-    public String getDns1() {
-        return dns1;
-    }
-
-    public String getDns2() {
-        return dns2;
-    }
-
-    public String getInternal_dns1() {
-        return internal_dns1;
-    }
-
-    public String getInternal_dns2() {
-        return internal_dns2;
-    }
-
-    public void setUseExternalDns(boolean useExternal_dns) {
-        this.useExternal_dns = useExternal_dns;
-    }
-
-    public void setDomainSuffix(String domain_suffix) {
-        this.domain_suffix = domain_suffix;
-    }
-
-    public void setIfDnsProvided(boolean dns) {
-        this.dns =dns;
-    }
-
-    public String getDomainSuffix() {
-        return this.domain_suffix;
-    }
-
-    public boolean getUseExternalDns() {
-        return useExternal_dns;
-    }
-
-    public boolean isDnsProvided() {
-        return dns;
-    }
-
 
 }

@@ -2894,6 +2894,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
 
+        // Adding this to the dhcpservice config if this is the last nic in subnet.
+        if (vm.getType() == VirtualMachine.Type.User) {
+            removeDhcpServiceInsubnet(vm);
+        }
+
         //1) Unplug the nic
         if (vm.getState() == State.Running) {
             NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());

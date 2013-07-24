@@ -3446,15 +3446,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
              ipAliasVO.setVmId(router.getId());
         }
         DataCenterVO dcvo = _dcDao.findById(router.getDataCenterId());
-        boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VirtualRouter);
-        String domain_suffix = dcvo.getDetail(ZoneConfig.DnsSearchOrder.getName());
-        DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(network.getNetworkDomain(),ipList, dcvo.getDns1(), dcvo.getDns2(), dcvo.getInternalDns1(), dcvo.getInternalDns2());
+        DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(ipList);
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(network.getId(), router.getId()));
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-        dnsMasqConfigCmd.setDomainSuffix(domain_suffix);
-        dnsMasqConfigCmd.setIfDnsProvided(dnsProvided);
         cmds.addCommand("dnsMasqConfig" ,dnsMasqConfigCmd);
     }
 
