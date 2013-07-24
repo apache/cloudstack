@@ -3271,6 +3271,7 @@
 
                     $.ajax({
                         url: createURL("addNetscalerLoadBalancer" + array1.join("")),
+                        type: "POST",
                         dataType: "json",
                         success: function(json) {
                             var addNetscalerLoadBalancerIntervalID = setInterval(function() {
@@ -3808,6 +3809,7 @@
                         $.ajax({
                             url: createURL('addVmwareDc'),
                             data: vmwareData,
+                            type: "POST",
                             success: function(json) {
                                 var item = json.addvmwaredcresponse.vmwaredc;
                                 if (item.id != null) {
@@ -3846,7 +3848,7 @@
                         $.ajax({
                             url: createURL("addCluster" + array1.join("")),
                             dataType: "json",
-                            async: true,
+                            type: "POST",                            
                             success: function(json) {
                                 stepFns.addHost({
                                     data: $.extend(args.data, {

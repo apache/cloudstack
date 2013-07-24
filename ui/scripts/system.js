@@ -6061,6 +6061,7 @@
                                             $.ajax({
                                                 url: createURL('addVmwareDc'),
                                                 data: data,
+                                                type: "POST",
                                                 success: function(json) {
                                                     //var item = json.addvmwaredcresponse.vmwaredc;
                                                     args.response.success();
@@ -11199,7 +11200,7 @@
                                 $.ajax({
                                     url: createURL("addCluster" + array1.join("")),
                                     dataType: "json",
-                                    async: true,
+                                    type: "POST",                                    
                                     success: function(json) {
                                         var item = json.addclusterresponse.cluster[0];
                                         clusterId = json.addclusterresponse.cluster[0].id;
@@ -14197,6 +14198,7 @@
                                 $.ajax({
                                     url: createURL('addUcsManager'),
                                     data: data,
+                                    type: "POST",
                                     success: function(json) { //e.g. json == { "addUcsManagerResponse" :  { "ucsmanager" : {"id":"11","name":"ucsmanager","url":"10.223.184.2","zoneid":"2"} }  }
                                         var item = json.addUcsManagerResponse.ucsmanager;
                                         args.response.success({
@@ -15478,6 +15480,7 @@
                                                 username: args.data.username,
                                                 password: args.data.password
                                             },
+                                            type: "POST",
                                             success: function(json) {
                                                 var jid = json.addexternaldhcpresponse.jobid;
                                                 args.response.success({
@@ -15513,6 +15516,7 @@
                     username: args.data.username,
                     password: args.data.password
                 },
+                type: "POST",
                 success: function(json) {
                     var jid = json.addexternaldhcpresponse.jobid;
                     args.response.success({
@@ -15560,6 +15564,7 @@
                                                 password: args.data.password,
                                                 tftpdir: args.data.tftpdir
                                             },
+                                            type: "POST",
                                             success: function(json) {
                                                 var jid = json.addexternalpxeresponse.jobid;
                                                 args.response.success({
@@ -15596,6 +15601,7 @@
                     password: args.data.password,
                     tftpdir: args.data.tftpdir
                 },
+                type: "POST",
                 success: function(json) {
                     var jid = json.addexternalpxeresponse.jobid;
                     args.response.success({
@@ -15704,6 +15710,7 @@
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
             dataType: "json",
+            type: "POST",
             success: function(json) {
                 var jid = json[apiCmdRes].jobid;
                 args.response.success({
@@ -15849,6 +15856,7 @@
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
             dataType: "json",
+            type: "POST",
             success: function(json) {
                 var jid = json[apiCmdRes].jobid;
                 args.response.success({
@@ -15881,6 +15889,7 @@
         $.ajax({
             url: createURL(apiCmd + array1.join("")),
             dataType: "json",
+            type: "POST",
             success: function(json) {
                 var jid = json[apiCmdRes].jobid;
                 args.response.success({

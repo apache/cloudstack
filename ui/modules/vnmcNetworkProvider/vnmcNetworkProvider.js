@@ -179,6 +179,7 @@
 
                             $.ajax({
                                 url: createURL('addCiscoVnmcResource'),
+                                type: "POST",
                                 data: data,
                                 success: function (json) {
                                     var item = json.addCiscoVnmcResource.CiscoVnmcResource;
