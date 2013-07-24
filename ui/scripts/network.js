@@ -4088,6 +4088,7 @@
                                                         account: args.context.ipAddresses[0].account
                                                     }),
                                                     dataType: 'json',
+                                                    type: "POST",
                                                     success: function(data) {
                                                         args.response.success({
                                                             _custom: {

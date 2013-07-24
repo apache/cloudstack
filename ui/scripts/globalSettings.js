@@ -316,7 +316,7 @@
                                 $.ajax({
                                     url: createURL("ldapConfig" + array.join("")),
                                     dataType: "json",
-                                    async: true,
+                                    type: "POST",                               
                                     success: function(json) {
                                         var items = json.ldapconfigresponse.ldapconfig;
                                         args.response.success({
