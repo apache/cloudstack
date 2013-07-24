@@ -447,7 +447,7 @@ var addGuestNetworkDialog = {
                 networkOfferingId: {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
-                    dependsOn: 'scope',
+                    dependsOn: ['zoneId', 'scope'],
                     select: function(args) {
                         var data = {
                             state: 'Enabled',
