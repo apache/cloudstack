@@ -18,12 +18,27 @@ package com.cloud.network.dao;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class NetworkAccountDaoImpl extends GenericDaoBase<NetworkAccountVO, Long> implements NetworkAccountDao {
-    public NetworkAccountDaoImpl() {
+    final SearchBuilder<NetworkAccountVO> AllFieldsSearch;
+
+    protected NetworkAccountDaoImpl() {
         super();
+
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.done();
+    }
+
+    @Override
+    public NetworkAccountVO getAccountNetworkMapByNetworkId(long networkId) {
+        SearchCriteria<NetworkAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
     }
 }
