@@ -96,7 +96,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
             }
         } else {
-            if (plan.getClusterId() == null) {
+            if (plan.getPodId() == null) {
+                // zone wide primary storage deployment
                 return null;
             }
             List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(),

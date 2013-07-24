@@ -47,7 +47,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
 
-		if (clusterId == null) {
+		if (podId == null) {
 			return null;
 		}
 
