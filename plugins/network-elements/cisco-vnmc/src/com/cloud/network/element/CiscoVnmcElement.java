@@ -550,7 +550,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         params.put("ip", cmd.getHost());
         params.put("username", cmd.getUsername());
         params.put("password", cmd.getPassword());
-        params.put("transportzoneisotype", physicalNetwork.getIsolationMethods().get(0).toLowerCase()); // FIXME What to do with multiple isolation types
 
         Map<String, Object> hostdetails = new HashMap<String,Object>();
         hostdetails.putAll(params);
