@@ -1746,9 +1746,6 @@ class TestVMDeployVPC(cloudstackTestCase):
         #    expected
         # 2. All the resources associated with account should be deleted
 
-        # Remove account from cleanup list, we will delete it at end of test
-        self.cleanup = []
-
         self.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
                                      self.apiclient,
@@ -2426,6 +2423,9 @@ class TestVMDeployVPC(cloudstackTestCase):
             self.fail("Failed to delete account: %s" %
                                                 self.account.name)
         wait_for_cleanup(self.apiclient, ["account.cleanup.interval"])
+
+        # Remove account from cleanup list, we've already deleted it
+        self.cleanup.remove(self.account)
 
         self.debug("Check if the VPC network is created successfully?")
         vpc_networks = VPC.list(
