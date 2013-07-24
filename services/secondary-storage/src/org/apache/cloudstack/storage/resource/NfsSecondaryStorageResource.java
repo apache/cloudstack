@@ -417,15 +417,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
             File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
             File destFile = getFile(destData.getPath(), destDataStore.getUrl());
-            s_logger.debug("copy snapshot to template");
-            Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFile.getAbsolutePath());
+            // get snapshot file name, add extension if it is missing
+            String templateName = srcFile.getName();
+            if (!templateName.endsWith(ImageFormat.QCOW2.getFileExtension())) {
+                templateName = templateName + ImageFormat.QCOW2.getFileExtension();
+            }
+            String destFileFullPath = destFile.getAbsolutePath() + File.separator + templateName;
+            s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
+            Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
+            // template post processing
             QCOW2Processor processor = new QCOW2Processor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
             try {
                 processor.configure("qcow2 processor", params);
                 String destPath = destFile.getAbsolutePath();
-                String templateName = srcFile.getName();
                 FormatInfo info = processor.process(destPath, null, templateName);
                 TemplateLocation loc = new TemplateLocation(_storage, destPath);
                 loc.create(1, true, srcFile.getName());
@@ -434,7 +440,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 TemplateProp prop = loc.getTemplateInfo();
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(destData.getPath() + File.separator + templateName);
-                newTemplate.setFormat(ImageFormat.VHD);
+                newTemplate.setFormat(ImageFormat.QCOW2);
                 newTemplate.setSize(prop.getSize());
                 return new CopyCmdAnswer(newTemplate);
             } catch (ConfigurationException e) {
@@ -481,7 +487,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     return answer;
                 }
                 s_logger.debug("starting copy template to swift");
-                DataTO newTemplate = (DataTO)answer.getNewData();
+                DataTO newTemplate = answer.getNewData();
                 File templateFile = getFile(newTemplate.getPath(), ((NfsTO) srcDataStore).getUrl());
                 SwiftTO swift = (SwiftTO)destDataStore;
                 String containterName = SwiftUtil.getContainerName(destData.getObjectType().toString(), destData.getId());
