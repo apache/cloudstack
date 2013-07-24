@@ -204,6 +204,8 @@ install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-pac
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
 python -m py_compile ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudutils
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
+cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
 # Management
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
@@ -535,6 +537,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
+%attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
