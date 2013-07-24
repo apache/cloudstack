@@ -343,14 +343,6 @@ under the License.
                         </row>
                         <row>
                             <entry>
-                                <para>CLOUDSTACK-3433</para>
-                            </entry>
-                            <entry>
-                                <para>Relax the same package restriction for Command and its derived classes in ArrayTypeAdaptor</para>
-                            </entry>
-                        </row>
-                        <row>
-                            <entry>
                                 <para>CLOUDSTACK-986</para>
                             </entry>
                             <entry>
