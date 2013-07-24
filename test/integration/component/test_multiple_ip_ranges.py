@@ -58,14 +58,17 @@ class Services:
                                     "ostype": "CentOS 5.3 (64-bit)",
                                     "templatefilter": 'self',
                         },
-                         "vlan_ip_range": {
+                        "vlan_ip_range": {
                                            "startip": "",
                                            "endip": "",
                                            "netmask": "",
                                            "gateway": "",
                                            "forvirtualnetwork": "false",
                                            "vlan": "untagged",
-                                           }
+                        },
+                        "ostype": "CentOS 5.3 (64-bit)",
+                        "sleep": 60,
+                        "timeout": 10,
           }
 
 class TestMultipleIpRanges(cloudstackTestCase):
@@ -90,6 +93,21 @@ class TestMultipleIpRanges(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.name
+        cls.disk_offering = DiskOffering.create(
+                                    cls.api_client,
+                                    cls.services["disk_offering"]
+                                    )
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["templates"]["ostypeid"] = cls.template.ostypeid
+        cls.services["diskoffering"] = cls.disk_offering.id
         cls._cleanup = [
                         cls.account,
                         ]
@@ -166,7 +184,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_01_add_ip_same_cidr(self):
         """Test add guest ip range in the existing cidr
         """
@@ -188,6 +206,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["zoneid"] = self.zone.id
         self.services["vlan_ip_range"]["podid"] = self.pod.id
         #create new vlan ip range
+	self.debug("Creating new ip range with new cidr in the same vlan")
         new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp,test_endIp))
         self.cleanup.append(new_vlan)
@@ -197,6 +216,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         #Add few more ips in the same CIDR
         self.services["vlan_ip_range"]["startip"] = test_startIp2
         self.services["vlan_ip_range"]["endip"] = test_endIp2
+	self.debug("Creating new ip range in the existing CIDR")
         new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp2,test_endIp2))
         self.cleanup.append(new_vlan2)
@@ -206,7 +226,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.verify_vlan_range(new_vlan2_res,self.services["vlan_ip_range"])
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_02_add_ip_diff_cidr(self):
         """Test add ip range in a new cidr
 
@@ -230,6 +250,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["zoneid"] = self.zone.id
         self.services["vlan_ip_range"]["podid"] = self.pod.id
         #create new vlan ip range
+	self.debug("Adding new ip range in different CIDR in same vlan")
         new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp,test_endIp))
         self.cleanup.append(new_vlan)
@@ -238,7 +259,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.verify_vlan_range(new_vlan_res,self.services["vlan_ip_range"])
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_03_del_ip_range(self):
         """Test delete ip range
 
@@ -263,12 +284,14 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["zoneid"] = self.zone.id
         self.services["vlan_ip_range"]["podid"] = self.pod.id
         #create new vlan ip range
+	self.debug("Creating new ip range in the new cidr")
         new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp,test_endIp))
         new_vlan_res = new_vlan.list(self.apiclient,id=new_vlan.vlan.id)
         #Compare list output with configured values
         self.verify_vlan_range(new_vlan_res,self.services["vlan_ip_range"])
         #Delete the above IP range
+	self.debug("Deleting new ip range added in new cidr")
         new_vlan.delete(self.apiclient)
         #listing vlan ip ranges with the id should through exception , if not mark the test case as failed
         try:
@@ -278,7 +301,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
             self.assertTrue(cs.errorMsg.find("entity does not exist")>0, msg="Failed to delete IP range")
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_04_add_noncontiguous_ip_range(self):
         """Test adding non-contiguous ip range in existing cidr
 
@@ -315,6 +338,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["startip"] = test_startIp2
         self.services["vlan_ip_range"]["endip"] = test_endIp2
         #create new vlan ip range
+	self.debug("Adding non contiguous ip range")
         new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp,test_endIp))
         self.cleanup.append(new_vlan)
@@ -323,7 +347,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.verify_vlan_range(new_vlan_res,self.services["vlan_ip_range"])
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_05_add_overlapped_ip_range(self):
         """Test adding overlapped ip range in existing cidr
 
@@ -337,9 +361,9 @@ class TestMultipleIpRanges(cloudstackTestCase):
         #Add IP range in the new CIDR
         test_gateway = ip.__add__(1)
         test_startIp = ip.__add__(10)
-        test_endIp = ip.__add__(100)
-        test_startIp2 = ip.__add__(90)
-        test_endIp2 = ip.__add__(150)
+        test_endIp = ip.__add__(30)
+        test_startIp2 = ip.__add__(20)
+        test_endIp2 = ip.__add__(40)
         #Populating services with new IP range
         self.services["vlan_ip_range"]["startip"] = test_startIp
         self.services["vlan_ip_range"]["endip"] = test_endIp
@@ -348,6 +372,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["zoneid"] = self.zone.id
         self.services["vlan_ip_range"]["podid"] = self.pod.id
         #create new vlan ip range
+	self.debug("Creating new ip range with startip:%s and endip: %s".format(test_startIp,test_endIp))
         new_vlan = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp,test_endIp))
         self.cleanup.append(new_vlan)
@@ -359,6 +384,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["startip"] = test_startIp2
         self.services["vlan_ip_range"]["endip"] = test_endIp2
         #Try to create ip range overlapped with exiting ip range
+	self.debug("Adding overlapped ip range")
         try:
             new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         except cloudstackAPIException as cs:
@@ -370,9 +396,9 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.fail("CS should not accept overlapped ip ranges in guest traffic, but it allowed")
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_06_add_ip_range_overlapped_with_two_ranges(self):
-        """Test adding overlapped ip range in existing cidr
+        """Test adding overlapped ip range with two existing cidr
 
             1.Add ip range in new cidr e.g:10.147.40.2-10.147.40.10
             2.Add another ip range in the same cidr e.g:10.147.40.20-10.147.40.30
@@ -385,11 +411,11 @@ class TestMultipleIpRanges(cloudstackTestCase):
         #Add IP range in the new CIDR
         test_gateway = ip.__add__(1)
         test_startIp = ip.__add__(2)
-        test_endIp = ip.__add__(10)
-        test_startIp2 = ip.__add__(20)
-        test_endIp2 = ip.__add__(30)
-        test_startIp3 = ip.__add__(10)
-        test_endIp3 = ip.__add__(20)
+        test_endIp = ip.__add__(5)
+        test_startIp2 = ip.__add__(7)
+        test_endIp2 = ip.__add__(10)
+        test_startIp3 = ip.__add__(5)
+        test_endIp3 = ip.__add__(7)
         #Populating services with new IP range
         self.services["vlan_ip_range"]["startip"] = test_startIp
         self.services["vlan_ip_range"]["endip"] = test_endIp
@@ -410,14 +436,11 @@ class TestMultipleIpRanges(cloudstackTestCase):
         new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         self.debug("Created new vlan range with startip:%s and endip:%s" %(test_startIp2,test_endIp2))
         self.cleanup.append(new_vlan2)
-        new_vlan_res = new_vlan.list(self.apiclient,id=new_vlan.vlan.id)
-        #Compare list output with configured values
-        self.verify_vlan_range(new_vlan_res,self.services["vlan_ip_range"])
-        #Add ip range which will overlap with two existing ip ranges in the same CIDR
         #Populating services with new IP range
         self.services["vlan_ip_range"]["startip"] = test_startIp3
         self.services["vlan_ip_range"]["endip"] = test_endIp3
         #Try to create ip range overlapped with exiting ip range
+	self.debug("Adding ip range overlapped with two cidrs")
         try:
             new_vlan3 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         except cloudstackAPIException as cs:
@@ -429,7 +452,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.fail("CS should not accept overlapped ip ranges in guest traffic, but it allowed")
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_07_add_iprange_superset(self):
         """Test adding ip range superset to existing CIDR
 
@@ -470,18 +493,19 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["netmask"] = superset
         self.services["vlan_ip_range"]["startip"] = test_startIp2
         self.services["vlan_ip_range"]["endip"] = test_endIp2
+	self.debug("Adding IP range super set to existing CIDR")
         try:
             new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         except cloudstackAPIException as cs:
             self.debug(cs.errorMsg)
-            self.assertTrue(cs.errorMsg.find("new subnet is a super set of the existing subnet")>0, msg="Fail: CS allowed adding ip range superset to existing CIDR")
+            self.assertTrue(cs.errorMsg.find("superset")>0, msg="Fail: CS allowed adding ip range superset to existing CIDR")
             return
         #Test will reach here if there is a bug in allowing superset ip range
         self.cleanup.append(new_vlan2)
         self.fail("CS should not allow adding ip range superset to existing CIDR")
         return
 
-    @attr(tags=["advanced_sg", "sg"])
+    @attr(tags=["sg"])
     def test_08_add_iprange_subset(self):
         """Test adding ip range subset to existing CIDR
 
@@ -522,11 +546,12 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.services["vlan_ip_range"]["netmask"] = subset
         self.services["vlan_ip_range"]["startip"] = test_startIp2
         self.services["vlan_ip_range"]["endip"] = test_endIp2
+	self.debug("Adding ip range subset to existing cidr")
         try:
             new_vlan2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"])
         except cloudstackAPIException as cs:
             self.debug(cs.errorMsg)
-            self.assertTrue(cs.errorMsg.find("new subnet is a subset of the existing subnet")>0, msg="Fail: CS allowed adding ip range subset to existing CIDR")
+            self.assertTrue(cs.errorMsg.find("subset")>0, msg="Fail: CS allowed adding ip range subset to existing CIDR")
             return
         #Test will reach here if there is a bug in allowing superset ip range
         self.cleanup.append(new_vlan2)
