@@ -1310,6 +1310,7 @@ dictionary = {
 'message.creating.secondary.storage': '<fmt:message key="message.creating.secondary.storage" />',
 'message.creating.zone': '<fmt:message key="message.creating.zone" />',
 'message.decline.invitation': '<fmt:message key="message.decline.invitation" />',
+'message.dedicate.zone': '<fmt:message key="message.dedicate.zone" />',
 'message.delete.account': '<fmt:message key="message.delete.account" />',
 'message.delete.affinity.group': '<fmt:message key="message.delete.affinity.group" />',
 'message.delete.gateway': '<fmt:message key="message.delete.gateway" />',

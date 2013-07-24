@@ -2099,33 +2099,33 @@
                                 })
                             });
 
-                            dedicatedZoneId = json.createzoneresponse.zone.id;
-                            //EXPLICIT ZONE DEDICATION
-                            if (args.data.pluginFrom == null && args.data.zone.ispublic != null) {
-                                var array2 = [];
-                                if (args.data.zone.domain != null)
-                                    array2.push("&domainid=" + args.data.zone.domain);
-                                if (args.data.zone.accountId != "")
-                                    array2.push("&account=" + todb(args.data.zone.accountId));
+                            // dedicatedZoneId = json.createzoneresponse.zone.id;
+                            // //EXPLICIT ZONE DEDICATION
+                            // if (args.data.pluginFrom == null && args.data.zone.ispublic != null) {
+                            //     var array2 = [];
+                            //     if (args.data.zone.domain != null)
+                            //         array2.push("&domainid=" + args.data.zone.domain);
+                            //     if (args.data.zone.accountId != "")
+                            //         array2.push("&account=" + todb(args.data.zone.accountId));
 
-                                if (dedicatedZoneId != null) {
-                                    $.ajax({
-                                        url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
-                                        dataType: "json",
-                                        success: function(json) {
-                                            var dedicatedObj = json.dedicatezoneresponse.jobid;
-                                            //args.response.success({ data: $.extend(item, dedicatedObj)});
+                            //     if (dedicatedZoneId != null) {
+                            //         $.ajax({
+                            //             url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
+                            //             dataType: "json",
+                            //             success: function(json) {
+                            //                 var dedicatedObj = json.dedicatezoneresponse.jobid;
+                            //                 //args.response.success({ data: $.extend(item, dedicatedObj)});
 
-                                        },
+                            //             },
 
-                                        error: function(json) {
+                            //             error: function(json) {
 
-                                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                                        }
-                                    });
+                            //                 args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                            //             }
+                            //         });
 
-                                }
-                            }
+                            //     }
+                            // }
 
                         },
                         error: function(XMLHttpResponse) {
@@ -4027,11 +4027,22 @@
                 },
 
                 addSecondaryStorage: function(args) {
+
+                    var dedicatedZone = (args.data.pluginFrom == null && args.data.zone.ispublic != null);
+
                 	if (args.data.secondaryStorage.provider == '') {
-                		 complete({
-                             data: args.data
-                         });
-                		return; //skip addSecondaryStorage if provider dropdown is blank
+
+                        if (dedicatedZone) {
+                            stepFns.dedicateZone({
+                                data: args.data
+                            });
+                        } else {
+                            complete({
+                                data: args.data
+                            })
+                        }
+
+                        return; //skip addSecondaryStorage if provider dropdown is blank
                 	}
                 	
                 	
@@ -4059,11 +4070,21 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                complete({
-                                    data: $.extend(args.data, {
-                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                
+                                if (dedicatedZone) {
+                                    stepFns.dedicateZone({
+                                        data: $.extend(args.data, {                                               
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
                                     })
-                                });
+                                } else {
+                                    complete({
+                                        data: $.extend(args.data, {
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
+                                    });
+                                }
+
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4111,11 +4132,20 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                complete({
-                                    data: $.extend(args.data, {
-                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                if (dedicatedZone) {
+                                    stepFns.dedicateZone({
+                                        data: $.extend(args.data, {                                               
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
                                     })
-                                });
+                                } else {
+                                    complete({
+                                        data: $.extend(args.data, {
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
+                                    });
+                                }
+                                
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4179,11 +4209,19 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                complete({
-                                    data: $.extend(args.data, {
-                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                if (dedicatedZone) {
+                                    stepFns.dedicateZone({
+                                        data: $.extend(args.data, {                                               
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
                                     })
-                                });
+                                } else {
+                                    complete({
+                                        data: $.extend(args.data, {
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
+                                    });
+                                }
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4194,6 +4232,61 @@
                             }
                         });
                     }
+                },
+                dedicateZone: function(args) {
+
+                    if(args.data.pluginFrom == null && args.data.zone.ispublic != null) {
+                        var dedicatedZoneId = args.data.returnedZone.id;
+                	    message(dictionary['message.dedicate.zone']);
+
+                        var array2 = [];
+                        if (args.data.zone.domain != null)
+                            array2.push("&domainid=" + args.data.zone.domain);
+                        if (args.data.zone.accountId != "")
+                            array2.push("&account=" + todb(args.data.zone.accountId));
+
+                        if (dedicatedZoneId != null) {
+                            $.ajax({
+                                url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
+                                dataType: "json",
+                                success: function(json) {
+                                    var jobId = json.dedicatezoneresponse.jobid;
+                                    var dedicatedZoneIntervalId = setInterval(function() {
+                                        $.ajax({
+                                            url: createURL("queryAsyncJobResult&jobid=" + jobId),
+                                            dataType: "json",
+                                            success: function(json) {
+                                                if (json.queryasyncjobresultresponse.jobstatus == 0) { // not complete
+                                                    return;
+                                                } else {
+                                                    clearInterval(dedicatedZoneIntervalId);
+                                                    if(json.queryasyncjobresultresponse.jobstatus == 1) { // successed
+                                                        complete({
+                                                            data: $.extend(args.data, {
+                                                                returnedDedicateZone: json.queryasyncjobresultresponse.jobresult
+                                                            })
+                                                        });
+                                                    } else if(json.queryasyncjobresultresponse.jobstatus == 2) { // failed
+                                                        error('addZone', json.queryasyncjobresultresponse.jobresult.errortext, {
+                                                            fn: 'dedicateZone',
+                                                            args: args
+                                                        })
+                                                    }
+                                                }
+                                                
+                                            }
+                                        });
+                                    }, g_queryAsyncJobResultInterval);
+                                }
+                            });
+
+                        }
+                    } else {
+                        complete({
+                            data: args.data
+                        });
+                    }
+                    
                 }
             };
 
