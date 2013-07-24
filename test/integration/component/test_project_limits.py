@@ -149,10 +149,15 @@ class TestProjectLimits(cloudstackTestCase):
                             cls.services["user"],
                             domainid=cls.domain.id
                             )
+        cls.disk_offering = DiskOffering.create(
+                                    cls.api_client,
+                                    cls.services["disk_offering"]
+                                    )
         cls._cleanup = [
             cls.admin,
             cls.user,
-            cls.domain
+            cls.domain,
+            cls.disk_offering
             ]
         return
 
@@ -181,7 +186,7 @@ class TestProjectLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_project_limits(self):
-        """ Test project limits
+        """ Test project limits for domain admin
         """
         # Validate the following
         # 1. Create a Project. Verify once projects are created, they inherit
@@ -194,8 +199,8 @@ class TestProjectLimits(cloudstackTestCase):
         #    account resource limits
         # 3. Increase Projects Resources limits above domains limit. Verify
         #    project can't have more resources than domain level limit allows.
-        # 4. Create Resource more than its set limit for a project. Verify
-        #    resource allocation should fail giving proper message
+        # 4. Create Resource more than its set limit for the parent domain.
+        #    Verify resource allocation should fail giving proper message
 
         # Create project as a domain admin
         project = Project.create(
@@ -309,27 +314,46 @@ class TestProjectLimits(cloudstackTestCase):
                                         self.apiclient,
                                         resource.resourcetype,
                                         domainid=self.domain.id,
-                                        max=2
+                                        max=1
                                       )
-            with self.assertRaises(Exception):
-                max_value = 3
-                self.debug(
-                    "Attempting to update project: %s resource limit to: %s" % (
-                                                                project.id,
-                                                                max_value
-                                                                ))
-                # Update project resource limits to 3
-                update_resource_limit(
-                                        self.apiclient,
-                                        resource.resourcetype,
-                                        max=max_value,
-                                        projectid=project.id
-                                      )
+            max_value = 2
+            self.debug(
+                "Attempting to update project: %s resource limit to: %s" % (
+                                                            project.id,
+                                                            max_value
+                                                            ))
+            # Update project resource limits to 3
+            update_resource_limit(
+                                    self.apiclient,
+                                    resource.resourcetype,
+                                    max=max_value,
+                                    projectid=project.id
+                                  )
+
+        # Verify project can't have more resources then limit set for domain by adding volumes.
+        volume = Volume.create(
+                          self.apiclient,
+                          self.services["volume"],
+                          zoneid=self.zone.id,
+                          diskofferingid=self.disk_offering.id,
+                          projectid=project.id
+                        )
+        # Exception should be raised for second volume
+        with self.assertRaises(Exception):
+            Volume.create(
+                          self.apiclient,
+                          self.services["volume"],
+                          zoneid=self.zone.id,
+                          diskofferingid=self.disk_offering.id,
+                          projectid=project.id
+                        )
+        volume.delete(self.apiclient);
+
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_02_project_limits_normal_user(self):
-        """ Test project limits
+        """ Test project limits for normal user
         """
         # Validate the following
         # 1. Create a Project
@@ -786,26 +810,33 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    an appropriate error that Volume limit is exhausted and an alert
         #    should be generated.
 
+        self.project_1 = Project.create(
+                         self.api_client,
+                         self.services["project"],
+                         account=self.account.name,
+                         domainid=self.account.domainid
+                         )
+        self.cleanup.append(self.project_1)
+
         self.debug(
             "Updating volume resource limits for project: %s" %
-                                                    self.project.id)
+                                                    self.project_1.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               2, # Volume
-                              max=2,
-                              projectid=self.project.id
+                              max=1,
+                              projectid=self.project_1.id
                               )
 
-        self.debug("Deploying VM for project: %s" % self.project.id)
+        self.debug("Deploying VM for project: %s" % self.project_1.id)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 serviceofferingid=self.service_offering.id,
-                                projectid=self.project.id
+                                projectid=self.project_1.id
                                 )
-        self.cleanup.append(virtual_machine_1)
         # Verify VM state
         self.assertEqual(
                             virtual_machine_1.state,
@@ -820,7 +851,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                           self.services["volume"],
                           zoneid=self.zone.id,
                           diskofferingid=self.disk_offering.id,
-                          projectid=self.project.id
+                          projectid=self.project_1.id
                         )
         return
 
