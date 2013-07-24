@@ -153,7 +153,6 @@ class Services:
                                 },
                          "ostype": 'CentOS 5.3 (64-bit)',
                          # Cent OS 5.3 (64 bit)
-                         "sleep": 60,
                          "timeout": 10,
                          "mode": 'advanced'
                     }
@@ -219,10 +218,6 @@ class TestVMDeployVPC(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -305,7 +300,6 @@ class TestVMDeployVPC(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
