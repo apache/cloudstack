@@ -1308,10 +1308,10 @@ class TestSharedNetworks(cloudstackTestCase):
         self.assertEqual(
             list_network_offerings_response[0].state,
             "Disabled",
-            "The network offering created should be bydefault disabled."
+            "The network offering created should be by default disabled."
             )
         
-        self.debug("Network Offering created: %s" % self.shared_network_offering.id)
+        self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
         
         #Update network offering state from disabled to enabled.
         network_offering_update_response = NetworkOffering.update(
