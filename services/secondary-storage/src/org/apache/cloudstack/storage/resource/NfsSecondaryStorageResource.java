@@ -417,12 +417,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
             File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
             File destFile = getFile(destData.getPath(), destDataStore.getUrl());
-            // get snapshot file name, add extension if it is missing
+            // get snapshot file name
             String templateName = srcFile.getName();
-            if (!templateName.endsWith(ImageFormat.QCOW2.getFileExtension())) {
-                templateName = templateName + ImageFormat.QCOW2.getFileExtension();
-            }
-            String destFileFullPath = destFile.getAbsolutePath() + File.separator + templateName;
+            // add kvm file extension for copied template name
+            String destFileFullPath = destFile.getAbsolutePath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension();
             s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
             // template post processing
@@ -439,7 +437,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 loc.save();
                 TemplateProp prop = loc.getTemplateInfo();
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
-                newTemplate.setPath(destData.getPath() + File.separator + templateName);
+                newTemplate.setPath(destData.getPath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension());
                 newTemplate.setFormat(ImageFormat.QCOW2);
                 newTemplate.setSize(prop.getSize());
                 return new CopyCmdAnswer(newTemplate);
