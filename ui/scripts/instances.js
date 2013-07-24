@@ -598,6 +598,7 @@
                     },
                     reset: {
                         label: 'Reset VM',
+                        textLabel: 'Reset VM',
                         messages: {
                             confirm: function(args) {
                                 return 'Do you want to restore the VM ?';
