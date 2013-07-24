@@ -53,6 +53,11 @@ import com.cloud.upgrade.dao.Upgrade228to229;
 import com.cloud.upgrade.dao.Upgrade229to2210;
 import com.cloud.upgrade.dao.Upgrade301to302;
 import com.cloud.upgrade.dao.Upgrade302to40;
+import com.cloud.upgrade.dao.Upgrade303to304;
+import com.cloud.upgrade.dao.Upgrade304to305;
+import com.cloud.upgrade.dao.Upgrade305to306;
+import com.cloud.upgrade.dao.Upgrade306to307;
+import com.cloud.upgrade.dao.Upgrade307to410;
 import com.cloud.upgrade.dao.Upgrade30to301;
 import com.cloud.upgrade.dao.Upgrade40to41;
 import com.cloud.upgrade.dao.Upgrade410to420;
@@ -165,6 +170,17 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("4.0.2", new DbUpgrade[] { new Upgrade40to41(), new Upgrade410to420() });
 
         _upgradeMap.put("4.1.0", new DbUpgrade[] { new Upgrade410to420() });
+        
+        //CP Upgraes
+        _upgradeMap.put("3.0.3", new DbUpgrade[] { new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
+        
+        _upgradeMap.put("3.0.4", new DbUpgrade[] { new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
+        
+        _upgradeMap.put("3.0.5", new DbUpgrade[] { new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
+        
+        _upgradeMap.put("3.0.6", new DbUpgrade[] { new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
+        
+        _upgradeMap.put("3.0.7", new DbUpgrade[] { new Upgrade307to410(), new Upgrade410to420() });
     }
 
     protected void runScript(Connection conn, File file) {
