@@ -340,11 +340,6 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                              "Running",
                              "Router state should be running"
                              )
-            self.assertIn(
-                    router.linklocalip,
-                    [master_router.linklocalip, backup_router.linklocalip],
-                    "Routers should have same linklocal IP after nw restart"
-                  )
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -486,11 +481,6 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                              "Running",
                              "Router state should be running"
                              )
-            self.assertIn(
-                    router.linklocalip,
-                    [master_router.linklocalip, backup_router.linklocalip],
-                    "Routers should have same linklocal IP after nw restart"
-                  )
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
