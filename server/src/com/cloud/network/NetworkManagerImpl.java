@@ -121,8 +121,11 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkAccountDao;
+import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
@@ -262,6 +265,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
     @Inject
     DataCenterVnetDao _datacenterVnetDao;
+    @Inject
+    NetworkAccountDao _networkAccountDao;
 
     List<NetworkGuru> _networkGurus;
     public List<NetworkGuru> getNetworkGurus() {
@@ -2892,7 +2897,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                  } catch (NoTransitionException e) {
                      s_logger.debug(e.getMessage());
                  }
-                _networksDao.remove(network.getId());
+                if (_networksDao.remove(network.getId())) {
+                    NetworkDomainVO networkDomain = _networkDomainDao.getDomainNetworkMapByNetworkId(network.getId());
+                    if (networkDomain != null)
+                        _networkDomainDao.remove(networkDomain.getId());
+
+                    NetworkAccountVO networkAccount = _networkAccountDao.getAccountNetworkMapByNetworkId(network.getId());
+                    if (networkAccount != null)
+                        _networkAccountDao.remove(networkAccount.getId());
+                }
 
                 NetworkOffering ntwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
                 boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, network.getAclType());
