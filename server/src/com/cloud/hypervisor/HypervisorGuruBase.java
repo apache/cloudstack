@@ -29,6 +29,7 @@ import com.cloud.configuration.Config;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -135,8 +136,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public long getCommandHostDelegation(long hostId, Command cmd) {
-        return hostId;
+    public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
+        return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
     }
 
     @Override

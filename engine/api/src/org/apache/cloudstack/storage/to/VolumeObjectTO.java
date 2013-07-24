@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -41,6 +42,7 @@ public class VolumeObjectTO implements DataTO {
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private Hypervisor.HypervisorType hypervisorType;
 
     public VolumeObjectTO() {
 
@@ -67,6 +69,7 @@ public class VolumeObjectTO implements DataTO {
         this.bytesWriteRate = volume.getBytesWriteRate();
         this.iopsReadRate = volume.getIopsReadRate();
         this.iopsWriteRate = volume.getIopsWriteRate();
+        this.hypervisorType = volume.getHypervisorType();
     }
 
     public String getUuid() {
@@ -85,6 +88,11 @@ public class VolumeObjectTO implements DataTO {
     @Override
     public DataStoreTO getDataStore() {
         return this.dataStore;
+    }
+
+    @Override
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return this.hypervisorType;
     }
 
 

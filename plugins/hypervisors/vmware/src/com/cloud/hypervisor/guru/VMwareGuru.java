@@ -28,6 +28,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.host.Host;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -42,7 +43,6 @@ import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -294,92 +294,82 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override @DB
-    public long getCommandHostDelegation(long hostId, Command cmd) {
+    public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
 
-        if(cmd instanceof PrimaryStorageDownloadCommand ||
-                cmd instanceof BackupSnapshotCommand ||
-                cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
-                cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
-                cmd instanceof CopyVolumeCommand ||
-                cmd instanceof CreateVolumeOVACommand ||
-                cmd instanceof PrepareOVAPackingCommand ||
-                cmd instanceof CreateVolumeFromSnapshotCommand ||
-                cmd instanceof CopyCommand) {
-            if (cmd instanceof CopyCommand) {
-                CopyCommand cpyCommand = (CopyCommand)cmd;
-                DataTO srcData = cpyCommand.getSrcTO();
-                DataStoreTO srcStoreTO = srcData.getDataStore();
-                DataTO destData = cpyCommand.getDestTO();
-                DataStoreTO destStoreTO = destData.getDataStore();
+        if (cmd instanceof CopyCommand) {
+            CopyCommand cpyCommand = (CopyCommand)cmd;
+            DataTO srcData = cpyCommand.getSrcTO();
+            DataStoreTO srcStoreTO = srcData.getDataStore();
+            DataTO destData = cpyCommand.getDestTO();
+            DataStoreTO destStoreTO = destData.getDataStore();
 
-                if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
-                        srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
-                    needDelegation = false;
-                } else {
-                    needDelegation = true;
-                }
+            if (!(HypervisorType.VMware == srcData.getHypervisorType() ||
+                    HypervisorType.VMware == destData.getHypervisorType()
+            )) {
+                return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+            }
+
+            if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
+                    srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
+                needDelegation = false;
             } else {
                 needDelegation = true;
             }
-
         }
-        /* Fang: remove this before checking in */
-        // needDelegation = false;
 
-        if (cmd instanceof PrepareOVAPackingCommand ||
-                cmd instanceof CreateVolumeOVACommand	) {
+        if(!needDelegation) {
+            return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+        }
+
+        HostVO host = _hostDao.findById(hostId);
+        long dcId = host.getDataCenterId();
+
+        Pair<HostVO, SecondaryStorageVmVO> cmdTarget = _secStorageMgr.assignSecStorageVm(dcId, cmd);
+        if(cmdTarget != null) {
+            // TODO, we need to make sure agent is actually connected too
+
             cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
-        }
-        if(needDelegation) {
-            HostVO host = _hostDao.findById(hostId);
-            assert(host != null);
-            assert(host.getHypervisorType() == HypervisorType.VMware);
-            long dcId = host.getDataCenterId();
-
-            Pair<HostVO, SecondaryStorageVmVO> cmdTarget = _secStorageMgr.assignSecStorageVm(dcId, cmd);
-            if(cmdTarget != null) {
-                // TODO, we need to make sure agent is actually connected too
-                cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+            if (host.getType() == Host.Type.Routing) {
                 Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
                 cmd.setContextParam("guid", resolveNameInGuid(hostDetails.get("guid")));
                 cmd.setContextParam("username", hostDetails.get("username"));
                 cmd.setContextParam("password", hostDetails.get("password"));
                 cmd.setContextParam("serviceconsole", _vmwareMgr.getServiceConsolePortGroupName());
                 cmd.setContextParam("manageportgroup", _vmwareMgr.getManagementPortGroupName());
-
-                CommandExecLogVO execLog = new CommandExecLogVO(cmdTarget.first().getId(), cmdTarget.second().getId(), cmd.getClass().getSimpleName(), 1);
-                _cmdExecLogDao.persist(execLog);
-                cmd.setContextParam("execid", String.valueOf(execLog.getId()));
-
-                if(cmd instanceof BackupSnapshotCommand ||
-                        cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
-                        cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
-                        cmd instanceof CopyVolumeCommand ||
-                        cmd instanceof CopyCommand ||
-                        cmd instanceof CreateVolumeOVACommand ||
-                        cmd instanceof PrepareOVAPackingCommand ||
-                        cmd instanceof CreateVolumeFromSnapshotCommand) {
-
-                    String workerName = _vmwareMgr.composeWorkerName();
-                    long checkPointId = 1;
-                    // FIXME: Fix                    long checkPointId = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName));
-                    cmd.setContextParam("worker", workerName);
-                    cmd.setContextParam("checkpoint", String.valueOf(checkPointId));
-
-                    // some commands use 2 workers
-                    String workerName2 = _vmwareMgr.composeWorkerName();
-                    long checkPointId2 = 1;
-                    // FIXME: Fix                    long checkPointId2 = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName2));
-                    cmd.setContextParam("worker2", workerName2);
-                    cmd.setContextParam("checkpoint2", String.valueOf(checkPointId2));
-                }
-
-                return cmdTarget.first().getId();
             }
-        }
 
-        return hostId;
+            CommandExecLogVO execLog = new CommandExecLogVO(cmdTarget.first().getId(), cmdTarget.second().getId(), cmd.getClass().getSimpleName(), 1);
+            _cmdExecLogDao.persist(execLog);
+            cmd.setContextParam("execid", String.valueOf(execLog.getId()));
+
+            if(cmd instanceof BackupSnapshotCommand ||
+                    cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
+                    cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
+                    cmd instanceof CopyVolumeCommand ||
+                    cmd instanceof CopyCommand ||
+                    cmd instanceof CreateVolumeOVACommand ||
+                    cmd instanceof PrepareOVAPackingCommand ||
+                    cmd instanceof CreateVolumeFromSnapshotCommand) {
+
+                String workerName = _vmwareMgr.composeWorkerName();
+                long checkPointId = 1;
+                // FIXME: Fix                    long checkPointId = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName));
+                cmd.setContextParam("worker", workerName);
+                cmd.setContextParam("checkpoint", String.valueOf(checkPointId));
+
+                // some commands use 2 workers
+                String workerName2 = _vmwareMgr.composeWorkerName();
+                long checkPointId2 = 1;
+                // FIXME: Fix                    long checkPointId2 = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName2));
+                cmd.setContextParam("worker2", workerName2);
+                cmd.setContextParam("checkpoint2", String.valueOf(checkPointId2));
+            }
+
+            return new Pair<Boolean, Long>(Boolean.TRUE,cmdTarget.first().getId());
+
+        }
+        return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
     }
 
     @Override

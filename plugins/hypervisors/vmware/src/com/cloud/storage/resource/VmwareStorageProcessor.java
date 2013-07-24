@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -77,7 +78,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.State;
@@ -543,7 +543,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 	@Override
 	public Answer createTemplateFromVolume(CopyCommand cmd) {
 		VolumeObjectTO volume = (VolumeObjectTO)cmd.getSrcTO();
-		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
 		TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
 		DataStoreTO imageStore = template.getDataStore();
 		
@@ -579,7 +578,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 					hostService.getWorkerName(context, cmd, 0));
 
 			TemplateObjectTO newTemplate = new TemplateObjectTO();
-			newTemplate.setPath(template.getName());
+			newTemplate.setPath(result.first());
 			newTemplate.setFormat(ImageFormat.OVA);
 			newTemplate.setSize(result.third());
 			return new CopyCmdAnswer(newTemplate);
@@ -591,12 +590,196 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
 			s_logger.error("Unexpecpted exception ", e);
 
-			details = "CreatePrivateTemplateFromVolumeCommand exception: " + StringUtils.getExceptionStackInfo(e);
+			details = "CreatePrivateTemplateFromVolumeCommand exception: " + e.toString();
 			return new CopyCmdAnswer(details);
 		}
 	}
-	
-	private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,
+
+    private void writeMetaOvaForTemplate(String installFullPath, String ovfFilename, String vmdkFilename,
+                                         String templateName, long diskSize) throws Exception {
+
+        // TODO a bit ugly here
+        BufferedWriter out = null;
+        try {
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName +".ova.meta")));
+            out.write("ova.filename=" + templateName + ".ova");
+            out.newLine();
+            out.write("version=1.0");
+            out.newLine();
+            out.write("ovf=" + ovfFilename);
+            out.newLine();
+            out.write("numDisks=1");
+            out.newLine();
+            out.write("disk1.name=" + vmdkFilename);
+            out.newLine();
+            out.write("disk1.size=" + diskSize);
+            out.newLine();
+        } finally {
+            if(out != null)
+                out.close();
+        }
+    }
+
+    private Ternary<String, Long, Long> createTemplateFromSnapshot(String installPath, String templateUniqueName,
+                                                                   String secStorageUrl, String snapshotPath, Long templateId) throws Exception {
+        //Snapshot path is decoded in this form: /snapshots/account/volumeId/uuid/uuid
+        String[] tokens = snapshotPath.split(File.separator);
+        String backupSSUuid = tokens[tokens.length - 1];
+        String snapshotFolder = StringUtils.join(tokens, File.separator, 0, tokens.length -1);
+
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String installFullPath = secondaryMountPoint + "/" + installPath;
+        String installFullOVAName = installFullPath + "/" + templateUniqueName + ".ova";  //Note: volss for tmpl
+        String snapshotRoot = secondaryMountPoint + "/" + snapshotFolder;
+        String snapshotFullOVAName = snapshotRoot + "/" + backupSSUuid + ".ova";
+        String snapshotFullOvfName = snapshotRoot + "/" + backupSSUuid + ".ovf";
+        String result;
+        Script command;
+        String templateVMDKName = "";
+        String snapshotFullVMDKName = snapshotRoot + "/" + backupSSUuid + "/";
+
+        synchronized(installPath.intern()) {
+            command = new Script(false, "mkdir", _timeout, s_logger);
+            command.add("-p");
+            command.add(installFullPath);
+
+            result = command.execute();
+            if(result != null) {
+                String msg = "unable to prepare template directory: "
+                        + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
+
+        try {
+            if(new File(snapshotFullOVAName).exists()) {
+                command = new Script(false, "cp", _timeout, s_logger);
+                command.add(snapshotFullOVAName);
+                command.add(installFullOVAName);
+                result = command.execute();
+                if(result != null) {
+                    String msg = "unable to copy snapshot " + snapshotFullOVAName + " to " + installFullPath;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+
+                // untar OVA file at template directory
+                command = new Script("tar", 0, s_logger);
+                command.add("--no-same-owner");
+                command.add("-xf", installFullOVAName);
+                command.setWorkDir(installFullPath);
+                s_logger.info("Executing command: " + command.toString());
+                result = command.execute();
+                if(result != null) {
+                    String msg = "unable to untar snapshot " + snapshotFullOVAName + " to "
+                            + installFullPath;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+
+            } else {  // there is no ova file, only ovf originally;
+                if(new File(snapshotFullOvfName).exists()) {
+                    command = new Script(false, "cp", _timeout, s_logger);
+                    command.add(snapshotFullOvfName);
+                    //command.add(installFullOvfName);
+                    command.add(installFullPath);
+                    result = command.execute();
+                    if(result != null) {
+                        String msg = "unable to copy snapshot " + snapshotFullOvfName + " to " + installFullPath;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+
+                    s_logger.info("vmdkfile parent dir: " + snapshotFullVMDKName);
+                    File snapshotdir = new File(snapshotFullVMDKName);
+                    // File snapshotdir = new File(snapshotRoot);
+                    File[] ssfiles = snapshotdir.listFiles();
+                    // List<String> filenames = new ArrayList<String>();
+                    for (int i = 0; i < ssfiles.length; i++) {
+                        String vmdkfile = ssfiles[i].getName();
+                        s_logger.info("vmdk file name: " + vmdkfile);
+                        if(vmdkfile.toLowerCase().startsWith(backupSSUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
+                            snapshotFullVMDKName += vmdkfile;
+                            templateVMDKName += vmdkfile;
+                            break;
+                        }
+                    }
+                    if (snapshotFullVMDKName != null) {
+                        command = new Script(false, "cp", _timeout, s_logger);
+                        command.add(snapshotFullVMDKName);
+                        command.add(installFullPath);
+                        result = command.execute();
+                        s_logger.info("Copy VMDK file: " + snapshotFullVMDKName);
+                        if(result != null) {
+                            String msg = "unable to copy snapshot vmdk file " + snapshotFullVMDKName + " to " + installFullPath;
+                            s_logger.error(msg);
+                            throw new Exception(msg);
+                        }
+                    }
+                } else {
+                    String msg = "unable to find any snapshot ova/ovf files" + snapshotFullOVAName + " to " + installFullPath;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            }
+
+            long physicalSize = new File(installFullPath + "/" + templateVMDKName).length();
+            VmdkProcessor processor = new VmdkProcessor();
+            // long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            processor.configure("VMDK Processor", params);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
+
+            postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            writeMetaOvaForTemplate(installFullPath, backupSSUuid + File.separator + backupSSUuid + ".ovf", templateVMDKName, templateUniqueName, physicalSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
+        } catch(Exception e) {
+            // TODO, clean up left over files
+            throw e;
+        }
+    }
+
+    @Override
+    public Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        SnapshotObjectTO snapshot = (SnapshotObjectTO)cmd.getSrcTO();
+        TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
+        DataStoreTO imageStore = template.getDataStore();
+        String details;
+        String uniqeName = UUID.randomUUID().toString();
+
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            if (!(imageStore instanceof  NfsTO)) {
+                return new CopyCmdAnswer("Only support create template from snapshot, when the dest store is nfs");
+            }
+
+            NfsTO nfsSvr = (NfsTO)imageStore;
+            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(),
+                    uniqeName,
+                    nfsSvr.getUrl(), snapshot.getPath(),
+                    template.getId()
+                    );
+
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(result.first());
+            newTemplate.setSize(result.second());
+            newTemplate.setFormat(ImageFormat.OVA);
+            return new CopyCmdAnswer(newTemplate);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                hostService.invalidateServiceContext(context);
+            }
+
+            s_logger.error("Unexpecpted exception ", e);
+
+            details = "CreatePrivateTemplateFromSnapshotCommand exception: " + e.toString();
+            return new CopyCmdAnswer(details);
+        }
+    }
+
+    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,
 	        String secStorageUrl, String secStorageDir, String exportName,
 	        String workerVmName) throws Exception {
 
@@ -760,7 +943,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
 			s_logger.error("Unexpecpted exception ", e);
 
-			details = "BackupSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
+			details = "BackupSnapshotCommand exception: " + e.toString();
 			return new CopyCmdAnswer(details);
 		}
 	}
@@ -1298,7 +1481,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 			}
 
 			s_logger.error("Unexpecpted exception ", e);
-			details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
+			details = "CreateVolumeFromSnapshotCommand exception: " + e.toString();
 		}
 		return new CopyCmdAnswer(details);
 	}

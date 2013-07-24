@@ -84,6 +84,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.backupSnapshot(cmd);
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.VOLUME) {
         	return processor.createVolumeFromSnapshot(cmd);
+        } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
+            return processor.createTemplateFromSnapshot(cmd);
         }
 
         return new Answer(cmd, false, "not implemented yet");

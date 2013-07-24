@@ -404,6 +404,11 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
+    public Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public Answer backupSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
