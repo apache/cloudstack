@@ -1827,7 +1827,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                                 self.services["domain"],
                                 parentdomainid=self.domain.id
                                 )
-        self._cleanup.append(domain)
+        self.cleanup.append(domain)
         self.debug("Domain: %s is created successfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")

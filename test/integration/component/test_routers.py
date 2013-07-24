@@ -139,7 +139,7 @@ class TestRouterServices(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -150,7 +150,7 @@ class TestRouterServices(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterServices, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -158,14 +158,14 @@ class TestRouterServices(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced"])
@@ -470,7 +470,7 @@ class TestRouterServices(cloudstackTestCase):
                                                              router.state
                                                              ))
         # Cleanup Vm_2 - Not required for further tests
-        self._cleanup.append(self.vm_2)
+        self.cleanup.append(self.vm_2)
         return
 
     @attr(tags = ["advanced"])
@@ -619,7 +619,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -630,7 +630,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterStopCreatePF, cls).getClsTestClient().getApiClient()
             # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -639,14 +639,14 @@ class TestRouterStopCreatePF(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced", "advancedns"])
@@ -831,7 +831,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -842,7 +842,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterStopCreateLB, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -850,14 +850,14 @@ class TestRouterStopCreateLB(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced", "advancedns"])
@@ -1042,7 +1042,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -1053,7 +1053,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterStopCreateFW, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1061,14 +1061,14 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced", "advancedns"])
