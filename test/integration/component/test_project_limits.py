@@ -149,10 +149,15 @@ class TestProjectLimits(cloudstackTestCase):
                             cls.services["user"],
                             domainid=cls.domain.id
                             )
+        cls.disk_offering = DiskOffering.create(
+                                    cls.api_client,
+                                    cls.services["disk_offering"]
+                                    )
         cls._cleanup = [
             cls.admin,
             cls.user,
-            cls.domain
+            cls.domain,
+            cls.disk_offering
             ]
         return
 
@@ -194,8 +199,8 @@ class TestProjectLimits(cloudstackTestCase):
         #    account resource limits
         # 3. Increase Projects Resources limits above domains limit. Verify
         #    project can't have more resources than domain level limit allows.
-        # 4. Create Resource more than its set limit for a project. Verify
-        #    resource allocation should fail giving proper message
+        # 4. Create Resource more than its set limit for the parent domain.
+        #    Verify resource allocation should fail giving proper message
 
         # Create project as a domain admin
         project = Project.create(
@@ -309,22 +314,41 @@ class TestProjectLimits(cloudstackTestCase):
                                         self.apiclient,
                                         resource.resourcetype,
                                         domainid=self.domain.id,
-                                        max=2
+                                        max=1
                                       )
-            with self.assertRaises(Exception):
-                max_value = 3
-                self.debug(
-                    "Attempting to update project: %s resource limit to: %s" % (
-                                                                project.id,
-                                                                max_value
-                                                                ))
-                # Update project resource limits to 3
-                update_resource_limit(
-                                        self.apiclient,
-                                        resource.resourcetype,
-                                        max=max_value,
-                                        projectid=project.id
-                                      )
+            max_value = 2
+            self.debug(
+                "Attempting to update project: %s resource limit to: %s" % (
+                                                            project.id,
+                                                            max_value
+                                                            ))
+            # Update project resource limits to 3
+            update_resource_limit(
+                                    self.apiclient,
+                                    resource.resourcetype,
+                                    max=max_value,
+                                    projectid=project.id
+                                  )
+
+        # Verify project can't have more resources then limit set for domain by adding volumes.
+        volume = Volume.create(
+                          self.apiclient,
+                          self.services["volume"],
+                          zoneid=self.zone.id,
+                          diskofferingid=self.disk_offering.id,
+                          projectid=project.id
+                        )
+        # Exception should be raised for second volume
+        with self.assertRaises(Exception):
+            Volume.create(
+                          self.apiclient,
+                          self.services["volume"],
+                          zoneid=self.zone.id,
+                          diskofferingid=self.disk_offering.id,
+                          projectid=project.id
+                        )
+        volume.delete(self.apiclient);
+
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
