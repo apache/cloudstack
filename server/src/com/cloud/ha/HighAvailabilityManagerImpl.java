@@ -51,7 +51,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.dao.HighAvailabilityDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -573,18 +572,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         try {
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
+            
+            VMInstanceVO vm = _instanceDao.findById(vmId);
 
-            if (!_itMgr.migrateAway(work.getType(), vmId, srcHostId)) {
-                s_logger.warn("Unable to migrate vm from " + srcHostId);
-                _resourceMgr.maintenanceFailed(srcHostId);
-            }
+            _itMgr.migrateAway(vm.getUuid(), srcHostId);
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");
-            _resourceMgr.maintenanceFailed(srcHostId);
-            return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
-        } catch (VirtualMachineMigrationException e) {
-            s_logger.warn("Looks like VM is still starting, we need to retry migrating the VM later.");
             _resourceMgr.maintenanceFailed(srcHostId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         }

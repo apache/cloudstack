@@ -33,6 +33,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -66,8 +69,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -735,8 +736,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVm rebootVirtualMachine(long userId, long vmId)
             throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
-        User caller = _accountMgr.getActiveUser(userId);
-        Account owner = _accountMgr.getAccount(vm.getAccountId());
 
         if (vm == null || vm.getState() == State.Destroyed
                 || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -746,10 +745,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             collectVmDiskStatistics(vm);
-            return _itMgr.reboot(vm, null, caller, owner);
+            _itMgr.reboot(vm.getUuid(), null);
+            return _vmDao.findById(vmId);
         } else {
-            s_logger.error("Vm id=" + vmId
-                    + " is not in Running state, failed to reboot");
+            s_logger.error("Vm id=" + vmId + " is not in Running state, failed to reboot");
             return null;
         }
     }
@@ -3875,8 +3874,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (uservm != null) {
             collectVmDiskStatistics(uservm);
         }
-        VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
-        return migratedVm;
+        _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+        return _vmDao.findById(vmId);
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {
@@ -4164,7 +4163,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
-        Map<VolumeVO, StoragePoolVO> volToPoolObjectMap = new HashMap<VolumeVO, StoragePoolVO>();
+        Map<Volume, StoragePool> volToPoolObjectMap = new HashMap<Volume, StoragePool>();
         if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())) {
             if (volumeToPool.isEmpty()) {
                 // If the destination host is in the same cluster and volumes do not have to be migrated across pools
@@ -4214,8 +4213,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         checkHostsDedication(vm, srcHostId, destinationHost.getId());
 
-        VMInstanceVO migratedVm = _itMgr.migrateWithStorage(vm, srcHostId, destinationHost.getId(), volToPoolObjectMap);
-        return migratedVm;
+        _itMgr.migrateWithStorage(vm.getUuid(), srcHostId, destinationHost.getId(), volToPoolObjectMap);
+        return _vmDao.findById(vm.getId());
 }
 
     @DB

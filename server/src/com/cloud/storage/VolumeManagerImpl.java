@@ -2243,15 +2243,15 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            Map<VolumeVO, StoragePoolVO> volumeToPool) {
+    public void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            Map<Volume, StoragePool> volumeToPool) {
         // Check if all the vms being migrated belong to the vm.
         // Check if the storage pool is of the right type.
         // Create a VolumeInfo to DataStore map too.
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
-        for (Map.Entry<VolumeVO, StoragePoolVO> entry : volumeToPool.entrySet()) {
-            VolumeVO volume = entry.getKey();
-            StoragePoolVO storagePool = entry.getValue();
+        for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
+            Volume volume = entry.getKey();
+            StoragePool storagePool = entry.getValue();
             StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePool.getId(),
                     DataStoreRole.Primary);
 

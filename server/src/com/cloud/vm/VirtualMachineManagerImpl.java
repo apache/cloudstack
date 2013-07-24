@@ -1443,17 +1443,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> T migrate(T vmm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException,
-            ManagementServerException,
-    VirtualMachineMigrationException {
-        VMInstanceVO vm = _vmDao.findByUuid(vmm.getUuid());
+    public void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find the vm " + vm);
+                s_logger.debug("Unable to find the vm " + vmUuid);
             }
-            throw new CloudRuntimeException("Unable to find a virtual machine with id " + vmm.getUuid());
+            throw new CloudRuntimeException("Unable to find a virtual machine with id " + vmUuid);
         }
+        migrate(vm, srcHostId, dest);
+    }
 
+    protected void migrate(VMInstanceVO vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.info("Migrating " + vm + " to " + dest);
 
         long dstHostId = dest.getHost().getId();
@@ -1474,7 +1475,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            throw new VirtualMachineMigrationException("VM is not Running, unable to migrate the vm currently " + vm + " , current state: " + vm.getState().toString());
+            throw new CloudRuntimeException("VM is not Running, unable to migrate the vm currently " + vm + " , current state: " + vm.getState().toString());
         }
 
         short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
@@ -1542,8 +1543,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 MigrateAnswer ma = (MigrateAnswer) _agentMgr.send(vm.getLastHostId(), mc);
                 if (!ma.getResult()) {
-                    s_logger.error("Unable to migrate due to " + ma.getDetails());
-                    return null;
+                    throw new CloudRuntimeException("Unable to migrate due to " + ma.getDetails());
                 }
             } catch (OperationTimedoutException e) {
                 if (e.isActive()) {
@@ -1570,13 +1570,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
-                    return null;
+                    throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (OperationTimedoutException e) {
             }
 
             migrated = true;
-            return vmm;
         } finally {
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
@@ -1604,11 +1603,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private Map<VolumeVO, StoragePoolVO> getPoolListForVolumesForMigration(VirtualMachineProfile profile,
-            Host host, Map<VolumeVO, StoragePoolVO> volumeToPool) {
+    private Map<Volume, StoragePool> getPoolListForVolumesForMigration(VirtualMachineProfile profile, Host host, Map<Volume, StoragePool> volumeToPool) {
         List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
         for (VolumeVO volume : allVolumes) {
-            StoragePoolVO pool = volumeToPool.get(volume);
+            StoragePool pool = volumeToPool.get(volume);
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
             if (pool != null) {
@@ -1692,10 +1690,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> T migrateWithStorage(T vmm, long srcHostId, long destHostId,
-            Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException,
-            ManagementServerException, VirtualMachineMigrationException {
-        VMInstanceVO vm = _vmDao.findByUuid(vmm.getUuid());
+    public void migrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
+            ConcurrentOperationException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         HostVO srcHost = _hostDao.findById(srcHostId);
         HostVO destHost = _hostDao.findById(destHostId);
@@ -1756,14 +1753,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
-                    return null;
+                    throw new CloudRuntimeException("VM not found on desintation host. Unable to complete migration for " + vm);
                 }
             } catch (OperationTimedoutException e) {
                 s_logger.warn("Error while checking the vm " + vm + " is on host " + destHost, e);
             }
 
             migrated = true;
-            return vmm;
         } finally {
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
@@ -1832,11 +1828,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
-        VMInstanceVO vm = _vmDao.findById(vmId);
+    public void migrateAway(String vmUuid, long srcHostId) throws InsufficientServerCapacityException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
-            s_logger.debug("Unable to find a VM for " + vmId);
-            return true;
+            s_logger.debug("Unable to find a VM for " + vmUuid);
+            throw new CloudRuntimeException("Unable to find " + vmUuid);
         }
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -1844,7 +1840,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Long hostId = vm.getHostId();
         if (hostId == null) {
             s_logger.debug("Unable to migrate because the VM doesn't have a host id: " + vm);
-            return true;
+            throw new CloudRuntimeException("Unable to migrate " + vmUuid);
         }
 
         Host host = _hostDao.findById(hostId);
@@ -1876,38 +1872,28 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             excludes.addHost(dest.getHost().getId());
-            VMInstanceVO vmInstance = null;
             try {
-                vmInstance = migrate(vm, srcHostId, dest);
+                migrate(vm, srcHostId, dest);
+                return;
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to migrate to unavailable " + dest);
             } catch (ConcurrentOperationException e) {
                 s_logger.debug("Unable to migrate VM due to: " + e.getMessage());
-            } catch (ManagementServerException e) {
-                s_logger.debug("Unable to migrate VM: " + e.getMessage());
-            } catch (VirtualMachineMigrationException e) {
-                s_logger.debug("Got VirtualMachineMigrationException, Unable to migrate: " + e.getMessage());
-                if (vm.getState() == State.Starting) {
-                    s_logger.debug("VM seems to be still Starting, we should retry migration later");
-                    throw e;
-                } else {
-                    s_logger.debug("Unable to migrate VM, VM is not in Running or even Starting state, current state: " + vm.getState().toString());
-                }
             }
-            if (vmInstance != null) {
-                return true;
-            }
+
             try {
                 advanceStop(vm, true);
-                return true;
+                throw new CloudRuntimeException("Unable to migrate " + vm);
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());
+                throw new CloudRuntimeException("Unable to migrate " + vm);
             } catch (ConcurrentOperationException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());
+                throw new CloudRuntimeException("Unable to migrate " + vm);
             } catch (OperationTimedoutException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());
+                throw new CloudRuntimeException("Unable to migrate " + vm);
             }
-            return false;
         }
     }
 
@@ -1938,18 +1924,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> T reboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+    public void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
-            return advanceReboot(vm, params, caller, account);
+            advanceReboot(vmUuid, params);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to reboot a VM due to concurrent operation", e);
         }
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
-        T rebootedVm = null;
+    public void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ConcurrentOperationException,
+            ResourceUnavailableException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
@@ -1968,16 +1954,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
             if (rebootAnswer != null && rebootAnswer.getResult()) {
-                rebootedVm = vm;
-                return rebootedVm;
+                return;
             }
             s_logger.info("Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
         }
-
-        return rebootedVm;
     }
 
     public Command cleanup(VirtualMachine vm) {
