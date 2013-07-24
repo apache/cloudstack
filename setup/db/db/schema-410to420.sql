@@ -2151,3 +2151,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmsnapshot.max', '10', 'Maximum vm snapshots for a VM');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmsnapshot.create.wait', '1800','In second, timeout for create vm snapshot');
+
+ALTER TABLE `cloud`.`usage_event` ADD COLUMN `virtual_size` bigint unsigned;
+ALTER TABLE `cloud_usage`.`usage_event` ADD COLUMN `virtual_size` bigint unsigned;
+ALTER TABLE `cloud_usage`.`usage_storage` ADD COLUMN `virtual_size` bigint unsigned;
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `virtual_size` bigint unsigned;
