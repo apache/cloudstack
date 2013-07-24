@@ -1013,6 +1013,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.debug("Deployed VM in network: %s" % self.network.id)
         self.cleanup = []
         self.cleanup.insert(0, self.account)
+        self.update_waiting_time = 60;
         return
 
     def tearDown(self):
@@ -1023,7 +1024,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
-    def test_stopMasterRvR(self):
+    def test_01_stopMasterRvR(self):
         """Test stop master RVR
         """
 
@@ -1079,6 +1080,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop master router: %s" % e)
 
+        # wait for VR to update state
+        time.sleep(self.update_waiting_time)
+
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
@@ -1120,6 +1124,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start master router: %s" % e)
 
+        # wait for VR to update state
+        time.sleep(self.update_waiting_time)
+
         self.debug("Checking state of the master router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
@@ -1144,7 +1151,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
-    def test_stopBackupRvR(self):
+    def test_02_stopBackupRvR(self):
         """Test stop backup RVR
         """
 
@@ -1199,6 +1206,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop backup router: %s" % e)
 
+        # wait for VR update state
+        time.sleep(self.update_waiting_time)
+
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
@@ -1240,6 +1250,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop master router: %s" % e)
 
+        # wait for VR to start and update state
+        time.sleep(self.update_waiting_time)
+
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
@@ -1264,7 +1277,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
-    def test_rebootMasterRvR(self):
+    def test_03_rebootMasterRvR(self):
         """Test reboot master RVR
         """
 
@@ -1313,6 +1326,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reboot MASTER router: %s" % e)
 
+        # wait for VR to update state
+        time.sleep(self.update_waiting_time)
+
         self.debug("Checking state of the master router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
@@ -1354,7 +1370,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
-    def test_rebootBackupRvR(self):
+    def test_04_rebootBackupRvR(self):
         """Test reboot backup RVR
         """
 
@@ -1403,6 +1419,9 @@ class TestRvRRedundancy(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reboot BACKUP router: %s" % e)
 
+        # wait for VR to update state
+        time.sleep(self.update_waiting_time)
+
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
                               self.apiclient,
@@ -1444,7 +1463,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
-    def test_stopBackupRvR_startInstance(self):
+    def test_05_stopBackupRvR_startInstance(self):
         """Test stop backup RVR and start instance
         """
 
@@ -1492,6 +1511,9 @@ class TestRvRRedundancy(cloudstackTestCase):
             Router.stop(self.apiclient, id=backup_router.id)
         except Exception as e:
             self.fail("Failed to stop BACKUP router: %s" % e)
+
+        # wait for VR to update state
+        time.sleep(self.update_waiting_time)
 
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
