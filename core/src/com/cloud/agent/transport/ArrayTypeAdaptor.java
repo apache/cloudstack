@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.cloud.agent.api.Command;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -37,6 +38,9 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
 
     protected Gson              _gson = null;
 
+
+    private static final String s_pkg = Command.class.getPackage().getName() + ".";
+
     public ArrayTypeAdaptor() {
     }
 
@@ -49,7 +53,7 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
         JsonArray array = new JsonArray();
         for (T cmd : src) {
             JsonObject obj = new JsonObject();
-            obj.add(cmd.getClass().getName(), _gson.toJsonTree(cmd));
+            obj.add(cmd.getClass().getName().substring(s_pkg.length()), _gson.toJsonTree(cmd));
             array.add(obj);
         }
 
@@ -67,7 +71,7 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
             JsonObject element = (JsonObject)it.next();
             Map.Entry<String, JsonElement> entry = element.entrySet().iterator().next();
 
-            String name = entry.getKey();
+            String name = s_pkg + entry.getKey();
             Class<?> clazz;
             try {
                 clazz = Class.forName(name);
