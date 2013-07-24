@@ -171,7 +171,6 @@ class Services:
                 "protocol": 'TCP',
             },
             "ostype": 'CentOS 5.3 (64-bit)',
-            "sleep": 60,
             "timeout": 10,
         }
 
@@ -212,8 +211,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
-            print("Warning: Exception during cleanup : %s" % e)
-            #raise Exception("Warning: Exception during cleanup : %s" % e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
 
@@ -225,14 +223,13 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 admin=True,
                                                 domainid=self.domain.id
                                                 )
-        self._cleanup = [self.account]
+        self.cleanup = [self.account]
         self.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
                                                 self.apiclient,
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
         self.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
@@ -251,10 +248,9 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
-            #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def get_vpcrouter(self):
@@ -364,7 +360,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                     public_ip.ipaddress.ipaddress, e))
 
     def create_natrule(self, vm, public_ip, network, services=None):
-        self.debug("Creatinng NAT rule in network for vm with public IP")
+        self.debug("Creating NAT rule in network for vm with public IP")
         if not services:
             services = self.services["natrule"]
         nat_rule = NATRule.create(self.apiclient,
@@ -391,7 +387,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                         accountid=self.account.name,
                                         zoneid=self.zone.id,
                                         domainid=self.account.domainid,
-                                        networkid=None, #network.id,
+                                        networkid=network.id,
                                         vpcid=self.vpc.id
                                         )
         self.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress,
@@ -449,8 +445,8 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 )
                 self.debug("Created network with ID: %s" % obj_network.id)
                 return obj_network
-        except:
-                self.fail('Unable to create a Network with offering=%s' % net_offerring)
+        except Exception, e:
+                self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):
         try:
@@ -522,11 +518,17 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
         public_ip_1 = self.acquire_publicip(network_1)
+        #ensure vm is accessible over public ip
+        nat_rule = self.create_natrule(vm_1, public_ip_1, network_1)
+        self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
+        #remove the nat rule
+        nat_rule.delete(self.apiclient)
+
         router = self.stop_vpcrouter()
-        self.create_natrule( vm_1, public_ip_1, network_1)
+        #recreate nat rule
+        self.create_natrule(vm_1, public_ip_1, network_1)
         self.start_vpcrouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
-
         return
 
     @attr(tags=["advanced", "intervlan"])
