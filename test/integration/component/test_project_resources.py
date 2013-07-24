@@ -485,7 +485,7 @@ class TestNetwork(cloudstackTestCase):
                                  networkofferingid=network_offering.id,
                                  zoneid=self.zone.id
                                  )
-        self._cleanup.append(domain_network)
+        self.cleanup.append(domain_network)
         self.debug("Created network with ID: %s" % domain_network.id)
 
         virtual_machine = VirtualMachine.create(

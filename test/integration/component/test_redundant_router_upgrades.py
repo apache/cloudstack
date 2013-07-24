@@ -189,12 +189,13 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self._cleanup.insert(0, self.account)
+        self.cleanup = []
+        self.cleanup.insert(0, self.account)
         return
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

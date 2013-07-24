@@ -224,14 +224,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 admin=True,
                                                 domainid=self.domain.id
                                                 )
-        self._cleanup = [self.account]
+        self.cleanup = [self.account]
         self.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
                                                 self.apiclient,
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
+        self.cleanup.append(self.vpc_off)
         self.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
@@ -250,7 +250,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -405,7 +405,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
+        self.cleanup.append(self.vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
@@ -431,7 +431,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                         )
                 # Enable Network offering
                 nw_off.update(self.apiclient, state='Enabled')
-                self._cleanup.append(nw_off)
+                self.cleanup.append(nw_off)
                 self.debug('Created and Enabled NetworkOffering')
 
                 self.services["network"]["name"] = "NETWORK-" + str(gateway)
