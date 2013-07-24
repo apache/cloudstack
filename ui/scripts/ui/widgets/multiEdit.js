@@ -854,6 +854,8 @@
                     $loading.prependTo($multi);
                     reorder.moveDrag.action({
                         targetIndex: ui.item.index(),
+                        nextItem: ui.item.next().size() ? ui.item.next().data('json-obj') : null,
+                        prevItem: ui.item.prev().size() ? ui.item.prev().data('json-obj') : null,
                         context: $.extend(true, {}, context, {
                             // Passes all rules, so that each index can be updated
                             multiRule: [ui.item.data('json-obj')]
