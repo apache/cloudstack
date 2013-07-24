@@ -59,9 +59,13 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
 
-		if (clusterId == null) {
-			return null;
-		}
+        if (podId == null) {
+            // for zone wide storage, podId should be null. We cannot check
+            // clusterId == null here because it will break ClusterWide primary
+            // storage volume operation where
+            // only podId is passed into this call.
+            return null;
+        }
         if (dskCh.getTags() != null && dskCh.getTags().length != 0) {
             s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId
                     + " having tags:" + Arrays.toString(dskCh.getTags()));
