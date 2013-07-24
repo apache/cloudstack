@@ -366,6 +366,18 @@ disable_hvc() {
   [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
 }
 
+enable_vpc_rpsrfs() {
+    local enable=$1
+    if [ $eanble -eq 0]
+    then
+        echo 0 > /etc/rpsrfsenable
+    else
+        echo 1 > /etc/rpsrfsenable
+    fi
+
+    return 0
+}
+
 enable_rpsrfs() {
   local enable=$1
 
@@ -400,7 +412,7 @@ enable_rpsrfs() {
   echo $hex > /sys/class/net/eth0/queues/rx-0/rps_cpus
   echo $hex > /sys/class/net/eth2/queues/rx-0/rps_cpus
 
-  #enble rps
+  #enble rfs
   echo 256 > /proc/sys/net/core/rps_sock_flow_entries
   echo 256 > /sys/class/net/eth0/queues/rx-0/rps_flow_cnt
   echo 256 > /sys/class/net/eth2/queues/rx-0/rps_flow_cnt
@@ -848,6 +860,7 @@ EOF
   enable_svc dnsmasq 1
   enable_svc haproxy 1
   enable_irqbalance 1
+  enable_vpc_rpsrfs 1
   enable_svc cloud 0
   disable_rpfilter
   enable_fwding 1

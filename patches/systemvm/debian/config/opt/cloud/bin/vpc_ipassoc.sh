@@ -85,8 +85,53 @@ add_an_ip () {
   then
     sudo iptables -t mangle -A PREROUTING -i $ethDev -m state --state NEW -j CONNMARK --set-mark $tableNo 2>/dev/null
   fi
+
+  enable_rpsrfs $ethDev
   add_routing 
   return $?
+}
+
+enable_rpsrfs() {
+
+    if [  -f /etc/rpsrfsenable ]
+    then
+        enable=$(cat /etc/rpsrfsenable)
+        if [ $enable -eq 0 ]
+        then
+            return 0
+        fi
+    else
+        return 0
+    fi
+
+    proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+    if [ $proc -le 1 ]
+    then
+        return 0
+    fi
+    dev=$1
+
+    num=1
+    num=$(($num<<$proc))
+    num=$(($num-1));
+    echo $num;
+    hex=$(printf "%x\n" $num)
+    echo $hex;
+    #enable rps
+    echo $hex > /sys/class/net/$dev/queues/rx-0/rps_cpus
+
+    #enble rfs
+    rps_flow_entries=$(cat /proc/sys/net/core/rps_sock_flow_entries)
+
+    if [ $rps_flow_entries -eq 0 ]
+    then
+        echo 256 > /proc/sys/net/core/rps_sock_flow_entries
+    fi
+
+    if [ $(cat /sys/class/net/$dev/queues/rx-0/rps_flow_cnt) -eq 0 ]
+    then
+        echo 256 > /sys/class/net/$dev/queues/rx-0/rps_flow_cnt
+    fi
 }
 
 remove_an_ip () {
