@@ -1299,8 +1299,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @DB
     public void updateResourceCount() {
         ResourceType[] resourceTypes = Resource.ResourceType.values();
-        List<AccountVO> accounts = _accountDao.listAllIncludingRemoved();
-        List<DomainVO> domains = _domainDao.listAllIncludingRemoved();
+        List<AccountVO> accounts = _accountDao.listAll();
+        List<DomainVO> domains = _domainDao.listAll();
         List<ResourceCountVO> domainResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Domain);
         List<ResourceCountVO> accountResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Account);
 

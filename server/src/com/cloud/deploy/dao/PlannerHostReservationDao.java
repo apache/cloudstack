@@ -27,4 +27,6 @@ public interface PlannerHostReservationDao extends GenericDao<PlannerHostReserva
 
     List<PlannerHostReservationVO> listAllReservedHosts();
 
+    List<PlannerHostReservationVO> listAllDedicatedHosts();
+
 }

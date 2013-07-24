@@ -20,16 +20,18 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
-
+import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 
 @Local(value=VirtualMachineManager.class)
 public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImpl implements ClusterManagerListener {
+
+    @Inject
+    ClusterManager _clusterMgr;
 
     protected ClusteredVirtualMachineManagerImpl() {
     }

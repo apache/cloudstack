@@ -876,10 +876,17 @@ class TestTemplateHierarchy(cloudstackTestCase):
                                             account=cls.account_1.name,
                                             domainid=cls.domain_1.id
                                         )
+
+        # Wait for template to download
+        cls.template.download(cls.api_client)
+
+        # Wait for template status to be changed across
+        time.sleep(60)
+
         cls._cleanup = [
                         cls.account_2,
                         cls.domain_2,
-           cls.template,
+                        cls.template,
                         cls.account_1,
                         cls.domain_1,
                         ]
@@ -945,7 +952,8 @@ class TestTemplateHierarchy(cloudstackTestCase):
         # Verify private service offering is not visible to other domain
         templates = list_templates(
                                     self.apiclient,
-                                    templatefilter='self',
+                                    id=self.template.id,
+                                    templatefilter='all',
                                     account=self.account_2.name,
                                     domainid=self.domain_2.id
                                 )
@@ -1819,7 +1827,7 @@ class TestDomainForceRemove(cloudstackTestCase):
                                 self.services["domain"],
                                 parentdomainid=self.domain.id
                                 )
-        self._cleanup.append(domain)
+        self.cleanup.append(domain)
         self.debug("Domain: %s is created successfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")

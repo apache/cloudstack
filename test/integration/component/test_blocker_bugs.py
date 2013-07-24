@@ -103,9 +103,7 @@ class TestTemplate(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -285,6 +283,13 @@ class TestNATRules(cloudstackTestCase):
         self.cleanup = []
         return
 
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     @classmethod
     def tearDownClass(cls):
         try:
@@ -292,10 +297,6 @@ class TestNATRules(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
-    def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
 
     @attr(tags = ["advanced"])
     def test_01_firewall_rules_port_fw(self):
@@ -493,7 +494,6 @@ class TestRouters(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, users etc
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -608,6 +608,10 @@ class TestRouterRestart(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        return
+
+    def tearDown(self):
+        # No need
         return
 
     @attr(tags = ["advanced", "basic", "sg", "advancedns", "eip"])

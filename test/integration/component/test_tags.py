@@ -240,7 +240,7 @@ class TestResourceTags(cloudstackTestCase):
         try:
             #Cleanup resources used
             print("Cleanup resources used")
-            #cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

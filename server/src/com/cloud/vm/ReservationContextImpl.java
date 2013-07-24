@@ -17,12 +17,10 @@
 package com.cloud.vm;
 
 import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
+import com.cloud.utils.db.EntityManager;
 
 public class ReservationContextImpl implements ReservationContext {
     User _caller;
@@ -66,16 +64,16 @@ public class ReservationContextImpl implements ReservationContext {
     @Override
     public Account getAccount() {
         if (_account == null) {
-            _account = s_accountDao.findByIdIncludingRemoved(_caller.getId());
+            _account = s_entityMgr.findById(Account.class, _caller.getId());
         }
-        return _account; 
+        return _account;
     }
 
     @Override
     public Domain getDomain() {
         if (_domain == null) {
             getAccount();
-            _domain = s_domainDao.findByIdIncludingRemoved(_account.getDomainId());
+            _domain = s_entityMgr.findById(Domain.class, _account.getDomainId());
         }
         return _domain;
     }
@@ -90,13 +88,9 @@ public class ReservationContextImpl implements ReservationContext {
         return _reservationId;
     }
     
-    static UserDao s_userDao;
-    static DomainDao s_domainDao;
-    static AccountDao s_accountDao;
+    static EntityManager s_entityMgr;
     
-    static public void setComponents(UserDao userDao, DomainDao domainDao, AccountDao accountDao) {
-        s_userDao = userDao;
-        s_domainDao = domainDao;
-        s_accountDao = accountDao;
+    static public void init(EntityManager entityMgr) {
+        s_entityMgr = entityMgr;
     }
 }

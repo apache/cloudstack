@@ -4885,8 +4885,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         } catch (XenAPIException e) {
             s_logger.warn("Unable to create local link network", e);
+            throw new CloudRuntimeException("Unable to create local link network due to " + e.toString(), e);
         } catch (XmlRpcException e) {
             s_logger.warn("Unable to create local link network", e);
+            throw new CloudRuntimeException("Unable to create local link network due to " + e.toString(), e);
         }
     }
 

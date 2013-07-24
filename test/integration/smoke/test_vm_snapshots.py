@@ -120,7 +120,7 @@ class TestVmSnapshot(cloudstackTestCase):
                     serviceofferingid=cls.service_offering.id,
                     mode=cls.services["mode"]
                     )
-        cls.random_data_0 = random_gen(100)
+        cls.random_data_0 = random_gen(size=100)
         cls._cleanup = [
                 cls.service_offering,
                 cls.account,

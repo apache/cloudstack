@@ -905,11 +905,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 try {
                     if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                         try {
-                            boolean result = _itMgr.stop(secStorageVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                            if (result) {
-                            }
-
-                            return result;
+                            _itMgr.stop(secStorageVm.getUuid());
+                            return true;
                         } finally {
                             secStorageVmLock.unlock();
                         }
@@ -971,17 +968,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         SecondaryStorageVmVO ssvm = _secStorageVmDao.findById(vmId);
 
         try {
-            boolean result = _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-            if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(),
-                        Host.Type.SecondaryStorageVM);
-                if (host != null) {
-                    s_logger.debug("Removing host entry for ssvm id=" + vmId);
-                    result = result && _hostDao.remove(host.getId());
-                }
+            _itMgr.expunge(ssvm.getUuid());
+            _secStorageVmDao.remove(ssvm.getId());
+            HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(),
+                    Host.Type.SecondaryStorageVM);
+            if (host != null) {
+                s_logger.debug("Removing host entry for ssvm id=" + vmId);
+                _hostDao.remove(host.getId());
             }
 
-            return result;
+            return true;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + ssvm, e);
             return false;

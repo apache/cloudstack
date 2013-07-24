@@ -588,7 +588,7 @@
                 $('<div>').addClass('value').append(
                     $('<input>').attr({
                         type: 'text'
-                    }).addClass('required')
+                    }).addClass('required disallowSpecialCharacters')
                 )
             );
 

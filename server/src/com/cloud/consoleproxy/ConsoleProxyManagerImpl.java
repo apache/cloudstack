@@ -1025,9 +1025,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         try {
-            return _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            _itMgr.stop(proxy.getUuid());
+            return true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception " + e.toString());
+            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception ", e);
+            return false;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to stop proxy ", e);
             return false;
         }
     }
@@ -1148,17 +1152,16 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
             //expunge the vm
-            boolean result = _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-            if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
-                        Host.Type.ConsoleProxy);
-                if (host != null) {
-                    s_logger.debug("Removing host entry for proxy id=" + vmId);
-                    result = result && _hostDao.remove(host.getId());
-                }
+            _itMgr.expunge(proxy.getUuid());
+            _consoleProxyDao.remove(vmId);
+            HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
+                    Host.Type.ConsoleProxy);
+            if (host != null) {
+                s_logger.debug("Removing host entry for proxy id=" + vmId);
+                return _hostDao.remove(host.getId());
             }
 
-            return result;
+            return true;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + proxy, e);
             return false;

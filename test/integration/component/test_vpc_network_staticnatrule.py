@@ -38,6 +38,7 @@ from marvin.integration.lib.common import (get_domain,
                                                         get_template,
                                                         cleanup_resources,
                                                         list_routers)
+import socket
 
 
 class Services:
@@ -178,6 +179,9 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        # We want to fail quicker if it's failure
+        socket.setdefaulttimeout(60)
+
         cls.api_client = super(
                                         TestVPCNetworkPFRules,
                                         cls
@@ -220,14 +224,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 admin=True,
                                                 domainid=self.domain.id
                                                 )
-        self._cleanup = [self.account]
+        self.cleanup = [self.account]
         self.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
                                                 self.apiclient,
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
+        self.cleanup.append(self.vpc_off)
         self.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
@@ -246,7 +250,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -401,7 +405,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
+        self.cleanup.append(self.vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
@@ -427,7 +431,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                         )
                 # Enable Network offering
                 nw_off.update(self.apiclient, state='Enabled')
-                self._cleanup.append(nw_off)
+                self.cleanup.append(nw_off)
                 self.debug('Created and Enabled NetworkOffering')
 
                 self.services["network"]["name"] = "NETWORK-" + str(gateway)
@@ -634,8 +638,8 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         http_rule = self.create_NatRule_For_VM(vm_1, public_ip_1, network_1, self.services["http_rule"])
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
-        http_rule.delete()
-        nat_rule.delete()
+        http_rule.delete(self.apiclient)
+        nat_rule.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
@@ -682,12 +686,12 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_2, public_ip_2, testnegative=False)
         self.check_wget_from_vm(vm_3, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_4, public_ip_2, testnegative=False)
-        nat_rule1.delete()
-        nat_rule2.delete()
-        nat_rule3.delete()
-        nat_rule4.delete()
-        http_rule1.delete()
-        http_rule2.delete()
+        nat_rule1.delete(self.apiclient)
+        nat_rule2.delete(self.apiclient)
+        nat_rule3.delete(self.apiclient)
+        nat_rule4.delete(self.apiclient)
+        http_rule1.delete(self.apiclient)
+        http_rule2.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=True)
         self.check_ssh_into_vm(vm_3, public_ip_1, testnegative=True)

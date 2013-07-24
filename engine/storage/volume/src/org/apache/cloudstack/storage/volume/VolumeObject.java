@@ -109,7 +109,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String get_iScsiName() {
-    	return volumeVO.get_iScsiName();
+        return volumeVO.get_iScsiName();
     }
 
     public void setSize(Long size) {
@@ -254,9 +254,8 @@ public class VolumeObject implements VolumeInfo {
             }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
                 objectInStoreMgr.update(this, event);
-                if (this.volumeVO.getState() == Volume.State.Migrating
-                        || this.volumeVO.getState() == Volume.State.Copying
-                        || this.volumeVO.getState() == Volume.State.Uploaded) {
+                if (this.volumeVO.getState() == Volume.State.Migrating || this.volumeVO.getState() == Volume.State.Copying || this.volumeVO.getState() == Volume.State.Uploaded
+                        || this.volumeVO.getState() == Volume.State.Expunged) {
                     return;
                 }
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
@@ -513,6 +512,7 @@ public class VolumeObject implements VolumeInfo {
 
     }
 
+    @Override
     public void incRefCount() {
         if (this.dataStore == null) {
             return;

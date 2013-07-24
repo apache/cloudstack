@@ -35,11 +35,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.cloudstack.api.IdentityService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.api.IdentityService;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
@@ -51,12 +55,10 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -74,10 +76,12 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject VirtualMachineManager _vmMgr;
     @Inject ManagementServer _ms;
     @Inject IdentityService _identityService;
+    @Inject
+    EntityManager _entityMgr;
 
     static ManagementServer s_ms;
 
-    private Gson _gson = new GsonBuilder().create();
+    private final Gson _gson = new GsonBuilder().create();
 
     public ConsoleProxyServlet() {
     }
@@ -179,7 +183,7 @@ public class ConsoleProxyServlet extends HttpServlet {
     }
 
     private void handleThumbnailRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-        VMInstanceVO vm = _vmMgr.findById(vmId);
+        VirtualMachine vm = _vmMgr.findById(vmId);
         if(vm == null) {
             s_logger.warn("VM " + vmId + " does not exist, sending blank response for thumbnail request");
             sendResponse(resp, "");
@@ -230,7 +234,7 @@ public class ConsoleProxyServlet extends HttpServlet {
     }
 
     private void handleAccessRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-        VMInstanceVO vm = _vmMgr.findById(vmId);
+        VirtualMachine vm = _vmMgr.findById(vmId);
         if(vm == null) {
             s_logger.warn("VM " + vmId + " does not exist, sending blank response for console access request");
             sendResponse(resp, "");
@@ -258,7 +262,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         String vmName = vm.getHostName();
         if(vm.getType() == VirtualMachine.Type.User) {
-            UserVm userVm = (UserVm)_vmMgr.findByIdAndType(VirtualMachine.Type.User, vmId);
+            UserVm userVm = _entityMgr.findById(UserVm.class, vmId);
             String displayName = userVm.getDisplayName();
             if(displayName != null && !displayName.isEmpty() && !displayName.equals(vmName)) {
                 vmName += "(" + displayName + ")";
@@ -276,7 +280,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         // TODO authentication channel between console proxy VM and management server needs to be secured,
         // the data is now being sent through private network, but this is apparently not enough
-        VMInstanceVO vm = _vmMgr.findById(vmId);
+        VirtualMachine vm = _vmMgr.findById(vmId);
         if(vm == null) {
             s_logger.warn("VM " + vmId + " does not exist, sending failed response for authentication request from console proxy");
             sendResponse(resp, "failed");
@@ -339,7 +343,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		return _gson.toJson(keyIvPair);
     }
 
-    private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
+    private String composeThumbnailUrl(String rootUrl, VirtualMachine vm, HostVO hostVo, int w, int h) {
         StringBuffer sb = new StringBuffer(rootUrl);
 
         String host = hostVo.getPrivateIpAddress();
@@ -374,7 +378,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo) {
+    private String composeConsoleAccessUrl(String rootUrl, VirtualMachine vm, HostVO hostVo) {
         StringBuffer sb = new StringBuffer(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
@@ -454,7 +458,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
     private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
 
-        VMInstanceVO vm = _vmMgr.findById(vmId);
+        VirtualMachine vm = _vmMgr.findById(vmId);
         if(vm == null) {
             s_logger.debug("Console/thumbnail access denied. VM " + vmId + " does not exist in system any more");
             return false;

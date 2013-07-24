@@ -485,7 +485,7 @@ class TestNetwork(cloudstackTestCase):
                                  networkofferingid=network_offering.id,
                                  zoneid=self.zone.id
                                  )
-        self._cleanup.append(domain_network)
+        self.cleanup.append(domain_network)
         self.debug("Created network with ID: %s" % domain_network.id)
 
         virtual_machine = VirtualMachine.create(
@@ -1044,7 +1044,6 @@ class TestPublicIpAddress(cloudstackTestCase):
                                           public_ip.ipaddress.id,
                                           projectid=self.project.id
                                           )
-        self.cleanup.append(lb_rule)
         self.debug("Assigning VM: %s to LB rule: %s" % (
                                                     self.virtual_machine.name,
                                                     lb_rule.id

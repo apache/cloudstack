@@ -542,11 +542,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping ELB vm " + elbVm);
         try {
-            if (_itMgr.advanceStop( elbVm, forced, user, caller)) {
-                return _routerDao.findById(elbVm.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(elbVm.getUuid(), forced);
+            return _routerDao.findById(elbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + elbVm, e);
         }
@@ -736,7 +733,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             if (gceed) {
                 try {
                     s_logger.info("Attempting to destroy ELB VM: " + elbVm);
-                    _itMgr.expunge(elbVm, user, _systemAcct);
+                    _itMgr.expunge(elbVm.getUuid());
+                    _routerDao.remove(elbVm.getId());
                 } catch (ResourceUnavailableException e) {
                     s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                     gceed = false;

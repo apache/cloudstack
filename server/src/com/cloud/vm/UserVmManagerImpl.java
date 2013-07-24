@@ -107,6 +107,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.PlannerHostReservationVO;
+import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -178,6 +180,7 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
@@ -221,6 +224,7 @@ import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -418,11 +422,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     ConfigurationServer _configServer;
     @Inject
     AffinityGroupService _affinityGroupService;
+    @Inject
+    PlannerHostReservationDao _plannerHostReservationDao;
+    @Inject
+    private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
     protected int _expungeDelay;
     protected boolean _dailyOrHourly = false;
+    private int capacityReleaseInterval;
 
     protected String _name;
     protected String _instance;
@@ -727,8 +736,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVm rebootVirtualMachine(long userId, long vmId)
             throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
-        User caller = _accountMgr.getActiveUser(userId);
-        Account owner = _accountMgr.getAccount(vm.getAccountId());
 
         if (vm == null || vm.getState() == State.Destroyed
                 || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -738,10 +745,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             collectVmDiskStatistics(vm);
-            return _itMgr.reboot(vm, null, caller, owner);
+            _itMgr.reboot(vm.getUuid(), null);
+            return _vmDao.findById(vmId);
         } else {
-            s_logger.error("Vm id=" + vmId
-                    + " is not in Running state, failed to reboot");
+            s_logger.error("Vm id=" + vmId + " is not in Running state, failed to reboot");
             return null;
         }
     }
@@ -1424,6 +1431,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String workers = configs.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 10);
+        capacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
 
         String time = configs.get("expunge.interval");
         _expungeInterval = NumbersUtil.parseInt(time, 86400);
@@ -1494,10 +1502,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
         try {
+            List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
-            if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
-                s_logger.info("Did not expunge " + vm);
-                return false;
+            _itMgr.advanceExpunge(vm.getUuid());
+            // Update Resource count
+            if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.primary_storage,
+                        new Long(rootVol.get(0).getSize()));
             }
 
             // Only if vm is not expunged already, cleanup it's resources
@@ -1515,7 +1527,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return false;
                 }
 
-                _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
+                _vmDao.remove(vm.getId());
             }
 
             return true;
@@ -3833,22 +3845,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             + destinationHost.getResourceState());
         }
 
-        HostVO srcHost = _hostDao.findById(srcHostId);
-        HostVO destHost = _hostDao.findById(destinationHost.getId());
-        //if srcHost is dedicated and destination Host is not
-        if (checkIfHostIsDedicated(srcHost) && !checkIfHostIsDedicated(destHost)) {
-            //raise an alert
-            String msg = "VM is migrated on a non-dedicated host " + destinationHost.getName();
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
-        }
-        //if srcHost is non dedicated but destination Host is.
-        if (!checkIfHostIsDedicated(srcHost) && checkIfHostIsDedicated(destHost)) {
-            //raise an alert
-            String msg = "VM is migrated on a dedicated host " + destinationHost.getName();
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
-        }
+        checkHostsDedication(vm, srcHostId, destinationHost.getId());
 
-        // call to core process
+         // call to core process
         DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
         HostPodVO pod = _podDao.findById(destinationHost.getPodId());
         Cluster cluster = _clusterDao.findById(destinationHost.getClusterId());
@@ -3875,8 +3874,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (uservm != null) {
             collectVmDiskStatistics(uservm);
         }
-        VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
-        return migratedVm;
+        _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+        return _vmDao.findById(vmId);
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {
@@ -3889,6 +3888,210 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             return false;
         }
+    }
+
+    private Long accountOfDedicatedHost(HostVO host) {
+        long hostId = host.getId();
+        DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(hostId);
+        DedicatedResourceVO dedicatedClusterOfHost = _dedicatedDao.findByClusterId(host.getClusterId());
+        DedicatedResourceVO dedicatedPodOfHost = _dedicatedDao.findByPodId(host.getPodId());
+        if(dedicatedHost != null) {
+            return dedicatedHost.getAccountId();
+        }
+        if(dedicatedClusterOfHost != null) {
+            return dedicatedClusterOfHost.getAccountId();
+        }
+        if(dedicatedPodOfHost != null) {
+            return dedicatedPodOfHost.getAccountId();
+        }
+        return null;
+    }
+
+    private Long domainOfDedicatedHost(HostVO host) {
+        long hostId = host.getId();
+        DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(hostId);
+        DedicatedResourceVO dedicatedClusterOfHost = _dedicatedDao.findByClusterId(host.getClusterId());
+        DedicatedResourceVO dedicatedPodOfHost = _dedicatedDao.findByPodId(host.getPodId());
+        if(dedicatedHost != null) {
+            return dedicatedHost.getDomainId();
+        }
+        if(dedicatedClusterOfHost != null) {
+            return dedicatedClusterOfHost.getDomainId();
+        }
+        if(dedicatedPodOfHost != null) {
+            return dedicatedPodOfHost.getDomainId();
+        }
+        return null;
+    }
+
+    public void checkHostsDedication (VMInstanceVO vm, long srcHostId, long destHostId) {
+        HostVO srcHost = _hostDao.findById(srcHostId);
+        HostVO destHost = _hostDao.findById(destHostId);
+        boolean srcExplDedicated = checkIfHostIsDedicated(srcHost);
+        boolean destExplDedicated = checkIfHostIsDedicated(destHost);
+        //if srcHost is explicitly dedicated and destination Host is not
+        if (srcExplDedicated && !destExplDedicated) {
+            //raise an alert
+            String msg = "VM is being migrated from a explicitly dedicated host " + srcHost.getName() +" to non-dedicated host " + destHost.getName();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+            s_logger.warn(msg);
+        }
+        //if srcHost is non dedicated but destination Host is explicitly dedicated
+        if (!srcExplDedicated && destExplDedicated) {
+            //raise an alert
+            String msg = "VM is being migrated from a non dedicated host " + srcHost.getName() + " to a explicitly dedicated host "+ destHost.getName();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+            s_logger.warn(msg);
+        }
+
+        //if hosts are dedicated to different account/domains, raise an alert
+        if (srcExplDedicated && destExplDedicated) {
+            if((accountOfDedicatedHost(srcHost) != null) && (accountOfDedicatedHost(srcHost)!= accountOfDedicatedHost(destHost))) {
+                String msg = "VM is being migrated from host " + srcHost.getName() + " explicitly dedicated to account " + accountOfDedicatedHost(srcHost) +
+                        " to host " + destHost.getName() + " explicitly dedicated to account " + accountOfDedicatedHost(destHost);
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+                s_logger.warn(msg);
+            }
+            if((domainOfDedicatedHost(srcHost) != null) && (domainOfDedicatedHost(srcHost)!= domainOfDedicatedHost(destHost))) {
+                String msg = "VM is being migrated from host " + srcHost.getName() + " explicitly dedicated to domain " + domainOfDedicatedHost(srcHost) +
+                        " to host " + destHost.getName() + " explicitly dedicated to domain " + domainOfDedicatedHost(destHost);
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+                s_logger.warn(msg);
+            }
+        }
+
+        // Checks for implicitly dedicated hosts
+        ServiceOfferingVO deployPlanner = _offeringDao.findById(vm.getServiceOfferingId());
+        if(deployPlanner.getDeploymentPlanner() != null && deployPlanner.getDeploymentPlanner().equals("ImplicitDedicationPlanner")) {
+            //VM is deployed using implicit planner
+            long accountOfVm = vm.getAccountId();
+            String msg = "VM of account " + accountOfVm + " with implicit deployment planner being migrated to host " + destHost.getName();
+            //Get all vms on destination host
+            boolean emptyDestination = false;
+            List<VMInstanceVO> vmsOnDest= getVmsOnHost(destHostId);
+            if (vmsOnDest == null || vmsOnDest.isEmpty()) {
+                emptyDestination = true;
+            }
+
+            if (!emptyDestination) {
+                //Check if vm is deployed using strict implicit planner
+                if(!isServiceOfferingUsingPlannerInPreferredMode(vm.getServiceOfferingId())) {
+                    //Check if all vms on destination host are created using strict implicit mode
+                    if(!checkIfAllVmsCreatedInStrictMode(accountOfVm, vmsOnDest)) {
+                        msg = "VM of account " + accountOfVm + " with strict implicit deployment planner being migrated to host " + destHost.getName() +
+                                " not having all vms strict implicitly dedicated to account " + accountOfVm;
+                    }
+                } else {
+                    //If vm is deployed using preferred implicit planner, check if all vms on destination host must be
+                    //using implicit planner and must belong to same account
+                    for (VMInstanceVO vmsDest : vmsOnDest) {
+                        ServiceOfferingVO destPlanner = _offeringDao.findById(vmsDest.getServiceOfferingId());
+                        if (!((destPlanner.getDeploymentPlanner() != null && destPlanner.getDeploymentPlanner().equals("ImplicitDedicationPlanner")) &&
+                                vmsDest.getAccountId()==accountOfVm)) {
+                            msg = "VM of account " + accountOfVm + " with preffered implicit deployment planner being migrated to host " + destHost.getName() +
+                            " not having all vms implicitly dedicated to account " + accountOfVm;
+                        }
+                    }
+                }
+            }
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+            s_logger.warn(msg);
+
+        } else {
+            //VM is not deployed using implicit planner, check if it migrated between dedicated hosts
+            List<PlannerHostReservationVO> reservedHosts = _plannerHostReservationDao.listAllDedicatedHosts();
+            boolean srcImplDedicated = false;
+            boolean destImplDedicated = false;
+            String msg = null;
+            for (PlannerHostReservationVO reservedHost : reservedHosts) {
+                if(reservedHost.getHostId() == srcHostId) {
+                    srcImplDedicated = true;
+                }
+                if(reservedHost.getHostId() == destHostId) {
+                    destImplDedicated = true;
+                }
+            }
+            if(srcImplDedicated) {
+                if(destImplDedicated){
+                    msg = "VM is being migrated from implicitly dedicated host " + srcHost.getName() + " to another implicitly dedicated host " + destHost.getName();
+                } else {
+                    msg = "VM is being migrated from implicitly dedicated host " + srcHost.getName() + " to shared host " + destHost.getName();
+                }
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+                s_logger.warn(msg);
+            } else {
+                if (destImplDedicated) {
+                    msg = "VM is being migrated from shared host " + srcHost.getName() + " to implicitly dedicated host " + destHost.getName();
+                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+                    s_logger.warn(msg);
+                }
+            }
+        }
+    }
+
+    private List<VMInstanceVO> getVmsOnHost(long hostId) {
+        List<VMInstanceVO> vms =  _vmInstanceDao.listUpByHostId(hostId);
+        List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
+        if (vmsByLastHostId.size() > 0) {
+            // check if any VMs are within skip.counting.hours, if yes we have to consider the host.
+            for (VMInstanceVO stoppedVM : vmsByLastHostId) {
+                long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - stoppedVM.getUpdateTime()
+                        .getTime()) / 1000;
+                if (secondsSinceLastUpdate < capacityReleaseInterval) {
+                    vms.add(stoppedVM);
+                }
+            }
+        }
+
+        return vms;
+    }
+    private boolean isServiceOfferingUsingPlannerInPreferredMode(long serviceOfferingId) {
+        boolean preferred = false;
+        Map<String, String> details = serviceOfferingDetailsDao.findDetails(serviceOfferingId);
+        if (details != null && !details.isEmpty()) {
+            String preferredAttribute = details.get("ImplicitDedicationMode");
+            if (preferredAttribute != null && preferredAttribute.equals("Preferred")) {
+                preferred = true;
+            }
+        }
+        return preferred;
+    }
+
+    private boolean checkIfAllVmsCreatedInStrictMode(Long accountId, List<VMInstanceVO> allVmsOnHost) {
+        boolean createdByImplicitStrict = true;
+        if (allVmsOnHost.isEmpty())
+            return false;
+        for (VMInstanceVO vm : allVmsOnHost) {
+            if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId()) || vm.getAccountId()!= accountId) {
+                s_logger.info("Host " + vm.getHostId() + " found to be running a vm created by a planner other" +
+                        " than implicit, or running vms of other account");
+                createdByImplicitStrict = false;
+                break;
+            } else if (isServiceOfferingUsingPlannerInPreferredMode(vm.getServiceOfferingId()) || vm.getAccountId()!= accountId) {
+                s_logger.info("Host " + vm.getHostId() + " found to be running a vm created by an implicit planner" +
+                        " in preferred mode, or running vms of other account");
+                createdByImplicitStrict = false;
+                break;
+            }
+        }
+        return createdByImplicitStrict;
+    }
+
+    private boolean isImplicitPlannerUsedByOffering(long offeringId) {
+        boolean implicitPlannerUsed = false;
+        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(offeringId);
+        if (offering == null) {
+            s_logger.error("Couldn't retrieve the offering by the given id : " + offeringId);
+        } else {
+            String plannerName = offering.getDeploymentPlanner();
+            if (plannerName != null) {
+                if(plannerName.equals("ImplicitDedicationPlanner")) {
+                    implicitPlannerUsed = true;
+                }
+            }
+        }
+
+        return implicitPlannerUsed;
     }
 
     @Override
@@ -3960,7 +4163,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
-        Map<VolumeVO, StoragePoolVO> volToPoolObjectMap = new HashMap<VolumeVO, StoragePoolVO>();
+        Map<Volume, StoragePool> volToPoolObjectMap = new HashMap<Volume, StoragePool>();
         if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())) {
             if (volumeToPool.isEmpty()) {
                 // If the destination host is in the same cluster and volumes do not have to be migrated across pools
@@ -4008,8 +4211,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     " migrate to this host");
         }
 
-        VMInstanceVO migratedVm = _itMgr.migrateWithStorage(vm, srcHostId, destinationHost.getId(), volToPoolObjectMap);
-        return migratedVm;
+        checkHostsDedication(vm, srcHostId, destinationHost.getId());
+
+        _itMgr.migrateWithStorage(vm.getUuid(), srcHostId, destinationHost.getId(), volToPoolObjectMap);
+        return _vmDao.findById(vm.getId());
 }
 
     @DB
@@ -4201,9 +4406,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         txn.commit();
 
-        VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-        VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(
-                vmoi);
+        VirtualMachine vmoi = _itMgr.findById(vm.getId());
+        VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);
 
         // OS 3: update the network
         List<Long> networkIdList = cmd.getNetworkIds();
@@ -4279,9 +4483,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             networks.add(new Pair<NetworkVO, NicProfile>(networkList.get(0),
                     profile));
 
-            VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(
-                    vmi);
+            VirtualMachine vmi = _itMgr.findById(vm.getId());
+            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
             _networkMgr.allocate(vmProfile, networks);
 
             _securityGroupMgr.addInstanceToGroups(vm.getId(),
@@ -4413,10 +4616,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     networks.add(new Pair<NetworkVO, NicProfile>(appNet,
                             defaultNic));
                 }
-                VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(),
-                        vm.getId());
-                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(
-                        vmi);
+                VirtualMachine vmi = _itMgr.findById(vm.getId());
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
                 _networkMgr.allocate(vmProfile, networks);
                 s_logger.debug("AssignVM: Advance virtual, adding networks no "
                         + networks.size() + " to " + vm.getInstanceName());
@@ -4527,7 +4728,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (needRestart) {
             try {
-                _itMgr.stop(vm, user, caller);
+                _itMgr.stop(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
                 CloudRuntimeException ex = new CloudRuntimeException(

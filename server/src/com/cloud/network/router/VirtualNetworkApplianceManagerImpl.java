@@ -421,12 +421,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _accountMgr.checkAccess(caller, null, true, router);
 
-        boolean result = _itMgr.expunge(router, _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
-
-        if (result) {
-            return router;
-        }
-        return null;
+        _itMgr.expunge(router.getUuid());
+        _routerDao.remove(router.getId());
+        return router;
     }
 
     @Override
@@ -2755,11 +2752,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public DomainRouterVO stop(VirtualRouter router, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
-            if (_itMgr.advanceStop((DomainRouterVO) router, forced, user, caller)) {
-                return _routerDao.findById(router.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(router.getUuid(), forced);
+            return _routerDao.findById(router.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + router, e);
         }

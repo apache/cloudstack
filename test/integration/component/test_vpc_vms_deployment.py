@@ -354,7 +354,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -569,7 +569,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -822,7 +822,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -1091,7 +1091,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -1375,7 +1375,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         configs = Configurations.list(
                                 self.apiclient,
@@ -1546,7 +1546,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -1810,7 +1810,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         nw_off_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(nw_off)
+        self._cleanup.append(nw_off_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %

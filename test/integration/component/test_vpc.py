@@ -223,7 +223,16 @@ class TestVPC(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self._cleanup.insert(0, self.account)
+        self.cleanup = []
+        self.cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            self.debug("Warning: Exception during cleanup : %s" % e)
+            #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -517,7 +526,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -546,7 +555,7 @@ class TestVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         self.network_offering_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering_no_lb)
+        self.cleanup.append(self.network_offering_no_lb)
 
         gateway = '10.1.2.1'    # New network -> different gateway
         self.debug("Creating network with network offering: %s" %
@@ -644,7 +653,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -673,7 +682,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering_no_lb)
+        self.cleanup.append(self.network_offering_no_lb)
 
         gateway = '10.1.2.1'    # New network -> different gateway
         self.debug("Creating network with network offering: %s" %
@@ -757,7 +766,7 @@ class TestVPC(cloudstackTestCase):
                                      self.apiclient,
                                      self.services["account"],
                                 )
-        self._cleanup.append(self.user)
+        self.cleanup.append(self.user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -833,7 +842,7 @@ class TestVPC(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -859,7 +868,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         self.network_offering_no_lb = NetworkOffering.create(
                                     self.apiclient,
@@ -868,7 +877,7 @@ class TestVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         self.network_offering_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering_no_lb)
+        self.cleanup.append(self.network_offering_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -1178,7 +1187,7 @@ class TestVPC(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -1204,7 +1213,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         self.network_offering_no_lb = NetworkOffering.create(
                                     self.apiclient,
@@ -1213,7 +1222,7 @@ class TestVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         self.network_offering_no_lb.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering_no_lb)
+        self.cleanup.append(self.network_offering_no_lb)
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -1666,7 +1675,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -1813,7 +1822,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -1869,7 +1878,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -1918,7 +1927,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self._cleanup.append(user)
+        self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -1945,7 +1954,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -1999,7 +2008,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self._cleanup.append(user)
+        self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2026,7 +2035,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -2075,7 +2084,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self._cleanup.append(user)
+        self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2103,7 +2112,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -2159,7 +2168,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["domain_admin"]
                             )
         self.debug("Created account: %s" % domain_admin.name)
-        self._cleanup.append(domain_admin)
+        self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
                                         account=domain_admin.name,
                                         domain=domain_admin.domain,
@@ -2170,7 +2179,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self._cleanup.append(user)
+        self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2210,7 +2219,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["domain_admin"]
                             )
         self.debug("Created account: %s" % domain_admin.name)
-        self._cleanup.append(domain_admin)
+        self.cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
                                         account=domain_admin.name,
                                         domain=self.services["domain"]["name"],
@@ -2221,7 +2230,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self._cleanup.append(user)
+        self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2248,7 +2257,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -2359,7 +2368,7 @@ class TestVPC(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway

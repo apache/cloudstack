@@ -24,19 +24,17 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -56,12 +54,12 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -103,6 +101,7 @@ public class InternalLBVMManagerTest extends TestCase {
     long validVmId = 1L;
     long invalidVmId = 2L;
     
+    @Override
     @Before
     public void setUp() {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
@@ -160,12 +159,6 @@ public class InternalLBVMManagerTest extends TestCase {
         networkOfferingVO.setConcurrentConnections(500);
         Mockito.when(_offeringDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
         
-        try {
-            Mockito.when(_itMgr.expunge(Mockito.any(DomainRouterVO.class), Mockito.any(User.class), Mockito.any(Account.class))).thenReturn(true);
-        } catch (ResourceUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } 
         
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(vm);
         Mockito.when(_domainRouterDao.findById(invalidVmId)).thenReturn(null);

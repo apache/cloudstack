@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -41,6 +40,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface VolumeManager extends VolumeApiService {
@@ -91,8 +91,8 @@ public interface VolumeManager extends VolumeApiService {
     @Override
     Volume migrateVolume(MigrateVolumeCmd cmd);
 
-    <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            Map<VolumeVO, StoragePoolVO> volumeToPool);
+    void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            Map<Volume, StoragePool> volumeToPool);
 
     boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool);
 

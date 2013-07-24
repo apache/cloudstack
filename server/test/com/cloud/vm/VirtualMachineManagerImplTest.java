@@ -79,8 +79,10 @@ import com.cloud.network.NetworkManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -104,135 +106,149 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public class VirtualMachineManagerImplTest {
 
-        @Spy VirtualMachineManagerImpl _vmMgr = new VirtualMachineManagerImpl();
-        @Mock
-        VolumeManager _storageMgr;
-        @Mock
-        Account _account;
-        @Mock
-        AccountManager _accountMgr;
-        @Mock
-        ConfigurationManager _configMgr;
-        @Mock
-        CapacityManager _capacityMgr;
-        @Mock
-        AgentManager _agentMgr;
-        @Mock
-        AccountDao _accountDao;
-        @Mock
-        ConfigurationDao _configDao;
-        @Mock
-        HostDao _hostDao;
-        @Mock
-        UserDao _userDao;
-        @Mock
-        UserVmDao _vmDao;
-        @Mock
-        ItWorkDao _workDao;
-        @Mock
-        VMInstanceDao _vmInstanceDao;
-        @Mock
-        VMTemplateDao _templateDao;
-        @Mock
-        VolumeDao _volsDao;
-        @Mock
-        RestoreVMCmd _restoreVMCmd;
-        @Mock
-        AccountVO _accountMock;
-        @Mock
-        UserVO _userMock;
-        @Mock
-        UserVmVO _vmMock;
-        @Mock
-        VMInstanceVO _vmInstance;
-        @Mock
-        HostVO _host;
-        @Mock
-        VMTemplateVO _templateMock;
-        @Mock
-        VolumeVO _volumeMock;
-        @Mock
-        List<VolumeVO> _rootVols;
-        @Mock
-        ItWorkVO _work;
-        @Mock
-        ConfigurationServer _configServer;
-        @Mock
-        HostVO hostVO;
-        @Mock
-        UserVmDetailVO _vmDetailVO;
+    @Spy
+    VirtualMachineManagerImpl _vmMgr = new VirtualMachineManagerImpl();
+    @Mock
+    VolumeManager _storageMgr;
+    @Mock
+    Account _account;
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    ConfigurationManager _configMgr;
+    @Mock
+    CapacityManager _capacityMgr;
+    @Mock
+    AgentManager _agentMgr;
+    @Mock
+    AccountDao _accountDao;
+    @Mock
+    ConfigurationDao _configDao;
+    @Mock
+    HostDao _hostDao;
+    @Mock
+    UserDao _userDao;
+    @Mock
+    UserVmDao _vmDao;
+    @Mock
+    ItWorkDao _workDao;
+    @Mock
+    VMInstanceDao _vmInstanceDao;
+    @Mock
+    VMTemplateDao _templateDao;
+    @Mock
+    VolumeDao _volsDao;
+    @Mock
+    RestoreVMCmd _restoreVMCmd;
+    @Mock
+    AccountVO _accountMock;
+    @Mock
+    UserVO _userMock;
+    @Mock
+    UserVmVO _vmMock;
+    @Mock
+    VMInstanceVO _vmInstance;
+    @Mock
+    HostVO _host;
+    @Mock
+    VMTemplateVO _templateMock;
+    @Mock
+    VolumeVO _volumeMock;
+    @Mock
+    List<VolumeVO> _rootVols;
+    @Mock
+    ItWorkVO _work;
+    @Mock
+    ConfigurationServer _configServer;
+    @Mock
+    HostVO hostVO;
+    @Mock
+    UserVmDetailVO _vmDetailVO;
 
-        @Mock ClusterDao _clusterDao;
-        @Mock HostPodDao _podDao;
-        @Mock DataCenterDao _dcDao;
-        @Mock DiskOfferingDao _diskOfferingDao;
-        @Mock PrimaryDataStoreDao _storagePoolDao;
-        @Mock UserVmDetailsDao _vmDetailsDao;
-        @Mock StoragePoolHostDao _poolHostDao;
-        @Mock NetworkManager _networkMgr;
-        @Mock HypervisorGuruManager _hvGuruMgr;
-        @Mock VMSnapshotManager _vmSnapshotMgr;
+    @Mock
+    ClusterDao _clusterDao;
+    @Mock
+    HostPodDao _podDao;
+    @Mock
+    DataCenterDao _dcDao;
+    @Mock
+    DiskOfferingDao _diskOfferingDao;
+    @Mock
+    PrimaryDataStoreDao _storagePoolDao;
+    @Mock
+    UserVmDetailsDao _vmDetailsDao;
+    @Mock
+    StoragePoolHostDao _poolHostDao;
+    @Mock
+    NetworkManager _networkMgr;
+    @Mock
+    HypervisorGuruManager _hvGuruMgr;
+    @Mock
+    VMSnapshotManager _vmSnapshotMgr;
 
-        // Mock objects for vm migration with storage test.
-        @Mock DiskOfferingVO _diskOfferingMock;
-        @Mock StoragePoolVO _srcStoragePoolMock;
-        @Mock StoragePoolVO _destStoragePoolMock;
-        @Mock HostVO _srcHostMock;
-        @Mock HostVO _destHostMock;
-        @Mock Map<VolumeVO, StoragePoolVO> _volumeToPoolMock;
+    // Mock objects for vm migration with storage test.
+    @Mock
+    DiskOfferingVO _diskOfferingMock;
+    @Mock
+    StoragePoolVO _srcStoragePoolMock;
+    @Mock
+    StoragePoolVO _destStoragePoolMock;
+    @Mock
+    HostVO _srcHostMock;
+    @Mock
+    HostVO _destHostMock;
+    @Mock
+    Map<Volume, StoragePool> _volumeToPoolMock;
 
-        @Before
-        public void setup(){
-            MockitoAnnotations.initMocks(this);
+    @Before
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
 
-            _vmMgr._templateDao = _templateDao;
-            _vmMgr._volsDao = _volsDao;
-            _vmMgr.volumeMgr = _storageMgr;
-            _vmMgr._accountDao = _accountDao;
-            _vmMgr._userDao = _userDao;
-            _vmMgr._accountMgr = _accountMgr;
-            _vmMgr._configMgr = _configMgr;
-            _vmMgr._capacityMgr = _capacityMgr;
-            _vmMgr._hostDao = _hostDao;
-            _vmMgr._nodeId = 1L;
-            _vmMgr._workDao = _workDao;
-            _vmMgr._agentMgr = _agentMgr;
-            _vmMgr._podDao = _podDao;
-            _vmMgr._clusterDao = _clusterDao;
-            _vmMgr._dcDao = _dcDao;
-            _vmMgr._diskOfferingDao = _diskOfferingDao;
-            _vmMgr._storagePoolDao = _storagePoolDao;
-            _vmMgr._poolHostDao= _poolHostDao;
-            _vmMgr._networkMgr = _networkMgr;
-            _vmMgr._hvGuruMgr = _hvGuruMgr;
-            _vmMgr._vmSnapshotMgr = _vmSnapshotMgr;
-            _vmMgr._vmDao = _vmInstanceDao;
-            _vmMgr._configServer = _configServer;
-            _vmMgr._uservmDetailsDao = _vmDetailsDao;
+        _vmMgr._templateDao = _templateDao;
+        _vmMgr._volsDao = _volsDao;
+        _vmMgr.volumeMgr = _storageMgr;
+        _vmMgr._accountDao = _accountDao;
+        _vmMgr._accountMgr = _accountMgr;
+        _vmMgr._configMgr = _configMgr;
+        _vmMgr._capacityMgr = _capacityMgr;
+        _vmMgr._hostDao = _hostDao;
+        _vmMgr._nodeId = 1L;
+        _vmMgr._workDao = _workDao;
+        _vmMgr._agentMgr = _agentMgr;
+        _vmMgr._podDao = _podDao;
+        _vmMgr._clusterDao = _clusterDao;
+        _vmMgr._dcDao = _dcDao;
+        _vmMgr._diskOfferingDao = _diskOfferingDao;
+        _vmMgr._storagePoolDao = _storagePoolDao;
+        _vmMgr._poolHostDao = _poolHostDao;
+        _vmMgr._networkMgr = _networkMgr;
+        _vmMgr._hvGuruMgr = _hvGuruMgr;
+        _vmMgr._vmSnapshotMgr = _vmSnapshotMgr;
+        _vmMgr._vmDao = _vmInstanceDao;
+        _vmMgr._configServer = _configServer;
+        _vmMgr._uservmDetailsDao = _vmDetailsDao;
 
-            when(_vmMock.getId()).thenReturn(314l);
-            when(_vmInstance.getId()).thenReturn(1L);
-            when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
-            when(_vmInstance.getInstanceName()).thenReturn("myVm");
-            when(_vmInstance.getHostId()).thenReturn(2L);
-            when(_vmInstance.getType()).thenReturn(VirtualMachine.Type.User);
-            when(_host.getId()).thenReturn(1L);
-            when(_hostDao.findById(anyLong())).thenReturn(null);
-            when(_configMgr.getServiceOffering(anyLong())).thenReturn(getSvcoffering(512));
-            when(_workDao.persist(_work)).thenReturn(_work);
-            when(_workDao.update("1", _work)).thenReturn(true);
-            when(_work.getId()).thenReturn("1");
-            doNothing().when(_work).setStep(ItWorkVO.Step.Done);
+        when(_vmMock.getId()).thenReturn(314l);
+        when(_vmInstance.getId()).thenReturn(1L);
+        when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
+        when(_vmInstance.getInstanceName()).thenReturn("myVm");
+        when(_vmInstance.getHostId()).thenReturn(2L);
+        when(_vmInstance.getType()).thenReturn(VirtualMachine.Type.User);
+        when(_host.getId()).thenReturn(1L);
+        when(_hostDao.findById(anyLong())).thenReturn(null);
+        when(_configMgr.getServiceOffering(anyLong())).thenReturn(getSvcoffering(512));
+        when(_workDao.persist(_work)).thenReturn(_work);
+        when(_workDao.update("1", _work)).thenReturn(true);
+        when(_work.getId()).thenReturn("1");
+        doNothing().when(_work).setStep(ItWorkVO.Step.Done);
         when(_vmInstanceDao.findByUuid(any(String.class))).thenReturn(_vmMock);
-            //doNothing().when(_volsDao).detachVolume(anyLong());
-            //when(_work.setStep(ItWorkVO.Step.Done)).thenReturn("1");
+        //doNothing().when(_volsDao).detachVolume(anyLong());
+        //when(_work.setStep(ItWorkVO.Step.Done)).thenReturn("1");
 
-        }
+    }
 
-
-    @Test(expected=CloudRuntimeException.class)
-    public void testScaleVM1()  throws Exception {
-
+    @Test(expected = CloudRuntimeException.class)
+    public void testScaleVM1() throws Exception {
 
         DeployDestination dest = new DeployDestination(null, null, null, _host);
         long l = 1L;
@@ -242,8 +258,8 @@ public class VirtualMachineManagerImplTest {
 
     }
 
-    @Test (expected=CloudRuntimeException.class)
-    public void testScaleVM2()  throws Exception {
+    @Test(expected = CloudRuntimeException.class)
+    public void testScaleVM2() throws Exception {
 
         DeployDestination dest = new DeployDestination(null, null, null, _host);
         long l = 1L;
@@ -261,15 +277,16 @@ public class VirtualMachineManagerImplTest {
         when(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
-                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse(), true);
+                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(),
+                newServiceOffering.getLimitCpuUse(), true);
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);
 
     }
 
-    @Test (expected=CloudRuntimeException.class)
-    public void testScaleVM3()  throws Exception {
+    @Test(expected = CloudRuntimeException.class)
+    public void testScaleVM3() throws Exception {
 
         /*VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
@@ -286,10 +303,9 @@ public class VirtualMachineManagerImplTest {
 
     }
 
+    private ServiceOfferingVO getSvcoffering(int ramSize) {
 
-    private ServiceOfferingVO getSvcoffering(int ramSize){
-
-        long id  = 4L;
+        long id = 4L;
         String name = "name";
         String displayText = "displayText";
         int cpu = 1;
@@ -304,7 +320,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     private void initializeMockConfigForMigratingVmWithVolumes() throws OperationTimedoutException,
-        ResourceUnavailableException {
+            ResourceUnavailableException {
 
         // Mock the source and destination hosts.
         when(_srcHostMock.getId()).thenReturn(5L);
@@ -316,7 +332,7 @@ public class VirtualMachineManagerImplTest {
         when(_vmMock.getId()).thenReturn(1L);
         when(_vmMock.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         when(_vmMock.getState()).thenReturn(State.Running).thenReturn(State.Running).thenReturn(State.Migrating)
-            .thenReturn(State.Migrating);
+                .thenReturn(State.Migrating);
         when(_vmMock.getHostId()).thenReturn(5L);
         when(_vmInstance.getId()).thenReturn(1L);
         when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
@@ -324,7 +340,7 @@ public class VirtualMachineManagerImplTest {
         when(_vmInstance.getHostId()).thenReturn(5L);
         when(_vmInstance.getType()).thenReturn(VirtualMachine.Type.User);
         when(_vmInstance.getState()).thenReturn(State.Running).thenReturn(State.Running).thenReturn(State.Migrating)
-            .thenReturn(State.Migrating);
+                .thenReturn(State.Migrating);
 
         // Mock the work item.
         when(_workDao.persist(any(ItWorkVO.class))).thenReturn(_work);
@@ -392,43 +408,43 @@ public class VirtualMachineManagerImplTest {
         when(_agentMgr.send(anyLong(), isA(CheckVirtualMachineCommand.class))).thenReturn(checkVmAnswerMock);
 
         // Mock the state transitions of vm.
-        Pair<Long, Long> opaqueMock = new Pair<Long, Long> (_vmMock.getHostId(), _destHostMock.getId());
+        Pair<Long, Long> opaqueMock = new Pair<Long, Long>(_vmMock.getHostId(), _destHostMock.getId());
         when(_vmSnapshotMgr.hasActiveVMSnapshotTasks(anyLong())).thenReturn(false);
         when(_vmInstanceDao.updateState(State.Running, Event.MigrationRequested, State.Migrating, _vmMock, opaqueMock))
-            .thenReturn(true);
+                .thenReturn(true);
         when(_vmInstanceDao.updateState(State.Migrating, Event.OperationSucceeded, State.Running, _vmMock, opaqueMock))
-            .thenReturn(true);
+                .thenReturn(true);
     }
 
     // Check migration of a vm with its volumes within a cluster.
     @Test
     public void testMigrateWithVolumeWithinCluster() throws ResourceUnavailableException, ConcurrentOperationException,
-        ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
+            ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
         when(_destHostMock.getClusterId()).thenReturn(3L);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 
     // Check migration of a vm with its volumes across a cluster.
     @Test
     public void testMigrateWithVolumeAcrossCluster() throws ResourceUnavailableException, ConcurrentOperationException,
-        ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
+            ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
         when(_destHostMock.getClusterId()).thenReturn(4L);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 
     // Check migration of a vm fails when src and destination pool are not of same type; that is, one is shared and
     // other is local.
-    @Test(expected=CloudRuntimeException.class)
+    @Test(expected = CloudRuntimeException.class)
     public void testMigrateWithVolumeFail1() throws ResourceUnavailableException, ConcurrentOperationException,
-        ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
+            ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -437,13 +453,13 @@ public class VirtualMachineManagerImplTest {
         when(_destStoragePoolMock.isLocal()).thenReturn(true);
         when(_diskOfferingMock.getUseLocalStorage()).thenReturn(false);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 
     // Check migration of a vm fails when vm is not in Running state.
-    @Test(expected=ConcurrentOperationException.class)
+    @Test(expected = ConcurrentOperationException.class)
     public void testMigrateWithVolumeFail2() throws ResourceUnavailableException, ConcurrentOperationException,
-        ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
+            ManagementServerException, VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -451,6 +467,6 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmMock.getState()).thenReturn(State.Stopped);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 }

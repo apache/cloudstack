@@ -822,11 +822,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             try {
                 try {
                     if (vm.getType() == Type.User) {
-                        success = (success && _itMgr.advanceStop(_userVmDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                        _itMgr.advanceStop(vm.getUuid(), false);
                     } else if (vm.getType() == Type.DomainRouter) {
-                        success = (success && _itMgr.advanceStop(_routerDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                        _itMgr.advanceStop(vm.getUuid(), false);
                     } else {
-                        success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
+                        _itMgr.advanceStop(vm.getUuid(), false);
                     }
                 } catch (OperationTimedoutException ote) {
                     s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);

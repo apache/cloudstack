@@ -180,7 +180,15 @@ class TestVPCOffering(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self._cleanup.insert(0, self.account)
+        self.cleanup = []
+        self.cleanup.insert(0, self.account)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -243,7 +251,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      )
 
         self.debug("Check if the VPC offering is created successfully?")
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
         return
 
@@ -270,7 +278,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -295,7 +303,7 @@ class TestVPCOffering(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -544,14 +552,14 @@ class TestVPCOffering(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         vpc_off = VpcOffering.create(
                                      self.apiclient,
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -663,14 +671,14 @@ class TestVPCOffering(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         vpc_off = VpcOffering.create(
                                      self.apiclient,
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -784,14 +792,14 @@ class TestVPCOffering(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
+        self.cleanup.append(self.network_offering)
 
         vpc_off = VpcOffering.create(
                                      self.apiclient,
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -904,7 +912,7 @@ class TestVPCOffering(cloudstackTestCase):
                              )
             self.validate_vpc_offering(vpc_off)
             # Appending to cleanup to delete after test
-            self._cleanup.append(vpc_off)
+            self.cleanup.append(vpc_off)
         except Exception as e:
             self.fail("Failed to create the VPC offering - %s" % e)
         return
@@ -928,7 +936,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.validate_vpc_offering(vpc_off)
 
         self.debug("Enabling the VPC offering created")
@@ -1024,7 +1032,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.apiclient,
                                      self.services["vpc_offering"]
                                      )
-        self._cleanup.append(vpc_off_1)
+        self.cleanup.append(vpc_off_1)
         self.validate_vpc_offering(vpc_off_1)
         self.debug("Disabling the VPC offering created")
         vpc_off_1.update(self.apiclient, state='Disabled')
@@ -1034,7 +1042,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off_2)
+        self.cleanup.append(vpc_off_2)
         self.validate_vpc_offering(vpc_off_2)
         self.debug("Enabling the VPC offering created")
         vpc_off_2.update(self.apiclient, state='Enabled')
@@ -1044,7 +1052,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.services["vpc_offering"]
                                      )
 
-        self._cleanup.append(vpc_off_3)
+        self.cleanup.append(vpc_off_3)
         self.validate_vpc_offering(vpc_off_3)
         self.debug("Enabling the VPC offering created")
         vpc_off_3.update(self.apiclient, state='Enabled')
@@ -1053,7 +1061,7 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.apiclient,
                                      self.services["vpc_offering"]
                                      )
-        self._cleanup.append(vpc_off_4)
+        self.cleanup.append(vpc_off_4)
         self.debug("Enabling the VPC offering created")
         vpc_off_4.update(self.apiclient, state='Enabled')
 

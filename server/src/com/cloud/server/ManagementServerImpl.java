@@ -39,23 +39,15 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.*;
-import com.cloud.vm.*;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ApiConstants;
-
-import com.cloud.event.ActionEventUtils;
-
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
-import org.apache.cloudstack.api.command.admin.region.*;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
@@ -69,6 +61,7 @@ import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
@@ -129,6 +122,12 @@ import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
+import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
+import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.CleanVMReservationsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
@@ -159,7 +158,14 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.*;
+import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
@@ -309,8 +315,8 @@ import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadB
 import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.ListGlobalLoadBalancerRuleCmd;
-import org.apache.cloudstack.api.command.user.region.ha.gslb.UpdateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.UpdateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.resource.GetCloudIdentifierCmd;
 import org.apache.cloudstack.api.command.user.resource.ListHypervisorsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListResourceLimitsCmd;
@@ -372,7 +378,19 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.volume.*;
+import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.RemoveResourceDetailCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.DeleteStaticRouteCmd;
@@ -401,6 +419,7 @@ import org.apache.cloudstack.api.command.user.vpn.RemoveVpnUserCmd;
 import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -451,9 +470,17 @@ import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -491,9 +518,9 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
@@ -542,7 +569,18 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -552,12 +590,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
-
-import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
-import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
-import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
-import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
-import org.apache.cloudstack.context.CallContext;
 
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
@@ -725,7 +757,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _affinityProcessors;
     }
     public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
-        this._affinityProcessors = affinityProcessors;
+        _affinityProcessors = affinityProcessors;
     }
 
     public ManagementServerImpl() {
@@ -1272,7 +1304,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             storagePools.remove(srcVolumePool);
             for (StoragePoolVO pool : storagePools) {
                 if (pool.isShared()) {
-                    allPools.add((StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId()));
+                    allPools.add((StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId()));
                 }
             }
 
@@ -2060,12 +2092,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO stopConsoleProxy(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException, OperationTimedoutException,
     ConcurrentOperationException {
 
-        User caller = _userDao.findById(CallContext.current().getCallingUserId());
-
-        if (_itMgr.advanceStop(systemVm, isForced, caller, CallContext.current().getCallingAccount())) {
-            return _consoleProxyDao.findById(systemVm.getId());
-        }
-        return null;
+        _itMgr.advanceStop(systemVm.getUuid(), isForced);
+        return _consoleProxyDao.findById(systemVm.getId());
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_PROXY_REBOOT, eventDescription = "rebooting console proxy Vm", async = true)
@@ -2949,12 +2977,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private SecondaryStorageVmVO stopSecondaryStorageVm(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException,
     OperationTimedoutException, ConcurrentOperationException {
 
-        User caller = _userDao.findById(CallContext.current().getCallingUserId());
-
-        if (_itMgr.advanceStop(systemVm, isForced, caller, CallContext.current().getCallingAccount())) {
-            return _secStorageVmDao.findById(systemVm.getId());
-        }
-        return null;
+        _itMgr.advanceStop(systemVm.getUuid(), isForced);
+        return _secStorageVmDao.findById(systemVm.getId());
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_SSVM_REBOOT, eventDescription = "rebooting secondary storage Vm", async = true)

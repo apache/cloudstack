@@ -136,7 +136,6 @@ class Services:
                                 },
                          "ostype": 'CentOS 5.3 (64-bit)',
                          # Cent OS 5.3 (64 bit)
-                         "sleep": 90,
                          "timeout": 10,
                          "mode": 'advanced'
                     }
@@ -207,33 +206,35 @@ class TestSharedNetworks(cloudstackTestCase):
                vm.delete(self.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during virtual machines cleanup : %s" % e)
-    
+
         try:
             for project in self.cleanup_projects:
                  project.delete(self.api_client)    
         except Exception as e:
              raise Exception("Warning: Exception during project cleanup : %s" % e)
-        
+
         try:
             for account in self.cleanup_accounts:
                 account.delete(self.api_client)    
         except Exception as e:
             raise Exception("Warning: Exception during account cleanup : %s" % e)
         
+        #Wait till all resources created are cleaned up completely and then attempt to delete domains
+        wait_for_cleanup(self.api_client, ["account.cleanup.interval"])
+
+        try:
+            for network in self.cleanup_networks:
+                network.delete(self.api_client)
+        except Exception:
+            self.debug("Network %s failed to delete. Moving on" % network.id)
+            pass #because domain/account deletion will get rid of the network
+
         try:
             for domain in self.cleanup_domains:
                 domain.delete(self.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during domain cleanup : %s" % e)
-            
-        #Wait till all resources created are cleaned up completely and then attempt to delete Network
-        time.sleep(self.services["sleep"])
-        
-        try:
-            for network in self.cleanup_networks:
-                network.delete(self.api_client)
-        except Exception as e:
-            raise Exception("Warning: Exception during network cleanup : %s" % e)
+
         return
 
     @attr(tags=["advanced", "advancedns"])
@@ -322,9 +323,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
-        #Verify that the network offering got created 
+        #Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -565,7 +564,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #    -  conservemode = false
         #    - specifyVlan = true
         #    - specifyIpRanges = true
-        #  4. Enable network offering - updateNetworkOffering - state=Enabled
+        #  4. Create network offering - updateNetworkOffering - state=Enabled
         #  5. createNetwork
         #    - name = mysharednetwork, displaytext = mysharednetwork
         #    - vlan = 123 (say)
@@ -683,8 +682,8 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -750,7 +749,7 @@ class TestSharedNetworks(cloudstackTestCase):
                          )
         
         self.cleanup_networks.append(self.network)
-        
+
         list_networks_response = Network.list(
                                         self.api_client,
                                         id=self.network.id
@@ -836,7 +835,7 @@ class TestSharedNetworks(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_accountSpecific(self):
-        """ Test Shared Networm with scope account """
+        """ Test Shared Network with scope account """
         
         # Steps,
         #  1. create an Admin Account - admin-XABU1
@@ -966,9 +965,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )         
         
-        self.cleanup.append(self.shared_network_offering)
-        
-        #Verify that the network offering got created 
+        #Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id
@@ -1292,8 +1289,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -1354,6 +1350,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.network = Network.create(
                          self.api_client,
                          self.services["network"],
+                         accountid=self.domain_admin_account.name,
                          domainid=self.dom_domain.id,
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id
@@ -1405,6 +1402,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        networkids=self.network.id,
                                                        serviceofferingid=self.service_offering.id
                                                        )
+        self.cleanup_vms.append(self.domain_user_account_virtual_machine)
         vms = VirtualMachine.list(
                             self.api_client,
                             id=self.domain_user_account_virtual_machine.id,
@@ -1433,6 +1431,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                        networkids=self.network.id,
                                                        serviceofferingid=self.service_offering.id
                                                        )
+        self.cleanup_vms.append(self.domain_admin_account_virtual_machine)
         vms = VirtualMachine.list(
                             self.api_client,
                             id=self.domain_admin_account_virtual_machine.id,
@@ -1612,8 +1611,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -1836,8 +1834,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -1996,8 +1993,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -2115,7 +2111,7 @@ class TestSharedNetworks(cloudstackTestCase):
         # Validations,
         #  1. shared networks should be created successfully
         #  2. a. VM should deploy successfully
-        #     b. VM should bedeployed in both networks and have IP in both the networks
+        #     b. VM should be deployed in both networks and have IP in both the networks
         
         #Create admin account
         self.admin_account = Account.create(
@@ -2181,8 +2177,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -2377,7 +2372,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  2. isolated network should be created successfully
         #  3. 
         #    a. VM should deploy successfully
-        #    b. VM should bedeployed in both networks and have IP in both the networks
+        #    b. VM should be deployed in both networks and have IP in both the networks
         #  4. FW and PF should apply successfully, ssh into the VM should work over isolated network
         
         #Create admin account
@@ -2394,7 +2389,7 @@ class TestSharedNetworks(cloudstackTestCase):
         list_accounts_response = Account.list(
                                         self.api_client,
                                         id=self.admin_account.id,
-                                        liistall=True
+                                        listall=True
                                         )
         self.assertEqual(
             isinstance(list_accounts_response, list),
@@ -2424,8 +2419,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -2484,8 +2478,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                           conservemode=False
                                           )
         
-        self.cleanup.append(self.isolated_network_offering)
-        
+
         #Update network offering state from disabled to enabled.
         network_offering_update_response = NetworkOffering.update(
                                                            self.isolated_network_offering,
@@ -2534,13 +2527,14 @@ class TestSharedNetworks(cloudstackTestCase):
         
         physical_network = list_physical_networks_response[0]        
 
-	    #create network using the shared network offering created
+        #create network using the shared network offering created
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
         self.shared_network = Network.create(
                          self.api_client,
                          self.services["network"],
+                         accountid=self.admin_account.name,
                          domainid=self.admin_account.domainid,
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id
@@ -2597,15 +2591,16 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         
         self.debug("Isolated Network created: %s" % self.isolated_network.id)
-        
-        self.shared_network_admin_account_virtual_machine = VirtualMachine.create(
-                                                                     self.api_client,
-                                                                     self.services["virtual_machine"],
-                                                                     accountid=self.admin_account.name,
-                                                                     domainid=self.admin_account.domainid,
-                                                                     networkids=self.shared_network.id,
-								     serviceofferingid=self.service_offering.id
-                                                                     )
+
+        self.shared_network_admin_account_virtual_machine =\
+                                    VirtualMachine.create(
+                                        self.api_client,
+                                        self.services["virtual_machine"],
+                                        accountid=self.admin_account.name,
+                                        domainid=self.admin_account.domainid,
+                                        networkids=self.shared_network.id,
+                                        serviceofferingid=self.service_offering.id
+                                    )
         vms = VirtualMachine.list(
                             self.api_client,
                             id=self.shared_network_admin_account_virtual_machine.id,
@@ -2623,16 +2618,18 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         self.debug("Virtual Machine created: %s" % self.shared_network_admin_account_virtual_machine.id)
         
-        self.assertTrue(self.shared_network_admin_account_virtual_machine.nic[0].ipaddress is not None, "ip should be assigned to running virtual machine")
-        
-        self.isolated_network_admin_account_virtual_machine = VirtualMachine.create(
-                                                                       self.api_client,
-                                                                       self.services["virtual_machine"],
-                                                                       accountid=self.admin_account.name,
-                                                                       domainid=self.admin_account.domainid,
-                                                                       networkids=self.isolated_network.id,
-								       serviceofferingid=self.service_offering.id
-                                                                       )
+        self.assertTrue(self.shared_network_admin_account_virtual_machine.nic[0].ipaddress is not None,
+            "ip should be assigned to running virtual machine")
+
+        self.isolated_network_admin_account_virtual_machine = \
+                                    VirtualMachine.create(
+                                           self.api_client,
+                                           self.services["virtual_machine"],
+                                           accountid=self.admin_account.name,
+                                           domainid=self.admin_account.domainid,
+                                           networkids=self.isolated_network.id,
+                                           serviceofferingid=self.service_offering.id
+                                           )
         vms = VirtualMachine.list(
                             self.api_client,
                             id=self.isolated_network_admin_account_virtual_machine.id,
@@ -2678,7 +2675,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #Create Firewall rule on source NAT
         fw_rule = FireWallRule.create(
                             self.api_client,
-                            ipaddressid=self.public_ip.ipaddress,
+                            ipaddressid=self.public_ip.ipaddress.id,
                             protocol='TCP',
                             cidrlist=[self.services["fw_rule"]["cidr"]],
                             startport=self.services["fw_rule"]["startport"],
@@ -2782,8 +2779,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )         
         
-        self.cleanup.append(self.shared_network_offering)
-        
+
         #Verify that the network offering got created 
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
@@ -2927,9 +2923,7 @@ class TestSharedNetworks(cloudstackTestCase):
                                                  conservemode=False
                                                  )         
         
-        self.cleanup.append(self.shared_network_offering)
-        
-        #Verify that the network offering got created 
+        #Verify that the network offering got created
         list_network_offerings_response = NetworkOffering.list(
                                                          self.api_client,
                                                          id=self.shared_network_offering.id

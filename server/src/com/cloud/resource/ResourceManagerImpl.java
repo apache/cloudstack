@@ -2043,8 +2043,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.debug("Deleting Host: " + host.getId() + " Guid:" + host.getGuid());
         }
 
-        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-
         if (forceDestroyStorage) {
             // put local storage into mainenance mode, will set all the VMs on
             // this local storage into stopped state
@@ -2067,11 +2065,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
                 for (VMInstanceVO vm : vmsOnLocalStorage) {
                     try {
-                        if (!_vmMgr.destroy(vm, caller, _accountMgr.getAccount(vm.getAccountId()))) {
-                            String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
-                            s_logger.warn(errorMsg);
-                            throw new UnableDeleteHostException(errorMsg);
-                        }
+                        _vmMgr.destroy(vm.getUuid());
                     } catch (Exception e) {
                         String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
                         s_logger.debug(errorMsg, e);
@@ -2090,11 +2084,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
                             s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + host.getId());
                             try {
-                                if (!_vmMgr.advanceStop(vm, true, caller, _accountMgr.getAccount(vm.getAccountId()))) {
-                                    String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
-                                    s_logger.warn(errorMsg);
-                                    throw new UnableDeleteHostException(errorMsg);
-                                }
+                                _vmMgr.advanceStop(vm.getUuid(), false);
                             } catch (Exception e) {
                                 String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
                                 s_logger.debug(errorMsg, e);

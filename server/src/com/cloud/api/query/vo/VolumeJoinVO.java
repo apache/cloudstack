@@ -144,11 +144,11 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Enumerated(value=EnumType.STRING)
     protected VirtualMachine.Type vmType;
 
-    @Column (name="volume_host_size")
-    private long volumeHostSize;
+    @Column(name = "volume_store_size")
+    private long volumeStoreSize;
 
-    @Column(name="volume_host_created")
-    private Date volumeHostCreated;
+    @Column(name = "created_on_store")
+    private Date createdOnStore;
 
     @Column(name="format")
     private Storage.ImageFormat format;
@@ -625,31 +625,21 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.vmType = vmType;
     }
 
-
-
-    public long getVolumeHostSize() {
-        return volumeHostSize;
+    public long getVolumeStoreSize() {
+        return volumeStoreSize;
     }
 
-
-
-    public void setVolumeHostSize(long volumeHostSize) {
-        this.volumeHostSize = volumeHostSize;
+    public void setVolumeStoreSize(long volumeStoreSize) {
+        this.volumeStoreSize = volumeStoreSize;
     }
 
-
-
-    public Date getVolumeHostCreated() {
-        return volumeHostCreated;
+    public Date getCreatedOnStore() {
+        return createdOnStore;
     }
 
-
-
-    public void setVolumeHostCreated(Date volumeHostCreated) {
-        this.volumeHostCreated = volumeHostCreated;
+    public void setCreatedOnStore(Date createdOnStore) {
+        this.createdOnStore = createdOnStore;
     }
-
-
 
     public Storage.ImageFormat getFormat() {
         return format;
