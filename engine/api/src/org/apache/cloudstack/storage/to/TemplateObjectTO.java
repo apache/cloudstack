@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -38,6 +39,7 @@ public class TemplateObjectTO implements DataTO {
     private String name;
     private String guestOsType;
     private Long size;
+    private Hypervisor.HypervisorType hypervisorType;
 
     public TemplateObjectTO() {
 
@@ -53,6 +55,7 @@ public class TemplateObjectTO implements DataTO {
         this.accountId = template.getAccountId();
         this.name = template.getUniqueName();
         this.format = template.getFormat();
+        this.hypervisorType = template.getHypervisorType();
     }
 
     public TemplateObjectTO(TemplateInfo template) {
@@ -69,6 +72,7 @@ public class TemplateObjectTO implements DataTO {
         if (template.getDataStore() != null) {
             this.imageDataStore = template.getDataStore().getTO();
         }
+        this.hypervisorType = template.getHypervisorType();
     }
 
     @Override
@@ -126,6 +130,11 @@ public class TemplateObjectTO implements DataTO {
     @Override
     public DataStoreTO getDataStore() {
         return this.imageDataStore;
+    }
+
+    @Override
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return this.hypervisorType;
     }
 
     public void setDataStore(DataStoreTO store){

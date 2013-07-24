@@ -111,6 +111,7 @@ public class SnapshotObjectTO implements DataTO {
         this.name = name;
     }
 
+    @Override
     public HypervisorType getHypervisorType() {
         return hypervisorType;
     }

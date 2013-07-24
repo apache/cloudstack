@@ -1438,7 +1438,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return new CopyCmdAnswer(details);
     }
 
-	@Override
+    @Override
+    public Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
 	public Answer createVolumeFromSnapshot(CopyCommand cmd) {
 		Connection conn = this.hypervisorResource.getConnection();
 		DataTO srcData = cmd.getSrcTO();
