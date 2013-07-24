@@ -3020,9 +3020,9 @@ class AffinityGroup:
         if name is not None:
             cmd.name = name
         if account is not None:
-            cmd.accountname = account
+            cmd.account = account
         if domainid is not None:
-            cmd.domaindid = domainid
+            cmd.domainid = domainid
 
         return apiclient.deleteAffinityGroup(cmd)
 
