@@ -29,10 +29,8 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
@@ -114,7 +112,7 @@ public interface VirtualMachineManager extends Manager {
     
     VirtualMachine findById(long vmId);
 
-	<T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId);
+    void storageMigration(String vmUuid, StoragePool storagePoolId);
 
     /**
      * @param vmInstance
@@ -175,15 +173,11 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
 
-    VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost)
-            throws ResourceUnavailableException, ConcurrentOperationException;
+    VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException,
-            VirtualMachineMigrationException, ManagementServerException;
+    void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException;
 
-    <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
-            throws ResourceUnavailableException, ConcurrentOperationException,
-            ManagementServerException, VirtualMachineMigrationException;
+    void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
 
 }

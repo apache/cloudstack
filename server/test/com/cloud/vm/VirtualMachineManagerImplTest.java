@@ -254,7 +254,7 @@ public class VirtualMachineManagerImplTest {
         long l = 1L;
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
-        _vmMgr.migrateForScale(_vmInstance, l, dest, l);
+        _vmMgr.migrateForScale(_vmInstance.getUuid(), l, dest, l);
 
     }
 
@@ -298,8 +298,9 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstance.getHostId()).thenReturn(null);
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
+        when(_vmInstanceDao.findByUuid(any(String.class))).thenReturn(_vmInstance);
         DeploymentPlanner.ExcludeList excludeHostList = new DeploymentPlanner.ExcludeList();
-        _vmMgr.findHostAndMigrate(VirtualMachine.Type.User, _vmInstance, 2l, excludeHostList);
+        _vmMgr.findHostAndMigrate(_vmInstance.getUuid(), 2l, excludeHostList);
 
     }
 

@@ -1210,7 +1210,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // #2 migrate the vm if host doesn't have capacity or is in avoid set
                     if (!existingHostHasCapacity){
-                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getType(), vmInstance, newServiceOfferingId, excludes);
+                        _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId, excludes);
                     }
 
                     // #3 scale the vm now
@@ -1225,14 +1225,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     s_logger.warn("Received exception while scaling ",e);
                 } catch (ConcurrentOperationException e) {
                     s_logger.warn("Received exception while scaling ",e);
-                } catch (VirtualMachineMigrationException e) {
-                    s_logger.warn("Received exception while scaling ",e);
-                } catch (ManagementServerException e) {
-                    s_logger.warn("Received exception while scaling ",e);
                 } catch (Exception e) {
                     s_logger.warn("Received exception while scaling ",e);
-                }
-                finally{
+                } finally {
                     if(!success){
                         _itMgr.upgradeVmDb(vmId, currentServiceOffering.getId()); // rollback
                         // Decrement CPU and Memory count accordingly.
@@ -3752,8 +3747,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             + destHypervisorType.toString() + ", vm: "
                             + vm.getHypervisorType().toString());
         }
-        VMInstanceVO migratedVm = _itMgr.storageMigration(vm, destPool);
-        return migratedVm;
+        _itMgr.storageMigration(vm.getUuid(), destPool);
+        return _vmDao.findById(vm.getId());
 
     }
 

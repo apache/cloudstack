@@ -1153,6 +1153,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         try {
             //expunge the vm
             _itMgr.expunge(proxy.getUuid());
+            proxy.setPublicIpAddress(null);
+            proxy.setPublicMacAddress(null);
+            proxy.setPublicNetmask(null);
+            proxy.setPrivateMacAddress(null);
+            proxy.setPrivateIpAddress(null);
+            _consoleProxyDao.update(proxy.getId(), proxy);
             _consoleProxyDao.remove(vmId);
             HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
                     Host.Type.ConsoleProxy);
