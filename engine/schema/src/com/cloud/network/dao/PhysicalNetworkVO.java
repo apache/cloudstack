@@ -206,7 +206,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     public List<Pair<Integer, Integer>> getVnet() {
         List <Pair<Integer,Integer>>  vnetList = new ArrayList<Pair<Integer, Integer>>();
         if (vnet != null) {
-           String [] Temp = vnet.split(";");
+           String [] Temp = vnet.split(",");
            String [] vnetSplit = null;
            for (String vnetRange : Temp){
                vnetSplit = vnetRange.split("-");

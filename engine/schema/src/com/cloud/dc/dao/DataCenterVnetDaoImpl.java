@@ -110,9 +110,10 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         sc.setParameters("vnet", vnet);
 
         return listBy(sc);
-    }    
-    
-    @DB
+    }
+
+
+    @DB   //In the List<string> argument each string is a vlan. not a vlanRange.
     public void add(long dcId, long physicalNetworkId, List<String> vnets) {
         String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
         
@@ -133,15 +134,18 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         }
     }
 
-    public void deleteRange(Transaction txn, long dcId, long physicalNetworkId, int start, int end) {
-        String deleteVnet = "DELETE FROM `cloud`.`op_dc_vnet_alloc` WHERE data_center_id=? AND physical_network_id=? AND taken IS NULL AND vnet BETWEEN ? AND ?";
+    //In the List<string> argument each string is a vlan. not a vlanRange.
+    public void deleteVnets(Transaction txn, long dcId, long physicalNetworkId, List<String> vnets) {
+        String deleteVnet = "DELETE FROM `cloud`.`op_dc_vnet_alloc` WHERE data_center_id=? AND physical_network_id=? AND taken IS NULL AND vnet=?";
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteVnet);
-            stmt.setLong(1,dcId);
-            stmt.setLong(2,physicalNetworkId);
-            stmt.setString(3,((Integer)start).toString());
-            stmt.setString(4,((Integer)end).toString());
-            stmt.execute();
+            for (int i =0; i <= vnets.size()-1; i++) {
+                stmt.setLong(1,dcId);
+                stmt.setLong(2,physicalNetworkId);
+                stmt.setString(3, vnets.get(i));
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception caught adding vnet ", e);
         }
