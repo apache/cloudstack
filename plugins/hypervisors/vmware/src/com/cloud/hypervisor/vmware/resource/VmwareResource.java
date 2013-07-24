@@ -44,6 +44,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.DhcpTO;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -287,7 +288,6 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.network.DnsMasqConfigurator;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -2136,47 +2136,35 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         assert(controlIp != null);
 
-        DnsMasqConfigurator configurator = new DnsMasqConfigurator();
-        String [] config = configurator.generateConfiguration(cmd);
-        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","_")+".cfg";
-        String tmpConfigFileContents = "";
-        for (int i = 0; i < config.length; i++) {
-            tmpConfigFileContents += config[i];
-            tmpConfigFileContents += "\n";
-        }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/dnsmasq.sh " +"config file at" + tmpConfigFilePath);
+        List<DhcpTO> dhcpTos = cmd.getIps();
+        String args ="";
+        for(DhcpTO dhcpTo : dhcpTos) {
+            args = args + dhcpTo.getRouterIp()+":"+dhcpTo.getGateway()+":"+dhcpTo.getNetmask()+":"+dhcpTo.getStartIpOfSubnet()+"-";
         }
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         File keyFile = mgr.getSystemVMKeyFile();
 
         try {
-            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpConfigFileContents.getBytes(), routerIp.replace('.', '_') + ".cfg", null);
-
-            try {
-
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/dnsmasq.sh " + tmpConfigFilePath);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
-                }
-
-                if (!result.first()) {
-                    s_logger.error("Unable to copy dnsmasq configuration file");
-                    return new Answer(cmd, false, "dnsmasq config failed due to uanble to copy dnsmasq configuration file");
-                }
-
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("dnsmasq config command on domain router " + routerIp + " completed");
-                }
-            } finally {
-                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "rm " + tmpConfigFilePath);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/dnsmasq.sh " + args);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
             }
 
-            return new Answer(cmd);
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception: " + e.toString(), e);
-            return new Answer(cmd, false, " DnsmasqConfig command failed due to " + VmwareHelper.getExceptionMessage(e));
+            if (!result.first()) {
+                s_logger.error("Unable update dnsmasq config file");
+                return new Answer(cmd, false, "dnsmasq config update failed due to: " + result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("dnsmasq config command on domain router " + routerIp + " completed");
+            }
+        }catch (Throwable e) {
+            String msg = "Dnsmasqconfig command failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
         }
+
+        return new Answer(cmd);
     }
 
     protected CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {

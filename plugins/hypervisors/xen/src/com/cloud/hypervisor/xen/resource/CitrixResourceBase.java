@@ -53,6 +53,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.cloud.agent.api.to.DhcpTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
@@ -254,7 +255,6 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.DnsMasqConfigurator;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -2058,20 +2058,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected Answer execute(final DnsMasqConfigCommand cmd) {
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        DnsMasqConfigurator configurator = new DnsMasqConfigurator();
-        String [] config = configurator.generateConfiguration(cmd);
-        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","-")+".cfg";
-        String tmpConfigFileContents = "";
-        for (int i = 0; i < config.length; i++) {
-            tmpConfigFileContents += config[i];
-            tmpConfigFileContents += "\n";
+        List<DhcpTO> dhcpTos = cmd.getIps();
+        String args ="";
+        for(DhcpTO dhcpTo : dhcpTos) {
+            args = args + dhcpTo.getRouterIp()+":"+dhcpTo.getGateway()+":"+dhcpTo.getNetmask()+":"+dhcpTo.getStartIpOfSubnet()+"-";
         }
 
-        String result = callHostPlugin(conn, "vmops", "createFileInDomr", "filepath", tmpConfigFilePath, "filecontents", tmpConfigFileContents, "domrip" ,routerIp);
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "DnsMasqConfigCommand failed to create DnsMasq cfg file.");
-        }
-        result = callHostPlugin(conn, "vmops", "configdnsmasq", "routerip", routerIp, "filepath", tmpConfigFilePath);
+        String result = callHostPlugin(conn, "vmops", "configdnsmasq", "routerip", routerIp, "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DnsMasqconfigCommand failed");

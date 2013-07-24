@@ -521,6 +521,8 @@ setup_dnsmasq() {
   [ -z $DHCP_RANGE ] && [ $ETH0_IP ] && DHCP_RANGE=$ETH0_IP
   [ $ETH0_IP6 ] && DHCP_RANGE_IP6=$ETH0_IP6
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  #removing the dnsmasq multiple ranges config file.
+  rm /etc/dnsmasq.d/multiple_ranges.conf
 
   #get the template
   cp /etc/dnsmasq.conf.tmpl /etc/dnsmasq.conf

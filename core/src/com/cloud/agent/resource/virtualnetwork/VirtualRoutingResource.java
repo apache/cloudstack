@@ -53,12 +53,12 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.network.DnsMasqConfigurator;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.rules.FirewallRule;
@@ -628,25 +628,15 @@ public class VirtualRoutingResource implements Manager {
     protected Answer execute(final DnsMasqConfigCommand cmd) {
         final Script command  = new Script(_callDnsMasqPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        DnsMasqConfigurator configurator = new DnsMasqConfigurator();
-        String [] config = configurator.generateConfiguration(cmd);
-        String cfgFileName = routerIp.replace(".","-")+"dns.cgf";
-        String tmpCfgFileContents = "";
-        for (int i = 0; i < config.length; i++) {
-            tmpCfgFileContents += config[i];
-            tmpCfgFileContents += "\n";
+        List<DhcpTO> dhcpTos = cmd.getIps();
+        String args ="";
+        for(DhcpTO dhcpTo : dhcpTos) {
+            args = args + dhcpTo.getRouterIp()+":"+dhcpTo.getGateway()+":"+dhcpTo.getNetmask()+":"+dhcpTo.getStartIpOfSubnet()+"-";
         }
-        File permKey = new File("/root/.ssh/id_rsa.cloud");
-        String cfgFilePath = "/tmp/"+cfgFileName;
-        try {
-            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, "/tmp/", tmpCfgFileContents.getBytes(), cfgFileName, null);
-            command.add(routerIp);
-            command.add(cfgFilePath);
-            final String result = command.execute();
-            return new Answer(cmd, result == null, result);
-        } catch (Exception e) {
-            return new Answer(cmd, false, e.getMessage());
-        }
+        command.add(routerIp);
+        command.add(args);
+        final String result = command.execute();
+        return new Answer(cmd, result == null, result);
     }
 
     public String getRouterStatus(String routerIP) {
