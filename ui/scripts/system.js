@@ -6005,6 +6005,7 @@
                                 actions: {
                                     addVmwareDc: {
                                         label: 'Add VMware datacenter',
+                                        textLabel: 'Add VMware datacenter',
                                         messages: {
                                             notification: function(args) {
                                                 return 'Add VMware datacenter';
