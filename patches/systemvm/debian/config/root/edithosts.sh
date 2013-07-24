@@ -96,11 +96,9 @@ wait_for_dnsmasq () {
   return 1
 }
 
-if [ $ipv4 ]
+if [ $ipv6 ]
 then
-    ip=$ipv4
-else
-    ip=$ipv6
+    no_dhcp_release=1
 fi
 
 if [ $no_dhcp_release -eq 0 ]
