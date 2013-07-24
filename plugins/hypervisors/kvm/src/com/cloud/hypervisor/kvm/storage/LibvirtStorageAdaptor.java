@@ -46,6 +46,7 @@ import com.ceph.rados.IoCTX;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdImage;
 import com.ceph.rbd.RbdException;
+import com.ceph.rbd.jna.RbdSnapInfo;
 
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
@@ -647,6 +648,42 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool) {
+
+        /**
+         * RBD volume can have snapshots and while they exist libvirt
+         * can't remove the RBD volume
+         *
+         * We have to remove those snapshots first
+         */
+        if (pool.getType() == StoragePoolType.RBD) {
+            try {
+                s_logger.info("Unprotecting and Removing RBD snapshots of image "
+                               + pool.getSourcePort() + "/" + uuid + " prior to removing the image");
+
+                Rados r = new Rados(pool.getAuthUserName());
+                r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+                r.confSet("key", pool.getAuthSecret());
+                r.connect();
+                s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                Rbd rbd = new Rbd(io);
+                RbdImage image = rbd.open(uuid);
+                List<RbdSnapInfo> snaps = image.snapList();
+                for (RbdSnapInfo snap : snaps) {
+                    image.snapUnprotect(snap.name);
+                    image.snapRemove(snap.name);
+                }
+
+                rbd.close(image);
+                r.ioCtxDestroy(io);
+            } catch (RadosException e) {
+                throw new CloudRuntimeException(e.toString());
+            } catch (RbdException e) {
+                throw new CloudRuntimeException(e.toString());
+            }
+        }
+
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         try {
             StorageVol vol = this.getVolume(libvirtPool.getPool(), uuid);
