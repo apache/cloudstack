@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent.resource.virtualnetwork;
 
+import com.google.gson.Gson;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -85,6 +87,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -463,61 +466,21 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(VmDataCommand cmd) {
         List<String[]> vmData = cmd.getVmData();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
+        data.put(cmd.getVmIpAddress(), cmd.getVmData());
+ 
+        String json = new Gson().toJson(data);
+        s_logger.debug("JSON IS:" + json);
 
-        for (String[] vmDataEntry : vmData) {
-            String folder = vmDataEntry[0];
-            String file = vmDataEntry[1];
-            String data = vmDataEntry[2];
-            File tmpFile = null;
+        json = Base64.encodeBase64String(json.getBytes());
 
-            byte[] dataBytes = null;
-            if (data != null) {
-                if (folder.equals("userdata")) {
-                    dataBytes = Base64.decodeBase64(data);//userdata is supplied in url-safe unchunked mode
-                } else {
-                    dataBytes = data.getBytes();
-                }
-            }
+        String args = "-d " + json;
 
-            try {
-                tmpFile = File.createTempFile("vmdata_", null);
-                FileOutputStream outStream = new FileOutputStream(tmpFile);
-                if (dataBytes != null)
-                    outStream.write(dataBytes); 
-                outStream.close();
-            } catch (IOException e) {
-                String tmpDir = System.getProperty("java.io.tmpdir");
-                s_logger.warn("Failed to create temporary file: is " + tmpDir + " full?", e);
-                return new Answer(cmd, false, "Failed to create or write to temporary file: is " + tmpDir + " full? " + e.getMessage() );
-            }
-       
-
-            final Script command  = new Script(_vmDataPath, _timeout, s_logger);
-            command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
-            command.add("-v", cmd.getVmIpAddress());
-            command.add("-F", folder);
-            command.add("-f", file);
-
-            if (tmpFile != null) {
-                command.add("-d", tmpFile.getAbsolutePath());
-            }
-
-            final String result = command.execute();
-
-            if (tmpFile != null) {
-                boolean deleted = tmpFile.delete();
-                if (!deleted) {
-                    s_logger.warn("Failed to clean up temp file after sending vmdata");
-                    tmpFile.deleteOnExit();
-                }
-            }
-
-            if (result != null) {
-                return new Answer(cmd, false, result);        	
-            }        	
-
+        final String result = routerProxy("vmdata_kvm.py", routerIp, args);
+        if (result != null) {
+            return new Answer(cmd, false, "VmDataCommand failed, check agent logs");
         }
-
         return new Answer(cmd);
     }
 
@@ -1190,11 +1153,6 @@ public class VirtualRoutingResource implements Manager {
         _dhcpEntryPath = findScript("dhcp_entry.sh");
         if(_dhcpEntryPath == null) {
             throw new ConfigurationException("Unable to find dhcp_entry.sh");
-        }
-
-        _vmDataPath = findScript("vm_data.sh");
-        if(_vmDataPath == null) {
-            throw new ConfigurationException("Unable to find user_data.sh");
         }
 
         _publicEthIf = (String)params.get("public.network.device");
