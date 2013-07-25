@@ -343,22 +343,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                 else:
                     self.debug("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
 
-    def create_staticnat(self, vm, public_ip, network):
-        self.debug("Enabling static NAT for IP: %s" %
-                                                        public_ip.ipaddress.ipaddress)
-        try:
-                StaticNATRule.enable(
-                                        self.apiclient,
-                                        ipaddressid=public_ip.ipaddress.id,
-                                        virtualmachineid=vm.id,
-                                        networkid=network.id
-                                        )
-                self.debug("Static NAT enabled for IP: %s" %
-                                                        public_ip.ipaddress.ipaddress)
-        except Exception as e:
-                self.fail("Failed to enable static NAT on IP: %s - %s" % (
-                                                    public_ip.ipaddress.ipaddress, e))
-
     def create_natrule(self, vm, public_ip, network, services=None):
         self.debug("Creating NAT rule in network for vm with public IP")
         if not services:
