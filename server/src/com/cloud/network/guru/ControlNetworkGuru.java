@@ -109,7 +109,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
 
-        if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
+        if(vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
             NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
@@ -132,7 +132,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        if (dest.getHost().getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        if (dest.getHost().getHypervisorType() == HypervisorType.VMware && isRouterVm(vm)) {
             if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
                 super.reserve(nic, config, vm, dest, context);
 
@@ -166,7 +166,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        if (vm.getHypervisorType() == HypervisorType.VMware && isRouterVm(vm)) {
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if(dcVo.getNetworkType() != NetworkType.Basic) {
@@ -192,6 +192,10 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         return true;
+    }
+
+    protected boolean isRouterVm(VirtualMachineProfile<? extends VirtualMachine> vm) {
+        return vm.getType() == VirtualMachine.Type.DomainRouter || vm.getType() == VirtualMachine.Type.InternalLoadBalancerVm;
     }
 
     @Override
