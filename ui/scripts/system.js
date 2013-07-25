@@ -14123,8 +14123,9 @@
 			                zoneid: args.context.physicalResources[0].id
 			              },
 			              success: function(json) {	
+			            	  //for testing only (begin)
 			            	  /*	            	  
-			            	  json = //override json (for testing only)
+			            	  json = 
 			            	  {
 			            	      "listucsmanagerreponse": {
 			            		      "count": 1,
@@ -14138,7 +14139,9 @@
 			            		      ]
 			            	      }
 			            	  };
-			            	  */			            	  
+			            	  */
+			            	  //for testing only (end)
+			            	  
 			            	  var items = json.listucsmanagerreponse.ucsmanager;
 			            	  args.response.success({ data: items });			            	  
 			              }
@@ -14258,24 +14261,24 @@
 
                                                 //for testing only (begin)
                                                 /*
-                        var data = [
-                          {
-                            "id": "58c84a1d-6e46-44e3-b7ec-abaa876d1be3",
-                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
-                            "bladedn": "sys/chassis-1/blade-1"
-                          },
-                          {
-                            "id": "de5abadf-f294-4014-9fed-7ee37a9b8724",
-                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
-                            "bladedn": "sys/chassis-1/blade-2"
-                          }
-                        ];
-                        for(var i = 0; i < data.length; i++) {
-                          var array1 = data[i].bladedn.split('/');
-                          data[i].chassis = array1[1];
-                          data[i].bladeid = array1[2];
-                        }
-                        */
+						                        var data = [
+						                          {
+						                            "id": "58c84a1d-6e46-44e3-b7ec-abaa876d1be3",
+						                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
+						                            "bladedn": "sys/chassis-1/blade-1"
+						                          },
+						                          {
+						                            "id": "de5abadf-f294-4014-9fed-7ee37a9b8724",
+						                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
+						                            "bladedn": "sys/chassis-1/blade-2"
+						                          }
+						                        ];
+						                        for(var i = 0; i < data.length; i++) {
+						                          var array1 = data[i].bladedn.split('/');
+						                          data[i].chassis = array1[1];
+						                          data[i].bladeid = array1[2];
+						                        }
+						                        */
                                                 //for testing only (end)
 
 
@@ -14353,21 +14356,24 @@
                                                         bladeid: args.context.blades[0].id
                                                     },
                                                     success: function(json) {
-                                                        //for testing only, comment it out before check in (begin)
+                                                        //for testing only (begin)
+                                                    	/*
                                                     	json =                                         
                                                         {
 														    "associateucsprofiletobladeresponse": {
 														        "jobid": "dff5fa7f-e4a7-457b-92f1-2fede357e3d5"
 														    }
 														};
-                                                    	//for testing only, comment it out before check in (end)
+														*/
+                                                    	//for testing only (end)
                                                     	
                                                     	var jid = json.associateucsprofiletobladeresponse.jobid;
                                                         args.response.success({
                                                             _custom: {
                                                                 jobId: jid,
                                                                 getUpdatedItem: function(json) {                                                               	    
-                                                                	//for testing only, comment it out before check in (begin)
+                                                                	//for testing only (begin)
+                                                                	/*
                                                                 	json = 
                                                                 	{
                                                                 	    "queryasyncjobresultresponse": {
@@ -14389,7 +14395,8 @@
                                                                 	        "jobid": "dff5fa7f-e4a7-457b-92f1-2fede357e3d5"
                                                                 	    }
                                                                 	}
-	                                                               	//for testing only, comment it out before check in (end)
+                                                                	*/
+	                                                               	//for testing only (end)
                                                                 	                                                               	    
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
@@ -14404,75 +14411,7 @@
                                                 }
                                             }
                                         }
-                                    }
-
-                                    /*,
-                  detailView: {
-                    name: 'blade details',
-                    noCompact: true,
-                    actions: {
-                      associateProfileToBlade: {
-                        label: 'Associate Profile to Blade',
-                        messages: {
-                          notification: function(args) {
-                            return 'Associate Profile to Blade';
-                          }
-                        },
-                        createForm: {
-                          title: 'Associate Profile to Blade',
-                          fields: {
-                            profiledn: {
-                              label: 'profile',
-                              select: function(args) {
-                                var items = [];
-
-                                items.push({id: 'profile_1', description: 'profile_1'});
-                                items.push({id: 'profile_2', description: 'profile_2'});
-                                items.push({id: 'profile_3', description: 'profile_3'});
-                                args.response.success({data: items});
-                              },
-                              validation: { required: true }
-                            }
-                          }
-                        },
-                        action: function(args) {
-                          args.response.success();
-                        },
-                        notification: {
-                          poll: function(args) {
-                            args.complete();
-                          }
-                        }
-                      }
-                    },
-                    tabs: {
-                      details: {
-                        title: 'label.details',
-
-                        fields: [
-                          {
-                            fieldA: { label: 'fieldA' }
-                          },
-                          {
-                            fieldB: { label: 'fieldB' }
-                          }
-                        ],
-
-                        dataProvider: function(args) {
-                          args.response.success(
-                            {
-                              data: {
-                                fieldA: 'fieldAAA',
-                                fieldB: 'fieldBBB'
-                              }
-                            }
-                          );
-                        }
-                      }
-                    }
-                  }
-                  */
-
+                                    }                                 
                                 }
                             }
                         }
