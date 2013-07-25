@@ -196,15 +196,15 @@ class codeGenerator(object):
         body += 'return CloudStackAPIClient(copy.copy(self.connection))\n'
         body += self.newline
 
-# The `id` property will be used to link the test with the cloud resource being created  #
-#            @property
-#            def id(self):
-#                return self._id
-#
-#            @id.setter
-#            def id(self, identifier):
-#                self._id = identifier
-
+        # The `id` property will be used to link the test with the cloud
+        # resource being created
+        #            @property
+        #            def id(self):
+        #                return self._id
+        #
+        #            @id.setter
+        #            def id(self, identifier):
+        #                self._id = identifier
 
         body += self.space + '@property' + self.newline
         body += self.space + 'def id(self):' + self.newline

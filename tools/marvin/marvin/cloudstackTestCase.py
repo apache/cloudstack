@@ -17,6 +17,7 @@
 
 import unittest
 
+
 def user(Name, DomainName, AcctType):
     def wrapper(cls):
         orig_init = cls.__init__

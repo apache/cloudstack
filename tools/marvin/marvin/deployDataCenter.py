@@ -159,7 +159,8 @@ specify a valid config file" % cfgFile)
             secondarycmd.provider = secondary.provider
             secondarycmd.details = []
 
-            if secondarycmd.provider == 'S3' or secondarycmd.provider == "Swift":
+            if secondarycmd.provider == 'S3' \
+                    or secondarycmd.provider == "Swift":
                 for key, value in vars(secondary.details).iteritems():
                     secondarycmd.details.append({
                                                 'key': key,
