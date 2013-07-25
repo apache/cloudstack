@@ -26,11 +26,11 @@ import xml.dom.minidom
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
 import traceback
+import libvirt
 
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
 iptables = Command("iptables")
 bash = Command("/bin/bash")
-virsh = Command("virsh")
 ebtablessave = Command("ebtables-save")
 ebtables = Command("ebtables")
 def execute(cmd):
@@ -83,6 +83,78 @@ def ipset(ipsetname, proto, start, end, ips):
 
     return result
 '''
+def virshlist(*states):
+
+    libvirt_states={ 'running'  : libvirt.VIR_DOMAIN_RUNNING,
+                     'shutoff'  : libvirt.VIR_DOMAIN_SHUTOFF,
+                     'shutdown' : libvirt.VIR_DOMAIN_SHUTDOWN,
+                     'paused'   : libvirt.VIR_DOMAIN_PAUSED,
+                     'nostate'  : libvirt.VIR_DOMAIN_NOSTATE,
+                     'blocked'  : libvirt.VIR_DOMAIN_BLOCKED,
+                     'crashed'  : libvirt.VIR_DOMAIN_CRASHED,
+    }
+
+    searchstates = list(libvirt_states[state] for state in states)
+
+    conn = libvirt.openReadOnly('qemu:///system')
+    if conn == None:
+       print 'Failed to open connection to the hypervisor'
+       sys.exit(3)
+
+    alldomains = map(conn.lookupByID, conn.listDomainsID())
+    alldomains += map(conn.lookupByName, conn.listDefinedDomains())
+
+    domains = []
+    for domain in alldomains:
+        if domain.info()[0] in searchstates:
+            domains.append(domain.name())
+
+    conn.close()
+
+    return domains
+
+def virshdomstate(domain):
+
+    libvirt_states={ libvirt.VIR_DOMAIN_RUNNING  : 'running',
+                     libvirt.VIR_DOMAIN_SHUTOFF  : 'shut off',
+                     libvirt.VIR_DOMAIN_SHUTDOWN : 'shut down',
+                     libvirt.VIR_DOMAIN_PAUSED   : 'paused',
+                     libvirt.VIR_DOMAIN_NOSTATE  : 'no state',
+                     libvirt.VIR_DOMAIN_BLOCKED  : 'blocked',
+                     libvirt.VIR_DOMAIN_CRASHED  : 'crashed',
+    }
+
+    conn = libvirt.openReadOnly('qemu:///system')
+    if conn == None:
+       print 'Failed to open connection to the hypervisor'
+       sys.exit(3)
+
+    try:
+        dom = (conn.lookupByName (domain))
+    except libvirt.libvirtError:
+        return None
+
+    state = libvirt_states[dom.info()[0]]
+    conn.close()
+
+    return state
+
+def virshdumpxml(domain):
+
+    conn = libvirt.openReadOnly('qemu:///system')
+    if conn == None:
+       print 'Failed to open connection to the hypervisor'
+       sys.exit(3)
+
+    try:
+        dom = (conn.lookupByName (domain))
+    except libvirt.libvirtError:
+        return None
+
+    xml = dom.XMLDesc(0)
+    conn.close()
+
+    return xml
 
 def destroy_network_rules_for_vm(vm_name, vif=None):
     vmchain = vm_name
@@ -509,13 +581,9 @@ def get_rule_log_for_vm(vmName):
     return ','.join([_vmName, _vmID, _vmIP, _domID, _signature, _seqno])
 
 def check_domid_changed(vmName):
-    curr_domid = '-1'
-    try:
-        curr_domid = getvmId(vmName)
-        if (curr_domid is None) or (not curr_domid.isdigit()):
-            curr_domid = '-1'
-    except:
-        pass
+    curr_domid = getvmId(vmName)
+    if (curr_domid is None) or (not curr_domid.isdigit()):
+        curr_domid = '-1'
 
     vm_name = vmName;
     logfilename = logpath + vm_name + ".log"
@@ -592,8 +660,7 @@ def network_rules_for_rebooted_vm(vmName):
     return True
 
 def get_rule_logs_for_vms():
-    cmd = "virsh list|awk '/running/ {print $2}'"
-    vms = bash("-c", cmd).stdout.split("\n")
+    vms = virshlist('running')
 
     result = []
     try:
@@ -623,11 +690,7 @@ def cleanup_rules():
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
 
-                cmd = "virsh list |awk '/" + vm_name + "/ {print $3}'"
-                try:
-                    result = execute(cmd).strip()
-                except:
-                    result = None
+                result = virshdomstate(vm_name)
 
                 if result == None or len(result) == 0:
                     logging.debug("chain " + chain + " does not correspond to a vm, cleaning up iptable rules")
@@ -643,11 +706,7 @@ def cleanup_rules():
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
 
-                cmd = "virsh list |awk '/" + vm_name + "/ {print $3}'"
-                try:
-                    result = execute(cmd).strip()
-                except:
-                    result = None
+                result = virshdomstate(vm_name)
 
                 if result == None or len(result) == 0:
                     logging.debug("chain " + chain + " does not correspond to a vm, cleaning up ebtable rules")
@@ -726,9 +785,6 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
   try:
     vmName = vm_name
     domId = getvmId(vmName)
-
-
-
 
     changes = []
     changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
@@ -827,9 +883,8 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
 
 def getVifs(vmName):
     vifs = []
-    try:
-        xmlfile = virsh("dumpxml", vmName).stdout
-    except:
+    xmlfile = virshdumpxml(vmName)
+    if xmlfile == None:
         return vifs
 
     dom = xml.dom.minidom.parseString(xmlfile)
@@ -841,9 +896,8 @@ def getVifs(vmName):
 
 def getVifsForBridge(vmName, brname):
     vifs = []
-    try:
-        xmlfile = virsh("dumpxml", vmName).stdout
-    except:
+    xmlfile = virshdumpxml(vmName)
+    if xmlfile == None:
         return vifs
 
     dom = xml.dom.minidom.parseString(xmlfile)
@@ -858,9 +912,8 @@ def getVifsForBridge(vmName, brname):
 
 def getBridges(vmName):
     bridges = []
-    try:
-        xmlfile = virsh("dumpxml", vmName).stdout
-    except:
+    xmlfile = virshdumpxml(vmName)
+    if xmlfile == None:
         return bridges
 
     dom = xml.dom.minidom.parseString(xmlfile)
@@ -871,8 +924,20 @@ def getBridges(vmName):
     return list(set(bridges))
 
 def getvmId(vmName):
-    cmd = "virsh list |awk '/" + vmName + "/ {print $1}'"
-    return bash("-c", cmd).stdout.strip()
+
+    conn = libvirt.openReadOnly('qemu:///system')
+    if conn == None:
+       print 'Failed to open connection to the hypervisor'
+       sys.exit(3)
+
+    try:
+        dom = (conn.lookupByName (domain))
+    except libvirt.libvirtError:
+        return None
+
+    conn.close()
+
+    return dom.ID()
 
 def addFWFramework(brname):
     try:
