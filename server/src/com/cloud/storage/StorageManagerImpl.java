@@ -625,7 +625,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
             }
 
-            HostScope scope = new HostScope(host.getId(), host.getDataCenterId());
+            HostScope scope = new HostScope(host.getId(), host.getClusterId(), host.getDataCenterId());
             lifeCycle.attachHost(store, scope, pInfo);
         } catch (Exception e) {
             s_logger.warn("Unable to setup the local storage pool for " + host, e);

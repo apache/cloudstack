@@ -34,7 +34,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -49,6 +48,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -1589,6 +1589,18 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         if (storeForRootStoreScope.getScopeType() != storeForDataStoreScope.getScopeType()) {
+            if (storeForDataStoreScope.getScopeType() == ScopeType.CLUSTER && storeForRootStoreScope.getScopeType() == ScopeType.HOST) {
+                HostScope hs = (HostScope)storeForRootStoreScope;
+                if (storeForDataStoreScope.getScopeId().equals(hs.getClusterId())) {
+                    return false;
+                }
+            }
+            if (storeForRootStoreScope.getScopeType() == ScopeType.CLUSTER && storeForDataStoreScope.getScopeType() == ScopeType.HOST) {
+                HostScope hs = (HostScope)storeForDataStoreScope;
+                if (storeForRootStoreScope.getScopeId().equals(hs.getClusterId())) {
+                    return false;
+                }
+            }
             throw new CloudRuntimeException("Can't move volume between scope: " + storeForDataStoreScope.getScopeType() + " and " + storeForRootStoreScope.getScopeType());
         }
 
