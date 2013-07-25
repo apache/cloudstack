@@ -147,7 +147,7 @@ class TestSnapshots(cloudstackTestCase):
                             )
         
         cls.services["domainid"] = cls.domain.id
-        cls.services["server_with_disk"]["zoneid"] = cls.zone.id
+        cls.services["volume"]["zoneid"] = cls.services["server_with_disk"]["zoneid"] = cls.zone.id
         cls.services["server_with_disk"]["diskoffering"] = cls.disk_offering.id
 
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id
