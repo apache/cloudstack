@@ -445,6 +445,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                 processor.configure("qcow2 processor", params);
                 String destPath = destFile.getAbsolutePath();
+
                 FormatInfo info = processor.process(destPath, null, templateName);
                 TemplateLocation loc = new TemplateLocation(_storage, destPath);
                 loc.create(1, true, srcFile.getName());
