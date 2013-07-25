@@ -774,7 +774,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
-        UserVmVO vmInstance = _vmDao.findById(vmId);
+        //UserVmVO vmInstance = _vmDao.findById(vmId);
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         if (vmInstance == null) {
             throw new InvalidParameterValueException(
                     "unable to find a virtual machine with id " + vmId);
