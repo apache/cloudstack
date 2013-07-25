@@ -1543,6 +1543,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
     private boolean needMoveVolume(VolumeVO rootVolumeOfVm, VolumeInfo volume) {
+        if (rootVolumeOfVm.getPoolId() == null || volume.getPoolId() == null) {
+            return false;
+        }
+
         DataStore storeForRootVol = dataStoreMgr.getPrimaryDataStore(rootVolumeOfVm.getPoolId());
         DataStore storeForDataVol = dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
 
