@@ -137,8 +137,6 @@ class MarvinPlugin(Plugin):
     def _injectClients(self, test):
         testcaselogger = logging.getLogger("testclient.testcase.%s" %
                                            test.__name__)
-
-
         self.debug_stream. \
             setFormatter(logging.
                          Formatter("%(asctime)s - %(levelname)s - %(name)s" +
