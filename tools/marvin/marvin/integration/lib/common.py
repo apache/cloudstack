@@ -18,8 +18,6 @@
 """
 
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
 from utils import *
@@ -28,6 +26,15 @@ from base import *
 #Import System modules
 import time
 
+
+def is_config_suitable(apiclient, name, value):
+    """
+    Ensure if the deployment has the expected `value` for the global setting `name'
+    @return: true if value is set, else false
+    """
+    configs = Configurations.list(apiclient, name=name)
+    assert(configs is not None and isinstance(configs, list) and len(configs) > 0)
+    return configs[0].value == value
 
 def wait_for_cleanup(apiclient, configs=None):
     """Sleeps till the cleanup configs passed"""

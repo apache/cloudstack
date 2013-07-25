@@ -109,7 +109,7 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=50, keyPairFileLocation=None):
+def is_server_ssh_ready(ipaddress, port, username, password, retries=5, timeout=20, keyPairFileLocation=None):
     """Return ssh handle else wait till sshd is running"""
     loop_cnt = retries
     while True:
@@ -124,9 +124,10 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50, keyPair
             if loop_cnt == 0:
                 raise e
             loop_cnt = loop_cnt - 1
-            time.sleep(30)
+            time.sleep(timeout)
         else:
             return ssh
+    raise Exception("Failed to bring up ssh service in time. Waited %ss" % retries*timeout)
 
 
 def format_volume_to_ext3(ssh_client, device="/dev/sda"):
@@ -155,6 +156,7 @@ def fetch_api_client(config_file='datacenterCfg'):
             testClientLogger
         )
     )
+
 
 
 def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):
