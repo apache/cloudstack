@@ -444,6 +444,8 @@ public class EventTypes {
     public static final String EVENT_DEDICATE_RESOURCE_RELEASE = "DEDICATE.RESOURCE.RELEASE";
 
     public static final String EVENT_CLEANUP_VM_RESERVATION = "VM.RESERVATION.CLEANUP";
+    
+    public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
     static {
 
