@@ -69,6 +69,10 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.ConfigDepot;
+import org.apache.cloudstack.config.ConfigKey;
+import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.region.PortableIp;
@@ -130,7 +134,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -151,7 +154,6 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -190,6 +192,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
@@ -207,9 +210,11 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Component
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
-public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
+public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, ConfigDepot {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -3055,7 +3060,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 //extend IP range
                 if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
-                    throw new InvalidParameterValueException("The IP range has already been added with gateway " 
+                    throw new InvalidParameterValueException("The IP range has already been added with gateway "
                             + otherVlanGateway + " ,and netmask " + otherVlanNetmask
                             + ", Please specify the gateway/netmask if you want to extend ip range" );
                 }
@@ -5123,5 +5128,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         return false;
+    }
+
+    @Override
+    public <T> ConfigValue<T> get(ConfigKey<T> config) {
+        return new ConfigValue<T>(_entityMgr, config);
     }
 }

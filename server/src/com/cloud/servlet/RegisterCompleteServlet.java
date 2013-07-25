@@ -30,7 +30,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.configuration.Configuration;
+import org.apache.cloudstack.config.Configuration;
+
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;

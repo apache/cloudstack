@@ -18,7 +18,6 @@ package org.apache.cloudstack.api;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.DataCenter;
@@ -91,6 +90,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
+
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -182,6 +182,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -189,6 +190,7 @@ import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.storage.ImageStore;
+
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;

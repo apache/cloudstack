@@ -21,6 +21,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.config.Configuration;
+
 import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @Entity

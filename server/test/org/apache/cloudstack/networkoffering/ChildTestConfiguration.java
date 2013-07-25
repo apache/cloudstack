@@ -110,6 +110,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
@@ -197,6 +198,11 @@ public class ChildTestConfiguration {
     @Bean
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
+    }
+    
+    @Bean
+    public EntityManager entityMgr() {
+        return Mockito.mock(EntityManager.class);
     }
 
     @Bean

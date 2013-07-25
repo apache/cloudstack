@@ -19,7 +19,9 @@ package com.cloud.server;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import com.cloud.exception.*;
+
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
@@ -46,9 +48,10 @@ import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
+import org.apache.cloudstack.config.Configuration;
+
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Configuration;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;

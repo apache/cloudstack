@@ -52,9 +52,9 @@ import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
+
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.dc.ClusterVO;
@@ -86,6 +86,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.Type;
+
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
@@ -108,12 +109,15 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.Configuration;
+
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
