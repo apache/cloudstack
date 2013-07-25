@@ -20,12 +20,9 @@
 import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
-import datetime
 
 
 class Services:
@@ -157,6 +154,8 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+
+
     @attr(configuration='vm.instancename.flag')
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_user_provided_hostname(self):
@@ -168,6 +167,8 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         #    should be user provided display name
         # 2. Give the user provided user name. Internal name should be
         #    i-<userid>-<vmid>-display name
+        if not is_config_suitable(apiclient=self.apiclient, name='vm.instancename.flag', value='true'):
+            self.skipTest('vm.instancename.flag should be true. skipping')
 
         self.debug("Deploying VM in account: %s" % self.account.name)
         # Spawn an instance in that network
@@ -270,6 +271,8 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         #    should be user provided display name
         # 2. Dont give the user provided user name. Internal name should be
         #    i-<userid>-<vmid>-<instance.name> in global config
+        if not is_config_suitable(apiclient=self.apiclient, name='vm.instancename.flag', value='true'):
+            self.skipTest('vm.instancename.flag should be true. skipping')
 
         # Removing display name from config
         del self.services["virtual_machine"]["displayname"]
