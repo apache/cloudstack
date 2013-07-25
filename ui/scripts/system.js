@@ -14229,15 +14229,14 @@
                                 title: 'Blades',
                                 listView: {
                                     id: 'blades',
-                                    fields: {
-                                        //dn: { label: 'Distinguished Name' },
+                                    fields: {                                        
                                         chassis: {
                                             label: 'Chassis'
                                         },
                                         bladeid: {
                                             label: 'Blade ID'
                                         },
-                                        associatedProfileDn: {
+                                        profiledn: {
                                             label: 'Associated Profile'
                                         }
                                     },
@@ -14324,14 +14323,14 @@
 
                                                             //for testing only (begin)
                                                             /*
-                              items.push({id: 'org-root/ls-testProfile1', description: 'org-root/ls-testProfile1'});
-                              items.push({id: 'org-root/ls-testProfile2', description: 'org-root/ls-testProfile2'});
-                              items.push({id: 'org-root/ls-testProfile3', description: 'org-root/ls-testProfile3'});
-                              items.push({id: 'org-root/ls-testProfile4', description: 'org-root/ls-testProfile4'});
-                              items.push({id: 'org-root/ls-testProfile5', description: 'org-root/ls-testProfile5'});
-                              items.push({id: 'org-root/ls-testProfile6', description: 'org-root/ls-testProfile6'});
-                              items.push({id: 'org-root/ls-testProfile7', description: 'org-root/ls-testProfile7'});
-                              */
+								                            items.push({id: 'org-root/ls-testProfile1', description: 'org-root/ls-testProfile1'});
+								                            items.push({id: 'org-root/ls-testProfile2', description: 'org-root/ls-testProfile2'});
+								                            items.push({id: 'org-root/ls-testProfile3', description: 'org-root/ls-testProfile3'});
+								                            items.push({id: 'org-root/ls-testProfile4', description: 'org-root/ls-testProfile4'});
+								                            items.push({id: 'org-root/ls-testProfile5', description: 'org-root/ls-testProfile5'});
+								                            items.push({id: 'org-root/ls-testProfile6', description: 'org-root/ls-testProfile6'});
+								                            items.push({id: 'org-root/ls-testProfile7', description: 'org-root/ls-testProfile7'});
+								                            */
                                                             //for testing only (end)
 
                                                             args.response.success({
@@ -14347,33 +14346,57 @@
                                             },
                                             action: function(args) {
                                                 $.ajax({
-                                                    url: createURL('associatesUcsProfileToBlade'),
+                                                    url: createURL('associatesUcsProfileToBlade'), //This API has been changed from sync to async at 7/25/2013
                                                     data: {
                                                         ucsmanagerid: args.context.ucsManagers[0].id,
                                                         profiledn: args.data.profiledn,
                                                         bladeid: args.context.blades[0].id
                                                     },
                                                     success: function(json) {
-                                                        /*
-                                                    	{
+                                                        //for testing only, comment it out before check in (begin)
+                                                    	json =                                         
+                                                        {
 														    "associateucsprofiletobladeresponse": {
-														        "ucsblade": {
-														            "id": "8f63030a-033c-458e-890f-b2c8863d9542",
-														            "ucsmanagerid": "9d8566c0-f870-4e89-9864-7a3e0b332558",
-														            "bladedn": "sys/chassis-1/blade-2"
-														        }
+														        "jobid": "dff5fa7f-e4a7-457b-92f1-2fede357e3d5"
 														    }
-														}   
-														*/                                                     	
+														};
+                                                    	//for testing only, comment it out before check in (end)
+                                                    	
+                                                    	var jid = json.associateucsprofiletobladeresponse.jobid;
                                                         args.response.success({
-                                                            data: {
-                                                                associatedProfileDn: args.data.profiledn
+                                                            _custom: {
+                                                                jobId: jid,
+                                                                getUpdatedItem: function(json) {                                                               	    
+                                                                	//for testing only, comment it out before check in (begin)
+                                                                	json = 
+                                                                	{
+                                                                	    "queryasyncjobresultresponse": {
+                                                                	        "accountid": "b24f6866-f0ca-11e2-8c16-d637902e3581",
+                                                                	        "userid": "b24f76df-f0ca-11e2-8c16-d637902e3581",
+                                                                	        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
+                                                                	        "jobstatus": 1,
+                                                                	        "jobprocstatus": 0,
+                                                                	        "jobresultcode": 0,
+                                                                	        "jobresulttype": "object",
+                                                                	        "jobresult": {
+                                                                	            "ucsblade": {
+                                                                	                "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
+                                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                                	                "bladedn": "sys/chassis-1/blade-1"
+                                                                	            }
+                                                                	        },
+                                                                	        "created": "2013-07-25T15:10:13-0700",
+                                                                	        "jobid": "dff5fa7f-e4a7-457b-92f1-2fede357e3d5"
+                                                                	    }
+                                                                	}
+	                                                               	//for testing only, comment it out before check in (end)
+                                                                	                                                               	    
+                                                                    return json.queryasyncjobresultresponse.jobresult.ucsblade;
+                                                                }
                                                             }
-                                                        });
+                                                        });                                                    	
                                                     }
                                                 });
-
-                                                //args.response.success({data: { associatedProfileDn: args.data.profiledn }}); //for testing only
                                             },
                                             notification: {
                                                 poll: function(args) {
