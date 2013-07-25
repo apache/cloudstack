@@ -423,11 +423,26 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String destFileFullPath = destFile.getAbsolutePath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension();
             s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
-            // template post processing
-            QCOW2Processor processor = new QCOW2Processor();
-            Map<String, Object> params = new HashMap<String, Object>();
-            params.put(StorageLayer.InstanceConfigKey, _storage);
             try {
+                // generate template.properties file
+                String metaFileName = destFile.getAbsolutePath() + File.separator + "template.properties";
+                _storage.create(destFile.getAbsolutePath(), "template.properties");
+                File metaFile = new File(metaFileName);
+                FileWriter writer = new FileWriter(metaFile);
+                BufferedWriter bufferWriter = new BufferedWriter(writer);
+                bufferWriter.write("uniquename=" + destData.getName());
+                bufferWriter.write("\n");
+                bufferWriter.write("filename=" + templateName + "." + ImageFormat.QCOW2.getFileExtension());
+                bufferWriter.write("\n");
+                long size = this._storage.getSize(destFileFullPath);
+                bufferWriter.write("size=" + size);
+                bufferWriter.close();
+                writer.close();
+                // template post processing
+                QCOW2Processor processor = new QCOW2Processor();
+                Map<String, Object> params = new HashMap<String, Object>();
+                params.put(StorageLayer.InstanceConfigKey, _storage);
+
                 processor.configure("qcow2 processor", params);
                 String destPath = destFile.getAbsolutePath();
                 FormatInfo info = processor.process(destPath, null, templateName);
