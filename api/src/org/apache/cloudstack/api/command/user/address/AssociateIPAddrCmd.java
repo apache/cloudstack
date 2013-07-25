@@ -51,6 +51,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
@@ -211,6 +212,20 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             }
        } else if (networkId != null){
             Network network = _networkService.getNetwork(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by network id specified");
+            }
+
+            NetworkOffering offering = _configService.getNetworkOffering(network.getNetworkOfferingId());
+
+            DataCenter zone = _configService.getZone(network.getDataCenterId());
+            if (zone.getNetworkType() == NetworkType.Basic && offering.getElasticIp() && offering.getElasticLb()) {
+                // Since the basic zone network is owned by 'Root' domain, domain access checkers will fail for the
+                // accounts in non-root domains while acquiring public IP. So add an exception for the 'Basic' zone
+                // shared network with EIP/ELB service.
+                return caller.getAccountId();
+            }
+
             return network.getAccountId();
         } else if (vpcId != null) {
             Vpc vpc = _vpcService.getVpc(getVpcId());
