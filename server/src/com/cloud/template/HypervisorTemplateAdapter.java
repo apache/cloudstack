@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.template;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -111,25 +113,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-
-        if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
-                &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz"))
-                &&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
-                &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
-                &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
-                &&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
-                &&(!url.toLowerCase().endsWith("tar"))&&(!url.toLowerCase().endsWith("tar.zip"))
-                &&(!url.toLowerCase().endsWith("tar.bz2"))&&(!url.toLowerCase().endsWith("tar.gz"))
-                &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
-            throw new InvalidParameterValueException("Please specify a valid "+ cmd.getFormat().toLowerCase());
+        String path = null;
+        try {
+            URL str = new URL(url);
+            path = str.getPath();
+        } catch (MalformedURLException ex) {
+            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
         }
 
-        if ((cmd.getFormat().equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
-                || (cmd.getFormat().equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
-                || (cmd.getFormat().equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
-                || (cmd.getFormat().equalsIgnoreCase("tar") && (!url.toLowerCase().endsWith("tar") && !url.toLowerCase().endsWith("tar.zip") && !url.toLowerCase().endsWith("tar.bz2") && !url.toLowerCase().endsWith("tar.gz")))
-                || (cmd.getFormat().equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + cmd.getFormat().toLowerCase());
+        try {
+            checkFormat(cmd.getFormat(), url);
+        } catch (InvalidParameterValueException ex) {
+            checkFormat(cmd.getFormat(), path);
         }
 
         UriUtils.validateUrl(url);
@@ -139,6 +134,41 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         return profile;
     }
+
+    private void checkFormat(String format, String url) {
+        if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
+                &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz"))
+                &&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
+                &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
+                &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
+                &&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
+                &&(!url.toLowerCase().endsWith("tar"))&&(!url.toLowerCase().endsWith("tar.zip"))
+                &&(!url.toLowerCase().endsWith("tar.bz2"))&&(!url.toLowerCase().endsWith("tar.gz"))
+                &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
+            throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
+        }
+
+        if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd")
+                && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url
+                .toLowerCase().endsWith("vhd.gz")))
+                || (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2")
+                        && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url
+                        .toLowerCase().endsWith("qcow2.gz")))
+                || (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova")
+                        && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url
+                        .toLowerCase().endsWith("ova.gz")))
+                || (format.equalsIgnoreCase("tar") && (!url.toLowerCase().endsWith("tar")
+                        && !url.toLowerCase().endsWith("tar.zip") && !url.toLowerCase().endsWith("tar.bz2") && !url
+                        .toLowerCase().endsWith("tar.gz")))
+                || (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase()
+                        .endsWith("raw")))) {
+            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url
+                    + " is an invalid for the format " + format.toLowerCase());
+        }
+
+
+    }
+
 
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
