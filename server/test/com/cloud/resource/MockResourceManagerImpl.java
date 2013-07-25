@@ -107,7 +107,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      */
     @Override
     public Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState,
-                                 String managedstate, Float memoryOvercommitRaito, Float cpuOvercommitRatio) {
+                                 String managedstate) {
         // TODO Auto-generated method stub
         return null;
     }

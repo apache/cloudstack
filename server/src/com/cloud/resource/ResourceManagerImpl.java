@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ConfigurationServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -214,6 +215,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     PlannerHostReservationDao _plannerHostReserveDao;
     @Inject
     protected DedicatedResourceDao           _dedicatedDao;
+    @Inject
+    protected ConfigurationServer _configServer;
 
     protected List<? extends Discoverer> _discoverers;
 
@@ -479,8 +482,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         clusterId = cluster.getId();
         result.add(cluster);
 
-        ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", Float.toString(cmd.getCpuOvercommitRatio()));
-        ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRatio()));
+        ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", _configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), null, null));
+        ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", _configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), null, null));
         _clusterDetailsDao.persist(cluster_detail_cpu);
         _clusterDetailsDao.persist(cluster_detail_ram);
 
@@ -494,20 +497,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("username", username);
         details.put("password", password);
         _clusterDetailsDao.persist(cluster.getId(), details);
-
-        _clusterDetailsDao.persist(cluster_detail_cpu);
-        _clusterDetailsDao.persist(cluster_detail_ram);
-        // create a new entry only if the overcommit ratios are greater than 1.
-        if (cmd.getCpuOvercommitRatio().compareTo(1f) > 0) {
-            cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", Float.toString(cmd.getCpuOvercommitRatio()));
-            _clusterDetailsDao.persist(cluster_detail_cpu);
-        }
-
-
-        if(cmd.getMemoryOvercommitRatio().compareTo(1f) > 0) {
-             cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRatio()));
-            _clusterDetailsDao.persist(cluster_detail_ram);
-        }
 
         boolean success = false;
         try {
@@ -998,8 +987,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     @DB
-    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState, String managedstate,
-            Float memoryovercommitratio, Float cpuovercommitratio) {
+    public Cluster updateCluster(Cluster clusterToUpdate, String clusterType, String hypervisor, String allocationState, String managedstate) {
 
         ClusterVO cluster = (ClusterVO) clusterToUpdate;
         // Verify cluster information and update the cluster if needed
@@ -1064,19 +1052,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 doUpdate = true;
             }
         }
-
-
-       if (memoryovercommitratio != null) {
-           ClusterDetailsVO memory_detail = _clusterDetailsDao.findDetail(cluster.getId(),"memoryOvercommitRatio");
-           memory_detail.setValue(Float.toString(memoryovercommitratio));
-           _clusterDetailsDao.update(memory_detail.getId(),memory_detail);
-       }
-
-       if (cpuovercommitratio != null) {
-            ClusterDetailsVO cpu_detail = _clusterDetailsDao.findDetail(cluster.getId(),"cpuOvercommitRatio");
-            cpu_detail.setValue(Float.toString(cpuovercommitratio));
-            _clusterDetailsDao.update(cpu_detail.getId(),cpu_detail);
-       }
 
         if (doUpdate) {
             Transaction txn = Transaction.currentTxn();

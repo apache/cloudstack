@@ -313,6 +313,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
+    private Set<String> overprovisioningFactorsForValidation;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -326,6 +327,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
+        overProvisioningFactorsForValidation();
         return true;
     }
 
@@ -371,6 +373,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
 
 
+    }
+
+    private void overProvisioningFactorsForValidation() {
+        overprovisioningFactorsForValidation = new HashSet<String>();
+        overprovisioningFactorsForValidation.add(Config.MemOverprovisioningFactor.key());
+        overprovisioningFactorsForValidation.add(Config.CPUOverprovisioningFactor.key());
+        overprovisioningFactorsForValidation.add(Config.StorageOverprovisioningFactor.key());
     }
 
     @Override
@@ -688,11 +697,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 s_logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
             }
-            if ((name.equalsIgnoreCase("cpu.overprovisioning.factor") || name
-                    .equalsIgnoreCase("mem.overprovisioning.factor")) && value == null) {
-                s_logger.error("value cannot be null for cpu.overprovisioning.factor/mem.overprovisioning.factor");
-                return "value cannot be null for cpu.overprovisioning.factor/mem.overprovisioning.factor";
-            }
         }
 
         Class<?> type = c.getType();
@@ -701,9 +705,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (type.equals(Boolean.class)) {
                 return "Please enter either 'true' or 'false'.";
             }
+            if (overprovisioningFactorsForValidation.contains(name)) {
+                String msg = "value cannot be null for the parameter " + name;
+                s_logger.error(msg);
+                return msg;
+            }
             return null;
         }
+
         value = value.trim();
+        try {
+            if (overprovisioningFactorsForValidation.contains(name) && (Float.parseFloat(value) < 1f)) {
+                String msg = name + " should be greater than or equal to 1";
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        } catch (NumberFormatException e) {
+            String msg = "There was an error trying to parse the float value for: " + name;
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
 
         if (type.equals(Boolean.class)) {
             if (!(value.equals("true") || value.equals("false"))) {
