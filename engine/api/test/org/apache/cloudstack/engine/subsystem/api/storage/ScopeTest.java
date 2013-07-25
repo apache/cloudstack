@@ -48,9 +48,9 @@ public class ScopeTest {
 
     @Test
     public void testHostScope() {
-        HostScope hostScope = new HostScope(1L, 1L);
-        HostScope hostScope2 = new HostScope(1L, 1L);
-        HostScope hostScope3 = new HostScope(2L, 1L);
+        HostScope hostScope = new HostScope(1L, 1L, 1L);
+        HostScope hostScope2 = new HostScope(1L, 1L, 1L);
+        HostScope hostScope3 = new HostScope(2L, 1L, 1L);
 
         Assert.assertTrue(hostScope.isSameScope(hostScope2));
         Assert.assertFalse(hostScope.isSameScope(hostScope3));

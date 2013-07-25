@@ -22,11 +22,13 @@ import com.cloud.storage.ScopeType;
 
 public class HostScope extends AbstractScope {
     private Long hostId;
+    private Long clusterId;
     private Long zoneId;
 
-    public HostScope(Long hostId, Long zoneId) {
+    public HostScope(Long hostId, Long clusterId, Long zoneId) {
         super();
         this.hostId = hostId;
+        this.clusterId = clusterId;
         this.zoneId = zoneId;
     }
 
@@ -40,8 +42,11 @@ public class HostScope extends AbstractScope {
         return this.hostId;
     }
 
+    public Long getClusterId() {
+        return clusterId;
+    }
+
     public Long getZoneId() {
         return zoneId;
     }
-
 }
