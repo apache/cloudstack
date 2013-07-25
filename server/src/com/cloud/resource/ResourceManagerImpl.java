@@ -216,8 +216,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     PlannerHostReservationDao _plannerHostReserveDao;
     @Inject
     protected DedicatedResourceDao           _dedicatedDao;
-    @Inject
-    protected ConfigurationServer _configServer;
 
     protected List<? extends Discoverer> _discoverers;
 
@@ -463,7 +461,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         List<ClusterVO> result = new ArrayList<ClusterVO>();
 
-        long clusterId = 0;
         ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
         cluster.setHypervisorType(cmd.getHypervisor());
 
@@ -480,13 +477,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
-        clusterId = cluster.getId();
         result.add(cluster);
-
-        ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", _configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), null, null));
-        ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", _configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), null, null));
-        _clusterDetailsDao.persist(cluster_detail_cpu);
-        _clusterDetailsDao.persist(cluster_detail_ram);
 
         if (clusterType == Cluster.ClusterType.CloudManaged) {
             return result;
@@ -497,6 +488,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("url", url);
         details.put("username", username);
         details.put("password", password);
+        details.put("cpuOvercommitRatio", _configDao.getValue(Config.CPUOverprovisioningFactor.key()));
+        details.put("memoryOvercommitRatio", _configDao.getValue(Config.MemOverprovisioningFactor.key()));
         _clusterDetailsDao.persist(cluster.getId(), details);
 
         boolean success = false;
@@ -516,7 +509,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             List<HostVO> hosts = new ArrayList<HostVO>();
             Map<? extends ServerResource, Map<String, String>> resources = null;
-            resources = discoverer.find(dcId, podId, clusterId, uri, username, password, null);
+            resources = discoverer.find(dcId, podId, cluster.getId(), uri, username, password, null);
 
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
@@ -537,8 +530,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new DiscoveryException("Unable to add the external cluster");
         } finally {
             if (!success) {
-                _clusterDetailsDao.deleteDetails(clusterId);
-                _clusterDao.remove(clusterId);
+                _clusterDetailsDao.deleteDetails(cluster.getId());
+                _clusterDao.remove(cluster.getId());
             }
         }
     }
