@@ -14,47 +14,57 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.ovs;
+package com.cloud.agent.api;
 
 import com.cloud.agent.api.Command;
 
-public class OvsSetTagAndFlowCommand extends Command {
-    String vlans;
-    String vmName;
-    String seqno;
-    String tag;
-    Long vmId;
+public class OvsCreateTunnelCommand extends Command {
+	Integer key;
+	String remoteIp;
+	Long from;
+	Long to;
+	long networkId;
 
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
+	// for debug info
+	String fromIp;
 
-    public String getSeqNo() {
-        return seqno;
-    }
+	@Override
+	public boolean executeInSequence() {
+		return true;
+	}
 
-    public String getVlans() {
-        return vlans;
-    }
+	public OvsCreateTunnelCommand(String remoteIp, Integer key, Long from,
+			Long to, long networkId, String fromIp) {
+		this.remoteIp = remoteIp;
+		this.key = key;
+		this.from = from;
+		this.to = to;
+		this.networkId = networkId;
+		this.fromIp = fromIp;
+	}
 
-    public String getVmName() {
-        return vmName;
-    }
+	public Integer getKey() {
+		return key;
+	}
 
-    public Long getVmId() {
-        return vmId;
-    }
+	public String getRemoteIp() {
+		return remoteIp;
+	}
 
-    public String getTag() {
-        return tag;
-    }
+	public Long getFrom() {
+		return from;
+	}
 
-    public OvsSetTagAndFlowCommand(String vmName, String tag, String vlans, String seqno, Long vmId) {
-        this.vmName = vmName;
-        this.tag = tag;
-        this.vlans = vlans;
-        this.seqno = seqno;
-        this.vmId = vmId;
-    }
+	public Long getTo() {
+		return to;
+	}
+
+	public long getNetworkId() {
+		return networkId;
+	}
+
+	public String getFromIp() {
+		return fromIp;
+	}
+
 }

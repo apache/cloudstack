@@ -15,43 +15,44 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network.ovs;
+package com.cloud.agent.api;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public class OvsFetchInterfaceAnswer extends Answer {
-    String ip;
-    String netmask;
-    String mac;
-    String label;
+	String ip;
+	String netmask;
+	String mac;
+	String label;
 
-    public OvsFetchInterfaceAnswer(Command cmd, boolean success, String details) {
-        super(cmd, success, details);
-        this.label = ((OvsFetchInterfaceCommand)cmd).getLabel();
-    }
+	public OvsFetchInterfaceAnswer(Command cmd, boolean success, String details) {
+		super(cmd, success, details);
+		this.label = ((OvsFetchInterfaceCommand) cmd).getLabel();
+	}
 
-    public OvsFetchInterfaceAnswer(Command cmd, boolean success, String details, String ip, String netmask, String mac) {
-        super(cmd, success, details);
-        this.ip = ip;
-        this.netmask = netmask;
-        this.mac = mac;
-        this.label = ((OvsFetchInterfaceCommand)cmd).getLabel();
-    }
+	public OvsFetchInterfaceAnswer(Command cmd, boolean success,
+			String details, String ip, String netmask, String mac) {
+		super(cmd, success, details);
+		this.ip = ip;
+		this.netmask = netmask;
+		this.mac = mac;
+		this.label = ((OvsFetchInterfaceCommand) cmd).getLabel();
+	}
 
-    public String getIp() {
-        return ip;
-    }
+	public String getIp() {
+		return ip;
+	}
 
-    public String getNetmask() {
-        return netmask;
-    }
+	public String getNetmask() {
+		return netmask;
+	}
 
-    public String getMac() {
-        return mac;
-    }
+	public String getMac() {
+		return mac;
+	}
 
-    public String getLabel() {
-        return label;
-    }
+	public String getLabel() {
+		return label;
+	}
 }

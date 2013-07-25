@@ -14,23 +14,48 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.ovs;
+package com.cloud.agent.api;
 
 import com.cloud.agent.api.Command;
 
-public class OvsDeleteFlowCommand extends Command {
-    String vmName;
+public class OvsSetTagAndFlowCommand extends Command {
+	String vlans;
+	String vmName;
+	String seqno;
+	String tag;
+	Long vmId;
 
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
+	@Override
+	public boolean executeInSequence() {
+		return true;
+	}
 
-    public String getVmName() {
-        return vmName;
-    }
+	public String getSeqNo() {
+		return seqno;
+	}
 
-    public OvsDeleteFlowCommand(String vmName) {
-        this.vmName = vmName;
-    }
+	public String getVlans() {
+		return vlans;
+	}
+
+	public String getVmName() {
+		return vmName;
+	}
+
+	public Long getVmId() {
+		return vmId;
+	}
+
+	public String getTag() {
+		return tag;
+	}
+
+	public OvsSetTagAndFlowCommand(String vmName, String tag, String vlans,
+			String seqno, Long vmId) {
+		this.vmName = vmName;
+		this.tag = tag;
+		this.vlans = vlans;
+		this.seqno = seqno;
+		this.vmId = vmId;
+	}
 }

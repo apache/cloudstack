@@ -14,14 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.ovs;
 
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.host.Host;
+package com.cloud.agent.api;
 
-public class StartupOvsCommand extends StartupCommand {
+import com.cloud.agent.api.Command;
 
-	public StartupOvsCommand() {
-		super(Host.Type.L2Networking);
+public class OvsFetchInterfaceCommand extends Command {
+	String label;
+
+	@Override
+	public boolean executeInSequence() {
+		return true;
 	}
+
+	public OvsFetchInterfaceCommand(String label) {
+		this.label = label;
+	}
+
+	public String getLabel() {
+		return label;
+	}
+
 }

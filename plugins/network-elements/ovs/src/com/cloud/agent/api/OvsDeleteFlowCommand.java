@@ -14,37 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.ovs;
+package com.cloud.agent.api;
 
 import com.cloud.agent.api.Command;
 
-public class OvsDestroyTunnelCommand extends Command {
+public class OvsDeleteFlowCommand extends Command {
+	String vmName;
 
-    Long networkId;
-    Integer key;
-    String inPortName;
+	@Override
+	public boolean executeInSequence() {
+		return true;
+	}
 
-    public OvsDestroyTunnelCommand(Long networkId, Integer key, String inPortName) {
-        this.networkId = networkId;
-        this.inPortName = inPortName;
-        this.key = key;
-    }
+	public String getVmName() {
+		return vmName;
+	}
 
-    public Long getNetworkId() {
-        return networkId;
-    }
-
-    public String getInPortName() {
-        return inPortName;
-    }
-
-    public Integer getKey() {
-        return key;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
+	public OvsDeleteFlowCommand(String vmName) {
+		this.vmName = vmName;
+	}
 }

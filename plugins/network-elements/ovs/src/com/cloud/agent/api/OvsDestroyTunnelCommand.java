@@ -14,25 +14,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-package com.cloud.network.ovs;
+package com.cloud.agent.api;
 
 import com.cloud.agent.api.Command;
 
-public class OvsFetchInterfaceCommand extends Command {
-    String label;
+public class OvsDestroyTunnelCommand extends Command {
 
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
+	Long networkId;
+	Integer key;
+	String inPortName;
 
-    public OvsFetchInterfaceCommand(String label) {
-        this.label = label;
-    }
+	public OvsDestroyTunnelCommand(Long networkId, Integer key,
+			String inPortName) {
+		this.networkId = networkId;
+		this.inPortName = inPortName;
+		this.key = key;
+	}
 
-    public String getLabel() {
-        return label;
-    }
+	public Long getNetworkId() {
+		return networkId;
+	}
 
+	public String getInPortName() {
+		return inPortName;
+	}
+
+	public Integer getKey() {
+		return key;
+	}
+
+	@Override
+	public boolean executeInSequence() {
+		return true;
+	}
 }

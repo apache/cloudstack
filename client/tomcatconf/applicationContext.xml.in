@@ -266,7 +266,6 @@
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
   <bean id="ovsTunnelInterfaceDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" />
   <bean id="ovsTunnelNetworkDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" />
-  <bean id="ovsDeviceDaoImpl" class="com.cloud.network.ovs.dao.OvsDeviceDaoImpl" />
   <bean id="ovsNicMappingDaoImpl" class="com.cloud.network.ovs.dao.OvsNicMappingDaoImpl" />
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />

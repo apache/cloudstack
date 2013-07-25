@@ -14,22 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.ovs;
 
-public class OvsApiException extends Exception {
+package com.cloud.agent.api;
 
-	public OvsApiException() {
+import com.cloud.agent.api.Command;
+
+public class OvsDestroyBridgeCommand extends Command {
+
+	Long networkId;
+	Integer key;
+
+	public OvsDestroyBridgeCommand(Long networkId, Integer key) {
+		this.networkId = networkId;
+		this.key = key;
 	}
 
-	public OvsApiException(String message) {
-		super(message);
+	public Long getNetworkId() {
+		return networkId;
 	}
 
-	public OvsApiException(Throwable cause) {
-		super(cause);
+	public Integer getKey() {
+		return key;
 	}
 
-	public OvsApiException(String message, Throwable cause) {
-		super(message, cause);
+	@Override
+	public boolean executeInSequence() {
+		return true;
 	}
 }

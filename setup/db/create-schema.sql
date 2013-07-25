@@ -196,7 +196,6 @@ DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
 DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
 DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
-DROP TABLE IF EXISTS `cloud`.`ovs_devices`;
 DROP TABLE IF EXISTS `cloud`.`ovs_nic_map`;
 
 CREATE TABLE `cloud`.`version` (
@@ -2475,17 +2474,6 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY(`nic`) REFERENCES `nics`(`uuid`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ovs_devices` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `uuid` varchar(255) UNIQUE,
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which ovs device is added',
-  `device_name` varchar(255) NOT NULL COMMENT 'name of the ovs device',
-  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the ovs device',
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_ovs_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ovs_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`ovs_nic_map` (

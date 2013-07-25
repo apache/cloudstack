@@ -14,37 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.agent.api;
 
-package com.cloud.network.ovs;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.host.Host;
 
-import com.cloud.agent.api.Command;
+public class StartupOvsCommand extends StartupCommand {
 
-public class OvsSetupBridgeCommand extends Command {
-    Integer key;
-    Long hostId;
-    Long networkId;
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
-    public OvsSetupBridgeCommand(Integer key, Long hostId, Long networkId) {
-        this.key = key;
-        this.hostId = hostId;
-        this.networkId = networkId;
-    }
-
-    public Integer getKey() {
-        return key;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public Long getNetworkId() {
-        return networkId;
-    }
-
+	public StartupOvsCommand() {
+		super(Host.Type.L2Networking);
+	}
 }
