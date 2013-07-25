@@ -17,6 +17,8 @@
 # under the License.
 
 import sys, getopt, json, os, base64
+from fcntl import flock, LOCK_EX, LOCK_UN
+
 
 def main(argv):
     fpath =  ''
@@ -83,20 +85,37 @@ def createfile(ip, folder, file, data):
         if data is not None:
             data = base64.b64decode(data)
 
+    fh = open(dest, "w")
+    exflock(fh)
     if data is not None:
-        open(dest, "w").write(data)
+        fh.write(data)
     else:
-        open(dest, "w").write("")
+        fh.write("")
+    unflock(fh)
+    fh.close()
     os.chmod(dest, 0644)
 
     if folder == "metadata" or folder == "meta-data":
-        if not os.path.exists(metamanifestdir):
+        try:
             os.makedirs(metamanifestdir, 0755)
+        except OSError as e:
+            # error 17 is already exists, we do it this way for concurrency
+            if e.errno != 17:
+                print "failed to make directories " + metamanifestdir + " due to :" +e.strerror
+                sys.exit(1)
         if os.path.exists(metamanifest):
-            if not file in open(metamanifest).read():
-                open(metamanifest, "a").write(file + '\n')
+            fh = open(metamanifest, "r+a")
+            exflock(fh) 
+            if not file in fh.read():
+                fh.write(file + '\n')
+            unflock(fh)
+            fh.close()
         else:
-            open(metamanifest, "w").write(file + '\n')
+            fh = open(metamanifest, "w")
+            exflock(fh)
+            fh.write(file + '\n')
+            unflock(fh)
+            fh.close()
 
     if os.path.exists(metamanifest):
         os.chmod(metamanifest, 0644)
@@ -106,35 +125,80 @@ def htaccess(ip, folder, file):
     htaccessFolder = "/var/www/html/latest"
     htaccessFile = htaccessFolder + "/.htaccess"
 
-    if not os.path.exists(htaccessFolder):
+    try:
         os.mkdir(htaccessFolder,0755)
+    except OSError as e:
+        # error 17 is already exists, we do it this way for concurrency
+        if e.errno != 17:
+            print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
+            sys.exit(1)
 
     if os.path.exists(htaccessFile):
-        if not entry in open(htaccessFile).read():
-            open(htaccessFile, "a").write(entry + '\n')
+        fh = open(htaccessFile, "r+a")
+        exflock(fh)
+        if not entry in fh.read():
+            fh.write(entry + '\n')
+        unflock(fh) 
+        fh.close()
+    else:
+        fh = open(htaccessFile, "w")
+        exflock(fh)
+        fh.write("Options +FollowSymLinks\nRewriteEngine On\n\n")  
+        fh.write(entry + '\n')
+        unflock(fh)
+        fh.close()
 
     entry="Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
     htaccessFolder = "/var/www/html/" + folder + "/" + ip
     htaccessFile = htaccessFolder+"/.htaccess"
 
-    if not os.path.exists(htaccessFolder):
+    try:
         os.makedirs(htaccessFolder,0755)
+    except OSError as e:
+        # error 17 is already exists, we do it this way for sake of concurrency
+        if e.errno != 17:
+            print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
+            sys.exit(1)
 
-    open(htaccessFile, "w").write(entry + '\n')
+    fh = open(htaccessFile, "w")
+    exflock(fh)
+    fh.write(entry + '\n')
+    unflock(fh)
+    fh.close()
 
     if folder == "metadata" or folder == "meta-data":
-        entry="RewriteRule ^meta-data/(.+)$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
+        entry = "RewriteRule ^meta-data/(.+)$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
         htaccessFolder = "/var/www/html/latest"
         htaccessFile = htaccessFolder + "/.htaccess"
 
-        if not entry in open(htaccessFile).read():
-            open(htaccessFile, "a").write(entry + '\n')
+        fh = open(htaccessFile, "r+a")
+        exflock(fh)
+        if not entry in fh.read():
+            fh.write(entry + '\n')
 
-        entry="RewriteRule ^meta-data/$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
+        entry = "RewriteRule ^meta-data/$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
 
-        if not entry in open(htaccessFile).read():
-            open(htaccessFile, "a").write(entry + '\n')
+        fh.seek(0)
+        if not entry in fh.read():
+            fh.write(entry + '\n')
+        unflock(fh)
+        fh.close()
 
+def exflock(file):
+    try:
+        flock(file, LOCK_EX)
+    except IOError as e:
+        print "failed to lock file" + file.name + " due to : " + e.strerror
+        sys.exit(1)
+    return True
+    
+def unflock(file):
+    try:
+        flock(file, LOCK_UN)
+    except IOError:
+        print "failed to unlock file" + file.name + " due to : " + e.strerror
+        sys.exit(1)
+    return True
 
 if __name__ == "__main__":
     main(sys.argv[1:])
