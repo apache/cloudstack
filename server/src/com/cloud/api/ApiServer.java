@@ -745,6 +745,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+            } else {
+                CallContext.register(user, account);
             }
             return equalSig;
         } catch (ServerApiException ex){
