@@ -245,8 +245,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         _defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
-        if(_defaultSystemVmNicAdapterType == null)
+        if(_defaultSystemVmNicAdapterType == null) {
             _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
+        }
 
         _additionalPortRangeStart = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
         if(_additionalPortRangeStart > 65535) {
@@ -263,19 +264,23 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
         _reserveCpu = _configDao.getValue(Config.VmwareReserveCpu.key());
-        if(_reserveCpu == null || _reserveCpu.isEmpty())
+        if(_reserveCpu == null || _reserveCpu.isEmpty()) {
             _reserveCpu = "false";
+        }
         _reserveMem = _configDao.getValue(Config.VmwareReserveMem.key());
-        if(_reserveMem == null || _reserveMem.isEmpty())
+        if(_reserveMem == null || _reserveMem.isEmpty()) {
             _reserveMem = "false";
+        }
 
         _recycleHungWorker = _configDao.getValue(Config.VmwareRecycleHungWorker.key());
-        if(_recycleHungWorker == null || _recycleHungWorker.isEmpty())
+        if(_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {
             _recycleHungWorker = "false";
+        }
 
         _rootDiskController = _configDao.getValue(Config.VmwareRootDiskControllerType.key());
-        if(_rootDiskController == null || _rootDiskController.isEmpty())
+        if(_rootDiskController == null || _rootDiskController.isEmpty()) {
             _rootDiskController = DiskControllerType.ide.toString();
+        }
 
         s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
@@ -359,8 +364,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
             String hostInventoryPath) throws Exception {
         ManagedObjectReference mor = null;
-        if (serviceContext != null)
+        if (serviceContext != null) {
             mor = serviceContext.getHostMorByPath(hostInventoryPath);
+        }
         String privateTrafficLabel = null;
         privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
         if (privateTrafficLabel == null) {
@@ -459,11 +465,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getSecondaryStorageStoreUrl(long dcId) {
 
+        String secUrl = null;
         DataStore secStore = _dataStoreMgr.getImageStore(dcId);
-        if(secStore != null)
-            return secStore.getUri();
+        if (secStore != null) {
+            secUrl = secStore.getUri();
+        }
 
-        return null;
+        if (secUrl == null) {
+            // we are using non-NFS image store, then use cache storage instead
+            s_logger.info("Secondary storage is not NFS, we need to use cache storage");
+            DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
+            if (cacheStore != null) {
+                secUrl = cacheStore.getUri();
+            } else {
+                s_logger.warn("No cache storage is found when non-NFS secondary storage is used");
+            }
+        }
+
+        return secUrl;
     }
 
     @Override
@@ -478,8 +497,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public String getManagementPortGroupByHost(HostMO hostMo) throws Exception {
-        if(hostMo.getHostType() == VmwareHostType.ESXi)
+        if(hostMo.getHostType() == VmwareHostType.ESXi) {
             return  _managemetPortGroupName;
+        }
         return _serviceConsoleName;
     }
 
@@ -530,7 +550,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         _configServer.updateKeyPairs();
 
                         s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " + srcIso.getAbsolutePath() +
-                        	", destination: " + destIso.getAbsolutePath());
+                                ", destination: " + destIso.getAbsolutePath());
                         try {
                             FileUtil.copyfile(srcIso, destIso);
                         } catch(IOException e) {
@@ -541,8 +561,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             throw new CloudRuntimeException(msg);
                         }
                     } else {
-                        if(s_logger.isTraceEnabled())
+                        if(s_logger.isTraceEnabled()) {
                             s_logger.trace("SystemVM ISO file " + destIso.getPath() + " already exists");
+                        }
                     }
                 } finally {
                     lock.unlock();
@@ -579,7 +600,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         assert(isoFile != null);
         if(!isoFile.exists()) {
-        	s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
+            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
         }
         return isoFile;
     }
@@ -596,7 +617,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         assert(keyFile != null);
         if(!keyFile.exists()) {
-        	s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
         return keyFile;
     }
@@ -957,11 +978,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             if (associatedVmwareDc.getVcenterHost().equalsIgnoreCase(vCenterHost) &&
                     associatedVmwareDc.getVmwareDatacenterName().equalsIgnoreCase(vmwareDcName)) {
                 s_logger.info("Ignoring API call addVmwareDc, because VMware DC " + vCenterHost + "/" + vmwareDcName +
-                              " is already associated with specified zone with id " + zoneId);
+                        " is already associated with specified zone with id " + zoneId);
                 return associatedVmwareDc;
             } else {
                 throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter. " +
-                                                "Only 1 VMware DC can be associated with a zone.");
+                        "Only 1 VMware DC can be associated with a zone.");
             }
         }
         // Zone validation to check if the zone already has resources.
@@ -1051,8 +1072,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
             throw new CloudRuntimeException(msg);
         } finally {
-            if (context != null)
+            if (context != null) {
                 context.close();
+            }
             context = null;
         }
         return vmwareDc;
@@ -1129,8 +1151,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         } finally {
-            if (context != null)
+            if (context != null) {
                 context.close();
+            }
             context = null;
         }
         return true;

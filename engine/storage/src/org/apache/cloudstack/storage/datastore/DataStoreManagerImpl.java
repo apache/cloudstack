@@ -90,6 +90,16 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
+    public DataStore getImageCacheStore(long zoneId) {
+        List<DataStore> stores = getImageCacheStores(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(stores);
+        return stores.get(0);
+    }
+
+    @Override
     public List<DataStore> listImageStores() {
         return imageDataStoreMgr.listImageStores();
     }
