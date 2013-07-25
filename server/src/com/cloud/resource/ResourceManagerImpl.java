@@ -479,6 +479,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         result.add(cluster);
 
         if (clusterType == Cluster.ClusterType.CloudManaged) {
+            Map<String, String> details = new HashMap<String, String>();
+            details.put("cpuOvercommitRatio", _configDao.getValue(Config.CPUOverprovisioningFactor.key()));
+            details.put("memoryOvercommitRatio", _configDao.getValue(Config.MemOverprovisioningFactor.key()));
+            _clusterDetailsDao.persist(cluster.getId(), details);
             return result;
         }
 

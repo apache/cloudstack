@@ -189,8 +189,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             if (result) {
                 //snapshot is deleted on backup storage, need to delete it on primary storage
                 SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-                snapshotOnPrimary.setState(State.Destroyed);
-                snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+                if (snapshotOnPrimary != null) {
+                    snapshotOnPrimary.setState(State.Destroyed);
+                    snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+                }
             }
         } catch (Exception e) {
             s_logger.debug("Failed to delete snapshot: ", e);

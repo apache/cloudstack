@@ -783,8 +783,13 @@ public class ApiDBUtils {
         return _clusterDao.findById(clusterId);
     }
 
-    public static ClusterDetailsVO findClusterDetails(long clusterId, String name){
-         return _clusterDetailsDao.findDetail(clusterId,name);
+    public static String findClusterDetails(long clusterId, String name){
+        ClusterDetailsVO detailsVO = _clusterDetailsDao.findDetail(clusterId,name);
+        if (detailsVO != null) {
+            return detailsVO.getValue();
+        }
+
+        return null;
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {

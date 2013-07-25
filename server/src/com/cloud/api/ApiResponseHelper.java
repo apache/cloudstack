@@ -979,10 +979,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         clusterResponse.setManagedState(cluster.getManagedState().toString());
-        String cpuOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"cpuOvercommitRatio").getValue();
-        String memoryOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"memoryOvercommitRatio").getValue();
+        String cpuOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(),"cpuOvercommitRatio");
+        String memoryOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(),"memoryOvercommitRatio");
         clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
         clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
+
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
@@ -994,9 +995,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
 
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * Float.parseFloat(cpuOvercommitRatio))));
+                    if (cpuOvercommitRatio != null) {
+                        capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * Float.parseFloat(cpuOvercommitRatio))));
+                    }
                 } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_MEMORY) {
-                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * Float.parseFloat(memoryOvercommitRatio))));
+                    if (memoryOvercommitRatio != null) {
+                        capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * Float.parseFloat(memoryOvercommitRatio))));
+                    }
                 } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, null, cluster.getId());
                     capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
