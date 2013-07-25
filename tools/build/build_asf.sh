@@ -92,8 +92,14 @@ echo "found $currentversion"
 echo 'setting version numbers'
 mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -P baremetal -P ucs -Dnonoss
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
-perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' deps/XenServerJava/pom.xml
-perl -pi -e 's/$ENV{'currentversion'}/$ENV{'version'}/' tools/apidoc/pom.xml
+perl -pi -e "s/-SNAPSHOT//" deps/XenServerJava/pom.xml
+perl -pi -e "s/-SNAPSHOT//" tools/apidoc/pom.xml
+case "$currentversion" in 
+  *-SNAPSHOT*)
+    perl -pi -e 's/-SNAPSHOT//' debian/rules
+    ;;
+esac
+
 git clean -f
 
 echo 'commit changes'
@@ -157,5 +163,9 @@ if [ "$committosvn" == "yes" ]; then
   svn add apache-cloudstack-$version-src.tar.bz2.sha
   svn commit -m "Committing release candidate artifacts for $version to dist/dev/cloudstack in preparation for release vote"
 fi
+
+echo 'revert version changes'
+cd $sourcedir
+git revert --no-edit $commitsh
 
 echo "completed.  use commit-sh of $commitsh when starting the VOTE thread"
