@@ -94,7 +94,7 @@ public class ScriptTest {
     @Test
     public void testFindScript() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        String script = Script.findScript("/usr/bin", "cat");
-        Assert.assertNotNull("/usr/bin/cat shoud be there on linux",script);
+        String script = Script.findScript("/bin", "pwd");
+        Assert.assertNotNull("/bin/pwd shoud be there on linux",script);
     }
 }
