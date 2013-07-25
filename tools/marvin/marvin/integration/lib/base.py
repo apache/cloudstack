@@ -1074,7 +1074,7 @@ class PublicIPAddress:
 
     @classmethod
     def create(cls, apiclient, accountid=None, zoneid=None, domainid=None,
-               services=None, networkid=None, projectid=None, vpcid=None):
+               isportable=None, services=None, networkid=None, projectid=None, vpcid=None):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
 
@@ -1092,6 +1092,9 @@ class PublicIPAddress:
             cmd.domainid = domainid
         elif "domainid" in services:
             cmd.domainid = services["domainid"]
+
+        if isportable:
+            cmd.isportable = isportable
 
         if networkid:
             cmd.networkid = networkid
@@ -2271,7 +2274,7 @@ class PortablePublicIpRange:
         cmd.regionid = services["regionid"]
         cmd.vlan = services["vlan"]
 
-        return PortablePublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
+        return PortablePublicIpRange(apiclient.createPortableIpRange(cmd).__dict__)
 
     def delete(self, apiclient):
         """Delete portable IpRange"""
