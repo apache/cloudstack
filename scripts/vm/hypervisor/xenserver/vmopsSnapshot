@@ -321,7 +321,7 @@ def umount(localDir):
     util.SMlog("Successfully unmounted " + localDir)
     return
 
-def mountSnapshotsDir(secondaryStorageMountPath, localMountPoint, path):
+def mountSnapshotsDir(secondaryStorageMountPath, localMountPointPath, path):
     # The aim is to mount secondaryStorageMountPath on 
     # And create <accountId>/<instanceId> dir on it, if it doesn't exist already.
     # Assuming that secondaryStorageMountPath  exists remotely
