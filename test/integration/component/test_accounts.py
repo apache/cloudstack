@@ -915,7 +915,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg", "needle"])
     def test_01_template_hierarchy(self):
         """Test to verify template at same level in hierarchy"""
 
@@ -1637,7 +1637,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator"])
     def test_forceDeleteDomain(self):
-        """ Test delete domain without force option"""
+        """ Test delete domain with force option"""
 
         # Steps for validations
         # 1. create a domain DOM
@@ -1784,16 +1784,9 @@ class TestDomainForceRemove(cloudstackTestCase):
         self.debug("Waiting for account.cleanup.interval" +
                    " to cleanup any remaining resouces")
 
-        configurations = Configurations.list(
-                                            self.apiclient,
-                                            name="account.cleanup.interval",
-                                            listall=True
-                                            )
-        self.debug("account.cleanup.interval: %s" %
-                                            int(configurations[0].value))
-        # Sleep to ensure that all resources are deleted
-        time.sleep(int(configurations[0].value) * 2)
-        self.debug("Checking if the resources in domain are deleted or not..")
+        # Sleep 2*account.gc to ensure that all resources are deleted
+        wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*2)
+        self.debug("Checking if the resources in domain are deleted")
         with self.assertRaises(cloudstackAPIException):
             Account.list(
                         self.apiclient,
@@ -1805,7 +1798,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
     @attr(tags=["domains", "advanced", "advancedns", "simulator"])
     def test_DeleteDomain(self):
-        """ Test delete domain with force option"""
+        """ Test delete domain without force option"""
 
         # Steps for validations
         # 1. create a domain DOM
@@ -1827,7 +1820,6 @@ class TestDomainForceRemove(cloudstackTestCase):
                                 self.services["domain"],
                                 parentdomainid=self.domain.id
                                 )
-        self.cleanup.append(domain)
         self.debug("Domain: %s is created successfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")
