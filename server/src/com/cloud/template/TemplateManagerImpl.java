@@ -508,8 +508,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 });
             } else {
-                s_logger.info("Skip loading template " + template.getId() + " into primary storage " + pool.getId() + " as pool zone "
-                        + pool.getDataCenterId() + " is ");
+                s_logger.info("Skip loading template " + template.getId() + " into primary storage " + pool.getId() + " as pool zone " + pool.getDataCenterId()
+                        + " is different from the requested zone " + zoneId);
             }
         }
     }
