@@ -3011,19 +3011,9 @@ class AffinityGroup:
     def update(self, apiclient):
         pass
 
-    @classmethod
-    def delete(cls, apiclient, name=None, id=None, account=None,
-               domainid=None):
+    def delete(self, apiclient):
         cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
-        if id is not None:
-            cmd.id = id
-        if name is not None:
-            cmd.name = name
-        if account is not None:
-            cmd.account = account
-        if domainid is not None:
-            cmd.domainid = domainid
-
+        cmd.id = self.id
         return apiclient.deleteAffinityGroup(cmd)
 
     @classmethod
