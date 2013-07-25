@@ -44,78 +44,30 @@ class Services:
     def __init__(self):
         self.services = {
             "account": {
-                "email": "test@test.com",
-                "firstname": "test",
-                "lastname": "t",
-                "username": "test",
-                "password": "password",
+                "email": "rmurphy@cloudstack.org",
+                "firstname": "Ryan",
+                "lastname": "Murphy",
+                "username": "rmurphy",
+                "password": "internalcloudstackpassword",
                 },
-            "ldapCon_1":#valid values&Query filter as email.
+            "ldapConfiguration_1":
                 {
-                    "ldapHostname": "10.147.38.163",
-                    "port": "389",
-                    "binddn": "CN=test,CN=Users,DC=hyd-qa,DC=com",
-                    "bindpass": "aaaa_1111",
-                    "queryfilter": "(&(mail=%e))",
-                    "searchbase": "CN=Users,DC=hyd-qa,DC=com",
-                    "ldapusername": "test",
-                    "ldappasswd": "aaaa_1111"
-                },
-            "ldapCon_2": ##valid values&Query filter as displayName.
-                {
-                    "ldapHostname": "10.147.38.163",
-                    "port": "389",
-                    "binddn": "CN=test,CN=Users,DC=hyd-qa,DC=com",
-                    "bindpass": "aaaa_1111",
-                    "queryfilter": "(&(displayName=%u))",
-                    "searchbase": "CN=Users,DC=hyd-qa,DC=com",
-                    "ldapusername": "test",
-                    "ldappasswd": "aaaa_1111"
-                },
-            "ldapCon_3": #Configuration with missing parameters value(queryfilter)
-                {
-                    "ldapHostname": "10.147.38.163",
-                    "port": "389",
-                    "binddn": "CN=test,CN=Users,DC=hyd-qa,DC=com",
-                    "bindpass": "aaaa_1111",
-                    "queryfilter": "",
-                    "searchbase": "CN=Users,DC=hyd-qa,DC=com",
-                    "ldapusername": "test",
-                    "ldappasswd": "aaaa_1111"
-                },
-
-            "ldapCon_4": #invalid configuration-wrong query filter
-                {
-                    "ldapHostname": "10.147.38.163",
-                    "port": "389",
-                    "binddn": "CN=test,CN=Users,DC=hyd-qa,DC=com",
-                    "bindpass": "aaaa_1111",
-                    "queryfilter": "(&(displayName=%p))",
-                    "searchbase":"CN=Users,DC=hyd-qa,DC=com",
-                    "ldapusername": "test",
-                    "ldappasswd": "aaaa_1111"
-                },
-            "ldapCon_5": #Configuration with invalid ldap credentials
-                {
-                    "ldapHostname": "10.147.38.163",
-                    "port": "389",
-                    "binddn": "CN=test,CN=Users,DC=hyd-qa,DC=com",
-                    "bindpass": "aaaa_1111",
-                    "queryfilter": "(&(displayName=%u))",
-                    "searchbase": "CN=Users,DC=hyd-qa,DC=com",
-                    "ldapusername": "test",
-                    "ldappasswd": "aaaa"
+                "basedn": "dc=cloudstack,dc=org",
+                "emailAttribute": "mail",
+                "realnameAttribute": "cn",
+                "userObject": "inetOrgPerson",
+                "usernameAttribute": "uid",
+                "hostname": "localhost",
+                "port": "10389",
+                "ldapUsername": "rmurphy",
+                "ldapPassword": "password"
                 }
-
-
-
         }
 
 
 class TestLdap(cloudstackTestCase):
     """
-    This test perform registering ldap configuration details in CS and create a user[ldap user] in CS
-     and  validate user credentials against LDAP server:AD
+    This tests attempts to register a LDAP server and authenticate as an LDAP user.
     """
 
     @classmethod
@@ -134,8 +86,6 @@ class TestLdap(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
-            #print "tear down class"
             cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as tde:
@@ -144,10 +94,10 @@ class TestLdap(cloudstackTestCase):
 
     def setUp(self):
 
-        self.apiclient = self.testClient.getApiClient()
+        self.apiClient = self.testClient.getApiClient()
 
         self.acct = createAccount.createAccountCmd()
-        self.acct.accounttype = 0 #We need a regular user. admins have accounttype=1
+        self.acct.accounttype = 0
         self.acct.firstname = self.services["account"]["firstname"]
         self.acct.lastname = self.services["account"]["lastname"]
         self.acct.password = self.services["account"]["password"]
@@ -155,208 +105,153 @@ class TestLdap(cloudstackTestCase):
         self.acct.email = self.services["account"]["email"]
         self.acct.account = self.services["account"]["username"]
         self.acct.domainid = 1
-        # mapping ldap user  by creating same user in  cloudstack
 
-        self.acctRes = self.apiclient.createAccount(self.acct)
-
+        self.acctRes = self.apiClient.createAccount(self.acct)
 
         return
 
     def tearDown(self):
 
         try:
-            #Clean up, terminate the created accounts, domains etc
-
             deleteAcct = deleteAccount.deleteAccountCmd()
             deleteAcct.id = self.acctRes.id
 
             acct_name=self.acctRes.name
 
-            self.apiclient.deleteAccount(deleteAcct)
+            self.apiClient.deleteAccount(deleteAcct)
 
             self.debug("Deleted the the following account name %s:" %acct_name)
-            #delete only if ldapconfig registered  in CS
-            if(self.ldapconfRes):
-                deleteldapconfg=ldapRemove.ldapRemoveCmd()
-                res=self.apiclient.ldapRemove(deleteldapconfg)
 
+            if(self.ldapconfRes==1):
+                self._deleteLdapConfiguration(self.services["ldapConfiguration_1"])
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "basic"])
-    def test_01_configLDAP(self):
-        '''
-        This test is to verify ldapConfig API  with valid  values.(i.e query fileter as email)
-        '''
-        # 1. This test covers ldapConfig  & login API with valid ldap credentials..
-        # require ldap configuration:ldapCon_1
+    def test_01_addLdapConfiguration(self):
+        """
+        This test configures LDAP and attempts to authenticate as a user.
+        """
+
 
         self.debug("start test")
 
-        self.ldapconfRes=self._testldapConfig(self.services["ldapCon_1"])
+        self.ldapconfRes=self._addLdapConfiguration(self.services["ldapConfiguration_1"])
 
         if(self.ldapconfRes==1):
 
+            self.debug("Ldap Configuration was succcessful")
 
-            self.debug("configure ldap successful")
-
-            #validating the user credentials with ldap Server
-            loginRes = self.chkLogin(self.services["ldapCon_1"]["ldapusername"], self.services["ldapCon_1"]["ldappasswd"])
-            self.assertEquals(loginRes,1,"ldap Authentication failed")
+            loginRes = self._checkLogin(self.services["ldapConfiguration_1"]["ldapUsername"],self.services["ldapConfiguration_1"]["ldapPassword"])
+            self.debug(loginRes)
+            self.assertEquals(loginRes,1,"Ldap Authentication")
 
         else:
 
             self.debug("LDAP Configuration failed with exception")
 
-            self.assertEquals(self.ldapconfRes,1,"ldapConfig API failed")
+            self.assertEquals(self.ldapconfRes,1,"addLdapConfiguration failed")
 
 
         self.debug("end test")
 
-    @attr(tags=["advanced", "basic"])
-    def test_02_configLDAP(self):
-        '''
-        This test is to verify ldapConfig API  with valid  values.(i.e query fileter as displayName)
-        '''
-
-        # 1. This test covers ldapConfig  & login API with valid ldap credentials.
-        # 2. require ldap configuration:ldapCon_2
-
-        self.debug("start test")
-        self.ldapconfRes=self._testldapConfig(self.services["ldapCon_2"])
-        self.assertEquals(self.ldapconfRes,1,"ldapConfig API failed")
-        if(self.ldapconfRes==1):
-            self.debug("configure ldap successful")
-            #validating the user credentials with ldap Server
-            loginRes = self.chkLogin(self.services["ldapCon_2"]["ldapusername"], self.services["ldapCon_2"]["ldappasswd"])
-            self.assertEquals(loginRes,1,"ldap Authentication failed")
-        else:
-            self.debug("LDAP Configuration failed with exception")
-        self.debug("end test")
-
-    @attr(tags=["advanced", "basic"])
-    def test_03_configLDAP(self):
-
-        '''
-        This test is to verify ldapConfig API  with missing config parameters value(i.queryfilter)
-        '''
-
-        # 1. Issue ldapConfig API with no ldap config parameter value and check behavior
-        # 2. require ldap configuration:ldapCon_3
-
-        self.debug("start test...")
-        self.ldapconfRes=self._testldapConfig(self.services["ldapCon_3"])
-        self.assertEquals(self.ldapconfRes,0,"LDAP configuration successful with invalid value.API failed")
-        self.debug("end test")
-    @attr(tags=["advanced", "basic"])
-    def test_04_configLDAP(self):
-        '''
-        This test is to verify ldapConfig API with invalid configuration values(by passing wrong query filter)
-        '''
-        # 1. calling ldapConfig API with invalid query filter value and check behavior
-        # 2. require ldap configuration:ldapCon_4
-
-        self.debug("start test...")
-        self.ldapconfRes=self._testldapConfig(self.services["ldapCon_4"])
-        self.assertEquals(self.ldapconfRes,0,"API failed")
-
-
-    @attr(tags=["advanced", "basic"])
-    def test_05_configLDAP(self):
-
-        '''
-        This test is to verify login API functionality by passing wrong ldap credentials
-        '''
-        # 1.This script first  configure the ldap and validates the user credentials using login API
-        # 2. require ldap configuration:ldapCon_5
-
-
-        self.debug("start test")
-        self.ldapconfRes=self._testldapConfig(self.services["ldapCon_5"])
-        self.assertEquals(self.ldapconfRes,1,"API failed")
-        #validating the cloudstack user credentials with ldap Server
-        loginRes = self.chkLogin(self.services["ldapCon_5"]["ldapusername"], self.services["ldapCon_5"]["ldappasswd"])
-        self.assertNotEqual(loginRes,1,"login API failed")
-        self.debug("end test")
-
-    @attr(tags=["advanced", "basic"])
-    def test_06_removeLDAP(self):
-        '''
-        This test is to verify ldapRemove API functionality
-        '''
-        # 1. This script fist configures ldap and removes the configured ldap values
-        # 2. require ldap configuration:ldapCon_1
-
-
-        self.debug("start test")
-        self.ldapconfRes=self._testldapConfig(self.services["ldapCon_1"])
-        if(self.ldapconfRes==1):
-            self.debug("ldap configured successfully")
-            deleteldapconfg=ldapRemove.ldapRemoveCmd()
-            res=self.apiclient.ldapRemove(deleteldapconfg)
-            self.debug("ldap removed successfully")
-            self.ldapconfRes=0
-        else:
-
-            self.debug("LDAP Configuration failed with exception")
-            self.assertEquals(self.ldapconfRes,0,"ldapconfig API failed")
-        self.debug("end test")
-
-    def _testldapConfig(self,ldapSrvD):
+    def _addLdapConfiguration(self,ldapConfiguration):
 
         """
 
-        :param ldapSrvD
-
+        :param ldapConfiguration
 
         """
-        #This Method takes dictionary as parameter,
-        # reads the ldap configuration values from the passed dictionary and
-        # register the ldapconfig detail in cloudstack
-        # & return true or false based on ldapconfig API response
 
-        self.debug("start ldapconfig  test")
-        #creating the  ldapconfig cmd object
-        lpconfig = ldapConfig.ldapConfigCmd()
-        #Config the ldap server by assigning the ldapconfig dict variable values to ldapConfig object
-        lpconfig.hostname = ldapSrvD["ldapHostname"]
-        lpconfig.port = ldapSrvD["port"]
-        lpconfig.binddn = ldapSrvD["binddn"]
-        lpconfig.bindpass = ldapSrvD["bindpass"]
-        lpconfig.searchbase = ldapSrvD["searchbase"]
-        lpconfig.queryfilter = ldapSrvD["queryfilter"]
+        # Setup Global settings
 
-        #end of assigning the variables
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "ldap.basedn"
+        updateConfigurationCmd.value = ldapConfiguration['basedn']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
+        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
 
-        #calling the ldapconfig Api
-        self.debug("calling ldapconfig API")
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "ldap.email.attribute"
+        updateConfigurationCmd.value = ldapConfiguration['emailAttribute']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
+        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "ldap.realname.attribute"
+        updateConfigurationCmd.value = ldapConfiguration['realnameAttribute']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
+        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "ldap.user.object"
+        updateConfigurationCmd.value = ldapConfiguration['userObject']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
+        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "ldap.username.attribute"
+        updateConfigurationCmd.value = ldapConfiguration['usernameAttribute']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
+        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+        self.debug("start addLdapConfiguration test")
+
+        ldapServer = addLdapConfiguration.addLdapConfigurationCmd()
+        ldapServer.hostname = ldapConfiguration['hostname']
+        ldapServer.port = ldapConfiguration['port']
+
+        self.debug("calling addLdapConfiguration API command")
         try:
-            lpconfig1 = self.apiclient.ldapConfig(lpconfig)
-            self.debug("ldapconfig API succesfful")
+            self.apiClient.addLdapConfiguration(ldapServer)
+            self.debug("addLdapConfiguration was successful")
             return 1
         except Exception, e:
-            self.debug("ldapconfig API failed %s" %e)
+            self.debug("addLdapConfiguration failed %s" %e)
             return 0
 
-    def chkLogin(self, username, password):
+    def _deleteLdapConfiguration(self,ldapConfiguration):
+
+        """
+
+        :param ldapConfiguration
+
+        """
+
+        ldapServer = deleteLdapConfiguration.deleteLdapConfigurationCmd()
+        ldapServer.hostname = ldapConfiguration["hostname"]
+
+        try:
+            self.apiClient.deleteLdapConfiguration(ldapServer)
+            self.debug("deleteLdapConfiguration was successful")
+            return 1
+        except Exception, e:
+            self.debug("deleteLdapConfiguration failed %s" %e)
+            return 0
+
+    def _checkLogin(self, username, password):
         """
 
         :param username:
         :param password:
 
         """
-        self.debug("login test")
+        self.debug("Attempting to login.")
 
         try:
-            login1 = login.loginCmd()
-            login1.username = username
-            login1.password = password
-            loginRes = self.apiclient.login(login1)
+            loginParams = login.loginCmd()
+            loginParams.username = username
+            loginParams.password = password
+            loginRes = self.apiClient.login(loginParams)
             self.debug("login response %s" % loginRes)
             if loginRes is None:
                 self.debug("login not successful")
+                return 0
             else:
                 self.debug("login successful")
                 return 1

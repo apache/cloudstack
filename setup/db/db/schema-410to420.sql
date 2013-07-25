@@ -1462,7 +1462,7 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.iops_write_rate,
         disk_offering.sort_key,
         disk_offering.type,
-	disk_offering.display_offering,
+  disk_offering.display_offering,
         domain.id domain_id,
         domain.uuid domain_uuid,
         domain.name domain_name,
@@ -1516,7 +1516,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
         data_center.is_security_group_enabled security_group_enabled,
-		data_center.networktype data_center_type,
+    data_center.networktype data_center_type,
         host.id host_id,
         host.uuid host_uuid,
         host.name host_name,
@@ -1672,7 +1672,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.attached,
         volumes.removed,
         volumes.pod_id,
-	volumes.display_volume,
+  volumes.display_volume,
         volumes.format,
         account.id account_id,
         account.uuid account_uuid,
@@ -1688,7 +1688,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
-	data_center.networktype data_center_type,
+  data_center.networktype data_center_type,
         vm_instance.id vm_id,
         vm_instance.uuid vm_uuid,
         vm_instance.name vm_name,
@@ -1820,7 +1820,7 @@ CREATE VIEW `cloud`.`template_view` AS
         data_center.name data_center_name,
         launch_permission.account_id lp_account_id,
         template_store_ref.store_id,
-		image_store.scope as store_scope,
+    image_store.scope as store_scope,
         template_store_ref.state,
         template_store_ref.download_state,
         template_store_ref.download_pct,
@@ -1840,7 +1840,7 @@ CREATE VIEW `cloud`.`template_view` AS
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
         resource_tags.customer tag_customer,
-		CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
+    CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
     from
         `cloud`.`vm_template`
             inner join
@@ -1859,7 +1859,7 @@ CREATE VIEW `cloud`.`template_view` AS
         `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
             left join
         `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
-        	left join
+          left join
         `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
             left join
         `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
@@ -2048,7 +2048,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_write_rate', 0, 'Default disk I/O write rate in bytes per second allowed in User vm\'s disk. ');
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+SET foreign_key_checks = 1;
 
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network
@@ -2142,10 +2142,25 @@ CREATE VIEW `cloud`.`project_view` AS
             left join
         `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.bind.principal', NULL, 'Specifies the bind principal to use for bind to LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.bind.password', NULL, 'Specifies the password to use for binding to LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.username.attribute', 'uid', 'Sets the username attribute used within LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.email.attribute', 'mail', 'Sets the email attribute used within LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.firstname.attribute', 'givenname', 'Sets the firstname attribute used within LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.lastname.attribute', 'sn', 'Sets the lastname attribute used within LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.user.object', 'inetOrgPerson', 'Sets the object type of users within LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.basedn', NULL, 'Sets the basedn for LDAP');
+
+CREATE TABLE `cloud`.`ldap_configuration` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `hostname` varchar(255) NOT NULL COMMENT 'the hostname of the ldap server',
+  `port` int(10) COMMENT 'port that the ldap server is listening on',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.max.conn', '4096', 'Load Balancer(haproxy) maximum number of concurrent connections(global max)');
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
-
         
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size` smallint(6) NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
 ALTER TABLE `cloud`.`sync_queue` MODIFY `queue_size_limit` smallint(6) NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';

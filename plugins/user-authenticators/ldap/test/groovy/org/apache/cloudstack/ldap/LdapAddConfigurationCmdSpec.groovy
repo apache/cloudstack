@@ -1,0 +1,89 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package groovy.org.apache.cloudstack.ldap
+
+import com.cloud.exception.InvalidParameterValueException
+import org.apache.cloudstack.api.ServerApiException
+import org.apache.cloudstack.api.command.LdapAddConfigurationCmd
+import org.apache.cloudstack.api.response.LdapConfigurationResponse
+import org.apache.cloudstack.ldap.LdapManager
+
+class LdapAddConfigurationCmdSpec extends spock.lang.Specification {
+
+    def "Test successful response from execute"() {
+        given:
+        def ldapManager = Mock(LdapManager)
+        ldapManager.addConfiguration(_, _) >> new LdapConfigurationResponse("localhost", 389)
+        def ldapAddConfigurationCmd = new LdapAddConfigurationCmd(ldapManager)
+        when:
+        ldapAddConfigurationCmd.execute()
+        then:
+        ldapAddConfigurationCmd.responseObject.hostname == "localhost"
+        ldapAddConfigurationCmd.responseObject.port == 389
+    }
+
+    def "Test failed response from execute"() {
+        given:
+        def ldapManager = Mock(LdapManager)
+        ldapManager.addConfiguration(_, _) >> { throw new InvalidParameterValueException() }
+        def ldapAddConfigurationCmd = new LdapAddConfigurationCmd(ldapManager)
+        when:
+        ldapAddConfigurationCmd.execute()
+        then:
+        thrown ServerApiException
+    }
+
+    def "Test successful setting of hostname"() {
+        given:
+        def ldapManager = Mock(LdapManager)
+        def ldapAddConfigurationCmd = new LdapAddConfigurationCmd(ldapManager)
+        when:
+        ldapAddConfigurationCmd.setHostname("localhost")
+        then:
+        ldapAddConfigurationCmd.getHostname() == "localhost"
+    }
+
+    def "Test successful setting of port"() {
+        given:
+        def ldapManager = Mock(LdapManager)
+        def ldapAddConfigurationCmd = new LdapAddConfigurationCmd(ldapManager)
+        when:
+        ldapAddConfigurationCmd.setPort(389)
+        then:
+        ldapAddConfigurationCmd.getPort() == 389
+    }
+
+    def "Test getEntityOwnerId is 0"() {
+        given:
+        def ldapManager = Mock(LdapManager)
+        def ldapAddConfigurationCmd = new LdapAddConfigurationCmd(ldapManager)
+        when:
+        long ownerId = ldapAddConfigurationCmd.getEntityOwnerId()
+        then:
+        ownerId == 1
+    }
+
+    def "Test successful return of getCommandName"() {
+        given:
+        def ldapManager = Mock(LdapManager)
+        def ldapAddConfigurationCmd = new LdapAddConfigurationCmd(ldapManager)
+        when:
+        String commandName = ldapAddConfigurationCmd.getCommandName()
+        then:
+        commandName == "ldapconfigurationresponse"
+    }
+}

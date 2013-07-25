@@ -87,8 +87,6 @@ import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.StartInternalLBVMCmd;
 import org.apache.cloudstack.api.command.admin.internallb.StopInternalLBVMCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -2504,8 +2502,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReconnectHostCmd.class);
         cmdList.add(UpdateHostCmd.class);
         cmdList.add(UpdateHostPasswordCmd.class);
-        cmdList.add(LDAPConfigCmd.class);
-        cmdList.add(LDAPRemoveCmd.class);
         cmdList.add(AddNetworkDeviceCmd.class);
         cmdList.add(AddNetworkServiceProviderCmd.class);
         cmdList.add(CreateNetworkOfferingCmd.class);

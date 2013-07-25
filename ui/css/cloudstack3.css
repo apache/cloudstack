@@ -5834,7 +5834,7 @@ label.error {
 .multi-wizard .buttons {
   width: 100%;
   position: absolute;
-  top: 519px;
+  bottom: 10px;
   left: 0px;
 }
 
@@ -12267,3 +12267,85 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   color: #0000FF !important;
 }
 
+.accounts-wizard table {
+  margin: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.accounts-wizard td:last-child {
+  border: none;
+}
+
+.accounts-wizard tbody tr:nth-child(even) {
+  background: #DFE1E3;
+}
+
+.accounts-wizard tbody tr:nth-child(odd) {
+  background: #F2F0F0;
+}
+
+.accounts-wizard .content {
+  display: inline-block;
+}
+
+.accounts-wizard .content:last-child {
+  margin-left: 14px;
+}
+
+.accounts-wizard .select-container {
+  overflow: auto;
+}
+
+.accounts-wizard .input-area{
+  width: 320px;
+  font-size: 15px;
+  color: #485867;
+  text-shadow: 0px 2px 1px #FFFFFF;
+}
+
+.ldap-account-choice {
+  border: none !important;
+  border-radius: 0 0 0 0 !important;
+}
+
+.manual-account-details .name {
+  margin-top: 2px;
+  width: 100px;
+  float: left;
+  padding-bottom:10px;
+}
+
+.manual-account-details .value {
+  float: left;
+}
+
+.manual-account-details .form-item:after {
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
+}
+
+.manual-account-details .form-item {
+  padding: 10px;
+  width: 278px;
+}
+
+.manual-account-details select, .manual-account-details input {
+  width: 150px;
+}
+
+.manual-account-details > *:nth-child(even) {
+  background: #DFE1E3;
+}
+
+.manual-account-details > *:nth-child(odd) {
+  background: #F2F0F0;
+}
+
+.manual-account-details .value {
+  display: inline-block;
+}

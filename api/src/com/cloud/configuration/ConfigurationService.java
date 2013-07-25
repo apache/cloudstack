@@ -26,8 +26,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
@@ -271,12 +269,6 @@ public interface ConfigurationService {
     Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId);
 
     DiskOffering getDiskOffering(long diskOfferingId);
-
-    boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException;
-
-	boolean removeLDAP(LDAPRemoveCmd cmd);
-
-    LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd);
 
     /**
      * @param offering

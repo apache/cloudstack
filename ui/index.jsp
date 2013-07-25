@@ -238,10 +238,10 @@ under the License.
             <!-- Step 6: Network -->
             <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
-              <div class="wizard-step-conditional nothing-to-select">     
+              <div class="wizard-step-conditional nothing-to-select">
 								<p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
 								<p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
-								<p id="from_vpc_tier"></p>     										
+								<p id="from_vpc_tier"></p>
               </div>
 
               <!-- 5b: Select network -->
@@ -432,7 +432,7 @@ under the License.
                       <a href="5"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
-                  
+
                   <!-- Security groups -->
                   <div class="select odd">
                     <div class="name">
@@ -467,6 +467,37 @@ under the License.
           <div class="button previous"><span><fmt:message key="label.previous"/></span></div>
           <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
           <div class="button next"><span><fmt:message key="label.next"/></span></div>
+        </div>
+      </div>
+      <!-- Accounts wizard -->
+      <div class="multi-wizard accounts-wizard">
+        <form>
+          <div class="steps">
+              <div class="content">
+                <div class="select-container ldap-account-choice">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style="width:40px">Select</th>
+                        <th style="width:110px">Realname</th>
+                        <th style="width:70px">Username</th>
+                        <th>Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="content input-area">
+                <div class="select-container manual-account-details">
+                </div>
+              </div>
+          </div>
+        </form>
+        <div class="buttons">
+          <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
+          <div class="button next"><span><fmt:message key="label.add"/></span></div>
         </div>
       </div>
       <!-- Zone wizard -->
@@ -505,7 +536,7 @@ under the License.
                   </div>
                   <div class="select-area advanced-zone disabled">
                     <div class="desc">
-                      <fmt:message key="message.desc.advanced.zone"/>  
+                      <fmt:message key="message.desc.advanced.zone"/>
 										</div>
                     <input type="radio" name="network-model" value="Advanced" />
                     <label><fmt:message key="label.advanced"/></label>
@@ -533,7 +564,7 @@ under the License.
           <div class="setup-zone" zone-wizard-form="zone"
                zone-wizard-step-id="addZone">
             <div class="info-desc">
-              <fmt:message key="message.desc.zone"/> 
+              <fmt:message key="message.desc.zone"/>
 						</div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -752,7 +783,7 @@ under the License.
               <li class="secondary-storage"><fmt:message key="label.secondary.storage"/></li>
             </ul>
             <div class="info-desc">
-              <fmt:message key="message.desc.host"/>         
+              <fmt:message key="message.desc.host"/>
 						</div>
             <div class="content input-area">
               <div class="select-container"></div>
@@ -976,7 +1007,7 @@ under the License.
             <span><fmt:message key="label.refresh"/></span>
           </div>
           <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
-            <span class="icon">&nbsp;</span>            
+            <span class="icon">&nbsp;</span>
             <span><fmt:message key="label.update.ssl.cert"/></span>
           </div>
         </div>
@@ -1050,7 +1081,7 @@ under the License.
               <span class="button view-all hosts"
                     view-all-title="<fmt:message key="label.virtual.routers"/>"
                     view-all-target="virtualRouters"><fmt:message key="label.view.all"/></span>
-            </li> 
+            </li>
           </ul>
         </div>
       </div>
@@ -1225,7 +1256,7 @@ under the License.
             <div class="title">
               <span></span>
             </div>
-            
+
              <div class="button fetch-latest">
                <span><fmt:message key="label.fetch.latest"/></span>
               </div>
@@ -1618,7 +1649,7 @@ under the License.
     <script src="lib/jquery.js" type="text/javascript"></script>
     <script src="lib/jquery.easing.js" type="text/javascript"></script>
     <script src="lib/jquery.validate.js" type="text/javascript"></script>
-    <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>		
+    <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
@@ -1642,7 +1673,7 @@ under the License.
     <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/dialog.js?t=<%=now%>"></script>
-    
+
     <script type="text/javascript" src="scripts/ui/widgets/multiEdit.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/overlay.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/dataTable.js?t=<%=now%>"></script>
@@ -1650,7 +1681,7 @@ under the License.
     <script type="text/javascript" src="scripts/ui/widgets/listView.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/detailView.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/treeView.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/ui/widgets/notifications.js?t=<%=now%>"></script> 
+    <script type="text/javascript" src="scripts/ui/widgets/notifications.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/tagger.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/toolTip.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=now%>"></script>
@@ -1671,8 +1702,8 @@ under the License.
     <script type="text/javascript" src="scripts/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/instanceWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instanceWizard.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/affinity.js?t=<%=now%>"></script>  
-    <script type="text/javascript" src="scripts/ui-custom/affinity.js?t=<%=now%>"></script>  
+    <script type="text/javascript" src="scripts/affinity.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/affinity.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>
@@ -1687,6 +1718,8 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/uploadVolume.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/storage.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/templates.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/accountsWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/accountsWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/accounts.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/configuration.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/globalSettings.js?t=<%=now%>"></script>

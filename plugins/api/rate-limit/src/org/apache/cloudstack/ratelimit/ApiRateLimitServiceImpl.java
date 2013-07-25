@@ -29,7 +29,6 @@ import net.sf.ehcache.CacheManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;

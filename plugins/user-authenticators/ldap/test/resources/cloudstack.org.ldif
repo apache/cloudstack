@@ -1,0 +1,19 @@
+version: 1
+
+dn: dc=cloudstack,dc=org
+objectClass: dcObject
+objectClass: organization
+dc: cloudstack
+o: cloudstack
+
+dn: cn=Ryan Murphy,dc=cloudstack,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Ryan Murphy
+sn: Murphy
+givenName: Ryan
+mail: rmurphy@cloudstack.org
+uid: rmurphy
+userpassword:: cGFzc3dvcmQ=

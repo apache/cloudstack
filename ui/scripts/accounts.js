@@ -76,7 +76,7 @@
                                     return 'label.add.account';
                                 }
                             },
-
+                            /*
                             createForm: {
                                 title: 'label.add.account',
                                 desc: 'label.add.account',
@@ -284,14 +284,21 @@
                                     }
                                 });
                             },
-
+                            */
                             notification: {
                                 poll: function(args) {
                                     args.complete({
                                         actionFilter: accountActionfilter
                                     });
                                 }
-                            }
+                            },
+
+                            action: {
+                                custom: cloudStack.uiCustom.accountsWizard(
+                                    cloudStack.accountsWizard
+                                )
+                            },
+
                         }
                     },
 

@@ -525,15 +525,4 @@ public class ApiConstants {
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp;
     }
-
-    public enum LDAPParams {
-        hostname, port, usessl, queryfilter, searchbase, dn, passwd, truststore, truststorepass;
-
-        @Override
-        public String toString() {
-            return "ldap." + name();
-        }
-    }
-
-
 }

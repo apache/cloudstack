@@ -14,13 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+package org.apache.cloudstack.ldap;
 
-import org.apache.cloudstack.api.BaseResponse;
+public class NoLdapUserMatchingQueryException extends Exception {
+    private static final long serialVersionUID = 7124360347208388174L;
 
-public class LDAPRemoveResponse extends BaseResponse {
+    private final String query;
 
-    public LDAPRemoveResponse(){
-        super();
+    public NoLdapUserMatchingQueryException(final String query) {
+        super("No users matching: " + query);
+        this.query = query;
+    }
+
+    public String getQuery() {
+        return query;
     }
 }
