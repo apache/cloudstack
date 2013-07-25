@@ -219,7 +219,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["simulator", "basic", "advanced",  "portablepublicip"])
+    @attr(tags = ["simulator", "advanced",  "portablepublicip"])
     def test_createPortablePublicIPAcquire(self):
         """ Test to acquire a provisioned public ip range
         """
@@ -229,7 +229,9 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
                                     self.services
                                     )
 
-        ip_address = PublicIPAddress.create(self.api_client, self.account.name, self.zone.id, self.account.domainid)
+        ip_address = PublicIPAddress.create(self.api_client, self.account.name,
+                            self.zone.id, self.account.domainid, True)
 
+        ip_address.delete(self.api_client)
         self.portable_ip_range.delete(self.apiclient)
         return
