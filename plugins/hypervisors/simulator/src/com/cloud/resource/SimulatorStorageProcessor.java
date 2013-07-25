@@ -94,6 +94,27 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     }
 
     @Override
+    public Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
+        DataStoreTO imageStore = template.getDataStore();
+        String details;
+
+        try {
+            if (!(imageStore instanceof  NfsTO)) {
+                return new CopyCmdAnswer("Only support create template from snapshot, when the dest store is nfs");
+            }
+
+            template.setPath(template.getName());
+            template.setFormat(Storage.ImageFormat.RAW);
+
+            return new CopyCmdAnswer(template);
+        } catch (Throwable e) {
+            details = "CreatePrivateTemplateFromSnapshotCommand exception: " + e.toString();
+            return new CopyCmdAnswer(details);
+        }
+    }
+
+    @Override
     public Answer backupSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
