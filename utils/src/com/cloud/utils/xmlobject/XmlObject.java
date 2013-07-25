@@ -50,10 +50,10 @@ public class XmlObject {
             elements.put(key, e);
         } else {
             if (old instanceof List) {
-                System.out.println(String.format("already list %s, add", key));
+                //System.out.println(String.format("already list %s, add", key));
                 ((List)old).add(e);
             } else {
-                System.out.println(String.format("not list list %s, add list", key));
+                //System.out.println(String.format("not list list %s, add list", key));
                 List lst = new ArrayList();
                 lst.add(old);
                 lst.add(e);

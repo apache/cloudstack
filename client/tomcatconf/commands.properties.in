@@ -608,6 +608,7 @@ listBaremetalPxePingServer=1
 
 #### UCS commands
 addUcsManager=1
+listUcsManager=1
 listUcsProfile=1
 listUcsBlade=1
 associatesUcsProfileToBlade=1

@@ -322,6 +322,11 @@ public class UcsManagerImpl implements UcsManager {
         String res = client.call(cmd);
         XmlObject xo = XmlObjectParser.parseFromString(res);
         s_logger.debug(String.format("association response is %s", res));
+        
+        if (xo.get("outConfig.computeBlade.association").equals("none")) {
+            throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information", dn));
+        }
+        
         return xo.get("outConfig.computeBlade.association").equals("associated");
     }
 
