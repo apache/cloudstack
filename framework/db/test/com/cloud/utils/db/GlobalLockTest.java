@@ -22,10 +22,7 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import junit.framework.Assert;
-
 import com.cloud.utils.Profiler;
-import com.cloud.utils.testcase.Log4jEnabledTestCase;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -42,6 +39,7 @@ public class GlobalLockTest {
             timeoutSeconds = timeout;
             jobDuration = duration;
         }
+        @Override
         public void run() {
             boolean locked = false;
             try {

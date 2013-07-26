@@ -23,8 +23,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import net.sf.ehcache.Cache;
 
 import com.cloud.utils.component.ManagerBase;
@@ -35,7 +33,6 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Component
 @Local(value=EntityManager.class)
 @SuppressWarnings("unchecked")
 public class EntityManagerImpl extends ManagerBase implements EntityManager {
@@ -48,7 +45,6 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         return dao.findById(id);
     }
     
-    @Override
     public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id) {
         GenericDao<? extends T, K> dao = (GenericDao<? extends T, K>)GenericDaoBase.getDao(entityType);
         return dao.findByIdIncludingRemoved(id);
@@ -61,7 +57,6 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         return dao.findByUuid(uuid);
     }
 
-    @Override
     public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid) {
         // Finds and returns a unique VO using uuid, null if entity not found in db
         GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
@@ -79,19 +74,16 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         return dao.listAll();
     }
 
-    @Override
     public <T> T persist(T t) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao((Class<T>)t.getClass());
         return dao.persist(t);
     }
 
-    @Override
     public <T> SearchBuilder<T> createSearchBuilder(Class<T> entityType) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         return dao.createSearchBuilder();
     }
 
-    @Override
     public <T, K> GenericSearchBuilder<T, K> createGenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         return dao.createSearchBuilder((Class<K>)resultType.getClass());
@@ -100,22 +92,6 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        /*
-        String threadId = Long.toString(Thread.currentThread().getId());
-
-        CacheManager cm = CacheManager.create();
-
-        _cache = cm.getCache(threadId);
-
-        if (_cache == null) {
-            int maxElements = NumbersUtil.parseInt((String)params.get("cache.size"), 100);
-            int live = NumbersUtil.parseInt((String)params.get("cache.time.to.live"), 300);
-            int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
-
-            _cache = new Cache(threadId, maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
-            cm.addCache(_cache);
-
-        }*/
         
         return true;
     } 
@@ -135,7 +111,6 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         return _name;
     }
 
-    @Override
     public <T, K> List<K> search(Class<T> entityType, SearchCriteria<K> sc) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         return dao.customSearch(sc, null);

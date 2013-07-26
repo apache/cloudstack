@@ -289,6 +289,11 @@
       <artifactId>javassist</artifactId>
       <version>3.9.0.GA</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-db</artifactId>
+      <version>${project.version}</version>
+    </dependency>    
   </dependencies>
   <build>
     <resources>

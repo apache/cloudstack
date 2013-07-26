@@ -49,7 +49,7 @@ public class SearchCriteria2<T, K> implements SearchCriteriaService<T, K>, Metho
     protected SelectType _selectType;
     protected Class<T> _entityBeanType;
 	
-	protected SearchCriteria2(T entity, Class<K> resultType, final Map<String, Attribute> attrs, GenericDao<? extends Serializable, ? extends Serializable> dao) {
+    protected SearchCriteria2(T entity, Class<K> resultType, final Map<String, Attribute> attrs, GenericDao<? extends Serializable, ? extends Serializable> dao) {
 		_entityBeanType = (Class<T>)entity.getClass();
 		_dao = dao;
 		_resultType = resultType;
@@ -125,7 +125,7 @@ public class SearchCriteria2<T, K> implements SearchCriteriaService<T, K>, Metho
 		if (isSelectAll()) {
 			return (List<K>)_dao.search(sc1, null);
 		} else {
-			return (List<K>)_dao.customSearch(sc1, null);
+			return _dao.customSearch(sc1, null);
 		}
 	}
 	
@@ -135,7 +135,7 @@ public class SearchCriteria2<T, K> implements SearchCriteriaService<T, K>, Metho
 	
 	@Override
 	public T getEntity() {
-		return (T) _entity; 
+		return _entity;
 	}
 
 	private SearchCriteria<K> createSearchCriteria() {

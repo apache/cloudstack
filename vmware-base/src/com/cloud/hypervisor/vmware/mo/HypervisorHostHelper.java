@@ -27,21 +27,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.Pair;
-import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
-import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
-import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.DVPortSetting;
@@ -78,6 +63,22 @@ import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
+import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
+import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
@@ -446,29 +447,29 @@ public class HypervisorHostHelper {
         Integer vid = null;
         Integer spvlanid = null;  // secondary pvlan id
 
-        /** This is the list of BroadcastDomainTypes we can actually 
+        /** This is the list of BroadcastDomainTypes we can actually
          * prepare networks for in this function.
          */
-        BroadcastDomainType[] supportedBroadcastTypes = 
-                new BroadcastDomainType[] { BroadcastDomainType.Lswitch, 
-                BroadcastDomainType.LinkLocal, 
-                BroadcastDomainType.Native, 
+        BroadcastDomainType[] supportedBroadcastTypes =
+                new BroadcastDomainType[] { BroadcastDomainType.Lswitch,
+                BroadcastDomainType.LinkLocal,
+                BroadcastDomainType.Native,
                 BroadcastDomainType.Pvlan,
                 BroadcastDomainType.Storage,
                 BroadcastDomainType.UnDecided,
                 BroadcastDomainType.Vlan };
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + 
+            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType +
                     " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
             if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
-                throw new InvalidParameterException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + 
+                throw new InvalidParameterException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " +
                         broadcastDomainType);
             }
-            /** 
+            /**
              * Nicira NVP requires all vms to be connected to a single port-group.
              * A unique vlan needs to be set per port. This vlan is specific to
              * this implementation and has no reference to other vlans in CS
@@ -552,7 +553,7 @@ public class HypervisorHostHelper {
             }
             long averageBandwidth = 0L;
             if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
-                averageBandwidth = (long) (networkRateMbps.intValue() * 1024L * 1024L);
+                averageBandwidth = networkRateMbps.intValue() * 1024L * 1024L;
             }
             // We chose 50% higher allocation than average bandwidth.
             // TODO(sateesh): Optionally let user specify the peak coefficient
@@ -601,7 +602,7 @@ public class HypervisorHostHelper {
         return vCenterApiVersion.compareTo(minVcenterApiVersionForFeature) >= 0 ? true : false;
     }
 
-    private static void setupPVlanPair(DistributedVirtualSwitchMO dvSwitchMo, ManagedObjectReference morDvSwitch, 
+    private static void setupPVlanPair(DistributedVirtualSwitchMO dvSwitchMo, ManagedObjectReference morDvSwitch,
             Integer vid, Integer spvlanid) throws Exception {
         Map<Integer, HypervisorHostHelper.PvlanType> vlanmap = dvSwitchMo.retrieveVlanPvlan(vid, spvlanid, morDvSwitch);
         if (!vlanmap.isEmpty()) {
@@ -664,7 +665,7 @@ public class HypervisorHostHelper {
 
     }
 
-    private static void createPortGroup(String physicalNetwork, String networkName, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo, 
+    private static void createPortGroup(String physicalNetwork, String networkName, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
             DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported) throws Exception{
         VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
@@ -717,7 +718,7 @@ public class HypervisorHostHelper {
                     throw new Exception(msg);
                 }
             }
-        }        
+        }
     }
     
      public static ManagedObjectReference waitForDvPortGroupReady(
@@ -806,12 +807,12 @@ public class HypervisorHostHelper {
         LongPolicy burstSize = new LongPolicy();
 
         isEnabled.setValue(true);
-        averageBandwidth.setValue((long) networkRateMbps.intValue() * 1024L * 1024L);
+        averageBandwidth.setValue(networkRateMbps.intValue() * 1024L * 1024L);
         // We chose 50% higher allocation than average bandwidth.
         // TODO(sateesh): Also let user specify the peak coefficient
         peakBandwidth.setValue((long) (averageBandwidth.getValue() * 1.5));
         // TODO(sateesh): Also let user specify the burst coefficient
-        burstSize.setValue((long) (5 * averageBandwidth.getValue() / 8));
+        burstSize.setValue(5 * averageBandwidth.getValue() / 8);
 
         shapingPolicy.setEnabled(isEnabled);
         shapingPolicy.setAverageBandwidth(averageBandwidth);
@@ -889,25 +890,25 @@ public class HypervisorHostHelper {
         String networkName;
         Integer vid = null;
 
-        /** This is the list of BroadcastDomainTypes we can actually 
+        /** This is the list of BroadcastDomainTypes we can actually
          * prepare networks for in this function.
          */
-        BroadcastDomainType[] supportedBroadcastTypes = 
-                new BroadcastDomainType[] { BroadcastDomainType.Lswitch, 
-                BroadcastDomainType.LinkLocal, 
-                BroadcastDomainType.Native, 
+        BroadcastDomainType[] supportedBroadcastTypes =
+                new BroadcastDomainType[] { BroadcastDomainType.Lswitch,
+                BroadcastDomainType.LinkLocal,
+                BroadcastDomainType.Native,
                 BroadcastDomainType.Pvlan,
                 BroadcastDomainType.Storage,
                 BroadcastDomainType.UnDecided,
                 BroadcastDomainType.Vlan };
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + 
+            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType +
                     " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
-            /** 
+            /**
              * Nicira NVP requires each vm to have its own port-group with a dedicated
              * vlan. We'll set the name of the pg to the uuid of the nic.
              */
@@ -934,7 +935,7 @@ public class HypervisorHostHelper {
         if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
             shapingPolicy = new HostNetworkTrafficShapingPolicy();
             shapingPolicy.setEnabled(true);
-            shapingPolicy.setAverageBandwidth((long)networkRateMbps.intValue()*1024L*1024L);
+            shapingPolicy.setAverageBandwidth(networkRateMbps.intValue()*1024L*1024L);
 
             //
             // TODO : people may have different opinion on how to set the following
@@ -1062,10 +1063,10 @@ public class HypervisorHostHelper {
     }
     
     private static void createNvpPortGroup(HostMO hostMo, HostVirtualSwitch vSwitch, String networkName, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
-        /** 
+        /**
          * No portgroup created yet for this nic
          * We need to find an unused vlan and create the pg
-         * The vlan is limited to this vSwitch and the NVP vAPP, 
+         * The vlan is limited to this vSwitch and the NVP vAPP,
          * so no relation to the other vlans in use in CloudStack.
          */
         String vSwitchName = vSwitch.getName();
@@ -1096,7 +1097,7 @@ public class HypervisorHostHelper {
         secPolicy.setMacChanges(Boolean.FALSE);
         
         // Create a portgroup with the uuid of the nic and the vlanid found above
-        hostMo.createPortGroup(vSwitch, networkName, nvpVlanId, secPolicy, shapingPolicy);      
+        hostMo.createPortGroup(vSwitch, networkName, nvpVlanId, secPolicy, shapingPolicy);
     }
 
     public static ManagedObjectReference waitForNetworkReady(HostMO hostMo,

@@ -352,7 +352,7 @@ public class ApiDispatcher {
         for (Class<?> entity : entities) {
             // For backward compatibility, we search within removed entities and let service layer deal
             // with removed ones, return empty response or error
-            Object objVO = s_instance._entityMgr.findByUuidIncludingRemoved(entity, uuid);
+            Object objVO = s_instance._entityMgr.findByUuid(entity, uuid);
             if (objVO == null) {
                 continue;
             }

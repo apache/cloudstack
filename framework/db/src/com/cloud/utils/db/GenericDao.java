@@ -215,7 +215,7 @@ public interface GenericDao<T, ID extends Serializable> {
     
     /**
      * Remove based on the search criteria.  This will delete if the VO object
-     * does not have a REMOVED column. 
+     * does not have a REMOVED column.
      * @param sc search criteria to match
      * @return rows removed.
      */

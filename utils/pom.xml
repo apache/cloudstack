@@ -83,11 +83,6 @@
       <version>${cs.jsch.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.persistence</groupId>
-      <artifactId>javax.persistence</artifactId>
-      <version>${cs.jpa.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.jasypt</groupId>
       <artifactId>jasypt</artifactId>
       <version>${cs.jasypt.version}</version>
