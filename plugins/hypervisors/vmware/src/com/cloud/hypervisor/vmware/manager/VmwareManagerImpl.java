@@ -472,12 +472,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         if (secUrl == null) {
             // we are using non-NFS image store, then use cache storage instead
-            s_logger.info("Secondary storage is not NFS, we need to use cache storage");
+            s_logger.info("Secondary storage is not NFS, we need to use staging storage");
             DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
             if (cacheStore != null) {
                 secUrl = cacheStore.getUri();
             } else {
-                s_logger.warn("No cache storage is found when non-NFS secondary storage is used");
+                s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
             }
         }
 

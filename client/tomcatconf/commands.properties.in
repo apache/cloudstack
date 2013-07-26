@@ -250,9 +250,9 @@ listS3s=1
 addImageStore=1
 listImageStores=1
 deleteImageStore=1
-createCacheStore=1
-listCacheStores=1
-#deleteCacheStore=1
+createSecondaryStagingStore=1
+listSecondaryStagingStores=1
+deleteSecondaryStagingStore=1
 
 #### host commands
 addHost=3

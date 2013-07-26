@@ -25,31 +25,31 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "listCacheStores", description="Lists cache stores.", responseObject=ImageStoreResponse.class, since = "4.2.0")
-public class ListCacheStoresCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListCacheStoresCmd.class.getName());
+@APICommand(name = "listSecondaryStagingStores", description = "Lists secondary staging stores.", responseObject = ImageStoreResponse.class, since = "4.2.0")
+public class ListSecondaryStagingStoresCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListSecondaryStagingStoresCmd.class.getName());
 
-    private static final String s_name = "listcachestoreresponse";
+    private static final String s_name = "listsecondarystagingstoreresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the cache store")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the staging store")
     private String storeName;
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="the cache store protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the staging store protocol")
     private String protocol;
 
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING, description="the cache store provider")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the staging store provider")
     private String provider;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="the Zone ID for the cache store")
+ description = "the Zone ID for the staging store")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = ImageStoreResponse.class,
-            description="the ID of the cache store")
+ description = "the ID of the staging store")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ public class ListCacheStoresCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        ListResponse<ImageStoreResponse> response = _queryService.searchForCacheStores(this);
+        ListResponse<ImageStoreResponse> response = _queryService.searchForSecondaryStagingStores(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

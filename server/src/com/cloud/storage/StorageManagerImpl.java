@@ -46,9 +46,9 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storage.DeleteCacheStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
@@ -1797,7 +1797,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore createCacheStore(CreateCacheStoreCmd cmd) {
+    public ImageStore createSecondaryStagingStore(CreateSecondaryStagingStoreCmd cmd) {
         String providerName = cmd.getProviderName();
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -1865,7 +1865,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean deleteCacheStore(DeleteCacheStoreCmd cmd) {
+    public boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd) {
         long storeId = cmd.getId();
         User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         // Verify that cache store exists
