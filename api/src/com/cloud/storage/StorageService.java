@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
@@ -48,7 +49,7 @@ public interface StorageService{
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException,
     UnknownHostException, ResourceUnavailableException;
-    
+
     ImageStore createCacheStore(CreateCacheStoreCmd cmd);
 
     /**
@@ -91,6 +92,8 @@ public interface StorageService{
     public StoragePool getStoragePool(long id);
 
     boolean deleteImageStore(DeleteImageStoreCmd cmd);
+
+    boolean deleteCacheStore(DeleteCacheStoreCmd cmd);
 
     ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 

@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
@@ -400,7 +401,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm,
-                                       final Set<StoragePool> avoid) {
+            final Set<StoragePool> avoid) {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -637,7 +638,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     @SuppressWarnings("rawtypes")
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -1185,7 +1186,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     @DB
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
@@ -1279,8 +1280,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         // check if pool is in an inconsistent state
                         if (pool != null
                                 && (pool.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)
-                                || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(
-                                StoragePoolStatus.CancelMaintenance))) {
+                                        || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(
+                                                StoragePoolStatus.CancelMaintenance))) {
                             _storagePoolWorkDao.removePendingJobsOnMsRestart(vo.getMsid(), poolId);
                             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
                             _storagePoolDao.update(poolId, pool);
@@ -1490,7 +1491,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean storagePoolHasEnoughIops(List<Volume> requestedVolumes,
-                                            StoragePool pool) {
+            StoragePool pool) {
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
@@ -1528,7 +1529,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean storagePoolHasEnoughSpace(List<Volume> volumes,
-                                             StoragePool pool) {
+            StoragePool pool) {
         if (volumes == null || volumes.isEmpty()){
             return false;
         }
@@ -1771,7 +1772,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // we are not actually deleting record from main
         // image_data_store table, so delete cascade will not work
         _imageStoreDetailsDao.deleteDetails(storeId);
-        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
         _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
         _templateStoreDao.deletePrimaryRecordsForStore(storeId);
         _imageStoreDao.remove(storeId);
@@ -1845,6 +1846,48 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.ImageCache);
+    }
+
+    @Override
+    public boolean deleteCacheStore(DeleteCacheStoreCmd cmd) {
+        long storeId = cmd.getId();
+        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        // Verify that cache store exists
+        ImageStoreVO store = _imageStoreDao.findById(storeId);
+        if (store == null) {
+            throw new InvalidParameterValueException("Cache store with id " + storeId + " doesn't exist");
+        }
+        _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), store.getDataCenterId());
+
+        // Verify that there are no live snapshot, template, volume on the cache
+        // store that is currently referenced
+        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listActiveOnCache(storeId);
+        if (snapshots != null && snapshots.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete cache store with staging snapshots currently in use!");
+        }
+        List<VolumeDataStoreVO> volumes = _volumeStoreDao.listActiveOnCache(storeId);
+        if (volumes != null && volumes.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete cache store with staging volumes currently in use!");
+        }
+
+        List<TemplateDataStoreVO> templates = this._templateStoreDao.listActiveOnCache(storeId);
+        if (templates != null && templates.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete cache store with staging templates currently in use!");
+        }
+
+        // ready to delete
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        // first delete from image_store_details table, we need to do that since
+        // we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
+        txn.commit();
+        return true;
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
