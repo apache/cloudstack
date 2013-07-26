@@ -10839,19 +10839,6 @@
                                         }
                                     },
 
-                                    cpuovercommit: {
-                                        label: 'CPU overcommit ratio',
-                                        defaultValue: '1'
-
-                                    },
-
-                                    memoryovercommit: {
-                                        label: 'RAM overcommit ratio',
-                                        defaultValue: '1'
-
-                                    },
-
-
                                     isDedicated: {
                                         label: 'Dedicate',
                                         isBoolean: true,
@@ -11131,15 +11118,6 @@
                                 array1.push("&podId=" + args.data.podId);
 
                                 var clusterName = args.data.name;
-
-                                if (args.data.cpuovercommit != "" && args.data.cpuovercommit > 0) {
-
-                                    array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
-
-                                }
-
-                                if (args.data.memoryovercommit != "" && args.data.memoryovercommit > 0)
-                                    array1.push("&memoryovercommitratio=" + todb(args.data.memoryovercommit));
 
                                 if (args.data.hypervisor == "VMware") {
                                     array1.push("&username=" + todb(args.data.vCenterUsername));
@@ -11610,14 +11588,6 @@
                                         },
                                         clustertype: {
                                             label: 'label.cluster.type'
-                                        },
-                                        cpuovercommitratio: {
-                                            label: 'CPU overcommit Ratio',
-                                            isEditable: true
-                                        },
-                                        memoryovercommitratio: {
-                                            label: 'Memory overcommit Ratio',
-                                            isEditable: true
                                         },
                                         //allocationstate: { label: 'label.allocation.state' },
                                         //managedstate: { label: 'Managed State' },
