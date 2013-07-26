@@ -139,10 +139,10 @@ class Services:
                 "alg": "leastconn",
                 # Algorithm used for load balancing
                 "privateport": 22,
-                "publicport": 2222,
+                "publicport": 22,
                 "openfirewall": False,
-                "startport": 2222,
-                "endport": 2222,
+                "startport": 22,
+                "endport": 22,
                 "protocol": "TCP",
                 "cidrlist": '0.0.0.0/0',
             },
@@ -161,11 +161,11 @@ class Services:
                 # Any network (For creating FW rule)
                 "protocol": "TCP"
             },
-            "http_rule": {
-                "startport": 80,
-                "endport": 80,
-                "cidrlist": '0.0.0.0/0',
-                "protocol": "ICMP"
+            "icmp_rule": {
+                    "icmptype": -1,
+                    "icmpcode": -1,
+                    "cidrlist": '0.0.0.0/0',
+                    "protocol": "ICMP"
             },
             "virtual_machine": {
                 "displayname": "Test VM",
@@ -336,14 +336,14 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         cls.nwacl_internet_1 = NetworkACL.create(
                                         cls.api_client,
                                         networkid=cls.network_1.id,
-                                        services=cls.services["http_rule"],
+                                        services=cls.services["icmp_rule"],
                                         traffictype='Egress'
                                         )
         cls._cleanup = [
+                        cls.account,
                         cls.service_offering,
                         cls.nw_off,
-                        cls.nw_off_no_lb,
-                        cls.account
+                        cls.nw_off_no_lb
                         ]
         return
 
@@ -423,6 +423,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
     def validate_network_rules(self):
         """Validates if the network rules work properly or not?"""
         try:
+            self.debug("Checking if we can SSH into VM_1 through %s?" %
+                    (self.public_ip_1.ipaddress.ipaddress))
             ssh_1 = self.vm_1.get_ssh_client(
                                 ipaddress=self.public_ip_1.ipaddress.ipaddress)
             self.debug("SSH into VM is successfully")
@@ -446,7 +448,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          "Ping to outside world from VM should be successful"
                          )
 
-        self.debug("Checking if we can SSH into VM_1?")
+        self.debug("Checking if we can SSH into VM_1 through %s?" %
+                (self.public_ip_2.ipaddress.ipaddress))
         try:
             ssh_2 = self.vm_1.get_ssh_client(
                             ipaddress=self.public_ip_2.ipaddress.ipaddress)
@@ -975,7 +978,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 networkofferingid=cls.shared_nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
-                                vpcid=cls.vpc.id
                                 )
         # Spawn an instance in that network
         cls.vm_1 = VirtualMachine.create(
@@ -1062,15 +1064,15 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.nwacl_internet_1 = NetworkACL.create(
                                         cls.api_client,
                                         networkid=cls.network_1.id,
-                                        services=cls.services["http_rule"],
+                                        services=cls.services["icmp_rule"],
                                         traffictype='Egress'
                                         )
         cls._cleanup = [
+                        cls.account,
                         cls.service_offering,
                         cls.nw_off,
                         cls.shared_nw_off,
-                        cls.vpc_off,
-                        cls.account
+                        cls.vpc_off
                         ]
         return
 
@@ -1774,11 +1776,11 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                                 vpcid=cls.vpc.id
                                 )
         cls._cleanup = [
+                        cls.account,
                         cls.service_offering,
                         cls.nw_off,
                         cls.nw_off_no_lb,
-                        cls.vpc_off,
-                        cls.account
+                        cls.vpc_off
                         ]
         return
 
@@ -1937,20 +1939,18 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         # Steps:
         # 1. Deploy a VM using the default CentOS 6.2 Template
 
-        self.debug("Finding the virtual router for network: %s" %
-                                                        self.network_1.name)
+        self.debug("Finding the virtual router for vpc: %s" % self.vpc.id)
+
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.name,
-                              domainid=self.account.domainid,
-                              networkid=self.network_1.id,
+                              zoneid=self.zone.id,
                               listall=True
                               )
         self.assertEqual(
                          isinstance(routers, list),
                          True,
-                         "List routers should return router for network: %s" %
-                                                        self.network_1.name
+                         "List routers should return router for vpc: %s" %
+                                                        self.vpc.id
                          )
         router = routers[0]
 
@@ -1969,10 +1969,13 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
             self.assertEqual(
                          isinstance(routers, list),
                          True,
-                         "List routers should return router for network: %s" %
-                                                        self.network_1.name
+                         "List routers should return router for vpc: %s" %
+                                                        self.vpc.id
                          )
             router = routers[0]
+            self.debug("router.state %s" %
+                    router.state)
+
             self.assertEqual(
                              router.state,
                              "Stopped",
@@ -2004,7 +2007,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                          "List vms shall return a valid resposnse"
                          )
         vm_response = vms[0]
-        self.assertEqaul(
+        self.assertEqual(
                          vm_response.state,
                          "Running",
                          "VM state should be running after deployment"
@@ -2182,14 +2185,14 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         cls.nwacl_internet = NetworkACL.create(
                                         cls.api_client,
                                         networkid=cls.network_1.id,
-                                        services=cls.services["http_rule"],
+                                        services=cls.services["icmp_rule"],
                                         traffictype='Egress'
                                         )
         cls._cleanup = [
+                        cls.account,
                         cls.service_offering,
                         cls.nw_off,
-                        cls.nw_off_no_lb,
-                        cls.account
+                        cls.nw_off_no_lb
                         ]
         return
 
@@ -2208,7 +2211,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.debug("Check the status of VPC virtual router")
         routers = Router.list(
                               self.apiclient,
-                              networkid=self.network_1.id,
+                              zoneid=self.zone.id,
                               listall=True
                               )
         if not isinstance(routers, list):
