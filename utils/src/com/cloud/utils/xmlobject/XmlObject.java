@@ -46,7 +46,7 @@ public class XmlObject {
         }
         Object old = elements.get(key);
         if (old == null) {
-            System.out.println(String.format("no %s, add new", key));
+            //System.out.println(String.format("no %s, add new", key));
             elements.put(key, e);
         } else {
             if (old instanceof List) {

@@ -424,6 +424,7 @@ public class UcsManagerImpl implements UcsManager {
         rsp.setId(vo.getUuid());
         rsp.setDn(vo.getDn());
         rsp.setHostId(hostIdToUuid(vo.getHostId()));
+        rsp.setAssociatedProfileDn(vo.getProfileDn());
         rsp.setUcsManagerId(ucsManagerIdToUuid(vo.getUcsManagerId()));
         return rsp;
     }

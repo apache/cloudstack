@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="associatesUcsProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
+@APICommand(name="associateUcsProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
 public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
 
