@@ -14088,7 +14088,7 @@
                     },
                     dataProvider: function(args) {                       
 			            $.ajax({
-			              url: createURL('listUcsManager'),
+			              url: createURL('listUcsManagers'),
 			              data: {
 			                zoneid: args.context.physicalResources[0].id
 			              },
@@ -14215,7 +14215,7 @@
                                     },
                                     dataProvider: function(args) {
                                         $.ajax({
-                                            url: createURL('listUcsBlade'),
+                                            url: createURL('listUcsBlades'),
                                             data: {
                                                 ucsmanagerid: args.context.ucsManagers[0].id
                                             },
@@ -14276,7 +14276,7 @@
                                                             var items = [];
 
                                                             $.ajax({
-                                                                url: createURL('listUcsProfile'),
+                                                                url: createURL('listUcsProfiles'),
                                                                 data: {
                                                                     ucsmanagerid: args.context.ucsManagers[0].id
                                                                 },
@@ -14319,7 +14319,7 @@
                                             },
                                             action: function(args) {
                                                 $.ajax({
-                                                    url: createURL('associatesUcsProfileToBlade'), //This API has been changed from sync to async at 7/25/2013
+                                                    url: createURL('associateUcsProfileToBlade'), //This API has been changed from sync to async at 7/25/2013
                                                     data: {
                                                         ucsmanagerid: args.context.ucsManagers[0].id,
                                                         profiledn: args.data.profiledn,
