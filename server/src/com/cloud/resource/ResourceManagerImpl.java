@@ -30,9 +30,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.server.ConfigurationServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -53,10 +54,12 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.PropagateResourceEventCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
@@ -119,6 +122,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
@@ -164,6 +168,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Local({ ResourceManager.class, ResourceService.class })
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
     private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
+
+    Gson _gson;
 
     @Inject
     AccountManager _accountMgr;
@@ -908,7 +914,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
         try {
-            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
+            Boolean result = propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
             if (result != null) {
                 return result;
             }
@@ -1222,7 +1228,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean maintain(final long hostId) throws AgentUnavailableException {
-        Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
+        Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
         if (result != null) {
             return result;
         }
@@ -1329,6 +1335,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _defaultSystemVMHypervisor = HypervisorType.getType(_configDao.getValue(Config.SystemVMDefaultHypervisor.toString()));
+        _gson = GsonHelper.getGson();
         return true;
     }
 
@@ -2138,7 +2145,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private boolean cancelMaintenance(long hostId) {
         try {
-            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
+            Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
 
             if (result != null) {
                 return result;
@@ -2186,7 +2193,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean umanageHost(long hostId) {
         try {
-            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.Unmanaged);
+            Boolean result = propagateResourceEvent(hostId, ResourceState.Event.Unmanaged);
 
             if (result != null) {
                 return result;
@@ -2218,7 +2225,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (cmd.getClusterId() == null) {
             // update agent attache password
             try {
-                Boolean result = _clusterMgr.propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+                Boolean result = propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
                 }
@@ -2235,7 +2242,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                      * FIXME: this is a buggy logic, check with alex. Shouldn't
                      * return if propagation return non null
                      */
-                    Boolean result = _clusterMgr.propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
+                    Boolean result = propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
                     if (result != null) {
                         return result;
                     }
@@ -2247,6 +2254,45 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             return true;
         }
+    }
+
+    public String getPeerName(long agentHostId) {
+
+        HostVO host = _hostDao.findById(agentHostId);
+        if (host != null && host.getManagementServerId() != null) {
+            if (_clusterMgr.getSelfPeerName().equals(Long.toString(host.getManagementServerId()))) {
+                return null;
+            }
+
+            return Long.toString(host.getManagementServerId());
+        }
+        return null;
+    }
+
+    public Boolean propagateResourceEvent(long agentId, ResourceState.Event event) throws AgentUnavailableException {
+        final String msPeer = getPeerName(agentId);
+        if (msPeer == null) {
+            return null;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Propagating agent change request event:" + event.toString() + " to agent:" + agentId);
+        }
+        Command[] cmds = new Command[1];
+        cmds[0] = new PropagateResourceEventCommand(agentId, event);
+
+        String AnsStr = _clusterMgr.execute(msPeer, agentId, _gson.toJson(cmds), true);
+        if (AnsStr == null) {
+            throw new AgentUnavailableException(agentId);
+        }
+
+        Answer[] answers = _gson.fromJson(AnsStr, Answer[].class);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Result for agent change is " + answers[0].getResult());
+        }
+
+        return answers[0].getResult();
     }
 
     @Override

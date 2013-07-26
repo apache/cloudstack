@@ -28,7 +28,6 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.host.Host;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -48,10 +47,10 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -100,7 +99,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject HostDao _hostDao;
     @Inject HostDetailsDao _hostDetailsDao;
     @Inject CommandExecLogDao _cmdExecLogDao;
-    @Inject ClusterManager _clusterMgr;
     @Inject VmwareManager _vmwareMgr;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject NetworkModel _networkMgr;

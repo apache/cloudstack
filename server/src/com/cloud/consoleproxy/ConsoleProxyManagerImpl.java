@@ -221,6 +221,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     IPAddressDao _ipAddressDao;
     @Inject
     ManagementServer _ms;
+    @Inject
+    ClusterManager _clusterMgr;
 
     private ConsoleProxyListener _listener;
 
@@ -981,7 +983,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private synchronized Map<Long, ZoneHostInfo> getZoneHostInfo() {
         Date cutTime = DateUtil.currentGMTTime();
-        List<RunningHostCountInfo> l = _hostDao.getRunningHostCounts(new Date(cutTime.getTime() - ClusterManager.DEFAULT_HEARTBEAT_THRESHOLD));
+        List<RunningHostCountInfo> l = _hostDao.getRunningHostCounts(new Date(cutTime.getTime() - _clusterMgr.getHeartbeatThreshold()));
 
         RunningHostInfoAgregator aggregator = new RunningHostInfoAgregator();
         if (l.size() > 0) {

@@ -85,6 +85,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
@@ -166,6 +167,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _clusterMgr.registerListener(this);
         _clusterMgr.registerDispatcher(new ClusterDispatcher());
         
+        _gson = GsonHelper.getGson();
+
         return super.configure(name, xmlParams);
     }
 
@@ -1237,31 +1240,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return send(hostId, commands);
     }
 
-    public Boolean propagateResourceEvent(long agentId, ResourceState.Event event) throws AgentUnavailableException {
-        final String msPeer = getPeerName(agentId);
-        if (msPeer == null) {
-            return null;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Propagating agent change request event:" + event.toString() + " to agent:" + agentId);
-        }
-        Command[] cmds = new Command[1];
-        cmds[0] = new PropagateResourceEventCommand(agentId, event);
-
-        String AnsStr = _clusterMgr.execute(msPeer, agentId, _gson.toJson(cmds), true);
-        if (AnsStr == null) {
-            throw new AgentUnavailableException(agentId);
-        }
-
-        Answer[] answers = _gson.fromJson(AnsStr, Answer[].class);
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Result for agent change is " + answers[0].getResult());
-        }
-
-        return answers[0].getResult();
-    }
 
     public boolean executeResourceUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
         return _resourceMgr.executeUserRequest(hostId, event);

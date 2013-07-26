@@ -43,6 +43,13 @@ import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -51,7 +58,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -116,12 +122,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-
 
 @Local(value = {VmwareManager.class, VmwareDatacenterService.class})
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService {
@@ -142,7 +142,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject ClusterDao _clusterDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject CommandExecLogDao _cmdExecLogDao;
-    @Inject ClusterManager _clusterMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
     @Inject DataStoreManager _dataStoreMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
@@ -664,7 +663,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private String setupMountPoint(String parent) {
         String mountPoint = null;
-        long mshostId = _clusterMgr.getManagementNodeId();
+        long mshostId = ManagementServerNode.getManagementServerId();
         for (int i = 0; i < 10; i++) {
             String mntPt = parent + File.separator + String.valueOf(mshostId) + "." + Integer.toHexString(_rand.nextInt(Integer.MAX_VALUE));
             File file = new File(mntPt);
@@ -683,7 +682,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private void startupCleanup(String parent) {
         s_logger.info("Cleanup mounted NFS mount points used in previous session");
 
-        long mshostId = _clusterMgr.getManagementNodeId();
+        long mshostId = ManagementServerNode.getManagementServerId();
 
         // cleanup left-over NFS mounts from previous session
         String[] mounts = _storage.listFiles(parent + File.separator + String.valueOf(mshostId) + ".*");

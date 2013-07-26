@@ -438,14 +438,12 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
@@ -513,7 +511,6 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -530,13 +527,11 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -584,7 +579,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -605,8 +599,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private AlertManager _alertMgr;
     @Inject
     private IPAddressDao _publicIpAddressDao;
-    @Inject
-    private DomainRouterDao _routerDao;
     @Inject
     private ConsoleProxyDao _consoleProxyDao;
     @Inject
@@ -637,8 +629,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyManager _consoleProxyMgr;
     @Inject
     private SecondaryStorageVmManager _secStorageVmMgr;
-    @Inject
-    private ServiceOfferingDao _offeringsDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
@@ -671,16 +661,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private VolumeDao _volumeDao;
-    @Inject
-    private AsyncJobManager _asyncMgr;
     private int _purgeDelay;
     private int _alertPurgeDelay;
     @Inject
     private InstanceGroupDao _vmGroupDao;
-    @Inject
-    private UploadMonitor _uploadMonitor;
-    @Inject
-    private UploadDao _uploadDao;
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
     @Inject
@@ -690,8 +674,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<HostAllocator> _hostAllocators;
     @Inject
     private List<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject
-    private ConfigurationManager _configMgr;
     @Inject
     private ResourceTagDao _resourceTagDao;
 

@@ -60,7 +60,6 @@ import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
@@ -101,7 +100,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Inject private AsyncJobExecutorContext _context;
     @Inject private SyncQueueManager _queueMgr;
-    @Inject private ClusterManager _clusterMgr;
     @Inject private AccountManager _accountMgr;
     @Inject private AccountDao _accountDao;
     @Inject private AsyncJobDao _jobDao;
