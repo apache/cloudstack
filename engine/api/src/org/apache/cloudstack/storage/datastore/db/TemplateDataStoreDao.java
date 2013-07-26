@@ -28,11 +28,13 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
     List<TemplateDataStoreVO> listByStoreId(long id);
 
     List<TemplateDataStoreVO> listDestroyed(long storeId);
+
+    List<TemplateDataStoreVO> listActiveOnCache(long id);
 
     void deletePrimaryRecordsForStore(long id);
 

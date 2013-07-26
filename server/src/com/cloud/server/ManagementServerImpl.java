@@ -148,6 +148,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
@@ -761,15 +762,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     public ManagementServerImpl() {
-    	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
 
     public List<UserAuthenticator> getUserAuthenticators() {
-    	return _userAuthenticators;
+        return _userAuthenticators;
     }
 
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
-    	_userAuthenticators = authenticators;
+        _userAuthenticators = authenticators;
     }
 
     public List<UserAuthenticator> getUserPasswordEncoders() {
@@ -781,18 +782,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     public List<HostAllocator> getHostAllocators() {
-		return _hostAllocators;
-	}
+        return _hostAllocators;
+    }
 
-	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
-		this._hostAllocators = _hostAllocators;
-	}
+    public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+        this._hostAllocators = _hostAllocators;
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
+    @Override
+    public boolean configure(String name, Map<String, Object> params)
+            throws ConfigurationException {
 
-		_configs = _configDao.getConfiguration();
+        _configs = _configDao.getConfiguration();
 
         String value = _configs.get("event.purge.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
@@ -817,10 +818,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _availableIdsMap.put(id, true);
         }
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
+    @Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
 
@@ -922,7 +923,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return result;
         }
         for (EventVO event : events) {
-        _eventDao.remove(event.getId());
+            _eventDao.remove(event.getId());
         }
         return result;
     }
@@ -952,7 +953,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd cmd) {
-    	Object id = cmd.getId();
+        Object id = cmd.getId();
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
         Long zoneId = cmd.getZoneId();
@@ -963,7 +964,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
 
-    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -1035,7 +1036,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>
-            listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
+    listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -1426,7 +1427,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
 
-    	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1768,7 +1769,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         return templateZonePairSet;
     }
-*/
+     */
 
     private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
         Long id = cmd.getId();
@@ -2814,6 +2815,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteImageStoreCmd.class);
         cmdList.add(CreateCacheStoreCmd.class);
         cmdList.add(ListCacheStoresCmd.class);
+        cmdList.add(DeleteCacheStoreCmd.class);
         cmdList.add(CreateApplicationLoadBalancerCmd.class);
         cmdList.add(ListApplicationLoadBalancersCmd.class);
         cmdList.add(DeleteApplicationLoadBalancerCmd.class);
@@ -3231,8 +3233,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             elasticLoadBalancerEnabled = elbEnabled == null ? false : Boolean.parseBoolean(elbEnabled);
             if (elasticLoadBalancerEnabled) {
                 String networkType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
-                if (networkType != null)
+                if (networkType != null) {
                     supportELB = networkType;
+                }
             }
         }
 
@@ -3338,10 +3341,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String certificate = cmd.getCertificate();
         String key = cmd.getPrivateKey();
         try {
-            if (certificate != null)
+            if (certificate != null) {
                 certificate = URLDecoder.decode(certificate, "UTF-8");
-            if (key != null)
+            }
+            if (key != null) {
                 key = URLDecoder.decode(key, "UTF-8");
+            }
         } catch (UnsupportedEncodingException e) {
         } finally {
         }
@@ -3358,8 +3363,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         _consoleProxyMgr.setManagementState(ConsoleProxyManagementState.ResetSuspending);
         List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, State.Running, State.Migrating, State.Starting);
-        for (SecondaryStorageVmVO ssVmVm : alreadyRunning)
+        for (SecondaryStorageVmVO ssVmVm : alreadyRunning) {
             _secStorageVmMgr.rebootSecStorageVm(ssVmVm.getId());
+        }
         return "Certificate has been updated, we will stop all running console proxy VMs and secondary storage VMs to propagate the new certificate, please give a few minutes for console access service to be up again";
     }
 
@@ -3404,7 +3410,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // give us the same key
         if (_hashKey == null) {
             _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(),
-            	getBase64EncodedRandomKey(128));
+                    getBase64EncodedRandomKey(128));
         }
         return _hashKey;
     }
@@ -3413,8 +3419,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public String getEncryptionKey() {
         if (_encryptionKey == null) {
             _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(),
-            	Config.EncryptionKey.getCategory(),
-            	getBase64EncodedRandomKey(128));
+                    Config.EncryptionKey.getCategory(),
+                    getBase64EncodedRandomKey(128));
         }
         return _encryptionKey;
     }
@@ -3423,8 +3429,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public String getEncryptionIV() {
         if (_encryptionIV == null) {
             _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(),
-            	Config.EncryptionIV.getCategory(),
-            	getBase64EncodedRandomKey(128));
+                    Config.EncryptionIV.getCategory(),
+                    getBase64EncodedRandomKey(128));
         }
         return _encryptionIV;
     }
@@ -3433,18 +3439,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @DB
     public void resetEncryptionKeyIV() {
 
-    	SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
-    	sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
-    	sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
-    	sb.done();
+        SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
+        sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.done();
 
-    	SearchCriteria<ConfigurationVO> sc = sb.create();
-    	sc.setParameters("name1", Config.EncryptionKey.key());
-    	sc.setParameters("name2", Config.EncryptionIV.key());
+        SearchCriteria<ConfigurationVO> sc = sb.create();
+        sc.setParameters("name1", Config.EncryptionKey.key());
+        sc.setParameters("name2", Config.EncryptionIV.key());
 
-    	_configDao.expunge(sc);
-    	_encryptionKey = null;
-    	_encryptionIV = null;
+        _configDao.expunge(sc);
+        _encryptionKey = null;
+        _encryptionIV = null;
     }
 
     @Override
@@ -3453,16 +3459,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private static String getBase64EncodedRandomKey(int nBits) {
-		SecureRandom random;
-		try {
-			random = SecureRandom.getInstance("SHA1PRNG");
-	        byte[] keyBytes = new byte[nBits/8];
-	        random.nextBytes(keyBytes);
-	        return Base64.encodeBase64URLSafeString(keyBytes);
-		} catch (NoSuchAlgorithmException e) {
-			s_logger.error("Unhandled exception: ", e);
-		}
-		return null;
+        SecureRandom random;
+        try {
+            random = SecureRandom.getInstance("SHA1PRNG");
+            byte[] keyBytes = new byte[nBits/8];
+            random.nextBytes(keyBytes);
+            return Base64.encodeBase64URLSafeString(keyBytes);
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unhandled exception: ", e);
+        }
+        return null;
     }
 
     @Override

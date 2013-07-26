@@ -25,9 +25,11 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
     List<VolumeDataStoreVO> listByStoreId(long id);
+
+    List<VolumeDataStoreVO> listActiveOnCache(long id);
 
     void deletePrimaryRecordsForStore(long id);
 

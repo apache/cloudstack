@@ -26,11 +26,13 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
     List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role);
 
-    void deletePrimaryRecordsForStore(long id);
+    List<SnapshotDataStoreVO> listActiveOnCache(long id);
+
+    void deletePrimaryRecordsForStore(long id, DataStoreRole role);
 
     SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId);
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
