@@ -1378,7 +1378,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return _agentLBEnabled.value();
     }
 
-    @Inject
     private ClusteredAgentRebalanceService _rebalanceService;
 
     boolean _agentLbHappened = false;
