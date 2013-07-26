@@ -184,6 +184,12 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
@@ -857,8 +863,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 long destHostId = dest.getHost().getId();
                 vm.setPodId(dest.getPod().getId());
                 Long cluster_id = dest.getCluster().getId();
-                ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
-                ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
+                ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio");
+                ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
+                //storing the value of overcommit in the vm_details table for doing a capacity check in case the cluster overcommit ratio is changed.
+                if (_uservmDetailsDao.findDetail(vm.getId(),"cpuOvercommitRatio") == null && ((Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f)) ){
+                    UserVmDetailVO vmDetail_cpu = new UserVmDetailVO(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue());
+                    UserVmDetailVO vmDetail_ram = new UserVmDetailVO(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue());
+                    _uservmDetailsDao.persist(vmDetail_cpu);
+                    _uservmDetailsDao.persist(vmDetail_ram);
+                }
+                else if (((Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f))) {
+                    UserVmDetailVO vmDetail_cpu = _uservmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
+                    vmDetail_cpu.setValue(cluster_detail_cpu.getValue());
+                    UserVmDetailVO vmDetail_ram = _uservmDetailsDao.findDetail(vm.getId(), "memoryOvercommitRatio");
+                    vmDetail_ram.setValue(cluster_detail_ram.getValue());
+                    _uservmDetailsDao.update(vmDetail_cpu.getId(), vmDetail_cpu);
+                    _uservmDetailsDao.update(vmDetail_ram.getId(), vmDetail_ram);
+                }
                 vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
                 vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
                 StartAnswer startAnswer = null;
