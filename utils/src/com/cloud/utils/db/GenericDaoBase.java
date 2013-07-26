@@ -68,7 +68,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.ComponentMethodInterceptable;
@@ -900,6 +899,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB(txn=false)
     protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter) {
         return searchIncludingRemoved(sc, filter, null, false);
+    }
+    
+    @DB(txn=false)
+    protected Pair<List<T>, Integer> listAndCountIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter) {
+        List<T> objects = searchIncludingRemoved(sc, filter, null, false);
+        Integer count = getCount(sc);
+        return new Pair<List<T>, Integer>(objects, count);
     }
 
     @DB(txn=false)

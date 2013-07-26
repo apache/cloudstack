@@ -35,6 +35,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
@@ -93,8 +94,8 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 	}
 
 	@Override
-	public List<UsageVO> searchAllRecords(SearchCriteria<UsageVO> sc, Filter filter) {
-	    return listIncludingRemovedBy(sc, filter);
+	public Pair<List<UsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<UsageVO> sc, Filter filter) {
+	    return listAndCountIncludingRemovedBy(sc, filter);
 	}
 
 	@Override

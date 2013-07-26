@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.usage;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,6 +31,8 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.log4j.Logger;
+
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listUsageRecords", description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
@@ -110,16 +111,18 @@ public class GetUsageRecordsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Usage> usageRecords = _usageService.getUsageRecords(this);
+        Pair<List<? extends Usage>, Integer> usageRecords = _usageService.getUsageRecords(this);
         ListResponse<UsageRecordResponse> response = new ListResponse<UsageRecordResponse>();
         List<UsageRecordResponse> usageResponses = new ArrayList<UsageRecordResponse>();
-        for(Usage usageRecord: usageRecords){
-        	UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord);
-        	usageResponse.setObjectName("usagerecord");
-        	usageResponses.add(usageResponse);
+        if (usageRecords != null) {
+            for(Usage usageRecord: usageRecords.first()){
+                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord);
+                usageResponse.setObjectName("usagerecord");
+                usageResponses.add(usageResponse);
+            }
+            response.setResponses(usageResponses, usageRecords.second());
         }
-        
-        response.setResponses(usageResponses);
+                
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -16,7 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.TestCase;
+
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
@@ -26,8 +30,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.utils.Pair;
 
 public class UsageCmdTest extends TestCase {
 
@@ -56,7 +59,7 @@ public class UsageCmdTest extends TestCase {
 
         UsageService usageService = Mockito.mock(UsageService.class);
 
-        List usageRecords = new ArrayList<Usage>();
+        Pair<List<? extends Usage>, Integer> usageRecords = new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
 
         Mockito.when(usageService.getUsageRecords(getUsageRecordsCmd)).thenReturn(
                 usageRecords);

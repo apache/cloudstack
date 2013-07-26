@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 
+import com.cloud.utils.Pair;
+
 public interface UsageService {
     /**
      * Generate Billing Records from the last time it was generated to the
@@ -50,7 +52,7 @@ public interface UsageService {
      *             the appropriate page number)
      * @return a list of usage records
      */
-    List<? extends Usage> getUsageRecords(GetUsageRecordsCmd cmd);
+    Pair<List<? extends Usage>, Integer> getUsageRecords(GetUsageRecordsCmd cmd);
 
     /**
      * Retrieves the timezone used for usage aggregation.  One day is represented as midnight to 11:59:59pm
