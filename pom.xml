@@ -180,6 +180,7 @@
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
         <version>${cs.mysql.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>log4j</groupId>
@@ -205,6 +206,11 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
       <version>${org.springframework.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>1</version>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>

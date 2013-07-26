@@ -119,7 +119,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
     <resources>
       <resource>
         <directory>resources</directory>

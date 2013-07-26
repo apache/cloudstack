@@ -129,16 +129,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>1.9.5</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
-    </dependency>
-    <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
       <version>6.1.1</version>
@@ -147,13 +137,6 @@
 
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <testSourceDirectory>${project.basedir}/test</testSourceDirectory>
-    <testResources>
-      <testResource>
-        <directory>${project.basedir}/test/resource</directory>
-      </testResource>
-    </testResources>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

@@ -36,12 +36,4 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
-  <build>
-    <defaultGoal>install</defaultGoal>
-    <testResources>
-      <testResource>
-        <directory>${project.basedir}/test/resources</directory>
-      </testResource>
-    </testResources>
-  </build>
 </project>
