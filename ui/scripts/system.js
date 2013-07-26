@@ -6488,12 +6488,7 @@
                                                                 selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
                                                             }
                                                         },
-                                                        error: function(XMLHttpResponse) { //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});                                                      	
-                                                        	if(parseXMLHttpResponse(XMLHttpResponse) == 'The given command does not exist or it is not available for user')
-                                                        		return; //do nothing
-                                                        	else 
-                                                        		cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)}); //pop up error dialog box if the error is not 'The given command does not exist or it is not available for user'
-                                                        }
+                                                        error: function(XMLHttpResponse) {} //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});   
                                                     });
 
                                                     // for testing only (begin)
