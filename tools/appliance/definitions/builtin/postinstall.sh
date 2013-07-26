@@ -18,11 +18,9 @@
 set -x
 
 install_packages() {
-  # xen
-  yum -y install xen-tools
 
   # dev tools, ssh, nfs
-  yum -y install telnet tcpdump sed awk ssh
+  yum -y install wget telnet tcpdump sed awk ssh htop
 
   # utlities
   yum -y install httpd
