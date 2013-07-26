@@ -2028,7 +2028,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                        id=private_gateway.id,
                                        listall=True
                                        )
-        self.assertEqaul(
+        self.assertEqual(
                         isinstance(gateways, list),
                         True,
                         "List private gateways should return a valid response"
@@ -2045,7 +2045,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                        id=static_route.id,
                                        listall=True
                                        )
-        self.assertEqaul(
+        self.assertEqual(
                         isinstance(static_routes, list),
                         True,
                         "List static route should return a valid response"
@@ -2199,7 +2199,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                        id=private_gateway.id,
                                        listall=True
                                        )
-        self.assertEqaul(
+        self.assertEqual(
                         isinstance(gateways, list),
                         True,
                         "List private gateways should return a valid response"
@@ -2216,7 +2216,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                        id=static_route.id,
                                        listall=True
                                        )
-        self.assertEqaul(
+        self.assertEqual(
                         isinstance(static_routes, list),
                         True,
                         "List static route should return a valid response"
