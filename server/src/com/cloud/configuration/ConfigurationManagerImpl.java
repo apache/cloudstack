@@ -733,7 +733,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (type.equals(Boolean.class)) {
             if (!(value.equals("true") || value.equals("false"))) {
-                s_logger.error("Configuration variable " + name + " is expecting true or false in stead of " + value);
+                s_logger.error("Configuration variable " + name + " is expecting true or false instead of " + value);
                 return "Please enter either 'true' or 'false'.";
             }
             return null;
@@ -790,17 +790,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else if (range.equals("hypervisorList")) {
                 String[] hypervisors = value.split(",");
                 if (hypervisors == null) {
-                    return "Please enter hypervisor list, seperated by comma";
+                    return "Please enter hypervisor list, separated by comma";
                 }
                 for (String hypervisor : hypervisors) {
                     if (HypervisorType.getType(hypervisor) == HypervisorType.Any
                             || HypervisorType.getType(hypervisor) == HypervisorType.None) {
-                        return "Please enter valid hypervisor type";
+                        return "Please enter a valid hypervisor type";
                     }
                 }
             } else if (range.equalsIgnoreCase("instanceName")) {
                 if (!NetUtils.verifyInstanceName(value)) {
-                    return "Instance name can not contain hyphen, spaces and plus sign";
+                    return "Instance name can not contain hyphen, space or plus sign";
                 }
             } else if (range.equals("routes")) {
                 String[] routes = value.split(",");
