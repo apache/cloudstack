@@ -14215,38 +14215,46 @@
                                                 ucsmanagerid: args.context.ucsManagers[0].id
                                             },
                                             success: function(json) {
-                                                var data = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
-
+                                                //for testing only (begin)
+                                            	/*
+                                            	json = {
+                                                	    "listucsbladeresponse": {
+                                                	        "count": 4,
+                                                	        "ucsblade": [
+                                                	            {
+                                                	                "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
+                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	                "bladedn": "sys/chassis-1/blade-1",
+                                                	                "profiledn": "org-root/ls-profile-for-blade-1"
+                                                	            },
+                                                	            {
+                                                	                "id": "524a3e55-5b61-4561-9464-1b19e3543189",
+                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	                "bladedn": "sys/chassis-1/blade-2",
+                                                	                "profiledn": "org-root/ls-profile-for-blade-2"
+                                                	            },
+                                                	            {
+                                                	                "id": "4828f560-6191-46e6-8a4c-23d1d7d017f0",
+                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	                "bladedn": "sys/chassis-1/blade-3"
+                                                	            },
+                                                	            {
+                                                	                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
+                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	                "bladedn": "sys/chassis-1/blade-4"
+                                                	            }
+                                                	        ]
+                                                	    }
+                                                	};
+                                            	*/
+                                            	//for testing only (end)
+                                            	
+                                            	var data = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
                                                 for (var i = 0; i < data.length; i++) {
                                                     var array1 = data[i].bladedn.split('/');
                                                     data[i].chassis = array1[1];
                                                     data[i].bladeid = array1[2];
                                                 }
-
-
-                                                //for testing only (begin)
-                                                /*
-						                        var data = [
-						                          {
-						                            "id": "58c84a1d-6e46-44e3-b7ec-abaa876d1be3",
-						                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
-						                            "bladedn": "sys/chassis-1/blade-1"
-						                          },
-						                          {
-						                            "id": "de5abadf-f294-4014-9fed-7ee37a9b8724",
-						                            "ucsmanagerid": "0c96f848-4306-47e5-a9ac-b76aad3557fb",
-						                            "bladedn": "sys/chassis-1/blade-2"
-						                          }
-						                        ];
-						                        for(var i = 0; i < data.length; i++) {
-						                          var array1 = data[i].bladedn.split('/');
-						                          data[i].chassis = array1[1];
-						                          data[i].bladeid = array1[2];
-						                        }
-						                        */
-                                                //for testing only (end)
-
-
                                                 args.response.success({
                                                     data: data
                                                 });
@@ -14276,8 +14284,35 @@
                                                                     ucsmanagerid: args.context.ucsManagers[0].id
                                                                 },
                                                                 async: false,
-                                                                success: function(json) { //e.g. json == { "listucsprofileresponse" : { "count":1 ,"ucsprofile" : [  {"ucsdn":"org-root/ls-testProfile"} ] } }
-                                                                    var ucsprofiles = json.listucsprofileresponse.ucsprofile;
+                                                                success: function(json) { 
+                                                                    //for testing only (begin)
+                                                                	/*
+                                                                	json = {
+                                                                    	    "listucsprofileresponse": {
+                                                                    	        "count": 5,
+                                                                    	        "ucsprofile": [
+                                                                    	            {
+                                                                    	                "ucsdn": "org-root/ls-profile-for-blade-2"
+                                                                    	            },
+                                                                    	            {
+                                                                    	                "ucsdn": "org-root/ls-profile-for-blade-1"
+                                                                    	            },
+                                                                    	            {
+                                                                    	                "ucsdn": "org-root/ls-simpleProfile"
+                                                                    	            },
+                                                                    	            {
+                                                                    	                "ucsdn": "org-root/ls-testProfile"
+                                                                    	            },
+                                                                    	            {
+                                                                    	                "ucsdn": "org-root/ls-UCS_Test"
+                                                                    	            }
+                                                                    	        ]
+                                                                    	    }
+                                                                    	};
+                                                                    */
+                                                                	//for testing only (end)
+                                                                	
+                                                                	var ucsprofiles = json.listucsprofileresponse.ucsprofile;
                                                                     if (ucsprofiles != null) {
                                                                         for (var i = 0; i < ucsprofiles.length; i++) {
                                                                             items.push({
@@ -14321,17 +14356,16 @@
                                                         bladeid: args.context.blades[0].id
                                                     },
                                                     success: function(json) {
-                                                        //for testing only (begin)
+                                                    	//for testing only (begin)
                                                     	/*
-                                                    	json =                                         
-                                                        {
-														    "associateucsprofiletobladeresponse": {
-														        "jobid": "dff5fa7f-e4a7-457b-92f1-2fede357e3d5"
-														    }
-														};
-														*/
+                                                    	json = {
+                                                        	    "associateucsprofiletobladeresponse": {
+                                                        	        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                        	    }
+                                                        	}
+                                                    	*/
                                                     	//for testing only (end)
-                                                    	
+                                                    	                                                    	
                                                     	var jid = json.associateucsprofiletobladeresponse.jobid;
                                                         args.response.success({
                                                             _custom: {
@@ -14339,30 +14373,30 @@
                                                                 getUpdatedItem: function(json) {                                                               	    
                                                                 	//for testing only (begin)
                                                                 	/*
-                                                                	json = 
-                                                                	{
-                                                                	    "queryasyncjobresultresponse": {
-                                                                	        "accountid": "b24f6866-f0ca-11e2-8c16-d637902e3581",
-                                                                	        "userid": "b24f76df-f0ca-11e2-8c16-d637902e3581",
-                                                                	        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
-                                                                	        "jobstatus": 1,
-                                                                	        "jobprocstatus": 0,
-                                                                	        "jobresultcode": 0,
-                                                                	        "jobresulttype": "object",
-                                                                	        "jobresult": {
-                                                                	            "ucsblade": {
-                                                                	                "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
-                                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                                	                "bladedn": "sys/chassis-1/blade-1"
-                                                                	            }
-                                                                	        },
-                                                                	        "created": "2013-07-25T15:10:13-0700",
-                                                                	        "jobid": "dff5fa7f-e4a7-457b-92f1-2fede357e3d5"
-                                                                	    }
-                                                                	}
+                                                                	json = {
+                                                                		    "queryasyncjobresultresponse": {
+                                                                		        "accountid": "b24f6e36-f0ca-11e2-8c16-d637902e3581",
+                                                                		        "userid": "b24f7d8d-f0ca-11e2-8c16-d637902e3581",
+                                                                		        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
+                                                                		        "jobstatus": 1,
+                                                                		        "jobprocstatus": 0,
+                                                                		        "jobresultcode": 0,
+                                                                		        "jobresulttype": "object",
+                                                                		        "jobresult": {
+                                                                		            "ucsblade": {
+                                                                		                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
+                                                                		                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                                		                "bladedn": "sys/chassis-1/blade-4",
+                                                                		                "profiledn": "org-root/ls-profile-for-blade-4"
+                                                                		            }
+                                                                		        },
+                                                                		        "created": "2013-07-26T13:53:01-0700",
+                                                                		        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                                		    }
+                                                                		};
                                                                 	*/
-	                                                               	//for testing only (end)
-                                                                	                                                               	    
+                                                                	//for testing only (end)
+                                                                	                                                                	                                  	    
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
                                                             }
