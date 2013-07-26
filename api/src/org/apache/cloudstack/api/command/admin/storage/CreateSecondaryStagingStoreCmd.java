@@ -35,32 +35,32 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-@APICommand(name = "createCacheStore", description="create cache store.", responseObject=ImageStoreResponse.class)
-public class CreateCacheStoreCmd extends BaseCmd {
+@APICommand(name = "createSecondaryStagingStore", description = "create secondary staging store.", responseObject = ImageStoreResponse.class)
+public class CreateSecondaryStagingStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddImageStoreCmd.class.getName());
-    private static final String s_name = "createcachestoreresponse";
+    private static final String s_name = "createsecondarystagingstoreresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL for the cache store")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL for the staging store")
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the Zone ID for the image store")
+ description = "the Zone ID for the staging store")
     private Long zoneId;
 
 
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the image store")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "the details for the staging store")
     private Map<String, String> details;
 
     @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
-            required=false, description="the scope of the image store: zone only for now")
+ required = false, description = "the scope of the staging store: zone only for now")
     private String scope;
 
     @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
-            required=false, description="the cache store provider name")
+ required = false, description = "the staging store provider name")
     private String providerName;
 
     /////////////////////////////////////////////////////
@@ -75,25 +75,25 @@ public class CreateCacheStoreCmd extends BaseCmd {
         return zoneId;
     }
 
-     public Map<String, String> getDetails() {
-         Map<String, String> detailsMap = null;
-         if (details != null && !details.isEmpty()) {
-             detailsMap = new HashMap<String, String>();
-             Collection<?> props = details.values();
-             Iterator<?> iter = props.iterator();
-             while (iter.hasNext()) {
-                 HashMap<String, String> detail = (HashMap<String, String>) iter.next();
-                 String key = detail.get("key");
-                 String value = detail.get("value");
-                 detailsMap.put(key, value);
-             }
-         }
-         return detailsMap;
+    public Map<String, String> getDetails() {
+        Map<String, String> detailsMap = null;
+        if (details != null && !details.isEmpty()) {
+            detailsMap = new HashMap<String, String>();
+            Collection<?> props = details.values();
+            Iterator<?> iter = props.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                String key = detail.get("key");
+                String value = detail.get("value");
+                detailsMap.put(key, value);
+            }
+        }
+        return detailsMap;
     }
 
     public String getScope() {
         return this.scope;
-     }
+    }
 
     public String getProviderName() {
         return this.providerName;
@@ -117,13 +117,13 @@ public class CreateCacheStoreCmd extends BaseCmd {
     @Override
     public void execute(){
         try{
-            ImageStore result = _storageService.createCacheStore(this);
+            ImageStore result = _storageService.createSecondaryStagingStore(this);
             ImageStoreResponse storeResponse = null;
             if (result != null ) {
-                    storeResponse = _responseGenerator.createImageStoreResponse(result);
-                    storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("secondarystorage");
-                    this.setResponseObject(storeResponse);
+                storeResponse = _responseGenerator.createImageStoreResponse(result);
+                storeResponse.setResponseName(getCommandName());
+                storeResponse.setObjectName("secondarystorage");
+                this.setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }

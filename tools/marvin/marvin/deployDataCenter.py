@@ -174,7 +174,7 @@ specify a valid config file" % cfgFile)
         if cacheStorages is None:
             return
         for cache in cacheStorages:
-            cachecmd = createCacheStore.createCacheStoreCmd()
+            cachecmd = createSecondaryStagingStore.createSecondaryStagingStoreCmd()
             cachecmd.url = cache.url
             cachecmd.provider = cache.provider
             cachecmd.zoneid = zoneId
@@ -186,7 +186,7 @@ specify a valid config file" % cfgFile)
                                             'key': key,
                                             'value': value
                                             })
-            self.apiClient.createCacheStore(cachecmd)
+            self.apiClient.createSecondaryStagingStore(cachecmd)
 
     def createnetworks(self, networks, zoneId):
         if networks is None:

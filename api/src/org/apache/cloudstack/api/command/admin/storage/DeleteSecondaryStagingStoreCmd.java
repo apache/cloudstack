@@ -28,18 +28,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCacheStore", description = "Deletes a cache store .", responseObject = SuccessResponse.class, since = "4.2.0")
-public class DeleteCacheStoreCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteCacheStoreCmd.class.getName());
+@APICommand(name = "deleteSecondaryStagingStore", description = "Deletes a secondary staging store .", responseObject = SuccessResponse.class, since = "4.2.0")
+public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteSecondaryStagingStoreCmd.class.getName());
 
-    private static final String s_name = "deletecachestoreresponse";
+    private static final String s_name = "deletesecondarystagingstoreresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
- required = true, description = "the cache store ID")
+            required = true, description = "the staging store ID")
     private Long id;
 
 
@@ -68,12 +68,12 @@ public class DeleteCacheStoreCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean result = _storageService.deleteCacheStore(this);
+        boolean result = _storageService.deleteSecondaryStagingStore(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete image store");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete secondary staging store");
         }
     }
 }
