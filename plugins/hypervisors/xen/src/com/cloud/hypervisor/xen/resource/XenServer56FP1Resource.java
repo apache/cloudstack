@@ -200,6 +200,13 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             vmr.platform = platform;
         }
 
+        String coresPerSocket = details.get("cpu.corespersocket");
+        if (coresPerSocket != null) {
+            Map<String, String> platform = vmr.platform;
+            platform.put("cores-per-socket", coresPerSocket);
+            vmr.platform = platform;
+        }
+
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
 
