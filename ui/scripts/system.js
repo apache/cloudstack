@@ -15187,6 +15187,40 @@
                             detailView: {
                                 name: 'Cache Storage details',
                                 isMaximized: true,
+                                actions: {
+                                	remove: {
+                                        label: 'Delete Cache Storage',
+                                        messages: {
+                                            confirm: function(args) {
+                                                return 'Please confirm you want to delete cache storage.';
+                                            },
+                                            notification: function(args) {
+                                                return 'Delete Cache Storage';
+                                            }
+                                        },
+                                        action: function(args) {
+                                            var data = {
+                                            	id: args.context.cacheStorage[0].id
+                                            };
+                                            $.ajax({
+                                                url: createURL('deleteCacheStore'),
+                                                data: data,
+                                                async: true,
+                                                success: function(json) {
+                                                    args.response.success();
+                                                },
+                                                error: function(data) {
+                                                    args.response.error(parseXMLHttpResponse(data));
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: function(args) {
+                                                args.complete();
+                                            }
+                                        }
+                                    }
+                                },
                                 tabs: {
                                     details: {
                                         title: 'label.details',
