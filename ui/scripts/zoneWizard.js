@@ -4171,7 +4171,7 @@
                             };
 
                             $.ajax({
-                                url: createURL('createCacheStore'),
+                                url: createURL('createSecondaryStagingStore'),
                                 data: nfsCacheData,
                                 success: function(json) {
                                     //do nothing

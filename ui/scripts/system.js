@@ -7371,11 +7371,11 @@
                                                     };
 
                                                     $.ajax({
-                                                        url: createURL('listCacheStores' + searchByArgs),
+                                                        url: createURL('listSecondaryStagingStore' + searchByArgs),
                                                         data: data,
                                                         success: function(json) {
                                                             args.response.success({
-                                                                data: json.listcachestoreresponse.imagestore
+                                                                data: json.listsecondarystagingstoreresponse.imagestore
                                                             });
                                                         },
                                                         error: function(json) {
@@ -14869,7 +14869,7 @@
                                                 };
 
                                                 $.ajax({
-                                                    url: createURL('createCacheStore'),
+                                                    url: createURL('createSecondaryStagingStore'),
                                                     data: nfsCacheData,
                                                     success: function(json) {
                                                         //do nothing
@@ -15157,10 +15157,10 @@
                                             url: nfsURL(args.data.nfsServer, args.data.path)
                                         };
                                         $.ajax({
-                                            url: createURL('createCacheStore'),
+                                            url: createURL('createSecondaryStagingStore'),
                                             data: data,
                                             success: function(json) {
-                                                var item = json.createcachestoreresponse.secondarystorage;
+                                                var item = json.createsecondarystagingstoreresponse.secondarystorage;
                                                 args.response.success({
                                                     data: item
                                                 });
@@ -15202,7 +15202,7 @@
                                             	id: args.context.cacheStorage[0].id
                                             };
                                             $.ajax({
-                                                url: createURL('deleteCacheStore'),
+                                                url: createURL('deleteSecondaryStagingStore'),
                                                 data: data,
                                                 async: true,
                                                 success: function(json) {
@@ -15262,13 +15262,13 @@
 
                                         dataProvider: function(args) {
                                             $.ajax({
-                                                url: createURL('listCacheStores'),
+                                                url: createURL('listSecondaryStagingStore'),
                                                 data: {
                                                     id: args.context.cacheStorage[0].id
                                                 },
                                                 async: false,
                                                 success: function(json) {
-                                                    var item = json.listcachestoreresponse.imagestore[0];
+                                                    var item = json.listsecondarystagingstoreresponse.imagestore[0];
                                                     args.response.success({
                                                         data: item
                                                     });
