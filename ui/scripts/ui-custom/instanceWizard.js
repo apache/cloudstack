@@ -123,10 +123,15 @@
                                             $select.siblings('.single-select:visible').find('input[type=checkbox]')
                                                 .attr('checked', false);
 
-                                            if (!$('input[name=new-network]:visible').is(':checked')) {
+                                            var $checkedOtherSelect = $otherSelects.filter(function() {
+                                                return $(this).not('.single-select') &&
+                                                    $(this).find('input[type=checkbox]:checked').size() &&
+                                                    $(this).find('input[type=radio]:checked').size();
+                                            });
+
+                                            if (!$checkedOtherSelect.size() &&
+                                                !$('.new-network:visible input[type=radio]:checked').size()) {
                                                 $(this).closest('.select').find('input[type=radio]').click();
-                                            } else {
-                                                $newNetwork.find('input[type=radio]').click();
                                             }
                                         }
 
