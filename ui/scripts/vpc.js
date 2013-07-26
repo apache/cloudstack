@@ -358,8 +358,6 @@
                         protocol: args.data.protocolnumber
                     });
                     delete args.data.protocolnumber;
-                    delete args.data.startport;
-                    delete args.data.endport;
                     delete args.data.icmptype;
                     delete args.data.icmpcode;
                 } else {
