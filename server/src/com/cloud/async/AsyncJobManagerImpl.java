@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiDispatcher;
@@ -87,7 +88,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
-import com.cloud.utils.net.MacAddress;
 
 @Component
 @Local(value={AsyncJobManager.class})
@@ -773,11 +773,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private long getMsid() {
-        if(_clusterMgr != null) {
-            return _clusterMgr.getManagementNodeId();
-        }
-
-        return MacAddress.getMacAddress().toLong();
+        return ManagementServerNode.getManagementServerId();
     }
 
     private void cleanupPendingJobs(List<SyncQueueItemVO> l) {

@@ -31,9 +31,11 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.config.ConfigDepot;
+import org.apache.cloudstack.config.ConfigKey;
+import org.apache.cloudstack.config.ConfigValue;
+
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
@@ -49,14 +51,14 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     @Inject private ClusterManager _manager;
     
     @Inject private ManagementServerHostDao _mshostDao;
-    
-    @Inject private ConfigurationDao _configDao;
+    @Inject
+    protected ConfigDepot _configDepot;
     
     private ClusterServiceServletContainer _servletContainer;
     
     private int _clusterServicePort = DEFAULT_SERVICE_PORT;
     
-    private int _clusterRequestTimeoutSeconds = DEFAULT_REQUEST_TIMEOUT;
+    private ConfigValue<Integer> _clusterRequestTimeoutSeconds;
     
     @Override
 	public ClusterService getPeerService(String strPeer) throws RemoteException {
@@ -71,7 +73,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     	if(serviceUrl == null)
     		return null;
     	
-    	return new ClusterServiceServletImpl(serviceUrl, _clusterRequestTimeoutSeconds);
+        return new ClusterServiceServletImpl(serviceUrl, _clusterRequestTimeoutSeconds);
 	}
     
     @Override
@@ -123,12 +125,14 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     	return true;
     }
     
+    private final ConfigKey<Integer> ClusterMessageTimeOut = new ConfigKey<Integer>(Integer.class, "cluster.message.timeout.seconds", "Advance", ClusterManager.class, "300",
+            "Time (in seconds) to wait before a inter-management server message post times out.", true, "Seconds");
+
     private void init() throws ConfigurationException {
     	if(_mshostDao != null)
     		return;
     	
-        String value = _configDao.getValue(Config.ClusterMessageTimeOutSeconds.key());
-    	_clusterRequestTimeoutSeconds = NumbersUtil.parseInt(value, DEFAULT_REQUEST_TIMEOUT);
+        _clusterRequestTimeoutSeconds = _configDepot.get(ClusterMessageTimeOut);
     	s_logger.info("Configure cluster request time out. timeout: " + _clusterRequestTimeoutSeconds + " seconds");
         
         File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");

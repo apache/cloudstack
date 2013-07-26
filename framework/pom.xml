@@ -34,5 +34,7 @@
     <module>rest</module>
     <module>events</module>
     <module>jobs</module>
+	<module>cluster</module>
+	<module>db</module>
   </modules>
 </project>

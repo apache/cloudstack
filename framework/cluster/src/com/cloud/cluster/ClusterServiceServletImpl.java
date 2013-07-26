@@ -27,23 +27,25 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.config.ConfigValue;
+
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
     
     private String _serviceUrl;
 
-    private int _requestTimeoutSeconds;
+    private ConfigValue<Integer> _requestTimeoutSeconds;
     protected static HttpClient s_client = null;
     
     public ClusterServiceServletImpl() {
     }
 
-    public ClusterServiceServletImpl(String serviceUrl, int requestTimeoutSeconds) {
-    	s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + requestTimeoutSeconds + " seconds");
+    public ClusterServiceServletImpl(String serviceUrl, ConfigValue<Integer> requestTimeoutSeconds) {
+        s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + requestTimeoutSeconds.value() + " seconds");
     	
-        this._serviceUrl = serviceUrl;
-        this._requestTimeoutSeconds = requestTimeoutSeconds;
+        _serviceUrl = serviceUrl;
+        _requestTimeoutSeconds = requestTimeoutSeconds;
     }
     
     @Override
@@ -125,7 +127,7 @@ public class ClusterServiceServletImpl implements ClusterService {
     		
 	        s_client = new HttpClient(mgr);
 	        HttpClientParams clientParams = new HttpClientParams();
-	        clientParams.setSoTimeout(_requestTimeoutSeconds * 1000);
+            clientParams.setSoTimeout(_requestTimeoutSeconds.value() * 1000);
 	        
 	        s_client.setParams(clientParams);
     	}
@@ -141,6 +143,6 @@ public class ClusterServiceServletImpl implements ClusterService {
             System.out.println(result);
         } catch (RemoteException e) {
         }
-*/        
+*/
     }
 }

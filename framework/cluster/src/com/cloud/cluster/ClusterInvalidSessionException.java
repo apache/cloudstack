@@ -16,17 +16,17 @@
 // under the License.
 package com.cloud.cluster;
 
-import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ManagementServerHost extends InternalIdentity {
+public class ClusterInvalidSessionException extends Exception {
 
-    public static enum State {
-        Up, Starting, Down
-    };
+	private static final long serialVersionUID = -6636524194520997512L;
 
-    long getMsid();
+    public ClusterInvalidSessionException(String message) {
+        super(message);
+    }
 
-    State getState();
-
-    String getVersion();
+    public ClusterInvalidSessionException(String message, Throwable th) {
+        super(message, th);
+    }
 }
+

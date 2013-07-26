@@ -14,10 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package com.cloud.server;
 
 import java.util.List;
 
+import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.db.Merovingian2;
 
 /**

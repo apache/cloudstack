@@ -30,7 +30,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="mshost")
@@ -81,10 +80,11 @@ public class ManagementServerHostVO implements ManagementServerHost {
     	this.runid = runid;
     	this.serviceIP = serviceIP;
     	this.servicePort = servicePort;
-    	this.lastUpdateTime = updateTime;
+    	lastUpdateTime = updateTime;
     }
     
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 
@@ -119,7 +119,7 @@ public class ManagementServerHostVO implements ManagementServerHost {
 	
 	@Override
 	public ManagementServerHost.State getState() {
-		return this.state;
+		return state;
 	}
 	
 	public void setState(ManagementServerHost.State state) {

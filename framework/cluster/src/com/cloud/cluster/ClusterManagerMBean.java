@@ -16,16 +16,11 @@
 // under the License.
 package com.cloud.cluster;
 
-import com.cloud.exception.CloudException;
-
-public class ActiveFencingException extends CloudException {
-    private static final long serialVersionUID = -3975376101728211726L;
-
-    public ActiveFencingException(String message) {
-        super(message);
-    }
-
-    public ActiveFencingException(String message, Throwable th) {
-        super(message, th);
-    }
+public interface ClusterManagerMBean {
+	public long getMsid();
+	public String getLastUpdateTime();
+	public String getClusterNodeIP();
+	public String getVersion();
+	public int getHeartbeatInterval();
+	public int getHeartbeatThreshold();
 }

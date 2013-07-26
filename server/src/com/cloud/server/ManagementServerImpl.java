@@ -427,6 +427,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -824,6 +825,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
+
+        _clusterMgr.registerListener(new LockMasterListener(ManagementServerNode.getManagementServerId()));
 
         enableAdminUser("password");
         return true;

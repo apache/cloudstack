@@ -16,18 +16,15 @@
 // under the License.
 package com.cloud.cluster;
 
-import com.cloud.exception.CloudException;
 
-public class ClusterInvalidSessionException extends CloudException {
+public class ActiveFencingException extends Exception {
+    private static final long serialVersionUID = -3975376101728211726L;
 
-	private static final long serialVersionUID = -6636524194520997512L;
-
-    public ClusterInvalidSessionException(String message) {
+    public ActiveFencingException(String message) {
         super(message);
     }
 
-    public ClusterInvalidSessionException(String message, Throwable th) {
+    public ActiveFencingException(String message, Throwable th) {
         super(message, th);
     }
 }
-
