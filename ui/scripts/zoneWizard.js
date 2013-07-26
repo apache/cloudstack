@@ -1968,7 +1968,7 @@
                     },
 
                     createNfsCache: {
-                        label: 'Create NFS Cache Storage',
+                        label: 'Create NFS Secondary Staging Store',
                         isBoolean: true,
                         isChecked: true,
                         isHidden: true

@@ -14698,7 +14698,7 @@
                                             },
 
                                             createNfsCache: {
-                                                label: 'Create NFS Cache Storage',
+                                                label: 'Create NFS Secondary Staging Store',
                                                 isBoolean: true,
                                                 isChecked: true
                                             },
@@ -15052,7 +15052,7 @@
                     },
                     cacheStorage: {
                         type: 'select',
-                        title: 'Cache Storage',
+                        title: 'Secondary Staging Store',
                         listView: {
                             id: 'secondarystorages',
                             section: 'seconary-storage',
@@ -15100,9 +15100,9 @@
 
                             actions: {
                                 add: {
-                                    label: 'Add NFS Cache Storage',
+                                    label: 'Add NFS Secondary Staging Store',
                                     createForm: {
-                                        title: 'Add NFS Cache Storage',
+                                        title: 'Add NFS Secondary Staging Store',
                                         fields: {
                                             zoneid: {
                                                 label: 'Zone',
@@ -15177,24 +15177,24 @@
                                     },
                                     messages: {
                                         notification: function(args) {
-                                            return 'Add NFS Cache Storage';
+                                            return 'Add NFS Secondary Staging Store';
                                         }
                                     }
                                 }
                             },
 
                             detailView: {
-                                name: 'Cache Storage details',
+                                name: 'Secondary Staging Store details',
                                 isMaximized: true,
                                 actions: {
                                 	remove: {
-                                        label: 'Delete Cache Storage',
+                                        label: 'Delete Secondary Staging Store',
                                         messages: {
                                             confirm: function(args) {
-                                                return 'Please confirm you want to delete cache storage.';
+                                                return 'Please confirm you want to delete Secondary Staging Store.';
                                             },
                                             notification: function(args) {
-                                                return 'Delete Cache Storage';
+                                                return 'Delete Secondary Staging Store';
                                             }
                                         },
                                         action: function(args) {
