@@ -47,7 +47,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementService;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="listUcsManager", description="List ucs manager", responseObject=UcsManagerResponse.class)
+@APICommand(name="listUcsManagers", description="List ucs manager", responseObject=UcsManagerResponse.class)
 public class ListUcsManagerCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
 
