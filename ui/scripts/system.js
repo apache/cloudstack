@@ -7371,7 +7371,7 @@
                                                     };
 
                                                     $.ajax({
-                                                        url: createURL('listSecondaryStagingStore' + searchByArgs),
+                                                        url: createURL('listSecondaryStagingStores' + searchByArgs),
                                                         data: data,
                                                         success: function(json) {
                                                             args.response.success({
@@ -15262,7 +15262,7 @@
 
                                         dataProvider: function(args) {
                                             $.ajax({
-                                                url: createURL('listSecondaryStagingStore'),
+                                                url: createURL('listSecondaryStagingStores'),
                                                 data: {
                                                     id: args.context.cacheStorage[0].id
                                                 },
