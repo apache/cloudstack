@@ -2397,10 +2397,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (SummedCapacity summedCapacity : summedCapacities) {
             CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(), podId, clusterId, summedCapacity.getUsedCapacity()
                     + summedCapacity.getReservedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
-
-            if (summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                capacity.setTotalCapacity((long) (summedCapacity.getTotalCapacity() * ApiDBUtils.getCpuOverprovisioningFactor()));
-            }
             capacities.add(capacity);
         }
 

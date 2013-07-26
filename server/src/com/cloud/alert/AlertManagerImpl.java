@@ -573,7 +573,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         for( ClusterVO cluster : clusterList){
             for (Short capacityType : clusterCapacityTypes){
                 List<SummedCapacity> capacity = new ArrayList<SummedCapacity>();
-                float overProvFactor = getOverProvisioningFactor(cluster.getId(), capacityType);
                 capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
 
                 // cpu and memory allocated capacity notification threshold can be defined at cluster level, so getting the value if they are defined at cluster level
@@ -599,7 +598,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                     continue;
                 }
 
-                double totalCapacity = capacity.get(0).getTotalCapacity() * overProvFactor; 
+                double totalCapacity = capacity.get(0).getTotalCapacity();
                 double usedCapacity =  capacity.get(0).getUsedCapacity() + capacity.get(0).getReservedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > threshold){
                     generateEmailAlert(ApiDBUtils.findZoneById(cluster.getDataCenterId()), ApiDBUtils.findPodById(cluster.getPodId()), cluster,
