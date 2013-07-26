@@ -67,7 +67,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     ResourceTagDao _tagsDao;
 
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
-    protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
+    // need to account for zone-wide primary storage where storage_pool has
+    // null-value pod and cluster, where hypervisor information is stored in
+    // storage_pool
+    protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT s.hypervisor, c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
 
     private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
             + " AND pool.pod_id = ? AND pool.cluster_id = ? " + " GROUP BY pool.id ORDER BY 2 ASC ";
@@ -109,8 +112,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy);
         sc.setParameters("vType", Volume.Type.ROOT.toString());
-	    return listBy(sc);
-	}
+        return listBy(sc);
+    }
 
     @Override
     public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
@@ -421,14 +424,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                 str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
-                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
-                        .append(dbVol.getUpdated());
+                .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                .append(dbVol.getUpdated());
                 str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState)
-                        .append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount())
-                        .append("; updatedTime=").append(vo.getUpdated());
+                .append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount())
+                .append("; updatedTime=").append(vo.getUpdated());
                 str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState)
-                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
-                        .append("; updatedTime=").append(oldUpdatedTime);
+                .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                .append("; updatedTime=").append(oldUpdatedTime);
             } else {
                 s_logger.debug("Unable to update volume: id=" + vo.getId()
                         + ", as there is no such volume exists in the database anymore");
