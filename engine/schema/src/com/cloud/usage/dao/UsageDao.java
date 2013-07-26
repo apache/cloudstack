@@ -22,13 +22,14 @@ import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
 
 public interface UsageDao extends GenericDao<UsageVO, Long> {
     void deleteRecordsForAccount(Long accountId);
-    List<UsageVO> searchAllRecords(SearchCriteria<UsageVO> sc, Filter filter);
+    Pair<List<UsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<UsageVO> sc, Filter filter);
 
     void saveAccounts(List<AccountVO> accounts);
     void updateAccounts(List<AccountVO> accounts);
