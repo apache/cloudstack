@@ -241,7 +241,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             pstmt.setLong(1, volumeId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return HypervisorType.getType(rs.getString(1));
+                String hypervisor;
+                if (rs.getString(1) != null)
+                    hypervisor = rs.getString(1);
+                else
+                    hypervisor = rs.getString(2);
+                return HypervisorType.getType(hypervisor);
             }
             return HypervisorType.None;
         } catch (SQLException e) {
