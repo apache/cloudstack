@@ -116,7 +116,7 @@ class Services:
                     "name": "Cent OS Template",
                     "passwordenabled": True,
                 },
-            "diskdevice": ['/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
+            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
             # Disk device where ISO is attached to instance
             "mount_dir": "/mnt/tmp",
             "sleep": 60,
@@ -731,15 +731,6 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.id = iso.id
         cmd.virtualmachineid = self.virtual_machine.id
         self.apiclient.attachIso(cmd)
-
-        #determine device type from hypervisor
-        hosts = Host.list(self.apiclient, id=self.virtual_machine.hostid)
-        self.assertTrue(isinstance(hosts, list))
-        self.assertTrue(len(hosts) > 0)
-        self.debug("Found %s host" % hosts[0].hypervisor)
-
-        if hosts[0].hypervisor.lower() == "kvm":
-            self.services["diskdevice"] = "/dev/vdb"
 
         try:
             ssh_client = self.virtual_machine.get_ssh_client()
