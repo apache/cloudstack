@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -1033,15 +1034,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         volume = _volsDao.persist(volume);
-        if (cmd.getSnapshotId() == null) {
-            // for volume created from snapshot, create usage event after volume
-            // creation
-            UsageEventVO usageEvent = new UsageEventVO(
-                    EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
-                    volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    diskOfferingId, null, size);
-            _usageEventDao.persist(usageEvent);
-        }
 
         CallContext.current().setEventDetails("Volume Id: " + volume.getId());
 
