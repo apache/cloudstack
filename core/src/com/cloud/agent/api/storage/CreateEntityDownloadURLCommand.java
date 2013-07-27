@@ -17,13 +17,16 @@
 package com.cloud.agent.api.storage;
 
 
+import com.cloud.agent.api.to.DataTO;
+
 public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
 
-    public CreateEntityDownloadURLCommand(String parent, String installPath, String uuid) { // this constructor is for creating template download url
+    public CreateEntityDownloadURLCommand(String parent, String installPath, String uuid, DataTO data) { // this constructor is for creating template download url
         super();
         this.parent = parent; // parent is required as not the template can be child of one of many parents
         this.installPath = installPath;
         this.extractLinkUUID = uuid;
+        this.data = data;
     }
 
     public CreateEntityDownloadURLCommand(String installPath, String uuid) {
@@ -38,6 +41,16 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
     private String installPath;
     private String parent;
     private String extractLinkUUID;
+
+    public DataTO getData() {
+        return data;
+    }
+
+    public void setData(DataTO data) {
+        this.data = data;
+    }
+
+    private DataTO data;
 
     @Override
     public boolean executeInSequence() {

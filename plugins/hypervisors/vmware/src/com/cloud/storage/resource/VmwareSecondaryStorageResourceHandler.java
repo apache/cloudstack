@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.naming.OperationNotSupportedException;
 
+import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.to.DataTO;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 import org.apache.log4j.Logger;
@@ -30,11 +32,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
-import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
@@ -88,14 +85,12 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer = execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
         } else if (cmd instanceof CopyVolumeCommand) {
             answer = execute((CopyVolumeCommand) cmd);
-        } else if (cmd instanceof CreateVolumeOVACommand) {
-            answer = execute((CreateVolumeOVACommand) cmd);
-        } else if (cmd instanceof PrepareOVAPackingCommand) {
-            answer = execute((PrepareOVAPackingCommand) cmd);
         } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
             answer = execute((CreateVolumeFromSnapshotCommand) cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {
             answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
+        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+            answer = execute((CreateEntityDownloadURLCommand)cmd);
         } else {
             answer = _resource.defaultAction(cmd);
         }
@@ -114,6 +109,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         return answer;
+    }
+    protected Answer execute(CreateEntityDownloadURLCommand cmd) {
+        boolean result = _storageMgr.execute(this, cmd);
+        return _resource.defaultAction(cmd);
     }
 
     private Answer execute(PrimaryStorageDownloadCommand cmd) {
@@ -154,23 +153,6 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(PrepareOVAPackingCommand cmd) {
-        s_logger.info("Fang: VmwareSecStorageResourceHandler: exec cmd. cmd is  " + cmd.toString());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource PrepareOVAPackingCommand: " + _gson.toJson(cmd));
-        }
-
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource CreateVolumeOVACommand: " + _gson.toJson(cmd));
-        }
-
-        return (CreateVolumeOVAAnswer) _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CreateVolumeFromSnapshotCommand cmd) {

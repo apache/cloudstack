@@ -983,7 +983,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 	                throw new Exception(msg);
 	            }
 
-	            clonedVm.exportVm(exportPath, exportName, true, true);
+	            clonedVm.exportVm(exportPath, exportName, false, false);
 	        } finally {
 	            if(clonedVm != null) {
 	                clonedVm.detachAllDisks();

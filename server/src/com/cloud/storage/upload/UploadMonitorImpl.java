@@ -250,7 +250,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
     	    // Create Symlink at ssvm
 	    	String path = vmTemplateHost.getInstallPath();
 	    	String uuid = UUID.randomUUID().toString() + "." + template.getFormat().getFileExtension(); // adding "." + vhd/ova... etc.
-	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid);
+	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null);
 	    	Answer ans = ep.sendMessage(cmd);
 	        if (ans == null || !ans.getResult()) {
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId() + "," + ans.getDetails();
@@ -306,7 +306,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             	throw new CloudRuntimeException(errorString);
             }
 
-            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)secStore).getMountPoint(), path, uuid);
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)secStore).getMountPoint(), path, uuid, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
                 errorString = "Unable to create a link for " +type+ " id:"+entityId + "," + ans.getDetails();

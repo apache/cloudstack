@@ -65,7 +65,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     }
 
     @Override
-    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         throw new UnsupportedServiceException("Extract entity url is not yet supported for Swift image store provider");
     }
 

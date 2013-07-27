@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
@@ -68,7 +69,7 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
 
 
     @Override
-    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         // for S3, no need to do anything, just return template url for
         // extract template. but we need to set object acl as public_read to
         // make the url accessible
