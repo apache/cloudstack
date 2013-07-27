@@ -116,7 +116,7 @@ class Services:
                     "name": "Cent OS Template",
                     "passwordenabled": True,
                 },
-            "diskdevice": ['/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
+            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
             # Disk device where ISO is attached to instance
             "mount_dir": "/mnt/tmp",
             "sleep": 60,
@@ -732,15 +732,6 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.virtualmachineid = self.virtual_machine.id
         self.apiclient.attachIso(cmd)
 
-        #determine device type from hypervisor
-        hosts = Host.list(self.apiclient, id=self.virtual_machine.hostid)
-        self.assertTrue(isinstance(hosts, list))
-        self.assertTrue(len(hosts) > 0)
-        self.debug("Found %s host" % hosts[0].hypervisor)
-
-        if hosts[0].hypervisor.lower() == "kvm":
-            self.services["diskdevice"] = "/dev/vdb"
-
         try:
             ssh_client = self.virtual_machine.get_ssh_client()
         except Exception as e:
@@ -758,7 +749,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         else:
             self.skipTest("No mount points matched. Mount was unsuccessful")
 
-        c = "fdisk -l|grep %s|head -1" % self.services["mount"]
+        c = "mount |grep %s|head -1" % self.services["mount"]
         res = ssh_client.execute(c)
         self.debug("Found a mount point at %s" % res)
 
@@ -784,7 +775,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertEqual(
                          str(iso_size) in result,
                          True,
-                         "Check size of the attached ISO"
+                         "ISO size mismatch. reported size within guest %s" % str(iso_size)
                          )
         try:
             #Unmount ISO

@@ -1144,13 +1144,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
-            throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
-        }
 
         if(vmInstance.getState().equals(State.Stopped)){
             upgradeStoppedVirtualMachine(vmId, newServiceOfferingId);
             return true;
+        }
+
+        if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
+            throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
