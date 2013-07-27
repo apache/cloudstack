@@ -1554,3 +1554,13 @@ CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_pxe_devices` (
 #drop tables as the feature is not a part of 4.2
 DROP TABLE IF EXISTS `cloud`.`host_updates`;
 DROP TABLE IF EXISTS `cloud`.`host_updates_ref`;
+
+DROP TABLE IF EXISTS `cloud`.`netscaler_pod_ref`;
+CREATE TABLE  `cloud`.`netscaler_pod_ref` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_ns_pod_ref__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ns_pod_ref__device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
