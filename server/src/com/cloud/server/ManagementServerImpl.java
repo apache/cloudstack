@@ -2292,24 +2292,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (summedCapacitiesAtZone != null) {
                 summedCapacities.addAll(summedCapacitiesAtZone);
             }
-        }
-        if (podId == null) {// Group by Pod, capacity type
+        } else if (podId == null) {// Group by Pod, capacity type
             List<SummedCapacity> summedCapacitiesAtPod = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 2,
                     cmd.getPageSizeVal());
             if (summedCapacitiesAtPod != null) {
                 summedCapacities.addAll(summedCapacitiesAtPod);
             }
-            List<SummedCapacity> summedCapacitiesForSecStorage = getSecStorageUsed(zoneId, capacityType);
-            if (summedCapacitiesForSecStorage != null) {
-                summedCapacities.addAll(summedCapacitiesForSecStorage);
+        } else { // Group by Cluster, capacity type
+            List<SummedCapacity> summedCapacitiesAtCluster = _capacityDao.listCapacitiesGroupedByLevelAndType(
+                    capacityType, zoneId, podId, clusterId, 3, cmd.getPageSizeVal());
+            if (summedCapacitiesAtCluster != null) {
+                summedCapacities.addAll(summedCapacitiesAtCluster);
             }
         }
 
-        // Group by Cluster, capacity type
-        List<SummedCapacity> summedCapacitiesAtCluster = _capacityDao.listCapacitiesGroupedByLevelAndType(capacityType, zoneId, podId, clusterId, 3,
-                cmd.getPageSizeVal());
-        if (summedCapacitiesAtCluster != null) {
-            summedCapacities.addAll(summedCapacitiesAtCluster);
+        List<SummedCapacity> summedCapacitiesForSecStorage = getSecStorageUsed(zoneId, capacityType);
+        if (summedCapacitiesForSecStorage != null) {
+            summedCapacities.addAll(summedCapacitiesForSecStorage);
         }
 
         // Sort Capacities
