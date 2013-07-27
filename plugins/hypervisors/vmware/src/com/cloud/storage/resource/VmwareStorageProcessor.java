@@ -855,6 +855,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.info("vmdkfile parent dir: " + snapshotRoot);
                     File snapshotdir = new File(snapshotRoot);
                     File[] ssfiles = snapshotdir.listFiles();
+                    if (ssfiles == null) {
+                        String msg = "unable to find snapshot vmdk files in " + snapshotRoot;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
                     // List<String> filenames = new ArrayList<String>();
                     for (int i = 0; i < ssfiles.length; i++) {
                         String vmdkfile = ssfiles[i].getName();
