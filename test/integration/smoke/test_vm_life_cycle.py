@@ -749,7 +749,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         else:
             self.skipTest("No mount points matched. Mount was unsuccessful")
 
-        c = "fdisk -l|grep %s|head -1" % self.services["mount"]
+        c = "mount |grep %s|head -1" % self.services["mount"]
         res = ssh_client.execute(c)
         self.debug("Found a mount point at %s" % res)
 
@@ -775,7 +775,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertEqual(
                          str(iso_size) in result,
                          True,
-                         "Check size of the attached ISO"
+                         "ISO size mismatch. reported size within guest %s" % str(iso_size)
                          )
         try:
             #Unmount ISO
