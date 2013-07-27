@@ -72,10 +72,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
@@ -1038,15 +1034,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         volume = _volsDao.persist(volume);
-        if (cmd.getSnapshotId() == null) {
-            // for volume created from snapshot, create usage event after volume
-            // creation
-            UsageEventVO usageEvent = new UsageEventVO(
-                    EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
-                    volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    diskOfferingId, null, size);
-            _usageEventDao.persist(usageEvent);
-        }
 
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
