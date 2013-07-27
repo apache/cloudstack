@@ -31,9 +31,9 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -72,10 +72,9 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -1265,6 +1264,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
             }
             _volsDao.update(volume.getId(), volume);
+            // Log usage event for volumes belonging user VM's only
+            UsageEventVO usageEvent = new UsageEventVO(
+                    EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize());
+            _usageEventDao.persist(usageEvent);
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
@@ -1413,7 +1417,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vol.setDeviceId(1l);
         }
 
-        vol.setFormat(this.getSupportedImageFormatForCluster(vm.getHypervisorType()));
+        vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
 
         // Save usage event and update resource count for user vm volumes
@@ -1444,7 +1448,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(),
                 owner.getDomainId(), owner.getId(), offering.getId(), size,
                 offering.getMinIops(), offering.getMaxIops(), null);
-        vol.setFormat(this.getSupportedImageFormatForCluster(template.getHypervisorType()));
+        vol.setFormat(getSupportedImageFormatForCluster(template.getHypervisorType()));
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -1556,10 +1560,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
-        VolumeVO volVO = this._volsDao.findById(vol.getId());
-        volVO.setFormat(this.getSupportedImageFormatForCluster(rootDiskHyperType));
-        this._volsDao.update(volVO.getId(), volVO);
-        return this.volFactory.getVolume(volVO.getId());
+        VolumeVO volVO = _volsDao.findById(vol.getId());
+        volVO.setFormat(getSupportedImageFormatForCluster(rootDiskHyperType));
+        _volsDao.update(volVO.getId(), volVO);
+        return volFactory.getVolume(volVO.getId());
     }
 
     private boolean needMoveVolume(VolumeVO rootVolumeOfVm, VolumeInfo volume) {
@@ -2103,7 +2107,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         for (VolumeVO vol : volumesForVm) {
             if (vol.getVolumeType().equals(Type.ROOT)) {
                 // Destroy volume if not already destroyed
-                boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || 
+                boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy ||
                         vol.getState() == Volume.State.Expunged ||
                         vol.getState() == Volume.State.Expunging);
                 if (!volumeAlreadyDestroyed) {
@@ -2788,15 +2792,15 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         // Clean up code to remove all those previous uploadVO and uploadMonitor code. Previous code is trying to fake an async operation purely in
         // db table with uploadVO and async_job entry, but internal implementation is actually synchronous.
-        StoragePool srcPool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-        ImageStoreEntity secStore = (ImageStoreEntity) this.dataStoreMgr.getImageStore(zoneId);
+        StoragePool srcPool = (StoragePool) dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+        ImageStoreEntity secStore = (ImageStoreEntity) dataStoreMgr.getImageStore(zoneId);
         String secondaryStorageURL = secStore.getUri();
 
-        String value = this._configDao.getValue(Config.CopyVolumeWait.toString());
+        String value = _configDao.getValue(Config.CopyVolumeWait.toString());
         int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
         // Copy volume from primary to secondary storage
-        VolumeInfo srcVol = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> cvAnswer = this.volService.copyVolume(srcVol, secStore);
+        VolumeInfo srcVol = volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
         // Check if you got a valid answer.
         VolumeApiResult cvResult = null;
         try {
