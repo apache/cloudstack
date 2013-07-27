@@ -60,8 +60,15 @@
                     filemode="755">
                     <include name="**/*" />
                     <exclude name="**/.classpath" />
+                    <exclude name="**/log**"/>
+                    <exclude name="**/logrotate.d"/>
                     <exclude name="**/.project" />
                     <exclude name="**/wscript_build" />
+                  </tarfileset>
+                  <tarfileset dir="${basedir}/target/build-patch/"
+                   filemode="644">
+                   <include name="**/log**"/>
+                   <include name="**/logrotate.d/**"/>
                   </tarfileset>
                 </tar>
                 <gzip destfile="${basedir}/target/cloud-scripts.tgz" src="${basedir}/target/patch.tar" />
