@@ -19,6 +19,7 @@ package com.cloud.utils.xmlobject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,10 +27,8 @@ import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 public class XmlObject {
-    private Map<String, Object> elements = new HashMap<String, Object>();
+    private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
 

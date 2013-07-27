@@ -34,7 +34,7 @@ under the License.
         <param name="ActiveFileName" value="@MSLOG@"/>
       </rollingPolicy>
       <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
+         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%n"/>
       </layout>
    </appender>
    
@@ -46,7 +46,7 @@ under the License.
         <param name="ActiveFileName" value="@APISERVERLOG@"/>
       </rollingPolicy>
       <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
+         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%n"/>
       </layout>
    </appender>
 
@@ -59,7 +59,7 @@ under the License.
       <param name="SyslogHost" value="localhost"/>
       <param name="Facility" value="LOCAL6"/>
       <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) %m%n"/>
+         <param name="ConversionPattern" value="%-5p [%c{1.}] (%t:%x) %m%n"/>
       </layout>
    </appender>
 
@@ -71,7 +71,7 @@ under the License.
       <param name="Target" value="System.out"/>
       <param name="Threshold" value="INFO"/>
       <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) %m%n"/>
+         <param name="ConversionPattern" value="%-5p [%c{1.}] (%t:%x) %m%n"/>
       </layout>
    </appender>
 
@@ -82,6 +82,10 @@ under the License.
    <category name="com.cloud">
      <priority value="DEBUG"/>
    </category>
+   
+   <category name="org.apache.cloudstack">
+     <priority value="DEBUG"/>
+   </category
    
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
