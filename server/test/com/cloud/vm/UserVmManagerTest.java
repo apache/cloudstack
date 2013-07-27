@@ -313,6 +313,8 @@ public class UserVmManagerTest {
        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
+        //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
+        doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         CallContext.register(user, account);
         try {
