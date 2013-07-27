@@ -60,12 +60,6 @@
       <version>${cs.httpcore.version}</version>
     </dependency>
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.thoughtworks.xstream</groupId>
       <artifactId>xstream</artifactId>
       <version>${cs.xstream.version}</version>

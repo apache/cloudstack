@@ -30,11 +30,5 @@
       <artifactId>cloud-engine-api</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
 </project>

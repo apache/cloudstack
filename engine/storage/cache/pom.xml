@@ -25,14 +25,5 @@
       <artifactId>cloud-engine-storage</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
-  <build>
-    <defaultGoal>install</defaultGoal>
-  </build>
 </project>
