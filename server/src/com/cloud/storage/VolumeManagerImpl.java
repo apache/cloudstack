@@ -31,10 +31,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -74,6 +70,9 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -1265,6 +1264,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
             }
             _volsDao.update(volume.getId(), volume);
+            // Log usage event for volumes belonging user VM's only
+            UsageEventVO usageEvent = new UsageEventVO(
+                    EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize());
+            _usageEventDao.persist(usageEvent);
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
