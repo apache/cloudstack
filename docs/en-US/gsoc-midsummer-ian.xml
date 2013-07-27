@@ -28,7 +28,7 @@
     <section id="introduction">
         <title>Introduction</title>
         <para>
-            Progress on my project is moving along smoothly. The Cloudstack community along with my mentor Abhi have been very accomodating. Since the community bonding period communication has been consistent and the expectations have been clear. Sebastien, head mentor has given us great guidance. I have enjoyed their teaching style. I found it was a nice gradual build up starting with creating a simple document update patch to eventually submitting a new Cloudstack Plugin.
+            Progress on my project is moving along smoothly. The Cloudstack community along with my mentor Abhi have been very accomodating. Since the community bonding period communication has been consistent and the expectations have been clear. Sebastien, head mentor, has given us great guidance. I have enjoyed their teaching style. I found it was a nice gradual build up starting with creating a simple document update patch to eventually submitting a new Cloudstack Plugin.
         </para>
         <para>
             I am pleased with my progress on the project to date. I feel as if the goals set out in my proposal are very doable and that they should be achieved.
@@ -39,9 +39,6 @@
         <para>
             In order to try deliver working solutions of good quality I felt it would be a good idea to implement a continuous integration environment using Jenkins. The idea of this would be to automatically build and test my code. This was welcomed and aided by community members greatly.
         </para>
-        <para>
-            The pipeline for this is as follows:
-        </para>
         <mediaobject>
             <imageobject>
                 <imagedata fileref="./images/jenkins-pipeline.png"/>
@@ -50,25 +47,28 @@
                 <phrase>jenkins-pipeline.png: Screenshot of the build pipeline.</phrase>
             </textobject>
         </mediaobject>
+        <para>
+            The key stages of the pipeline are as follows:
+        </para>
         <itemizedlist>
             <listitem>
                 <para>
-                    Acquire Code Base - This pulls down the latest Cloudstack codebase and builds it executing all unit tests.
+                    <emphasis>Acquire Code Base</emphasis> - This pulls down the latest Cloudstack codebase and builds it executing all unit tests.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    Static Analysis - This runs tests on my code to ensure quality and good practice. This is being achieved with sonar source.
+                    <emphasis>Static Analysis</emphasis> - This runs tests on my code to ensure quality and good practice. This is being achieved with sonar source.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    Integration Tests - This deploys the Cloudstack database. Brings up the Cloudstack Manager with jetty and their simulator. All checkin/integration tests are ran and then the jetty server is shutdown.
+                    <emphasis>Integration Tests</emphasis> - This deploys the Cloudstack database. Brings up the Cloudstack Manager with jetty and their simulator. All checkin/integration tests are ran and then the jetty server is shutdown.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    Package(Only exists on my local Jenkins) - The codebase is packaged up into an RPM and placed onto a local yum repo. If the time allows this will be used for future automated acceptance testing.
+                    <emphasis>Package(Only exists on my local Jenkins)</emphasis> - The codebase is packaged up into an RPM and placed onto a local yum repo. If the time allows this will be used for future automated acceptance testing.
                 </para>
             </listitem>
         </itemizedlist>
@@ -79,22 +79,22 @@
     <section id="ldap-plugin-implementation">
         <title>Ldap Plugin implementation</title>
         <para>
-            At the start of the coding stage I began to review the current LDAP implementation. This includes:
+            At the start of the coding stage I began by reviewing the current LDAP implementation. This included:
         </para>
                 <itemizedlist>
             <listitem>
                 <para>
-                    The user authenticator - This enables LDAP users to login to Cloudstack once the user exists within the internal Cloudstack database.
+                    <emphasis>The user authenticator</emphasis>  - Enables LDAP users to login to Cloudstack once the user exists within the internal Cloudstack database.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAPConfig -This allows for adding LDAP configuration. This is detailed over here: <ulink url="https://cloudstack.apache.org/docs/api/apidocs-4.1/root_admin/ldapConfig.html"><citetitle>ldapConfig API reference</citetitle></ulink> This did not allow multiple configurations.
+                    <emphasis>LDAPConfig</emphasis> - Adds LDAP configuration. This is detailed in <ulink url="https://cloudstack.apache.org/docs/api/apidocs-4.1/root_admin/ldapConfig.html"><citetitle>ldapConfig API reference</citetitle></ulink> This did not allow multiple configurations.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAPRemove - This allows for removing the LDAP configuration
+                    <emphasis>LDAPRemove</emphasis>  - Removes the LDAP configuration
                 </para>
             </listitem>
             <listitem>
@@ -104,7 +104,7 @@
             </listitem>
         </itemizedlist>
         <para>
-            After reviewing this code and implementation for some time I realised that it wasn't the most maintainable code. I realised I could extend it if required. But it would involve creating more unmaintainable code and it would be messy. This goes against my own principles of developing quality. This made me make the steep but justified decision to completely redo the LDAP implementation within Cloudstack. By doing this I did expanded the scope of the project.
+            After reviewing this code and implementation for some time I discovered that it wasn't the most maintainable code. I realised I could extend it if required. But it would involve creating more unmaintainable code and it would be messy. This goes against my goal of delivering quality. I decided therefore, justifiably I think to completely redo the LDAP implementation within Cloudstack. By doing this I did expanded the scope of the project.
         </para>
         <para>
             I began to research the most appropriate way of structuring this. I started of by redoing the implementation. This meant creating the following classes(Excluding DAOs):
@@ -112,42 +112,42 @@
         <itemizedlist>
             <listitem>
                 <para>
-                    LdapManager: Manages all LDAP connections.
+                    <emphasis>LdapManager</emphasis> - Manages all LDAP connections.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LdapConfiguration: Supplies all configuration from within the Cloudstack database or defaults where required.
+                    <emphasis>LdapConfiguration</emphasis> - Supplies all configuration from within the Cloudstack database or defaults where required.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LdapUserManager: Handles any interaction with LDAP user information.
+                    <emphasis>LdapUserManager</emphasis> - Handles any interaction with LDAP user information.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LdapUtils: Supplies static helpers, e.g. escape search queries, get attributes from search queries.
+                    <emphasis>LdapUtils</emphasis> - Supplies static helpers, e.g. escape search queries, get attributes from search queries.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LdapContextFactory: Manages the creation of contexts.
+                    <emphasis>LdapContextFactory</emphasis> - Manages the creation of contexts.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LdapAuthenticator: Supplies an authenticator to Cloudstack using the LdapManager.
+                    <emphasis>LdapAuthenticator</emphasis> - Supplies an authenticator to Cloudstack using the LdapManager.
                 </para>
             </listitem>
         </itemizedlist>
         <para>
-            From this I had a solid foundation for creating API commands to allow the user to interact with an LDAP server. I went on to create the following commands:
+            From this I felt I had a solid foundation for creating API commands to allow the user to interact with an LDAP server. I went on to create the following commands:
         </para>
         <itemizedlist>
             <listitem>
                 <para>
-                    LdapAddConfiguration - This allows for adding multiple LDAP configurations. Each configuration is just seen as a hostname and port.
+                    <emphasis>LdapAddConfiguration</emphasis> - This allows for adding multiple LDAP configurations. Each configuration is just seen as a hostname and port.
                 </para>
                 <mediaobject>
                     <imageobject>
@@ -168,7 +168,7 @@
             </listitem>
             <listitem>
                 <para>
-                    LdapDeleteConfiguration - This allows for the deletion of an LDAP configuration based on its hostname.
+                    <emphasis>LdapDeleteConfiguration</emphasis> - This allows for the deletion of an LDAP configuration based on its hostname.
                 </para>
                 <mediaobject>
                     <imageobject>
@@ -189,7 +189,7 @@
             </listitem>
             <listitem>
                 <para>
-                    LdapListConfiguration - This lists all of the LDAP configurations that exist within the database.
+                    <emphasis>LdapListConfiguration</emphasis> - This lists all of the LDAP configurations that exist within the database.
                 </para>
                 <mediaobject>
                     <imageobject>
@@ -202,7 +202,7 @@
             </listitem>
             <listitem>
                 <para>
-                    LdapListAllUsers - This lists all the users within LDAP.
+                    <emphasis>LdapListAllUsers</emphasis> - This lists all the users within LDAP.
                 </para>
                 <mediaobject>
                     <imageobject>
@@ -215,47 +215,52 @@
             </listitem>
         </itemizedlist>
         <para>
-            Along with this global configuration options were added, this includes:
+            Along with this global settings were added, this includes:
         </para>
         <itemizedlist>
             <listitem>
                 <para>
-                    LDAP basedn: This allows the user to set the basedn for their LDAP configuration
+                    <emphasis>LDAP basedn</emphasis> - Sets the basedn for their LDAP configuration
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAP bind password: This allows the user to set the password to use for binding to LDAP for creating the system context. If this is left blank along with bind principal then anonymous binding is used.
+                    <emphasis>LDAP bind password</emphasis> - Sets the password to use for binding to LDAP for creating the system context. If this is left blank along with bind principal then anonymous binding is used.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAP bind principal: This allows the user to set the principle to use for binding with LDAP for creating the system context. If this is left blank along with the bind password then anonymous binding is used.
+                    <emphasis>LDAP bind principal</emphasis> - Sets the principle to use for binding with LDAP for creating the system context. If this is left blank along with the bind password then anonymous binding is used.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAP email attribute: This sets out the attribute to use for getting the users email address. Within both OpenLDAP and ActiveDirectory this is mail. For this reason this is set to mail by default.
+                    <emphasis>LDAP email attribute</emphasis> - Sets the attribute to use for getting the users email address. Within both OpenLDAP and ActiveDirectory this is mail. For this reason this is set to mail by default.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAP realname attribute: This sets out the attribute to use for getting the users realname. Within both OpenLDAP and ActiveDiretory this is cn. For this reason this is set to cn by default.
+                    <emphasis>LDAP firstname attribute</emphasis> - Sets the attribute to use for getting the users firstname. Within both OpenLDAP and ActiveDiretory this is givenname. For this reason this is set to givenname by default.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAP username attribute: This sets out the attribute to use for getting the users username. Within OpenLDAP this is uid and within ActiveDirectory this is samAccountName. In order to comply with posix standards this is set as uid by default.
+                    <emphasis>LDAP lastname attribute</emphasis> -  Sets the attribute to use for getting the users lastname. Within both OpenLDAP and ActiveDiretory this is sn. For this reason this is set to sn by default.
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    LDAP user object: This sets out the object type of user accounts within LDAP. Within OpenLDAP this is inetOrgPerson and within ActiveDirectory this is user. Again, in order to comply with posix standards this is set as inetOrgperson by default.
+                    <emphasis>LDAP username attribute</emphasis> - This sets out the attribute to use for getting the users username. Within OpenLDAP this is uid and within ActiveDirectory this is samAccountName. In order to comply with posix standards this is set as uid by default.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <emphasis>LDAP user object</emphasis> - This sets out the object type of user accounts within LDAP. Within OpenLDAP this is inetOrgPerson and within ActiveDirectory this is user. Again, in order to comply with posix standards this is set as inetOrgperson by default.
                 </para>
             </listitem>
         </itemizedlist>
         <para>
-            With this implementation I believe it allows for a much more extendable and flexible approach. The whole implementation is abstracted from the Cloudstack codebase using the "plugin" model. This allows all of the LDAP features to be contained within one place. Along with this the implementation supplies a good foundation. A side affect of redoing the implementation allowed me to add support for multiple LDAP servers. This means failover is support, so for example, if you have a standard ActiveDirectory with primary and secondary domain controller. Both can be added to Cloudstack which will allow it to failover to either one assume one of them is down.
+            With this implementation I believe it allows for a much more extendable and flexible approach. The whole implementation is abstracted from the Cloudstack codebase using the "plugin" model. This allows all of the LDAP features to be contained within one place. Along with this the implementation supplies a good foundation. A side affect of redoing the implementation allowed me to add support for multiple LDAP servers. This means failover is supported, so for example, if you have a standard ActiveDirectory with primary and secondary domain controller. Both can be added to Cloudstack which will allow it to failover to either one assume one of them is down.
         </para>
         <para>
             The API changes required me to update the UI interface within Cloudstack. With the improved API implementation this was easier. The Global Settings -> Ldap Configuration page has support for multiple LDAP servers however it only requires a hostname and port. All "global" ldap settings are set within the global settings page.
@@ -294,7 +299,7 @@
     <section id="testing">
         <title>Testing</title>
         <para>
-            Unit tests have 92% code coverage within the LDAP Plugin. The unit tests were wrote in groovy using the spock framework. This allowed for a BDD style of of testing.
+            Unit tests have 92% code coverage within the LDAP Plugin. The unit tests were wrote in groovy using the spock framework. This allowed me to implement a BDD style of testing.
         </para>
         <para>
             Integration tests have been wrote in python using the marvin test framework for Cloudstack. This test configures a LDAP server and attempts to login as an LDAP user. The plugin comes with an embedded LDAP server for testing purposes.
