@@ -27,9 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.to.*;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -46,14 +43,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
@@ -71,9 +65,9 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -858,16 +852,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         throw new Exception(msg);
                     }
 
-                    s_logger.info("vmdkfile parent dir: " + snapshotFullVMDKName);
-                    File snapshotdir = new File(snapshotFullVMDKName);
-                    // File snapshotdir = new File(snapshotRoot);
+                    s_logger.info("vmdkfile parent dir: " + snapshotRoot);
+                    File snapshotdir = new File(snapshotRoot);
                     File[] ssfiles = snapshotdir.listFiles();
                     // List<String> filenames = new ArrayList<String>();
                     for (int i = 0; i < ssfiles.length; i++) {
                         String vmdkfile = ssfiles[i].getName();
                         s_logger.info("vmdk file name: " + vmdkfile);
                         if(vmdkfile.toLowerCase().startsWith(backupSSUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
-                            snapshotFullVMDKName += vmdkfile;
+                            snapshotFullVMDKName = snapshotRoot + File.separator + vmdkfile;
                             templateVMDKName += vmdkfile;
                             break;
                         }
