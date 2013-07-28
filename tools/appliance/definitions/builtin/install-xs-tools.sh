@@ -5,3 +5,6 @@ sudo mount -o loop xs-tools.iso /mnt
 
 #install the xs tools
 sudo yes | sudo sh /mnt/Linux/install.sh
+
+#unmount and cleanup
+sudo umount /mnt

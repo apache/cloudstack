@@ -27,15 +27,28 @@ install_packages() {
 }
 
 start_services() {
-    chkconfig httpd on
     service httpd start
+}
+
+httpd_configure() {
+    # start httpd on boot
+    chkconfig httpd on
+    # open port 80
+    iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+    # create a test page
+    echo "<h1> Hello, World </h1>" > /var/www/html/test.html
+    # give 755 permissions and ownership
+    chmod -R 755 /var/www/html/
+    chown -R apache:apache /var/www/html/
 }
 
 begin=$(date +%s)
 
 install_packages
+httpd_configure
+start_services
 
 fin=$(date +%s)
 t=$((fin-begin))
 
-echo "Builtin baked in $t seconds"
+echo "Testing Builtin baked in $t seconds"
