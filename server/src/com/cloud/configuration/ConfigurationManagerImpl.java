@@ -1290,9 +1290,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         tablesToCheck.add(host);
 
         List<String> imageStore = new ArrayList<String>();
-        host.add(0, "image_store");
-        host.add(1, "data_center_id");
-        host.add(2, "there are data store created for this zone");
+        imageStore.add(0, "image_store");
+        imageStore.add(1, "data_center_id");
+        imageStore.add(2, "there are data store created for this zone");
         tablesToCheck.add(imageStore);
 
         List<String> hostPodRef = new ArrayList<String>();
