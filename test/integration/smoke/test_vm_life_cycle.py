@@ -696,7 +696,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "needle"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 

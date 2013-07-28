@@ -1203,7 +1203,7 @@ class TestProjectResources(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator", "needle"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_07_project_resources_account_delete(self):
         """ Test Verify after an account is removed from the project, all its resources stay with the project.
         """

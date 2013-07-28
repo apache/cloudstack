@@ -211,7 +211,7 @@ class TestLoadBalance(cloudstackTestCase):
         time.sleep(self.services["lb_switch_wait"])
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "needle"])
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_01_create_lb_rule_src_nat(self):
         """Test to create Load balancing rule with source NAT"""
 
