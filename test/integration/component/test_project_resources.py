@@ -784,8 +784,7 @@ class TestSnapshots(cloudstackTestCase):
         cls._cleanup = [
                         cls.project,
                         cls.service_offering,
-                        cls.account,
-                        cls.domain
+                        cls.account
                         ]
         return
 
