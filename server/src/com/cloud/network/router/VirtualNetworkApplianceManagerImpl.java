@@ -2480,7 +2480,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
         }
         //Reapply dhcp and dns configuration.
-        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
+        Network guestNetwork = _networkDao.findById(guestNetworkId);
+        if (guestNetwork.getGuestType()==GuestType.Shared &&  _networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
             Map<Network.Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId()), Service.Dhcp);
             String supportsMultipleSubnets = dhcpCapabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
             if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
