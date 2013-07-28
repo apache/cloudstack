@@ -29,7 +29,6 @@ import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
@@ -58,7 +57,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -77,7 +75,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.S3Utils.ClientOptions;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
@@ -258,9 +255,9 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
                 params.get(ApiConstants.S3_END_POINT),
                 params.get(ApiConstants.S3_BUCKET_NAME),
                 params.get(ApiConstants.S3_HTTPS_FLAG) == null ? false : Boolean.valueOf(params.get(ApiConstants.S3_HTTPS_FLAG)),
-                params.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
-                params.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_MAX_ERROR_RETRY)),
-                params.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_SOCKET_TIMEOUT)), now());
+                        params.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
+                                params.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_MAX_ERROR_RETRY)),
+                                        params.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_SOCKET_TIMEOUT)), now());
 
         this.validateFields(s3VO);
 
@@ -271,8 +268,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     @Override
     public boolean isS3Enabled() {
-        return Boolean
-                .valueOf(configurationDao.getValue(Config.S3Enable.key()));
+        return false;
     }
 
     @Override
