@@ -26,31 +26,26 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
-import java.util.Date;
 import java.util.UUID;
 
 public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
+    private static final Logger s_logger = Logger.getLogger(SimulatorImageStoreDriverImpl.class);
 
     @Inject
     TemplateDataStoreDao _templateStoreDao;
@@ -60,6 +55,8 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     VolumeDao _volumeDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    EndPointSelector _epSelector;
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -70,11 +67,6 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         return nfsTO;
     }
 
-
-
-    public String createEntityExtractUrl(DataStore store, String installPath, Storage.ImageFormat format) {
-        return null;
-    }
 
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
@@ -111,5 +103,21 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
                 path, path, size, size, null);
         caller.complete(answer);
         return;
+    }
+
+    @Override
+    public String createEntityExtractUrl(DataStore store, String installPath, Storage.ImageFormat format, DataObject dataObject) {
+        EndPoint ep = _epSelector.select(store);
+        // Create Symlink at ssvm
+        String path = installPath;
+        String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
+        // Construct actual URL locally now that the symlink exists at SSVM
+        return generateCopyUrl(ep.getPublicAddr(), uuid);
+    }
+
+    private String generateCopyUrl(String ipAddress, String uuid){
+        String hostname = ipAddress;
+        String scheme = "http";
+        return scheme + "://" + hostname + "/userdata/" + uuid;
     }
 }
