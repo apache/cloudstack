@@ -24,6 +24,7 @@ import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
@@ -246,4 +247,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
     }
+
+    @Override
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String url, Storage.ImageFormat format){
+    }
+
 }

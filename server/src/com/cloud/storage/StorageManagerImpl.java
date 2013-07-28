@@ -41,6 +41,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -49,26 +51,8 @@ import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingSto
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
-import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -81,6 +65,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -257,6 +242,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     DataStoreManager _dataStoreMgr;
     @Inject
     DataStoreProviderManager _dataStoreProviderMgr;
+
     @Inject
     private TemplateService _imageSrv;
     @Inject
@@ -291,6 +277,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     boolean _storageCleanupEnabled;
     boolean _templateCleanupEnabled = true;
     int _storageCleanupInterval;
+    int _downloadUrlCleanupInterval;
+    int _downloadUrlExpirationInterval;
     private int _createVolumeFromSnapshotWait;
     private int _copyvolumewait;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
@@ -510,6 +498,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         int wrks = NumbersUtil.parseInt(workers, 10);
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("StorageManager-Scavenger"));
 
+        String cleanupInterval = configs.get("extract.url.cleanup.interval");
+        _downloadUrlCleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
+
+        String urlExpirationInterval = configs.get("extract.url.expiration.interval");
+        _downloadUrlExpirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
+
         _agentMgr.registerForHostEvents(ComponentContext.inject(LocalStoragePoolListener.class), true, false, false);
 
         String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
@@ -571,6 +565,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else {
             s_logger.debug("Storage cleanup is not enabled, so the storage cleanup thread is not being scheduled.");
         }
+
+        _executor.scheduleWithFixedDelay(new DownloadURLGarbageCollector(), _downloadUrlCleanupInterval, _downloadUrlCleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -1097,6 +1093,35 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+
+    public void cleanupDownloadUrls(){
+        // find volumesOnImageStoreList with download url
+        List<VolumeDataStoreVO> volumesOnImageStoreList = _volumeStoreDao.listVolumeDownloadUrls();
+
+        for(VolumeDataStoreVO volumeOnImageStore : volumesOnImageStoreList){
+
+          try {
+            long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), volumeOnImageStore.getUpdated());
+            if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                continue;
+            }
+
+            s_logger.debug("Removing download url " + volumeOnImageStore.getExtractUrl() + " for volume id " + volumeOnImageStore.getVolumeId());
+
+            // Remove it from image store
+            ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
+            secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl(), ImageFormat.VHD);
+
+             // Now remove it from DB.
+             volumeOnImageStore.setExtractUrl(null);
+            _volumeStoreDao.update(volumeOnImageStore.getId(), volumeOnImageStore);
+          }catch(Throwable th){
+              s_logger.warn("caught exception while deleting download url " +volumeOnImageStore.getExtractUrl(), th);
+          }
+        }
+
+    }
+
     @Override
     @DB
     public void cleanupSecondaryStorage(boolean recurring) {
@@ -1255,6 +1280,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 s_logger.trace("Storage Garbage Collection Thread is running.");
 
                 cleanupStorage(true);
+
+            } catch (Exception e) {
+                s_logger.error("Caught the following Exception", e);
+            }
+        }
+    }
+
+
+    protected class DownloadURLGarbageCollector implements Runnable {
+
+        public DownloadURLGarbageCollector() {
+        }
+
+        @Override
+        public void run() {
+            try {
+                s_logger.trace("Download URL Garbage Collection Thread is running.");
+
+                cleanupDownloadUrls();
 
             } catch (Exception e) {
                 s_logger.error("Caught the following Exception", e);

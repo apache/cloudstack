@@ -194,5 +194,9 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return driver.createEntityExtractUrl(this, installPath, format, dataObject);
     }
 
+    @Override
+    public void deleteExtractUrl(String installPath, String url, ImageFormat format) {
+        driver.deleteEntityExtractUrl(this, installPath, url, format);
+    }
 
 }

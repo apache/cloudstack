@@ -23,6 +23,10 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Upload;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -74,6 +78,23 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         }
         // Construct actual URL locally now that the symlink exists at SSVM
         return generateCopyUrl(ep.getPublicAddr(), uuid);
+    }
+
+    @Override
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, ImageFormat format) {
+        // find an endpoint to send command
+        EndPoint ep = _epSelector.select(store);
+        // Create Symlink at ssvm
+        //CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), installPath, uuid);
+        DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(installPath, Upload.Type.VOLUME, downloadUrl, ((ImageStoreEntity) store).getMountPoint());
+
+        Answer ans = ep.sendMessage(cmd);
+        if (ans == null || !ans.getResult()) {
+            String errorString = "Unable to delete the url " + downloadUrl + " for path " + installPath + " on ssvm, " + ans.getDetails();
+            s_logger.error(errorString);
+            throw new CloudRuntimeException(errorString);
+        }
+
     }
 
     private String generateCopyUrl(String ipAddress, String uuid){
