@@ -20,17 +20,18 @@ import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.mockito.Mockito;
+
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
-import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
@@ -38,11 +39,11 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.VirtualMachineTemplate;
 
 /**
  *
@@ -165,8 +166,15 @@ public class RequestTest extends TestCase {
 
     public void testDownload() {
         s_logger.info("Testing Download answer");
-        VMTemplateVO template = new VMTemplateVO(1, "templatename", ImageFormat.QCOW2, true, true, true, TemplateType.USER, "url", true, 32, 1, "chksum", "displayText", true, 30, true,
-                HypervisorType.KVM, null);
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        Mockito.when(template.getId()).thenReturn(1L);
+        Mockito.when(template.getFormat()).thenReturn(ImageFormat.QCOW2);
+        Mockito.when(template.getName()).thenReturn("templatename");
+        Mockito.when(template.getTemplateType()).thenReturn(TemplateType.USER);
+        Mockito.when(template.getDisplayText()).thenReturn("displayText");
+        Mockito.when(template.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.when(template.getUrl()).thenReturn("url");
+
         NfsTO nfs = new NfsTO("secUrl", DataStoreRole.Image);
         TemplateObjectTO to = new TemplateObjectTO(template);
         to.setImageDataStore(nfs);

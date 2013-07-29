@@ -20,8 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.ConsoleProxy;
 
 public interface ConsoleProxyAllocator extends Adapter {
-	public ConsoleProxyVO allocProxy(List<ConsoleProxyVO> candidates, Map<Long, Integer> loadInfo, long dataCenterId);
+    /**
+     * Finds the least loaded console proxy.
+     * @param candidates
+     * @param loadInfo
+     * @param dataCenterId
+     * @return id of the console proxy to use or null if none.
+     */
+    public Long allocProxy(List<? extends ConsoleProxy> candidates, Map<Long, Integer> loadInfo, long dataCenterId);
 }

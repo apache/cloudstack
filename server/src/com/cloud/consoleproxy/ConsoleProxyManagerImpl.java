@@ -619,7 +619,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     }
                 }
             }
-            return allocator.allocProxy(runningList, loadInfo, dataCenterId);
+            Long allocated = allocator.allocProxy(runningList, loadInfo, dataCenterId);
+            if (allocated == null) {
+                s_logger.debug("Unable to find a console proxy ");
+                return null;
+            }
+            return _consoleProxyDao.findById(allocated);
         } else {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Empty running proxy pool for now in data center : " + dataCenterId);

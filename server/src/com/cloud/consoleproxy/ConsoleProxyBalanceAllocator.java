@@ -26,7 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.ConsoleProxy;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -36,40 +36,32 @@ public class ConsoleProxyBalanceAllocator extends AdapterBase implements Console
     private final Random _rand = new Random(System.currentTimeMillis());
 
     @Override
-    public ConsoleProxyVO allocProxy(List<ConsoleProxyVO> candidates, final Map<Long, Integer> loadInfo, long dataCenterId) {
-        if(candidates != null) {
+    public Long allocProxy(List<? extends ConsoleProxy> candidates, final Map<Long, Integer> loadInfo, long dataCenterId) {
+        List<ConsoleProxy> allocationList = new ArrayList<ConsoleProxy>(candidates);
 
-            List<ConsoleProxyVO> allocationList = new ArrayList<ConsoleProxyVO>();
-            for(ConsoleProxyVO proxy : candidates) {
-                allocationList.add(proxy);
-            }
+        Collections.sort(candidates, new Comparator<ConsoleProxy>() {
+            @Override
+            public int compare(ConsoleProxy x, ConsoleProxy y) {
+                Integer loadOfX = loadInfo.get(x.getId());
+                Integer loadOfY = loadInfo.get(y.getId());
 
-            Collections.sort(candidates, new Comparator<ConsoleProxyVO> () {
-                @Override
-                public int compare(ConsoleProxyVO x, ConsoleProxyVO y) {
-                    Integer loadOfX = loadInfo.get(x.getId());
-                    Integer loadOfY = loadInfo.get(y.getId());
-
-                    if(loadOfX != null && loadOfY != null) {
-                        if(loadOfX < loadOfY)
-                            return -1;
-                        else if(loadOfX > loadOfY)
-                            return 1;
-                        return 0;
-                    } else if(loadOfX == null && loadOfY == null) {
-                        return 0;
-                    } else {
-                        if(loadOfX == null)
-                            return -1;
+                if (loadOfX != null && loadOfY != null) {
+                    if (loadOfX < loadOfY)
+                        return -1;
+                    else if (loadOfX > loadOfY)
                         return 1;
-                    }
+                    return 0;
+                } else if (loadOfX == null && loadOfY == null) {
+                    return 0;
+                } else {
+                    if (loadOfX == null)
+                        return -1;
+                    return 1;
                 }
-            });
+            }
+        });
 
-            if(allocationList.size() > 0)
-                return allocationList.get(0);
-        }
-        return null;
+        return (allocationList.size() > 0) ? allocationList.get(0).getId() : null;
     }
 
     @Override
