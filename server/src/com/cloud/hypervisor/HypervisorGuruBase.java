@@ -120,15 +120,12 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         if(detailsInVm != null) {
             details.putAll(detailsInVm);
         }
-        if (details.get(VirtualMachine.IsDynamicScalingEnabled) == null || details.get(VirtualMachine.IsDynamicScalingEnabled).isEmpty()) {
-            to.setEnableDynamicallyScaleVm(false);
-        } else {
-            // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)
-            to.setEnableDynamicallyScaleVm(details.get(VirtualMachine.IsDynamicScalingEnabled).equals("true") && Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vm.getDataCenterId())));
-        }
         to.setDetails(details);
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
+        // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)
+        Boolean isDynamicallyScalable = vmInstance.isDynamicallyScalable() && Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vm.getDataCenterId()));
+        to.setEnableDynamicallyScaleVm(isDynamicallyScalable);
         to.setUuid(vmInstance.getUuid());
 
         //
