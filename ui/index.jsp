@@ -473,8 +473,8 @@ under the License.
       <div class="multi-wizard accounts-wizard">
         <form>
           <div class="steps">
-              <div class="content">
-                <div class="select-container ldap-account-choice">
+              <div class="content ldap-account-choice">
+                <div class="select-container">
                   <table>
                     <thead>
                       <tr>
@@ -496,8 +496,8 @@ under the License.
           </div>
         </form>
         <div class="buttons">
-          <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
-          <div class="button next"><span><fmt:message key="label.add"/></span></div>
+          <button class="cancel ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"><span><fmt:message key="label.cancel"/></span></button>
+          <button class="next ok ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"><span><fmt:message key="label.add"/></span></button>
         </div>
       </div>
       <!-- Zone wizard -->

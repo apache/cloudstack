@@ -18,7 +18,57 @@
 (function(cloudStack, $) {
     cloudStack.accountsWizard = {
 
-        manuallyInputtedAccountInformation: {
+        informationWithinLdap: {
+            username: {
+                label: 'label.username',
+                validation: {
+                    required: true
+                },
+                docID: 'helpAccountUsername'
+            },
+            password: {
+                label: 'label.password',
+                validation: {
+                    required: true
+                },
+                isPassword: true,
+                id: 'password',
+                docID: 'helpAccountPassword'
+            },
+            'password-confirm': {
+                label: 'label.confirm.password',
+                validation: {
+                    required: true,
+                    equalTo: '#password'
+                },
+                isPassword: true,
+                docID: 'helpAccountConfirmPassword'
+            },
+            email: {
+                label: 'label.email',
+                validation: {
+                    required: true,
+                    email: true
+                },
+                docID: 'helpAccountEmail'
+            },
+            firstname: {
+                label: 'label.first.name',
+                validation: {
+                    required: true
+                },
+                docID: 'helpAccountFirstName'
+            },
+            lastname: {
+                label: 'label.last.name',
+                validation: {
+                    required: true
+                },
+                docID: 'helpAccountLastName'
+            }
+        },
+
+        informationNotInLdap: {
             domainid: {
                 label: 'label.domain',
                 docID: 'helpAccountDomain',
@@ -48,7 +98,7 @@
                                     description: this.path
                                 });
 
-                                if (this.level == 0)
+                                if (this.level === 0)
                                     rootDomainId = this.id;
                             });
                             args.response.success({
@@ -62,8 +112,8 @@
                 label: 'label.account',
                 docID: 'helpAccountAccount',
                 validation: {
-                    required: true
-                },
+                    required: false
+                }
             },
             accounttype: {
                 label: 'label.type',
@@ -116,43 +166,123 @@
 
         action: function(args) {
             var array1 = [];
+            var ldapStatus = isLdapEnabled();
+            console.log("creating user: " + args.username);
+            array1.push("&username=" + args.username);
 
-            array1.push("&username=" + args.data.username);
+            if (!ldapStatus) {
+                var password = args.data.password;
+                if (md5Hashed) {
+                    password = $.md5(password);
+                }
+                array1.push("&email=" + args.data.email);
+                array1.push("&firstname=" + args.data.firstname);
+                array1.push("&lastname=" + args.data.lastname);
+
+                var password = args.data.password;
+                if (md5Hashed) {
+                    password = $.md5(password);
+                }
+                array1.push("&password=" + password);
+            }
+
             array1.push("&domainid=" + args.data.domainid);
 
-            if (args.data.account != null && args.data.account.length != 0) {
-                array1.push("&account=" + args.data.account);
+            var account = args.data.account;
+            if (account === null || account.length === 0) {
+                account = args.username;
             }
+            array1.push("&account=" + account);
 
-            if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) {
-                args.data.accounttype = "2";
+            var accountType = args.data.accounttype;
+            if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain
+                accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
             }
-            array1.push("&accountType=" + args.data.accounttype);
+            array1.push("&accounttype=" + accountType);
 
-            if (args.data.timezone != null && args.data.timezone.length != 0) {
+            if (args.data.timezone !== null && args.data.timezone.length > 0) {
                 array1.push("&timezone=" + args.data.timezone);
             }
 
-            if (args.data.networkdomain != null && args.data.networkdomain != 0) {
-                array1.push("&networkDomain=" + args.data.networkdomain);
+            if (args.data.networkdomain !== null && args.data.networkdomain.length > 0) {
+                array1.push("&networkdomain=" + args.data.networkdomain);
             }
 
-            console.log(array1.join(""));
-            console.log(args.data);
-
-		$.ajax({
-			url: createURL("ldapCreateAccount" + array1.join("")),
-			dataType: "json",
-			success: function(json) {
-				var item = json.createaccountresponse.account;
-				args.response.success({
-					data: item
-				});
-			},
-			error: function(XMLHttpResponse) {
-				args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-			}
-		});
+            if (ldapStatus) {
+                console.log("doing an ldap add");
+                $.ajax({
+                    url: createURL('ldapCreateAccount' + array1.join("")),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                        var item = json.createaccountresponse.account;
+                        args.response.success({
+                            data: item
+                        });
+                    },
+                    error: function(XMLHttpResponse) {
+                        args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    }
+                });
+            } else {
+                console.log("doing normal user add");
+                $.ajax({
+                    url: createURL('createAccount' + array1.join("")),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                        var item = json.createaccountresponse.account;
+                        args.response.success({
+                            data: item
+                        });
+                    },
+                    error: function(XMLHttpResponse) {
+                        args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    }
+                });
+            }
         }
-    }
+        /*
+                action: function(args) {
+                    var array1 = [];
+
+                    var username = args.data.username;
+
+                    array1.push("&domainid=" + args.data.domainid);
+
+                    if (args.data.account != null && args.data.account.length != 0) {
+                        array1.push("&account=" + args.data.account);
+                    }
+
+                    if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) {
+                        args.data.accounttype = "2";
+                    }
+                    array1.push("&accountType=" + args.data.accounttype);
+
+                    if (args.data.timezone != null && args.data.timezone.length != 0) {
+                        array1.push("&timezone=" + args.data.timezone);
+                    }
+                    if (args.data.networkdomain != null && args.data.networkdomain != 0) {
+                        array1.push("&networkDomain=" + args.data.networkdomain);
+                    }
+
+                    for (var i = 0; i < username.length; i++) {
+                        $.ajax({
+                            url: createURL("ldapCreateAccount&username=" + username[i] + array1.join("")),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                var item = json.createaccountresponse.account;
+                                args.response.success({
+                                    data: item
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                            }
+                        });
+                    }
+                }
+                */
+    };
 }(cloudStack, jQuery));

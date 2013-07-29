@@ -1287,7 +1287,7 @@
                                     $.ajax({
                                         url: createURL('updateUser'),
                                         data: data,
-                                        type: "POST",                                        
+                                        type: "POST",
                                         success: function(json) {
                                             args.response.success({
                                                 data: json.updateuserresponse.user
