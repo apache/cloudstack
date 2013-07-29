@@ -150,6 +150,9 @@ public class VolumeVO implements Volume {
     @Column(name = "iscsi_name")
     private String _iScsiName;
 
+    @Column(name = "vm_snapshot_chain_size")
+    private Long vmSnapshotChainSize;
+    
     @Transient
     // @Column(name="reservation")
     String reservationId;
@@ -549,5 +552,13 @@ public class VolumeVO implements Volume {
 
     public void setFormat(Storage.ImageFormat format) {
         this.format = format;
+    }
+    
+    public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
+        this.vmSnapshotChainSize = vmSnapshotChainSize;
+    }
+
+    public Long getVmSnapshotChainSize(){
+        return this.vmSnapshotChainSize;
     }
 }

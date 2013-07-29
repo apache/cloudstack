@@ -3409,6 +3409,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 			//Security Group Id
 			SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
 			usageRecResponse.setUsageId(sg.getUuid());
+		} else if(usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT){
+		    VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
+		    usageRecResponse.setVmName(vm.getInstanceName());
+		    usageRecResponse.setUsageId(vm.getUuid());
+	        usageRecResponse.setSize(usageRecord.getSize());
+	        if(usageRecord.getOfferingId() != null)
+	            usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
 		}
 
 		if (usageRecord.getRawUsage() != null) {
