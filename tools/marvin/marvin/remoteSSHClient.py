@@ -24,7 +24,7 @@ from contextlib import closing
 
 
 class remoteSSHClient(object):
-    def __init__(self, host, port, user, passwd, retries=10,
+    def __init__(self, host, port, user, passwd, retries=10, delay=5,
                  log_lvl=logging.INFO, keyPairFileLocation=None):
         self.host = host
         self.port = port
@@ -62,7 +62,7 @@ class remoteSSHClient(object):
                     raise cloudstackException. \
                         InvalidParameterException(repr(sshex))
                 retry_count = retry_count - 1
-                time.sleep(5)
+                time.sleep(delay)
             except paramiko.AuthenticationException, authEx:
                 raise cloudstackException. \
                     InvalidParameterException("Invalid credentials to "

@@ -111,23 +111,19 @@ def cleanup_resources(api_client, resources):
 
 def is_server_ssh_ready(ipaddress, port, username, password, retries=5, timeout=20, keyPairFileLocation=None):
     """Return ssh handle else wait till sshd is running"""
-    loop_cnt = retries
-    while True:
-        try:
-            ssh = remoteSSHClient(
-                host=ipaddress,
-                port=port,
-                user=username,
-                passwd=password,
-                keyPairFileLocation=keyPairFileLocation)
-        except Exception as e:
-            if loop_cnt == 0:
-                raise e
-            loop_cnt = loop_cnt - 1
-            time.sleep(timeout)
-        else:
-            return ssh
-    raise Exception("Failed to bring up ssh service in time. Waited %ss" % retries*timeout)
+    try:
+        ssh = remoteSSHClient(
+            host=ipaddress,
+            port=port,
+            user=username,
+            passwd=password,
+            keyPairFileLocation=keyPairFileLocation,
+            retries=retries,
+            delay=timeout)
+    except Exception, e:
+        raise Exception("Failed to bring up ssh service in time. Waited %ss. Error is %s" % (retries * timeout, e))
+    else:
+        return ssh
 
 
 def format_volume_to_ext3(ssh_client, device="/dev/sda"):
