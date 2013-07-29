@@ -303,7 +303,6 @@ class TestVPCOffering(cloudstackTestCase):
                                             )
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(self.network_offering)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -1006,7 +1005,7 @@ class TestVPCOffering(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "needle"])
     def test_08_list_vpc_off(self):
         """Test list VPC offering"""
 
@@ -1061,7 +1060,6 @@ class TestVPCOffering(cloudstackTestCase):
                                      self.apiclient,
                                      self.services["vpc_offering"]
                                      )
-        self.cleanup.append(vpc_off_4)
         self.debug("Enabling the VPC offering created")
         vpc_off_4.update(self.apiclient, state='Enabled')
 
