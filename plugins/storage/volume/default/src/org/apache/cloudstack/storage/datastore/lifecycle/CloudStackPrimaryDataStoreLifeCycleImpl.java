@@ -439,10 +439,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         List<StoragePoolHostVO> hostPoolRecords = this._storagePoolHostDao.listByPoolId(store.getId());
         StoragePool pool = (StoragePool) store;
         boolean deleteFlag = false;
-        // If datastore is not in ready state, simply delete its db entry.
-        if (pool.getStatus() != StoragePoolStatus.Up) {
-            return this.dataStoreHelper.deletePrimaryDataStore(store);
-        }
+
         // Remove the SR associated with the Xenserver
         for (StoragePoolHostVO host : hostPoolRecords) {
             DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(pool);
