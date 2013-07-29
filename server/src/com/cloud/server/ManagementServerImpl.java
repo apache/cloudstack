@@ -529,7 +529,6 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
@@ -691,10 +690,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     DataStoreManager dataStoreMgr;
     @Inject
     HostTagsDao _hostTagsDao;
-
-    @Inject
-    S3Manager _s3Mgr;
-
     @Inject
     ConfigurationServer _configServer;
     @Inject

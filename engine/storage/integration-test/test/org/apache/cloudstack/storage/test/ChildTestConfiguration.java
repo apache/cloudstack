@@ -76,7 +76,6 @@ import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
@@ -186,10 +185,6 @@ public class ChildTestConfiguration extends TestConfiguration {
         return Mockito.mock(VirtualMachineManager.class);
     }
 
-    @Bean
-    public S3Manager s3Mgr() {
-        return Mockito.mock(S3Manager.class);
-    }
 
     @Bean
     public SnapshotManager snapshotMgr() {

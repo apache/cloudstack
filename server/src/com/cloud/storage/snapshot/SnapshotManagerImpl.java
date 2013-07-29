@@ -99,7 +99,6 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
@@ -178,8 +177,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     protected ClusterDao _clusterDao;
     @Inject
     private ResourceLimitService _resourceLimitMgr;
-    @Inject
-    private S3Manager _s3Mgr;
     @Inject
     private SecondaryStorageVmManager _ssvmMgr;
     @Inject
@@ -962,9 +959,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                         || userVm.getHypervisorType() == HypervisorType.KVM) {
                     List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(),
                             Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
-                    if (activeSnapshots.size() > 1)
+                    if (activeSnapshots.size() > 1) {
                         throw new CloudRuntimeException(
                                 "There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                    }
                 }
 
                 List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
