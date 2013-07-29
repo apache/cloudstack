@@ -29,6 +29,10 @@ import java.util.Properties;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.to.*;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -44,17 +48,6 @@ import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
-import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
@@ -90,6 +83,25 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualSCSISharing;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
+    @Override
+    public boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd) {
+        DataTO data = cmd.getData();
+        if (data == null) {
+            return false;
+        }
+
+        String newPath = null;
+        if (data.getObjectType() == DataObjectType.VOLUME) {
+            newPath = createOvaForVolume((VolumeObjectTO)data);
+        } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
+            newPath = createOvaForTemplate((TemplateObjectTO)data);
+        }
+        if (newPath != null) {
+            cmd.setInstallPath(newPath);
+        }
+        return true;
+    }
+
     private static final Logger s_logger = Logger.getLogger(VmwareStorageManagerImpl.class);
 
     private final VmwareStorageMount _mountService;
@@ -109,108 +121,89 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         _timeout = NumbersUtil.parseInt(value, 1440) * 1000;
     }
 
-    //Fang note: use Answer here instead of the PrepareOVAPackingAnswer
-    @Override
-    public Answer execute(VmwareHostService hostService, PrepareOVAPackingCommand cmd) {
-		String secStorageUrl = ((PrepareOVAPackingCommand) cmd).getSecondaryStorageUrl();
-		assert (secStorageUrl != null);
-        String installPath = cmd.getTemplatePath();
-        String details = null;
-		boolean success = false;
-		String ovafileName = "";
-		s_logger.info("Fang: execute OVAPacking cmd at vmwareMngImpl. ");
-	    String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-	     //   String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
-	    String installFullPath = secondaryMountPoint + "/" + installPath;
+    public String createOvaForTemplate(TemplateObjectTO template) {
+        DataStoreTO storeTO = template.getDataStore();
+        if (!(storeTO instanceof NfsTO)) {
+            s_logger.debug("can only handle nfs storage, when create ova from volume");
+            return null;
+        }
+        NfsTO nfsStore = (NfsTO)storeTO;
+        String secStorageUrl = nfsStore.getUrl();
+        assert (secStorageUrl != null);
+        String installPath = template.getPath();
+        String ovafileName = "";
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
+        String installFullPath = secondaryMountPoint + "/" + installPath;
 
-	    String templateName = installFullPath;   // should be a file ending .ova;
-	    s_logger.info("Fang: execute vmwareMgrImpl: templateNAme " + templateName);
-		// Fang: Dir list, if there is ova file, done; Fang: add answer cmd;
-		// if not, from ova.meta, create a new OVA file;
-		// change the install path to *.ova , not ova.meta;
-	    // VmwareContext context = hostService.getServiceContext(cmd);  //Fang: we may not have the CTX here
-	    try {
-		if (templateName.endsWith(".ova")) {
-			if(new File(templateName).exists())  {
-				details = "OVA files exists. succeed. ";
-				return new Answer(cmd, true, details);
-			} else {
-				if (new File(templateName + ".meta").exists()) { //Fang parse the meta file
-				    //execute the tar command;
-					s_logger.info("Fang: execute vmwareMgrImpl: getfromMeta " + templateName);
-					ovafileName = getOVAFromMetafile(templateName + ".meta");
-                           details =  "OVA file in meta file is " + ovafileName;
-                           return  new Answer(cmd, true, details);
-				}  else {
-				    String msg = "Unable to find ova meta or ova file to prepare template (vmware)";
-				    s_logger.error(msg);
-				    throw new Exception(msg);
-			    }
-		   }
-		}
-            } catch (Throwable e) {
-                     if (e instanceof RemoteException) {
-                          //hostService.invalidateServiceContext(context); do not need context
-                          s_logger.error("Unable to connect to remote service ");
-                          details = "Unable to connect to remote service ";
-                          return new Answer(cmd, false, details);
-                     }
-                    String msg = "Unable to execute PrepareOVAPackingCommand due to exception";
-                     s_logger.error(msg, e);
-                     return new Answer(cmd, false, details);
+        String templateName = installFullPath;   // should be a file ending .ova;
+        try {
+            if (templateName.endsWith(".ova")) {
+                if(new File(templateName).exists())  {
+                    s_logger.debug("OVA files exists. succeed. ");
+                    return templateName;
+                } else {
+                    if (new File(templateName + ".meta").exists()) {
+                        ovafileName = getOVAFromMetafile(templateName + ".meta");
+                        s_logger.debug("OVA file in meta file is " + ovafileName);
+                        return installPath;
+                    }  else {
+                        String msg = "Unable to find ova meta or ova file to prepare template (vmware)";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
             }
-		return new Answer(cmd, true, details);
+        } catch (Throwable e) {
+            s_logger.debug("Failed to create ova: " + e.toString());
+        }
+        return null;
     }
 
     //Fang: new command added;
     // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
-    @Override
-    public Answer execute(VmwareHostService hostService, CreateVolumeOVACommand cmd) {
-		String secStorageUrl = ((CreateVolumeOVACommand) cmd).getSecondaryStorageUrl();
-		assert (secStorageUrl != null);
-        String installPath = cmd.getVolPath();
+    public String createOvaForVolume(VolumeObjectTO volume) {
+        DataStoreTO storeTO = volume.getDataStore();
+        if (!(storeTO instanceof NfsTO)) {
+            s_logger.debug("can only handle nfs storage, when create ova from volume");
+            return null;
+        }
+        NfsTO nfsStore = (NfsTO)storeTO;
+        String secStorageUrl = nfsStore.getUrl();
+        assert (secStorageUrl != null);
+        //Note the volume path is volumes/accountId/volumeId/uuid/, the actual volume is uuid/uuid.vmdk
+        String installPath = volume.getPath();
+        int index = installPath.lastIndexOf(File.separator);
+        String volumeUuid = installPath.substring(index + 1);
         String details = null;
-		boolean success = false;
+        boolean success = false;
 
-		s_logger.info("volss: execute CreateVolumeOVA cmd at vmwareMngImpl. ");
-	    String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-	     //   String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
-	    s_logger.info("volss: mountPoint: " + secondaryMountPoint + "installPath:" + installPath);
-	    String installFullPath = secondaryMountPoint + "/" + installPath;
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
+        //The real volume path
+        String volumePath = installPath + File.separator + volumeUuid + ".ova";
+        String installFullPath = secondaryMountPoint + "/" + installPath;
 
-	    String volName = cmd.getVolName();   // should be a UUID, without ova ovf, etc;
-	    s_logger.info("volss: execute vmwareMgrImpl: VolName " + volName);
-		// Fang: Dir list, if there is ova file, done; Note: add answer cmd;
+        try {
+            if(new File(secondaryMountPoint + File.separator + volumePath).exists())  {
+                s_logger.debug("ova already exists:" + volumePath);
+                return volumePath;
+            } else {
+                Script commandSync = new Script(true, "sync", 0, s_logger);
+                commandSync.execute();
 
-	    try {
-		if(new File(volName + ".ova").exists())  {
-				details = "OVA files exists. succeed. ";
-				return new CreateVolumeOVAAnswer(cmd, true, details);
-	    } else {
-	      File ovaFile = new File(installFullPath);
-	      String exportDir = ovaFile.getParent();
+                Script command = new Script(false, "tar", 0, s_logger);
+                command.setWorkDir(installFullPath);
+                command.add("-cf", volumeUuid + ".ova");
+                command.add(volumeUuid + ".ovf");		// OVF file should be the first file in OVA archive
+                command.add(volumeUuid + "-disk0.vmdk");
 
-              s_logger.info("Fang: exportDir is (for VolumeOVA): " + exportDir);
-          s_logger.info("Sync file system before we package OVA...");
-
-          Script commandSync = new Script(true, "sync", 0, s_logger);
-          commandSync.execute();
-
-          Script command = new Script(false, "tar", 0, s_logger);
-          command.setWorkDir(exportDir);
-          command.add("-cf", volName + ".ova");
-          command.add(volName + ".ovf");		// OVF file should be the first file in OVA archive
-          command.add(volName + "-disk0.vmdk");
-
-          s_logger.info("Package Volume OVA with commmand: " + command.toString());
-          command.execute();
-          return new CreateVolumeOVAAnswer(cmd, true, details);
-         }
-	    } catch (Throwable e) {
-                s_logger.info("Exception for createVolumeOVA");
-	    }
-             return new CreateVolumeOVAAnswer(cmd, true, "fail to pack OVA for volume");
-       }
+                command.execute();
+                return volumePath;
+            }
+        } catch (Throwable e) {
+            s_logger.info("Exception for createVolumeOVA");
+        }
+        return null;
+    }
 
     @Override
     public Answer execute(VmwareHostService hostService, PrimaryStorageDownloadCommand cmd) {

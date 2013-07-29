@@ -1187,8 +1187,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         String source = backupUuid + ".vhd";
         hypervisorResource.killCopyProcess(conn, source);
         s_logger.warn(errMsg);
-        return null;
-
+        throw new CloudRuntimeException(errMsg);
     }
 
     private boolean destroySnapshotOnPrimaryStorageExceptThis(Connection conn, String volumeUuid, String avoidSnapshotUuid){
@@ -1339,6 +1338,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 } else {
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
                              secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
+
                     finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }

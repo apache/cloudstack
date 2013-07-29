@@ -28,6 +28,11 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.host.Host;
+import com.cloud.storage.Storage;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -313,6 +318,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 needDelegation = false;
             } else {
                 needDelegation = true;
+            }
+        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+            DataTO srcData = ((CreateEntityDownloadURLCommand) cmd).getData();
+            if ((HypervisorType.VMware == srcData.getHypervisorType())) {
+                needDelegation = true;
+            }
+            if (srcData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;
+                if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
+                    needDelegation = true;
+                }
             }
         }
 

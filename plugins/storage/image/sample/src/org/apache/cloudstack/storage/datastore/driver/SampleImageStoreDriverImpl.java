@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
@@ -43,7 +44,7 @@ public class SampleImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     }
 
     @Override
-    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         return null;
     }
 

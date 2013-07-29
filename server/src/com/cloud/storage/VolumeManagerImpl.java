@@ -2823,23 +2823,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         VolumeInfo vol = cvResult.getVolume();
-        String volumeLocalPath = vol.getPath();
-        String volumeName = StringUtils.substringBeforeLast(StringUtils.substringAfterLast(volumeLocalPath, "/"), ".");
-        // volss, handle the ova special case;
-        if (getFormatForPool(srcPool) == "ova") {
-            // TODO: need to handle this for S3 as secondary storage
-            CreateVolumeOVACommand cvOVACmd = new CreateVolumeOVACommand(secondaryStorageURL, volumeLocalPath, volumeName, srcPool, copyvolumewait);
-            CreateVolumeOVAAnswer OVAanswer = null;
 
-            try {
-                cvOVACmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
-                // for extract volume, create the ova file here;
-                OVAanswer = (CreateVolumeOVAAnswer) storageMgr.sendToPool(srcPool, cvOVACmd);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("Storage unavailable");
-            }
-        }
-        String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat());
+        String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
         volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
         volumeStoreRef.setExtractUrl(extractUrl);
         _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
