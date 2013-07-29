@@ -1189,6 +1189,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if(!enableDynamicallyScaleVm){
                throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
+            UserVmDetailVO vmDetailVO = _vmDetailsDao.findDetail(vmId, VirtualMachine.IsDynamicScalingEnabled);
+            if (vmDetailVO == null || !Boolean.parseBoolean(vmDetailVO.getValue())) {
+                throw new CloudRuntimeException("Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have xs tools to support dynamic scaling");
+            }
 
             while (retry-- != 0) { // It's != so that it can match -1.
                 try{

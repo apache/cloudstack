@@ -278,7 +278,7 @@ public class VirtualMachineManagerImplTest {
         when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
                 newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(),
-                newServiceOffering.getLimitCpuUse(), true);
+                newServiceOffering.getLimitCpuUse());
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);

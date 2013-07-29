@@ -3275,14 +3275,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
             ConcurrentOperationException {
 
-        UserVmDetailVO vmDetailVO = _uservmDetailsDao.findDetail(vm.getId(), VirtualMachine.IsDynamicScalingEnabled);
-        Boolean isDynamicallyScalable;
-        if (vmDetailVO == null) {
-            isDynamicallyScalable = false;
-        } else {
-            isDynamicallyScalable = (vmDetailVO.getValue()).equals("true");
-        }
-
         long newServiceofferingId = vm.getServiceOfferingId();
         ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceofferingId);
         HostVO hostVo = _hostDao.findById(vm.getHostId());
@@ -3294,7 +3286,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         long minMemory = (long)(newServiceOffering.getRamSize() / memoryOvercommitRatio);
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(),
                 (int)(newServiceOffering.getSpeed() / cpuOvercommitRatio), newServiceOffering.getSpeed(), minMemory * 1024L * 1024L,
-                newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse(), isDynamicallyScalable);
+                newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
 
         Long dstHostId = vm.getHostId();
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());
