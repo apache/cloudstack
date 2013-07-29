@@ -48,6 +48,9 @@ else
 fi
 
 mkdir -p $RPMDIR/SPECS
+mkdir -p $RPMDIR/BUILD
+mkdir -p $RPMDIR/SRPMS
+mkdir -p $RPMDIR/RPMS
 mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 (cd ../../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION -x )
@@ -55,7 +58,7 @@ mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild -ba SPECS/cloud.spec "-D_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE")
+(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" -ba SPECS/cloud.spec)
 
 exit
 }
@@ -82,6 +85,9 @@ else
 fi
 
 mkdir -p $RPMDIR/SPECS
+mkdir -p $RPMDIR/BUILD
+mkdir -p $RPMDIR/RPMS
+mkdir -p $RPMDIR/SRPMS
 mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 
@@ -90,7 +96,7 @@ mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild -ba SPECS/cloud.spec "-D_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" "$DEFOSSNOSS")
+(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" "$DEFOSSNOSS" -bb SPECS/cloud.spec)
 
 exit
 }
