@@ -42,7 +42,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.ServerContexts;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -69,16 +68,13 @@ import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
@@ -90,27 +86,20 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StorageService;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
@@ -120,8 +109,6 @@ import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -153,36 +140,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected int _monitorId = 0;
     private final Lock _agentStatusLock = new ReentrantLock();
 
+    @Inject
+    protected EntityManager _entityMgr;
+
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
     @Inject
     protected DataCenterDao _dcDao = null;
     @Inject
-    protected DataCenterIpAddressDao _privateIPAddressDao = null;
-    @Inject
-    protected IPAddressDao _publicIPAddressDao = null;
-    @Inject
     protected HostPodDao _podDao = null;
-    @Inject
-    protected VMInstanceDao _vmDao = null;
-    @Inject
-    protected CapacityDao _capacityDao = null;
     @Inject
     protected ConfigurationDao _configDao = null;
     @Inject
-    protected PrimaryDataStoreDao _storagePoolDao = null;
-    @Inject
-    protected StoragePoolHostDao _storagePoolHostDao = null;
-    @Inject
     protected ClusterDao _clusterDao = null;
-    @Inject
-    protected ClusterDetailsDao _clusterDetailsDao = null;
-    @Inject
-    protected HostTagsDao _hostTagsDao = null;
-    @Inject
-    protected VolumeDao _volumeDao = null;
-
     protected int _port;
 
     @Inject
@@ -191,25 +162,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected AlertManager _alertMgr = null;
 
     @Inject
-    protected AccountManager _accountMgr = null;
-
-    @Inject
-    protected VirtualMachineManager _vmMgr = null;
-
-    @Inject StorageService _storageSvr = null;
-    @Inject StorageManager _storageMgr = null;
-
-    @Inject
     protected HypervisorGuruManager _hvGuruMgr;
-
-    @Inject SecondaryStorageVmManager _ssvmMgr;
 
     protected int _retry = 2;
 
-    protected String _instance;
-
     protected int _wait;
-    protected int _updateWait;
     protected int _alertWait;
     protected long _nodeId = -1;
 
@@ -243,9 +200,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         value = configs.get(Config.AlertWait.toString());
         _alertWait = NumbersUtil.parseInt(value, 1800);
 
-        value = configs.get(Config.UpdateWait.toString());
-        _updateWait = NumbersUtil.parseInt(value, 600);
-
         value = configs.get(Config.PingTimeout.toString());
         final float multiplier = value != null ? Float.parseFloat(value) : 2.5f;
         _pingTimeout = (long) (multiplier * _pingInterval);
@@ -254,11 +208,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         value = configs.get(Config.DirectAgentLoadSize.key());
         int threads = NumbersUtil.parseInt(value, 16);
-
-        _instance = configs.get("instance.name");
-        if (_instance == null) {
-            _instance = "DEFAULT";
-        }
 
         _nodeId = ManagementServerNode.getManagementServerId();
         s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
@@ -641,7 +590,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ServerResource resource = null;
         try {
             Class<?> clazz = Class.forName(resourceName);
-            Constructor constructor = clazz.getConstructor();
+            Constructor<?> constructor = clazz.getConstructor();
             resource = (ServerResource) constructor.newInstance();
         } catch (ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + host.getResource(), e);
@@ -705,7 +654,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
 
-    @SuppressWarnings("rawtypes")
     protected boolean loadDirectlyConnectedHost(HostVO host, boolean forRebalance) {
         boolean initialized = false;
         ServerResource resource = null;
