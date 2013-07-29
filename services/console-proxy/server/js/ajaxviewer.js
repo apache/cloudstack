@@ -137,6 +137,12 @@ KeyboardMapper.prototype = {
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SHIFT] 			= AjaxViewer.X11_KEY_SHIFT;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SELECT_KEY] 		= AjaxViewer.X11_KEY_SELECT_KEY;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
+			this.jsKeyPressX11KeysymMap[45] 				= [{type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
+			                                				   {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: false }];
+			this.jsKeyPressX11KeysymMap[47] 				= [{type: AjaxViewer.KEY_DOWN, code: 0x2f, modifiers: 0, shift: true },
+			                                				   {type: AjaxViewer.KEY_DOWN, code: 0x2f, modifiers: 0, shift: false }];
 		}
 	},
 	RawkeyboardInputHandler : function(eventType, code, modifiers, guestos, browser, browserVersion) {
@@ -506,6 +512,7 @@ AjaxViewer.X11_KEY_F12 = 0xffc9;
 AjaxViewer.X11_KEY_SHIFT = 0xffe1;
 AjaxViewer.X11_KEY_CTRL = 0xffe3;
 AjaxViewer.X11_KEY_ALT = 0xffe9;
+AjaxViewer.X11_KEY_SELECT_KEY = 0xff67;
 AjaxViewer.X11_KEY_GRAVE_ACCENT = 0x60;
 AjaxViewer.X11_KEY_SUBSTRACT = 0x2d;
 AjaxViewer.X11_KEY_ADD = 0x2b;
