@@ -624,3 +624,60 @@ def list_vpc_offerings(apiclient, **kwargs):
     cmd = listVPCOfferings.listVPCOfferingsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listVPCOfferings(cmd))
+
+def update_resource_count(apiclient, domainid, accountid=None,
+                          projectid=None, rtype=None):
+        """updates the resource count
+            0     - VM
+            1     - Public IP
+            2     - Volume
+            3     - Snapshot
+            4     - Template
+            5     - Projects
+            6     - Network
+            7     - VPC
+            8     - CPUs
+            9     - RAM
+            10    - Primary (shared) storage (Volumes)
+            11    - Secondary storage (Snapshots, Templates & ISOs)
+        """
+
+        Resources.updateCount(apiclient,
+                              domainid=domainid,
+                              account=accountid if accountid else None,
+                              projectid=projectid if projectid else None,
+                              resourcetype=rtype if rtype else None
+                              )
+        return
+
+def find_suitable_host(apiclient, vm):
+        """Returns a suitable host for VM migration"""
+
+        hosts = Host.list(apiclient,
+                          virtualmachineid=vm.id,
+                          listall=True)
+
+        if isinstance(hosts, list):
+            assert len(hosts) > 0, "List host should return valid response"
+        else:
+            raise Exception("Exception: List host should return valid response")
+        return hosts[0]
+
+def get_resource_type(resource_id):
+        """Returns resource type"""
+
+        lookup = {  0: "VM",
+                    1: "Public IP",
+                    2: "Volume",
+                    3: "Snapshot",
+                    4: "Template",
+                    5: "Projects",
+                    6: "Network",
+                    7: "VPC",
+                    8: "CPUs",
+                    9: "RAM",
+                    10: "Primary (shared) storage (Volumes)",
+                    11: "Secondary storage (Snapshots, Templates & ISOs)"
+                 }
+
+        return lookup[resource_id]
