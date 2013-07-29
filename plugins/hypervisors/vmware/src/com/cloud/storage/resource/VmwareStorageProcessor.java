@@ -363,6 +363,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
 					VolumeObjectTO newVol = new VolumeObjectTO();
 					newVol.setPath(vmdkName);
+                    newVol.setSize(volume.getSize());
 					return new CopyCmdAnswer(newVol);
 				} finally {
 					vmMo.detachAllDisks();
@@ -400,6 +401,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 				dsMo.deleteFile(srcFile, dcMo.getMor(), true);
 				VolumeObjectTO newVol = new VolumeObjectTO();
 				newVol.setPath(vmdkName);
+                newVol.setSize(volume.getSize());
 				return new CopyCmdAnswer(newVol);
 			}
 		} catch (Throwable e) {
