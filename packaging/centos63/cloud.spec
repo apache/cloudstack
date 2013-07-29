@@ -31,6 +31,9 @@ Release:   %{_rel}%{dist}
 %define _maventag %{_ver}
 Release:   %{_rel}%{dist}
 %endif
+
+%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+
 Version:   %{_ver}
 License:   ASL 2.0
 Vendor:    Apache CloudStack <dev@cloudstack.apache.org>
@@ -196,14 +199,15 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 # Common
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
-mkdir -p ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
+mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D services/console-proxy/server/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install -D services/console-proxy/server/dist/systemvm.zip ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.zip
-install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
-cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
-python -m py_compile ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
-python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudutils
+install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
+cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
+python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
+python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
+ 
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
@@ -298,8 +302,8 @@ install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/in
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
-cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
-install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudapis.py
+cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{python_sitearch}/
+install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloudapis.py
 
 # AWS API
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi
@@ -546,14 +550,14 @@ fi
 %{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
 
 %files common
-%dir %attr(0755,root,root) %{_libdir}/python2.6/site-packages/cloudutils
+%dir %attr(0755,root,root) %{python_sitearch}/cloudutils
 %dir %attr(0755,root,root) %{_datadir}/%{name}-common/vms
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.zip
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
+%attr(0644,root,root) %{python_sitearch}/cloud_utils.py
+%attr(0644,root,root) %{python_sitearch}/cloud_utils.pyc
+%attr(0644,root,root) %{python_sitearch}/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
@@ -569,9 +573,9 @@ fi
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
 %files cli
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudapis.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/__init__.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/utils.py
+%attr(0644,root,root) %{python_sitearch}/cloudapis.py
+%attr(0644,root,root) %{python_sitearch}/cloudtool/__init__.py
+%attr(0644,root,root) %{python_sitearch}/cloudtool/utils.py
 %{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 
