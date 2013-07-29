@@ -97,6 +97,9 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Column(name = "url")
     private String downloadUrl;
 
+    @Column(name = "download_url")
+    private String extractUrl;
+
     @Column(name = "destroyed")
     boolean destroyed = false;
 
@@ -345,4 +348,11 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         this.refCnt--;
     }
 
+    public String getExtractUrl() {
+        return extractUrl;
+    }
+
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
 }
