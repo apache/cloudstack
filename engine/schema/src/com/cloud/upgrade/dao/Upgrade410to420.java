@@ -100,6 +100,7 @@ public class Upgrade410to420 implements DbUpgrade {
         migrateSnapshotStoreRef(conn);
         fixNiciraKeys(conn);
         fixRouterKeys(conn);
+        updateConcurrentConnectionsInNetworkOfferings(conn);
     }
 
     private void fixBaremetalForeignKeys(Connection conn) {
@@ -1935,6 +1936,65 @@ public class Upgrade410to420 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to add foreign key fk_router_network_ref__router_id to the table router_network_ref", e);
         } finally {
             try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    protected void updateConcurrentConnectionsInNetworkOfferings(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        ResultSet rs1 = null;
+        ResultSet rs2 = null;
+        try {
+            try {
+                pstmt = conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");
+                rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                   pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
+                   pstmt.executeUpdate();
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("migration of concurrent connections from network_detais failed");
+            }
+
+
+
+            pstmt = conn.prepareStatement("select network_id, value from `cloud`.`network_details` where name='maxconnections'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long networkId = rs.getLong(1);
+                int maxconnections = Integer.parseInt(rs.getString(2));
+                pstmt = conn.prepareStatement("select network_offering_id from `cloud`.`networks` where id= ?");
+                pstmt.setLong(1, networkId);
+                rs1 = pstmt.executeQuery();
+                if (rs1.next()) {
+                    long network_offering_id = rs1.getLong(1);
+                    pstmt = conn.prepareStatement("select concurrent_connections from `cloud`.`network_offerings` where id= ?");
+                    pstmt.setLong(1,network_offering_id);
+                    rs2 = pstmt.executeQuery();
+                    if ((!rs2.next()) || (rs2.getInt(1) < maxconnections)) {
+                        pstmt = conn.prepareStatement("update network_offerings set concurrent_connections=? where id=?");
+                        pstmt.setInt(1, maxconnections);
+                        pstmt.setLong(2, network_offering_id);
+                        pstmt.executeUpdate();
+                    }
+                }
+            }
+        } catch (SQLException e) {
+        }
+        finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (rs1 != null) {
+                    rs1.close();
+                }
                 if (pstmt != null) {
                     pstmt.close();
                 }

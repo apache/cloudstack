@@ -2193,8 +2193,6 @@ ALTER TABLE `cloud_usage`.`usage_storage` ADD COLUMN `virtual_size` bigint unsig
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `virtual_size` bigint unsigned;
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.max.conn', '4096', 'Load Balancer(haproxy) maximum number of concurrent connections(global max)');
 
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
-
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vmsnapshot`;
 CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
   `id` bigint(20) unsigned NOT NULL,
