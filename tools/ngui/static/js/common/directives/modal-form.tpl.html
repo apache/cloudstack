@@ -1,0 +1,24 @@
+<div class="modal-header">
+    <h3>{{title}}</h3>
+</div>
+<div class="modal-body">
+    <div>
+        <form novalidate class="form-horizontal">
+            <div class="control-group" ng-repeat="field in formDetails.fields" ng-init="optionsCache = {}">
+                <label class="control-label">{{dictionary.labels[field.label]}}</label>
+                <div class="controls" ng-switch on="field.type">
+                    <input ng-switch-when="input-text" type="text" ng-model="formObject[field.model]">
+                    <input ng-switch-when="input-checkbox" type="checkbox" ng-model="formObject[field.model]">
+                    <input ng-switch-when="input-password" type="password" ng-model="formObject[field.model]">
+                    <select ng-switch-when="select" ng-init="optionsCache[field.model] = field.options()" ng-model="formObject[field.model]">
+                        <option ng-repeat="option in optionsCache[field.model]" value="{{field.getValue(option)}}">{{field.getName(option)}}</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-footer">
+    <button ng-click="close()" class="btn">{{cancelText || "Cancel"}}</button>
+    <button ng-click="submit(formObject)" class="btn btn-primary">{{okButtonText || "Submit"}}</button>
+</div>

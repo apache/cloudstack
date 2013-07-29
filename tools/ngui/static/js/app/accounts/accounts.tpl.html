@@ -1,0 +1,18 @@
+<div class="well well-small form-inline">
+    <input type="text" placeholder="Search" class="input-medium search-query" ng-model="search.name">
+    <modal-form form-details="addAccountForm">
+        <button class="btn">Add Account</button>
+    </modal-form>
+</div>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th ng-repeat="attribute in toDisplay"> {{dictionary.labels[attribute]}} </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="model in collection">
+            <td ng-repeat="attribute in toDisplay">{{model[attribute]}}</td>
+        </tr>
+    </tbody>
+</table>

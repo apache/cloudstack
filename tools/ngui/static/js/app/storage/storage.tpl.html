@@ -1,0 +1,33 @@
+<div class="well well-small form-inline">
+    <input type="text" placeholder="Search" class="input-medium search-query" ng-model="search.name">
+    <label>
+        Select view:
+        <select ng-model="view">
+            <option value="volumes">Volumes</option>
+            <option value="snapshots">Snapshots</option>
+        </select>
+    </label>
+    <modal-form form-details="addVolumeForm">
+        <button class="btn">Add Volume</button>
+    </modal-form>
+    <modal-form form-details="uploadVolumeForm">
+        <button class="btn">Upload Volume</button>
+    </modal-form>
+</div>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th ng-repeat="attribute in toDisplay"> {{dictionary.labels[attribute]}} </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="model in collection | filter:search">
+            <td>{{model.name}}</td>
+            <td>{{model.type}}</td>
+            <td>{{model.hypervisor}}</td>
+            <td>{{model.vmdisplayname}}</td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>

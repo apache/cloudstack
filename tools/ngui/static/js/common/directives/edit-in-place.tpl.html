@@ -1,0 +1,8 @@
+<span>
+    <span ng-hide="editing">{{model[attribute]}}<button class="btn pull-right" ng-click="edit()"><i class="icon-edit"></i>Edit</button></span>
+    <span ng-show="editing" class="form-inline">
+        <input type="text" ng-model="model[attribute]">
+        <button class="btn btn-success" ng-click="save()"><i class="icon-ok icon-white"></i></button>
+        <button class="btn" ng-click="cancel()"><i class="icon-ban-circle"></i></button>
+    </span>
+</span>

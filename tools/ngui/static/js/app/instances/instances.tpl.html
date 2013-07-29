@@ -1,0 +1,36 @@
+<div class="well well-small form-inline">
+    <input type="text" placeholder="Search" class="input-medium search-query" ng-model="search.displayname">
+    <label>
+        Display only:
+        <select ng-model="search.state">
+            <option value="">All</option>
+            <option value="Stopped">Stopped</option>
+            <option value="Running">Running</option>
+            <option value="Destroyed">Destroyed</option>
+        </select>
+    </label>
+</div>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th ng-repeat="attribute in toDisplay"> {{dictionary.labels[attribute]}} </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="model in collection | filter:search">
+            <td>
+                <a href="{{'/#/instances/' + model.id}}">{{model.displayname}}</a>
+            </td>
+            <td>{{model.instancename}}</td>
+            <td>{{model.zonename}}</td>
+            <td><vm-state-label vm="model"></vm-state-label></td>
+            <td>
+                <confirm on-ok="model.start()" action="Start VirtualMachine"><i class="icon-play"></i></confirm>
+                <confirm on-ok="model.stop()" action="Stop VirtualMachine"><i class="icon-ban-circle"></i></confirm>
+                <confirm on-ok="model.reboot()" action="Reboot VirtualMachine"><i class="icon-repeat"></i></confirm>
+                <confirm on-ok="model.destroy()" action="Destroy VirtualMachine"><i class="icon-remove"></i></confirm>
+            </td>
+        </tr>
+    </tbody>
+</table>
