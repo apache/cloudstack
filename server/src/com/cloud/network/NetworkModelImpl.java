@@ -1277,7 +1277,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     
         Long physicalNetworkId = null;
         if (effectiveTrafficType != TrafficType.Guest) {
-            physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network);
+            physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network, effectiveTrafficType);
         } else {
             NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
             physicalNetworkId = network.getPhysicalNetworkId();
@@ -1796,18 +1796,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     
 
-    protected Long getNonGuestNetworkPhysicalNetworkId(Network network) {
-            // no physical network for control traffic type
-    
-            // have to remove this sanity check as VMware control network is management network
+    protected Long getNonGuestNetworkPhysicalNetworkId(Network network, TrafficType trafficType) {
+            // VMware control network is management network
             // we need to retrieve traffic label information through physical network
-    /*        
-            if (network.getTrafficType() == TrafficType.Control) {
-                return null;
-            }
-    */
             Long physicalNetworkId = network.getPhysicalNetworkId();
-    
+
             if (physicalNetworkId == null) {
                 List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZone(network.getDataCenterId());
                 if (pNtwks.size() == 1) {
@@ -1817,7 +1810,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     // We can make this assumptions based on the fact that Public/Management/Control traffic types are
                     // supported only in one physical network in the zone in 3.0
                     for (PhysicalNetworkVO pNtwk : pNtwks) {
-                        if (_pNTrafficTypeDao.isTrafficTypeSupported(pNtwk.getId(), network.getTrafficType())) {
+                        if (_pNTrafficTypeDao.isTrafficTypeSupported(pNtwk.getId(), trafficType)) {
                             physicalNetworkId = pNtwk.getId();
                             break;
                         }
@@ -1826,6 +1819,37 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
             return physicalNetworkId;
         }
+
+    protected Long getNonGuestNetworkPhysicalNetworkId(Network network) {
+        // no physical network for control traffic type
+
+        // have to remove this sanity check as VMware control network is management network
+        // we need to retrieve traffic label information through physical network
+/*
+        if (network.getTrafficType() == TrafficType.Control) {
+            return null;
+        }
+*/
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+
+        if (physicalNetworkId == null) {
+            List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZone(network.getDataCenterId());
+            if (pNtwks.size() == 1) {
+                physicalNetworkId = pNtwks.get(0).getId();
+            } else {
+                // locate physicalNetwork with supported traffic type
+                // We can make this assumptions based on the fact that Public/Management/Control traffic types are
+                // supported only in one physical network in the zone in 3.0
+                for (PhysicalNetworkVO pNtwk : pNtwks) {
+                    if (_pNTrafficTypeDao.isTrafficTypeSupported(pNtwk.getId(), network.getTrafficType())) {
+                        physicalNetworkId = pNtwk.getId();
+                        break;
+                    }
+                }
+            }
+        }
+        return physicalNetworkId;
+    }
 
     @Override
     public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri) {
