@@ -819,13 +819,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
             throw new CloudRuntimeException("Host " + host.getUuid() + " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
         }
-        /*
-         * TODO: check current agent status and updateAgentStatus to removed. If
-         * it was already removed, that means someone is deleting host
-         * concurrently, return. And consider the situation of CloudStack
-         * shutdown during delete. A global lock?
-         */
-        AgentAttache attache = _agentMgr.findAttache(hostId);
         // Get storage pool host mappings here because they can be removed as a
         // part of handleDisconnect later
         // TODO: find out the bad boy, what's a buggy logic!
@@ -2204,8 +2197,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     private boolean doUpdateHostPassword(long hostId) {
-        AgentAttache attache = _agentMgr.findAttache(hostId);
-        if (attache == null) {
+        if (_agentMgr.isAgentAttached(hostId)) {
             return false;
         }
 
@@ -2214,7 +2206,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         nv = _hostDetailsDao.findDetail(hostId, ApiConstants.PASSWORD);
         String password = nv.getValue();
         UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
-        attache.updatePassword(cmd);
+        _agentMgr.easySend(hostId, cmd);
         return true;
     }
 

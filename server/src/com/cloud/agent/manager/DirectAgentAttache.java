@@ -212,9 +212,4 @@ public class DirectAgentAttache extends AgentAttache {
         }
     }
 
-
-    @Override
-    public void updatePassword(Command new_password) {
-        _resource.executeRequest(new_password);
-    }
 }

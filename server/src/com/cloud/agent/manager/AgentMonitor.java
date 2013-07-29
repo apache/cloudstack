@@ -26,8 +26,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
@@ -35,7 +33,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -48,10 +45,9 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
@@ -64,17 +60,18 @@ public class AgentMonitor extends Thread implements AgentMonitorService {
     private long _pingTimeout = 120; // Default set to 120 seconds
     @Inject private HostDao _hostDao;
     private boolean _stop;
-    @Inject private AgentManager _agentMgr;
+    @Inject
+    private AgentManagerImpl _agentMgr;
     @Inject private VMInstanceDao _vmDao;
-    @Inject private DataCenterDao _dcDao = null;
-    @Inject private HostPodDao _podDao = null;
+    @Inject private final DataCenterDao _dcDao = null;
+    @Inject private final HostPodDao _podDao = null;
     @Inject private AlertManager _alertMgr;
     private long _msId;
     @Inject ClusterDao _clusterDao;
     @Inject ResourceManager _resourceMgr;
         
     // private ConnectionConcierge _concierge;
-    private Map<Long, Long> _pingMap;
+    private final Map<Long, Long> _pingMap;
 
     public AgentMonitor() {
         _pingMap = new ConcurrentHashMap<Long, Long>(10007);
@@ -87,6 +84,7 @@ public class AgentMonitor extends Thread implements AgentMonitorService {
      *            agent or host id.
      * @return null if the agent is not kept here. true if behind; false if not.
      */
+    @Override
     public Boolean isAgentBehindOnPing(long agentId) {
         Long pingTime = _pingMap.get(agentId);
         if (pingTime == null) {
@@ -95,10 +93,12 @@ public class AgentMonitor extends Thread implements AgentMonitorService {
         return pingTime < (InaccurateClock.getTimeInSeconds() - _pingTimeout);
     }
 
+    @Override
     public Long getAgentPingTime(long agentId) {
         return _pingMap.get(agentId);
     }
 
+    @Override
     public void pingBy(long agentId) {
         _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
     }
@@ -168,6 +168,7 @@ public class AgentMonitor extends Thread implements AgentMonitorService {
         s_logger.info("Agent Monitor is leaving the building!");
     }
 
+    @Override
     public void signalStop() {
         _stop = true;
         interrupt();

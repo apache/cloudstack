@@ -123,8 +123,6 @@ import com.cloud.utils.nio.Task;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  *
@@ -372,36 +370,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    @Override
     public AgentAttache findAttache(long hostId) {
         AgentAttache attache = null;
         synchronized (_agents) {
             attache = _agents.get(hostId);
         }
         return attache;
-    }
-
-
-
-    private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
-        List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);
-        if (ssAHosts == null || ssAHosts.isEmpty() ) {
-            throw new AgentUnavailableException("No ssvm host found", -1);
-        }
-        Collections.shuffle(ssAHosts);
-        HostVO ssAhost = ssAHosts.get(0);
-        send(ssAhost.getId(), new Commands(cmd), listener);
-    }
-
-    @Override
-    public Answer sendToSSVM(final Long dcId, final Command cmd) {
-        List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);
-        if (ssAHosts == null || ssAHosts.isEmpty() ) {
-            return new Answer(cmd, false, "can not find secondary storage VM agent for data center " + dcId);
-        }
-        Collections.shuffle(ssAHosts);
-        HostVO ssAhost = ssAHosts.get(0);
-        return easySend(ssAhost.getId(), cmd);
     }
 
     @Override
@@ -1044,7 +1018,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
-    @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
         if (event == Event.AgentDisconnected) {
             if (s_logger.isDebugEnabled()) {
@@ -1060,6 +1033,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return reconnect(hostId);
         }
         return false;
+    }
+
+    @Override
+    public boolean isAgentAttached(long hostId) {
+        return findAttache(hostId) != null;
     }
 
     protected AgentAttache createAttacheForConnect(HostVO host, Link link) throws ConnectionException {
@@ -1462,7 +1440,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    @Override
     public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
         disconnectInternal(hostId, event, true);
     }

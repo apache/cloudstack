@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
@@ -46,11 +44,5 @@ public class DummyAttache extends AgentAttache {
 	public void send(Request req) throws AgentUnavailableException {
 
 	}
-
-
-    @Override
-    public void updatePassword(Command newPassword) {
-        throw new IllegalStateException("Should not have come here ");
-    }
 
 }

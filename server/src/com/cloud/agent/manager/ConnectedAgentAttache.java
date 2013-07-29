@@ -20,8 +20,6 @@ import java.nio.channels.ClosedChannelException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
@@ -72,7 +70,7 @@ public class ConnectedAgentAttache extends AgentAttache {
     public boolean equals(Object obj) {
         try {
             ConnectedAgentAttache that = (ConnectedAgentAttache) obj;
-            return super.equals(obj) && this._link == that._link && this._link != null;
+            return super.equals(obj) && _link == that._link && _link != null;
         } catch (ClassCastException e) {
             assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to " + this.getClass().getSimpleName() + ".equals()? ";
         return false;
@@ -94,8 +92,4 @@ public class ConnectedAgentAttache extends AgentAttache {
         }
     }
 
-    @Override
-    public void updatePassword(Command newPassword) {
-        throw new IllegalStateException("Should not have come here ");
-    }
 }

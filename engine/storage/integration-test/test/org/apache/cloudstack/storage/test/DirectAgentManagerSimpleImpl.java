@@ -58,7 +58,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
     private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
-    private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
+    private final Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject
     HostDao hostDao;
     @Inject
@@ -223,12 +223,6 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public Answer sendTo(Long dcId, HypervisorType type, Command cmd) {
         // TODO Auto-generated method stub
         return null;
@@ -251,12 +245,6 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public AgentAttache findAttache(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -284,15 +272,9 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public Answer sendToSSVM(Long dcId, Command cmd) {
+    public boolean isAgentAttached(long hostId) {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void disconnectWithInvestigation(long hostId, Event event) {
-        // TODO Auto-generated method stub
-
+        return false;
     }
 
 }
