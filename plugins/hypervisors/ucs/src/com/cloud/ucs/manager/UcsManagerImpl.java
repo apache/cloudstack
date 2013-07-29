@@ -175,7 +175,11 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public boolean start() {
-    	syncBladeInterval = Integer.valueOf(configDao.getValue(Config.UCSSyncBladeInterval.key()));
+        try {
+            syncBladeInterval = Integer.valueOf(configDao.getValue(Config.UCSSyncBladeInterval.key()));
+        } catch (NumberFormatException e) {
+            syncBladeInterval = 600;
+        }
     	syncBladesExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("UCS-SyncBlades"));
     	syncBladesExecutor.scheduleAtFixedRate(new SyncBladesThread(), syncBladeInterval, syncBladeInterval, TimeUnit.SECONDS);
         return true;
