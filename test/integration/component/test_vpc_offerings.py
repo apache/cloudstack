@@ -880,11 +880,9 @@ class TestVPCOffering(cloudstackTestCase):
         # 1. Creating VPC Offering with no SourceNat service should FAIL.
         # 2. Creating VPC Offering with services NOT supported by VPC
         #    like Firewall should not be allowed
-        # 3. Creating VPC Offering with services NOT supported by VPC
-        #    like Firewall should not be allowed
 
         self.debug("Creating a VPC offering without sourceNAT")
-        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat'
+        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Vpn,Lb,UserData,StaticNat'
 
         with self.assertRaises(Exception):
             VpcOffering.create(
@@ -892,8 +890,8 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.services["vpc_offering"]
                              )
 
-        self.debug("Creating a VPC offering without Firewall")
-        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Vpn,SourceNat,Lb,UserData,StaticNat'
+        self.debug("Creating a VPC offering with Firewall")
+        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Firewall,Vpn,SourceNat,Lb,UserData,StaticNat'
 
         with self.assertRaises(Exception):
             VpcOffering.create(
@@ -1005,7 +1003,7 @@ class TestVPCOffering(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan", "needle"])
+    @attr(tags=["advanced", "intervlan"])
     def test_08_list_vpc_off(self):
         """Test list VPC offering"""
 
