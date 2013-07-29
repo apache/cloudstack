@@ -1564,3 +1564,11 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
   CONSTRAINT `fk_ns_pod_ref__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ns_pod_ref__device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#rename the fields (we will rename them back in 307-41 cleanup)
+ALTER TABLE `cloud`.`usage_event` CHANGE COLUMN `virtual_size` `virtual_size1` bigint unsigned;
+ALTER TABLE `cloud_usage`.`usage_event` CHANGE COLUMN `virtual_size` `virtual_size1` bigint unsigned;
+ALTER TABLE `cloud_usage`.`usage_storage` CHANGE COLUMN `virtual_size` `virtual_size1` bigint unsigned;
+ALTER TABLE `cloud_usage`.`cloud_usage` CHANGE COLUMN `virtual_size` `virtual_size1` bigint unsigned;
+
+ALTER TABLE `cloud`.`network_offerings` CHANGE COLUMN `concurrent_connections` `concurrent_connections1` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
