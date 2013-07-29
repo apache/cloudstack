@@ -358,7 +358,7 @@ def setLoadBalancerRule(session, args):
 @echo
 def configdnsmasq(session, args):
     routerip = args['routerip']
-    args = args['filepath']
+    args = args['args']
     target   = "root@"+routerip
     try:
        util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',args])
