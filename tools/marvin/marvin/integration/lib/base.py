@@ -2961,6 +2961,8 @@ class VPC:
 
 class PrivateGateway:
     """Manage private gateway lifecycle"""
+
+    @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
                                                     physicalnetworkid=None):
         """Create private gateway"""
