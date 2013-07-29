@@ -140,12 +140,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             if (templateName.endsWith(".ova")) {
                 if(new File(templateName).exists())  {
                     s_logger.debug("OVA files exists. succeed. ");
-                    return templateName;
+                    return installPath;
                 } else {
                     if (new File(templateName + ".meta").exists()) {
                         ovafileName = getOVAFromMetafile(templateName + ".meta");
                         s_logger.debug("OVA file in meta file is " + ovafileName);
-                        return installPath;
+                        return ovafileName;
                     }  else {
                         String msg = "Unable to find ova meta or ova file to prepare template (vmware)";
                         s_logger.error(msg);
