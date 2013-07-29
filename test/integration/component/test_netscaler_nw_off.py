@@ -605,11 +605,10 @@ class TestNetScalerSharedMode(cloudstackTestCase):
                                      )
         cls._cleanup = [
                         cls.service_offering,
-                        cls.network_offering,
                         cls.account_1,
                         cls.account_2,
                         cls.account_3,
-                        cls.account_5
+                        cls.account_5,
                         ]
         cls.cleanup_devices = [cls.netscaler_1]
         return
@@ -1132,7 +1131,6 @@ class TestNwOffDedicatedNetscaler(cloudstackTestCase):
                                             )
         cls._cleanup = [
                         cls.service_offering,
-                        cls.network_offering,
                         cls.netscaler,
                         ]
         return
@@ -1312,8 +1310,6 @@ class TestNwOffNetscaler(cloudstackTestCase):
                                             )
         cls._cleanup = [
                         cls.service_offering,
-                        cls.network_offering,
-                        cls.network_offering_shared,
                         cls.netscaler_1,
                         cls.netscaler_2,
                         ]
@@ -1623,8 +1619,6 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
                                             )
         cls._cleanup = [
                         cls.service_offering,
-                        cls.network_offering_dedicated,
-                        cls.network_offering_shared,
                         cls.netscaler_1,
                         cls.netscaler_2,
                         ]
@@ -2040,8 +2034,6 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
                                             )
         cls._cleanup = [
                         cls.service_offering,
-                        cls.network_offering_dedicated,
-                        cls.network_offering_shared,
                         cls.netscaler_1,
                         cls.netscaler_2,
                         ]
