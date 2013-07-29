@@ -2361,16 +2361,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 "Can't create vm from template with hypervisor "
                                         + template.getHypervisorType()
                                         + " in vpc network " + network);
-                    }
-
-                    // Only XenServer, KVM, and VMware hypervisors are supported
-                    // for vpc networks
-                    if (!vpcSupportedHTypes.contains(hypervisor)) {
+                    } else if (template.getFormat() == ImageFormat.ISO && !vpcSupportedHTypes.contains(hypervisor)) {
+                        // Only XenServer, KVM, and VMware hypervisors are supported
+                        // for vpc networks
                         throw new InvalidParameterValueException(
                                 "Can't create vm of hypervisor type "
                                         + hypervisor + " in vpc network");
+                        
                     }
-
                 }
 
                 _networkModel.checkNetworkPermissions(owner, network);
