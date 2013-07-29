@@ -95,15 +95,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1 =
             "SELECT host.cluster_id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE ";
     private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 =
-            " AND host.type = 'Routing' GROUP BY host.cluster_id ORDER BY 2 ASC ";
+            " AND host.type = 'Routing' AND host.removed is null GROUP BY host.cluster_id ORDER BY 2 ASC ";
 
-    private static final String ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT pod.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host_pod_ref` pod LEFT JOIN `cloud`.`vm_instance` vm ON pod.id = vm.pod_id WHERE pod.data_center_id = ? " +
+    private static final String ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT pod.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host_pod_ref` pod LEFT JOIN `cloud`.`vm_instance` vm ON pod.id = vm.pod_id WHERE pod.data_center_id = ? AND pod.removed is null " +
                                                                        " GROUP BY pod.id ORDER BY 2 ASC ";
 
-    private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT =
-            "SELECT host.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE host.data_center_id = ? " +
-    		                                                            " AND host.pod_id = ? AND host.cluster_id = ? AND host.type = 'Routing' " +
-    		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
+    private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT host.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE host.data_center_id = ? "
+            + " AND host.type = 'Routing' AND host.removed is null ";
+
+    private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " GROUP BY host.id ORDER BY 2 ASC ";
 
     @Inject protected HostDao _hostDao;
 
@@ -561,11 +561,25 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         List<Long> result = new ArrayList<Long>();
         try {
             String sql = ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT;
+            if (podId != null) {
+                sql = sql + " AND host.pod_id = ? ";
+            }
+
+            if (clusterId != null) {
+                sql = sql + " AND host.cluster_id = ? ";
+            }
+
+            sql = sql + ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2;
+
             pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setLong(1, accountId);
             pstmt.setLong(2, dcId);
-            pstmt.setLong(3, podId);
-            pstmt.setLong(4, clusterId);
+            if (podId != null) {
+                pstmt.setLong(3, podId);
+            }
+            if (clusterId != null) {
+                pstmt.setLong(4, clusterId);
+            }
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
