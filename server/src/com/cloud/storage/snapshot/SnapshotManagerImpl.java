@@ -58,7 +58,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -99,7 +98,6 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
@@ -179,8 +177,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     protected ClusterDao _clusterDao;
     @Inject
     private ResourceLimitService _resourceLimitMgr;
-    @Inject
-    private S3Manager _s3Mgr;
     @Inject
     private SecondaryStorageVmManager _ssvmMgr;
     @Inject
@@ -615,7 +611,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         if (snapshotTypeStr != null) {
-            Type snapshotType = SnapshotVO.getSnapshotType((String) snapshotTypeStr);
+            Type snapshotType = SnapshotVO.getSnapshotType(snapshotTypeStr);
             if (snapshotType == null) {
                 throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
             }
@@ -625,7 +621,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
             }
         } else if (intervalTypeStr != null && volumeId != null) {
-            Type type = SnapshotVO.getSnapshotType((String) intervalTypeStr);
+            Type type = SnapshotVO.getSnapshotType(intervalTypeStr);
             if (type == null) {
                 throw new InvalidParameterValueException("Unsupported snapstho interval type " + intervalTypeStr);
             }
@@ -963,9 +959,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                         || userVm.getHypervisorType() == HypervisorType.KVM) {
                     List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(),
                             Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
-                    if (activeSnapshots.size() > 1)
+                    if (activeSnapshots.size() > 1) {
                         throw new CloudRuntimeException(
                                 "There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                    }
                 }
 
                 List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),

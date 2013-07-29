@@ -40,7 +40,6 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.s3.S3Manager;
 
 public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 

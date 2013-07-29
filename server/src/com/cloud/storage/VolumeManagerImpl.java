@@ -32,8 +32,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.*;
-import org.apache.commons.lang.StringUtils;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -142,7 +140,6 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -233,8 +230,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
     @Inject
     protected VMTemplateS3Dao _vmTemplateS3Dao;
-    @Inject
-    protected S3Manager _s3Mgr;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject

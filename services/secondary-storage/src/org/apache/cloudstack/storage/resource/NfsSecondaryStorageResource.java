@@ -71,9 +71,6 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
-import com.cloud.agent.api.DownloadSnapshotFromS3Command;
-import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
-import com.cloud.agent.api.DownloadTemplateFromSwiftToSecondaryStorageCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.PingCommand;
@@ -88,7 +85,6 @@ import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
-import com.cloud.agent.api.UploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -198,16 +194,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((ListTemplateCommand) cmd);
         } else if (cmd instanceof ListVolumeCommand) {
             return execute((ListVolumeCommand) cmd);
-        } else if (cmd instanceof DownloadSnapshotFromSwiftCommand) {
-            return execute((DownloadSnapshotFromSwiftCommand) cmd);
-        } else if (cmd instanceof DownloadSnapshotFromS3Command) {
-            return execute((DownloadSnapshotFromS3Command) cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand) {
             return execute((DeleteSnapshotsDirCommand) cmd);
-        } else if (cmd instanceof DownloadTemplateFromSwiftToSecondaryStorageCommand) {
-            return execute((DownloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
-        } else if (cmd instanceof UploadTemplateToSwiftFromSecondaryStorageCommand) {
-            return execute((UploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof CopyCommand) {
             return execute((CopyCommand) cmd);
         } else if (cmd instanceof DeleteCommand) {
@@ -590,50 +578,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return join(asList(getRootDir(storagePath), dataPath), File.separator);
     }
 
-    private Answer execute(DownloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
-        SwiftTO swift = cmd.getSwift();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        Long accountId = cmd.getAccountId();
-        Long templateId = cmd.getTemplateId();
-        String path = cmd.getPath();
-        String errMsg;
-        String lDir = null;
-        try {
-            String parent = getRootDir(secondaryStorageUrl);
-            lDir = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
-            String result = createLocalDir(lDir);
-            if (result != null) {
-                errMsg = "downloadTemplateFromSwiftToSecondaryStorageCommand failed due to Create local directory failed";
-                s_logger.warn(errMsg);
-                throw new InternalErrorException(errMsg);
-            }
-            String lPath = lDir + "/" + path;
-            result = swiftDownload(swift, "T-" + templateId.toString(), path, lPath);
-            if (result != null) {
-                errMsg = "failed to download template " + path + " from Swift to secondary storage " + lPath
-                        + " , err=" + result;
-                s_logger.warn(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-            path = "template.properties";
-            lPath = lDir + "/" + path;
-            result = swiftDownload(swift, "T-" + templateId.toString(), path, lPath);
-            if (result != null) {
-                errMsg = "failed to download template " + path + " from Swift to secondary storage " + lPath
-                        + " , err=" + result;
-                s_logger.warn(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            if (lDir != null) {
-                deleteLocalDir(lDir);
-            }
-            errMsg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(errMsg, e);
-            return new Answer(cmd, false, errMsg);
-        }
-    }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
         HttpClient client = new DefaultHttpClient();
@@ -732,33 +676,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    private Answer execute(UploadTemplateToSwiftFromSecondaryStorageCommand cmd) {
-        SwiftTO swift = cmd.getSwift();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        Long accountId = cmd.getAccountId();
-        Long templateId = cmd.getTemplateId();
-        try {
-            String parent = getRootDir(secondaryStorageUrl);
-            String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
-            if (!_storage.isFile(lPath + "/template.properties")) {
-                String errMsg = cmd + " Command failed due to template doesn't exist ";
-                s_logger.debug(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-            String result = swiftUpload(swift, "T-" + templateId.toString(), lPath, "*");
-            if (result != null) {
-                String errMsg = "failed to upload template from secondary storage " + lPath + " to swift  , err="
-                        + result;
-                s_logger.debug(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            String errMsg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(errMsg, e);
-            return new Answer(cmd, false, errMsg);
-        }
-    }
+
 
     private ImageFormat getTemplateFormat(String filePath) {
         String ext = null;
@@ -1063,73 +981,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    public Answer execute(final DownloadSnapshotFromS3Command cmd) {
-
-        final S3TO s3 = cmd.getS3();
-        final String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        final Long accountId = cmd.getAccountId();
-        final Long volumeId = cmd.getVolumeId();
-
-        try {
-
-            executeWithNoWaitLock(determineSnapshotLockId(accountId, volumeId), new Callable<Void>() {
-
-                @Override
-                public Void call() throws Exception {
-
-                    final String directoryName = determineSnapshotLocalDirectory(secondaryStorageUrl, accountId,
-                            volumeId);
-
-                    String result = createLocalDir(directoryName);
-                    if (result != null) {
-                        throw new InternalErrorException(format(
-                                "Failed to create directory %1$s during S3 snapshot download.", directoryName));
-                    }
-
-                    final String snapshotFileName = determineSnapshotBackupFilename(cmd.getSnapshotUuid());
-                    final String key = determineSnapshotS3Key(accountId, volumeId, snapshotFileName);
-                    final File targetFile = S3Utils.getFile(s3, s3.getBucketName(), key,
-                            _storage.getFile(directoryName), new FileNamingStrategy() {
-
-                        @Override
-                        public String determineFileName(String key) {
-                            return snapshotFileName;
-                        }
-
-                    });
-
-                    if (cmd.getParent() != null) {
-
-                        final String parentPath = join(File.pathSeparator, directoryName,
-                                determineSnapshotBackupFilename(cmd.getParent()));
-                        result = setVhdParent(targetFile.getAbsolutePath(), parentPath);
-                        if (result != null) {
-                            throw new InternalErrorException(format(
-                                    "Failed to set the parent for backup %1$s to %2$s due to %3$s.",
-                                    targetFile.getAbsolutePath(), parentPath, result));
-                        }
-
-                    }
-
-                    return null;
-
-                }
-
-            });
-
-            return new Answer(cmd, true, format(
-                    "Succesfully retrieved volume id %1$s for account id %2$s to %3$s from S3.", volumeId, accountId,
-                    secondaryStorageUrl));
-
-        } catch (Exception e) {
-            final String errMsg = format(
-                    "Failed to retrieve volume id %1$s for account id %2$s to %3$s from S3 due to exception %4$s",
-                    volumeId, accountId, secondaryStorageUrl, e.getMessage());
-            s_logger.error(errMsg);
-            return new Answer(cmd, false, errMsg);
-        }
-
-    }
 
     private String determineSnapshotS3Directory(final Long accountId, final Long volumeId) {
         return join(S3Utils.SEPARATOR, SNAPSHOT_ROOT_DIR, accountId, volumeId);
@@ -1147,54 +998,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return join(File.pathSeparator, getRootDir(secondaryStorageUrl), SNAPSHOT_ROOT_DIR, accountId, volumeId);
     }
 
-    public Answer execute(DownloadSnapshotFromSwiftCommand cmd) {
-        SwiftTO swift = cmd.getSwift();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String rFilename = cmd.getSnapshotUuid();
-        String sParent = cmd.getParent();
-        String errMsg = "";
-        try {
-            String parent = getRootDir(secondaryStorageUrl);
-            String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId);
-
-            String result = createLocalDir(lPath);
-            if (result != null) {
-                errMsg = "downloadSnapshotFromSwiftCommand failed due to Create local path failed";
-                s_logger.warn(errMsg);
-                throw new InternalErrorException(errMsg);
-            }
-            String lFilename = rFilename;
-            if (rFilename.startsWith("VHD-")) {
-                lFilename = rFilename.replace("VHD-", "") + ".vhd";
-            }
-            String lFullPath = lPath + "/" + lFilename;
-            result = swiftDownload(swift, "S-" + volumeId.toString(), rFilename, lFullPath);
-            if (result != null) {
-                return new Answer(cmd, false, result);
-            }
-            if (sParent != null) {
-                if (sParent.startsWith("VHD-") || sParent.endsWith(".vhd")) {
-                    String pFilename = sParent;
-                    if (sParent.startsWith("VHD-")) {
-                        pFilename = pFilename.replace("VHD-", "") + ".vhd";
-                    }
-                    String pFullPath = lPath + "/" + pFilename;
-                    result = setVhdParent(lFullPath, pFullPath);
-                    if (result != null) {
-                        return new Answer(cmd, false, result);
-                    }
-                }
-            }
-
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            String msg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg);
-        }
-    }
 
     private Answer execute(ComputeChecksumCommand cmd) {
 

@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.*;
-import com.cloud.server.ConfigurationServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -48,9 +47,6 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
 import com.cloud.agent.api.Answer;
@@ -129,7 +125,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -188,8 +183,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected CapacityDao _capacityDao;
     @Inject
     protected HostDao _hostDao;
-    @Inject
-    protected S3Manager _s3Mgr;
     @Inject
     protected HostDetailsDao _hostDetailsDao;
     @Inject
@@ -543,8 +536,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
         for (Discoverer discoverer : _discoverers) {
-            if (discoverer.getHypervisorType() == hypervisorType)
+            if (discoverer.getHypervisorType() == hypervisorType) {
                 return discoverer;
+            }
         }
         return null;
     }
