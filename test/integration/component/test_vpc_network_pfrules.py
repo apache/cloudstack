@@ -356,7 +356,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                             vpcid=self.vpc.id
                                             )
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible")
+        self.debug("Adding NetworkACL rules to make NAT rule accessible")
         nwacl_nat = NetworkACL.create(self.apiclient,
                                                 networkid=network.id,
                                                 services=services,
