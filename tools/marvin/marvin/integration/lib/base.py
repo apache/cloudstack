@@ -2962,6 +2962,9 @@ class VPC:
 class PrivateGateway:
     """Manage private gateway lifecycle"""
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
                                                     physicalnetworkid=None):
