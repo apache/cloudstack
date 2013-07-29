@@ -178,8 +178,8 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
         } else {
             //scaling disallowed, set static memory target
-            if (s_logger.isDebugEnabled()) {
-                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling");
+            if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
+                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
             }
             vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();

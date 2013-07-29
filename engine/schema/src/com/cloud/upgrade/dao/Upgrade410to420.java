@@ -265,7 +265,14 @@ public class Upgrade410to420 implements DbUpgrade {
                     throw new CloudRuntimeException("Error while updating "+ hypervisorAndTemplateName.getKey() +" systemVm template", e);
                 }
             }
-
+            try {
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` set dynamically_scalable = 1 where name = ? and type = 'SYSTEM'");
+                pstmt.setString(1, NewTemplateNameList.get(HypervisorType.VMware));
+                pstmt.executeUpdate();
+                pstmt.close();
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating dynamically_scalable flag to 1 for SYSTEM template systemvm-vmware-4.2");
+            }
             s_logger.debug("Updating System Vm Template IDs Complete");
         }
         finally {

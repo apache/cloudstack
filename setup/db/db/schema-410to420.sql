@@ -43,7 +43,9 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 'service status updated by LB healthcheck manager';
 
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `dynamically_scalable` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory';
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `dynamically_scalable` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory';
 UPDATE `cloud`.`vm_template` SET dynamically_scalable = 1 WHERE name = "CentOS 5.6(64-bit) no GUI (XenServer)" AND type = "BUILTIN";
+UPDATE `cloud`.`vm_template` SET dynamically_scalable = 1 WHERE name = "SystemVM Template (vSphere)" AND type = "SYSTEM";
 
 alter table storage_pool add hypervisor varchar(32);
 alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
@@ -1620,7 +1622,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         affinity_group.uuid affinity_group_uuid,
         affinity_group.name affinity_group_name,
         affinity_group.description affinity_group_description,
-        vm_details.value dynamically_scalable
+        vm_instance.dynamically_scalable dynamically_scalable
 
     from
         `cloud`.`user_vm`
@@ -1684,10 +1686,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`affinity_group_vm_map` ON vm_instance.id = affinity_group_vm_map.instance_id
             left join
-        `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id
-            left join
-        `cloud`.`user_vm_details` vm_details ON vm_details.vm_id = vm_instance.id
-            and vm_details.name = 'enable.dynamic.scaling';
+        `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id;
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS

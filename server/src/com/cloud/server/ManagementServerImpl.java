@@ -3736,6 +3736,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException {
 
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(cmd.getId());
+        if (vmInstance.getHypervisorType() == HypervisorType.XenServer && vmInstance.getState().equals(State.Running)) {
+            throw new InvalidParameterValueException("Dynamic Scaling operation is not permitted for this hypervisor on system vm");
+        }
         boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId());
         if(result){
             VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());

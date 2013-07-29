@@ -1189,9 +1189,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if(!enableDynamicallyScaleVm){
                throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
-            UserVmDetailVO vmDetailVO = _vmDetailsDao.findDetail(vmId, VirtualMachine.IsDynamicScalingEnabled);
-            if (vmDetailVO == null || !Boolean.parseBoolean(vmDetailVO.getValue())) {
-                throw new CloudRuntimeException("Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have xs tools to support dynamic scaling");
+            if (!vmInstance.isDynamicallyScalable()) {
+                throw new CloudRuntimeException("Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have tools to support dynamic scaling");
             }
 
             while (retry-- != 0) { // It's != so that it can match -1.
@@ -1803,18 +1802,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (isDynamicallyScalable != null) {
-            UserVmDetailVO vmDetailVO = _vmDetailsDao.findDetail(vm.getId(), VirtualMachine.IsDynamicScalingEnabled);
-            if (vmDetailVO == null) {
-                vmDetailVO = new UserVmDetailVO(vm.getId(), VirtualMachine.IsDynamicScalingEnabled, isDynamicallyScalable.toString());
-                _vmDetailsDao.persist(vmDetailVO);
-            } else {
-                vmDetailVO.setValue(isDynamicallyScalable.toString());
-                _vmDetailsDao.update(vmDetailVO.getId(), vmDetailVO);
-            }
+        if (isDynamicallyScalable == null) {
+            isDynamicallyScalable = vmInstance.isDynamicallyScalable();
         }
 
-        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled);
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable);
 
         if (updateUserdata) {
             boolean result = updateUserDataInternal(_vmDao.findById(id));
@@ -2716,8 +2708,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 owner.getDomainId(), owner.getId(), offering.getId(), userData,
                 hostName, diskOfferingId);
         vm.setUuid(uuidName);
-        vm.setDetail(VirtualMachine.IsDynamicScalingEnabled, template.isDynamicallyScalable().toString());
-
+        vm.setDynamicallyScalable(template.isDynamicallyScalable());
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
         }

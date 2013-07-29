@@ -265,8 +265,6 @@ public class VirtualMachineManagerImplTest {
         long l = 1L;
 
         doReturn(3L).when(_vmInstance).getId();
-        when(_vmDetailsDao.findDetail(3L, VirtualMachine.IsDynamicScalingEnabled)).thenReturn(_vmDetailVO);
-        doReturn("true").when(_vmDetailVO).getValue();
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         ServiceOfferingVO newServiceOffering = getSvcoffering(512);
         doReturn(1L).when(_vmInstance).getHostId();
