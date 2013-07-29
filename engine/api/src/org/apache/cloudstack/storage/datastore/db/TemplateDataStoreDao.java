@@ -62,4 +62,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     TemplateDataStoreVO findByTemplateZone(long templateId, Long zoneId, DataStoreRole role);
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);
+
+    List<TemplateDataStoreVO> listTemplateDownloadUrls();
 }

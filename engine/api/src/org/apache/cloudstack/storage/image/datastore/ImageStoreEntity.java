@@ -44,5 +44,5 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
 
     String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject);  // get the entity download URL
 
-    void deleteExtractUrl(String installPath, String url, ImageFormat format);
+    void deleteExtractUrl(String installPath, String url);
 }

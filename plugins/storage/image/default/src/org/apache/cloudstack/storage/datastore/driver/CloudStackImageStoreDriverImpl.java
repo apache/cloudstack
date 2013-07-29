@@ -81,7 +81,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     }
 
     @Override
-    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, ImageFormat format) {
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl) {
         // find an endpoint to send command
         EndPoint ep = _epSelector.select(store);
         // Create Symlink at ssvm

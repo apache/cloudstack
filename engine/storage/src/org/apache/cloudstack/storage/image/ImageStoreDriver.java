@@ -28,6 +28,6 @@ public interface ImageStoreDriver extends DataStoreDriver {
 
     String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject);
 
-    void deleteEntityExtractUrl(DataStore store, String installPath, String url, ImageFormat format);
+    void deleteEntityExtractUrl(DataStore store, String installPath, String url);
 
 }

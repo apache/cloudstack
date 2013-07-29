@@ -249,7 +249,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public void deleteEntityExtractUrl(DataStore store, String installPath, String url, Storage.ImageFormat format){
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String url){
     }
 
 }

@@ -1125,15 +1125,43 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             // Remove it from image store
             ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
-            secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl(), ImageFormat.VHD);
+            secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl());
 
              // Now remove it from DB.
              volumeOnImageStore.setExtractUrl(null);
-            _volumeStoreDao.update(volumeOnImageStore.getId(), volumeOnImageStore);
+             volumeOnImageStore.setExtractUrlCreated(null);
+              _volumeStoreDao.update(volumeOnImageStore.getId(), volumeOnImageStore);
           }catch(Throwable th){
               s_logger.warn("caught exception while deleting download url " +volumeOnImageStore.getExtractUrl(), th);
           }
         }
+
+        // Cleanup expired template URLs
+        List<TemplateDataStoreVO> templatesOnImageStoreList = _templateStoreDao.listTemplateDownloadUrls();
+
+        for(TemplateDataStoreVO templateOnImageStore : templatesOnImageStoreList){
+
+            try {
+                long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), templateOnImageStore.getExtractUrlCreated());
+                if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                    continue;
+                }
+
+                s_logger.debug("Removing download url " + templateOnImageStore.getExtractUrl() + " for template id " + templateOnImageStore.getTemplateId());
+
+                // Remove it from image store
+                ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(templateOnImageStore.getDataStoreId(), DataStoreRole.Image);
+                secStore.deleteExtractUrl(templateOnImageStore.getInstallPath(), templateOnImageStore.getExtractUrl());
+
+                // Now remove it from DB.
+                templateOnImageStore.setExtractUrl(null);
+                templateOnImageStore.setExtractUrlCreated(null);
+                _templateStoreDao.update(templateOnImageStore.getId(), templateOnImageStore);
+            }catch(Throwable th){
+                s_logger.warn("caught exception while deleting download url " +templateOnImageStore.getExtractUrl(), th);
+            }
+        }
+
 
     }
 

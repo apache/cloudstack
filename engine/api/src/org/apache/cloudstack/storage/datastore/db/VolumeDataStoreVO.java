@@ -100,6 +100,10 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Column(name = "download_url")
     private String extractUrl;
 
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
+
     @Column(name = "destroyed")
     boolean destroyed = false;
 
@@ -354,5 +358,13 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 
     public void setExtractUrl(String extractUrl) {
         this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
     }
 }

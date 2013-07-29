@@ -95,6 +95,13 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "url")
     private String downloadUrl;
 
+    @Column(name = "download_url")
+    private String extractUrl;
+
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
+
     @Column(name = "is_copy")
     private boolean isCopy = false;
 
@@ -367,6 +374,22 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void decrRefCnt() {
         this.refCnt--;
+    }
+
+    public String getExtractUrl() {
+        return extractUrl;
+    }
+
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
     }
 
 }

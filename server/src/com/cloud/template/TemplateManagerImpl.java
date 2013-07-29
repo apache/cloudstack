@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
@@ -474,7 +475,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         DataObject templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
 
-        return tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        /*
+        +        String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat());
++        volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
++        volumeStoreRef.setExtractUrl(extractUrl);
++        _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
+         */
+
+        String extractUrl = tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        tmpltStoreRef.setExtractUrl(extractUrl);
+        tmpltStoreRef.setExtractUrlCreated(DateUtil.now());
+        _tmplStoreDao.update(tmpltStoreRef.getId(), tmpltStoreRef);
+        return extractUrl;
     }
 
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
