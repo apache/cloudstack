@@ -526,6 +526,8 @@
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
+              <exclude>tools/ngui/static/bootstrap/*</exclude>
+              <exclude>tools/ngui/static/js/lib/*</exclude>
             </excludes>
           </configuration>
         </plugin>
