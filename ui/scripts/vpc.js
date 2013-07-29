@@ -2256,6 +2256,9 @@
                                                 select: function(args) {
                                                     $.ajax({
                                                         url: createURL('listNetworkACLLists'),
+                                                        data: {
+                                                            vpcid: args.context.vpc[0].id
+                                                        },
                                                         dataType: 'json',
                                                         async: true,
                                                         success: function(json) {
@@ -2263,11 +2266,18 @@
                                                             var items = [];
 
                                                             $(objs).each(function() {
+                                                                if (this.id == args.context.vpcGateways[0].aclid) {
+                                                                    return true;
+                                                                }
+                                                                
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.name
                                                                 });
+
+                                                                return true;
                                                             });
+                                                            
                                                             args.response.success({
                                                                 data: items
                                                             });
@@ -2292,7 +2302,7 @@
                                                             getUpdatedItem: function(json) {
                                                                 var item = json.queryasyncjobresultresponse.jobresult.aclid;
                                                                 return {
-                                                                    data: item
+                                                                    aclid: args.data.aclid
                                                                 };
                                                             }
                                                         }
@@ -2360,8 +2370,11 @@
                                                 return str ? 'Yes' : 'No';
                                             }
                                         },
+                                        aclName: {
+                                            label: 'ACL Name'
+                                        },
                                         aclid: {
-                                            label: 'ACL id'
+                                            label: 'ACL ID'
                                         }
 
 
@@ -2375,6 +2388,25 @@
                                             },
                                             success: function(json) {
                                                 var item = json.listprivategatewaysresponse.privategateway[0];
+
+
+                                                // Get ACL name
+                                                $.ajax({
+                                                    url: createURL('listNetworkACLLists'),
+                                                    async: false,
+                                                    data: {
+                                                        vpcid: args.context.vpc[0].id
+                                                    },
+                                                    success: function(json) {
+                                                        var objs = json.listnetworkacllistsresponse.networkacllist;
+                                                        var acl = $.grep(objs, function(obj) {
+                                                            return obj.id === args.context.vpcGateways[0].aclid;                                                            
+                                                        });
+                                                        
+                                                        item.aclName = acl[0] ? acl[0].name : 'None';
+                                                    }
+                                                });
+                                                
                                                 args.response.success({
                                                     data: item,
                                                     actionFilter: function(args) {
