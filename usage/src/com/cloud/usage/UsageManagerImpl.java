@@ -53,6 +53,7 @@ import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
+import com.cloud.usage.dao.UsageVMSnapshotDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.usage.dao.UsageVolumeDao;
@@ -64,6 +65,7 @@ import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
@@ -116,7 +118,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
-
+    @Inject private UsageVMSnapshotDao m_usageVMSnapshotDao;
+    
     private String m_version = null;
     private final Calendar m_jobExecTime = Calendar.getInstance();
     private int m_aggregationDuration = 0;
@@ -236,7 +239,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         // use the configured exec time and aggregation duration for scheduling the job
-        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
+        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis()  - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
 
         m_heartbeat = m_heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15*1000, /* check database every minute*/60*1000, TimeUnit.MILLISECONDS);
         
@@ -857,6 +860,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VPN user usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = VMSnapshotUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
     }
 
@@ -884,6 +893,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createVPNUserEvent(event);
         } else if (isSecurityGroupEvent(eventType)) {
             createSecurityGroupEvent(event);
+        } else if (isVmSnapshotEvent(eventType)){
+            createVMSnapshotEvent(event);
         }
     }
 
@@ -951,7 +962,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         return (eventType.equals(EventTypes.EVENT_SECURITY_GROUP_ASSIGN) ||
                 eventType.equals(EventTypes.EVENT_SECURITY_GROUP_REMOVE));
     }
-    
+
+    private boolean isVmSnapshotEvent(String eventType){
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_CREATE) ||
+                eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+    }
     private void createVMHelperEvent(UsageEventVO event) {
 
         // One record for handling VM.START and VM.STOP
@@ -1618,7 +1634,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
     }
-    
+
+    private void createVMSnapshotEvent(UsageEventVO event){
+        Long vmId = event.getResourceId();
+        Long volumeId = event.getTemplateId();
+        Long offeringId = event.getOfferingId();
+        Long zoneId = event.getZoneId();
+        Long accountId = event.getAccountId();
+        long size = event.getSize();
+        Date created = event.getCreateDate();
+        Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = acct.getDomainId();
+        UsageVMSnapshotVO vsVO  = new UsageVMSnapshotVO(volumeId,zoneId,accountId,
+                domainId,vmId,offeringId, size, created, null);
+        m_usageVMSnapshotDao.persist(vsVO);
+    }
+
     private class Heartbeat implements Runnable {
         public void run() {
             Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);

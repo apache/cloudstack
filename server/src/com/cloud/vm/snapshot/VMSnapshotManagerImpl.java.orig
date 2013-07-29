@@ -357,8 +357,13 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
 
     protected VMSnapshot createVmSnapshotInternal(UserVmVO userVm, VMSnapshotVO vmSnapshot, Long hostId) {
+<<<<<<< HEAD
+        try {
+            CreateVMSnapshotAnswer answer = null;
+=======
         CreateVMSnapshotAnswer answer = null;
         try {
+>>>>>>> acd2396... fix CLOUDSTACK-3591 add usage recording for VM snapshots
             GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
             
             // prepare snapshotVolumeTos
@@ -710,6 +715,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         // start or stop VM first, if revert from stopped state to running state, or from running to stopped
         if(userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory){
             try {
+<<<<<<< HEAD
                 _itMgr.advanceStart(userVm.getUuid(), new HashMap<VirtualMachineProfile.Param, Object>());
                 vm = _userVMDao.findById(userVm.getId());
         	    hostId = vm.getHostId();
@@ -721,6 +727,18 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             if(userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk){
                 try {
                     _itMgr.advanceStop(userVm.getUuid(), true);
+=======
+                vm = _itMgr.advanceStart(userVm, new HashMap<VirtualMachineProfile.Param, Object>(), callerUser, owner);
+                hostId = vm.getHostId();
+            } catch (Exception e) {
+                s_logger.error("Start VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
+                throw new CloudRuntimeException(e.getMessage());
+            }
+        }else {
+            if(userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk){
+                try {
+                    _itMgr.advanceStop(userVm, true, callerUser, owner);
+>>>>>>> acd2396... fix CLOUDSTACK-3591 add usage recording for VM snapshots
                 } catch (Exception e) {
                     s_logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
                     throw new CloudRuntimeException(e.getMessage());
@@ -753,8 +771,13 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             List<VolumeTO> volumeTOs = getVolumeTOList(userVm.getId());
             String vmInstanceName = userVm.getInstanceName();
             VMSnapshotTO parent = getSnapshotWithParents(snapshot).getParent();
+<<<<<<< HEAD
+            VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(),
+            		snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent);
+=======
             VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(), 
                     snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent);
+>>>>>>> acd2396... fix CLOUDSTACK-3591 add usage recording for VM snapshots
             
             GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
             RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());

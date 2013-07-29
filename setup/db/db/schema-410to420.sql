@@ -2202,3 +2202,21 @@ CREATE VIEW `cloud`.`account_vmstats_view` AS
     where
         vm_type = 'User'
     group by account_id , state;
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.max.conn', '4096', 'Load Balancer(haproxy) maximum number of concurrent connections(global max)');
+
+
+DROP TABLE IF EXISTS `cloud_usage`.`usage_vmsnapshot`;
+CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
+  `id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `disk_offering_id` bigint(20) unsigned,
+  `size` bigint(20),
+  `created` datetime NOT NULL,
+  `processed` datetime,
+  INDEX `i_usage_vmsnapshot` (`account_id`,`id`,`vm_id`,`created`)
+) ENGINE=InnoDB CHARSET=utf8;
+
+ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;

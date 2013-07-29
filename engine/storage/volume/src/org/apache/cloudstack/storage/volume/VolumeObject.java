@@ -613,4 +613,9 @@ public class VolumeObject implements VolumeInfo {
         }
         return true;
     }
+
+    @Override
+    public Long getVmSnapshotChainSize() {
+        return this.volumeVO.getVmSnapshotChainSize();
+    }
 }

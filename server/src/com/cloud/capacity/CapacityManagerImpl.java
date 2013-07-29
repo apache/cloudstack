@@ -479,24 +479,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (VolumeVO volume : volumes) {
             if(volume.getInstanceId() == null)
                 continue;
-            Long vmId = volume.getInstanceId();
-            UserVm vm = _userVMDao.findById(vmId);
-            if(vm == null)
-                continue;
-            ServiceOffering offering = _offeringsDao.findById(vm.getServiceOfferingId());
-            List<VMSnapshotVO> vmSnapshots =  _vmSnapshotDao.findByVm(vmId);
-            long pathCount = 0;
-            long memorySnapshotSize = 0;
-            for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
-                if(_vmSnapshotDao.listByParent(vmSnapshotVO.getId()).size() == 0)
-                    pathCount++;
-                if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory)
-                    memorySnapshotSize += (offering.getRamSize() * 1024L * 1024L);
-            }
-            if(pathCount <= 1)
-                totalSize = totalSize + memorySnapshotSize;
-            else
-                totalSize = totalSize + volume.getSize() * (pathCount - 1) + memorySnapshotSize;
+            Long chainSize = volume.getVmSnapshotChainSize();
+            if(chainSize != null)
+                totalSize += chainSize;
         }
         return totalSize;
     }

@@ -40,6 +40,7 @@ public class UsageTypes {
     public static final int VM_DISK_IO_WRITE = 22;
     public static final int VM_DISK_BYTES_READ = 23;
     public static final int VM_DISK_BYTES_WRITE = 24;
+    public static final int VM_SNAPSHOT = 25;
     
     public static List<UsageTypeResponse> listUsageTypes(){
     	List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
@@ -61,6 +62,7 @@ public class UsageTypes {
         responseList.add(new UsageTypeResponse(VM_DISK_IO_WRITE, "VM Disk usage(I/O Write)"));
         responseList.add(new UsageTypeResponse(VM_DISK_BYTES_READ, "VM Disk usage(Bytes Read)"));
         responseList.add(new UsageTypeResponse(VM_DISK_BYTES_WRITE, "VM Disk usage(Bytes Write)"));
+        responseList.add(new UsageTypeResponse(VM_SNAPSHOT, "VM Snapshot storage usage"));
     	return responseList;
     }
 }

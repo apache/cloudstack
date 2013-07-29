@@ -51,14 +51,18 @@ import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor;
+import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.VmdkProcessor;
@@ -70,6 +74,10 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
+import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.TaskEvent;
 import com.vmware.vim25.TaskInfo;
@@ -1209,6 +1217,55 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "snapshots/" + accountId + "/" + volumeId;
     }
 
+    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, 
+            String fileName, String poolUuid, String exceptFileName) 
+            throws Exception{
+        long size = 0;
+        ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
+        DatastoreMO dsMo = new DatastoreMO(context, morDs);
+        HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
+        String datastorePath = "[" + dsMo.getName() + "]";
+        HostDatastoreBrowserSearchSpec searchSpec = new HostDatastoreBrowserSearchSpec();
+        FileQueryFlags fqf = new FileQueryFlags();
+        fqf.setFileSize(true);
+        fqf.setFileOwner(true);
+        fqf.setModification(true);
+        searchSpec.setDetails(fqf);
+        searchSpec.setSearchCaseInsensitive(false);
+        searchSpec.getMatchPattern().add(fileName);
+        ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.
+                searchDatastoreSubFolders(datastorePath, searchSpec);
+        for(HostDatastoreBrowserSearchResults result : results){
+            if (result != null) {
+                List<FileInfo> info = result.getFile();
+                for (FileInfo fi : info) {
+                    if(exceptFileName != null && fi.getPath().contains(exceptFileName))
+                        continue;
+                    else
+                        size = size + fi.getFileSize();
+                }
+            }
+        }
+        return size;
+    }
+
+    private String extractSnapshotBaseFileName(String input) {
+        if(input == null)
+            return null;
+        String result  = input;
+        if (result.endsWith(".vmdk")){ // get rid of vmdk file extension
+            result = result.substring(0, result.length() - (".vmdk").length());
+        }
+        if(result.split("-").length == 1) // e.g 4da6dcbd412c47b59f96c7ff6dbd7216.vmdk
+            return result;
+        if(result.split("-").length > 2) // e.g ROOT-5-4.vmdk, ROOT-5-4-000001.vmdk
+            return result.split("-")[0] + "-" + result.split("-")[1];
+        if(result.split("-").length == 2) // e.g 4da6dcbd412c47b59f96c7ff6dbd7216-000001.vmdk
+            return result.split("-")[0];
+        else
+            return result;
+    }
+    
     @Override
     public CreateVMSnapshotAnswer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd) {
         List<VolumeTO> volumeTOs = cmd.getVolumeTOs();
@@ -1250,24 +1307,30 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 // find VM disk file path after creating snapshot
                 VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
                 for (int i = 0; i < vdisks.length; i ++){
-                    @SuppressWarnings("deprecation")
                     List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
                     for(Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
                         String vmdkName = fileItem.first().split(" ")[1];
-                        if ( vmdkName.endsWith(".vmdk")){
+                        if (vmdkName.endsWith(".vmdk")){
                             vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
                         }
-                        String[] s = vmdkName.split("-");
-                        mapNewDisk.put(s[0], vmdkName);
+                        String baseName = extractSnapshotBaseFileName(vmdkName);
+                        mapNewDisk.put(baseName, vmdkName);
                     }
                 }
-
-                // update volume path using maps
                 for (VolumeTO volumeTO : volumeTOs) {
-                    String parentUUID = volumeTO.getPath();
-                    String[] s = parentUUID.split("-");
-                    String key = s[0];
-                    volumeTO.setPath(mapNewDisk.get(key));
+                    String baseName = extractSnapshotBaseFileName(volumeTO.getPath());
+                    String newPath = mapNewDisk.get(baseName);
+                    // get volume's chain size for this VM snapshot, exclude current volume vdisk
+                    long size = getVMSnapshotChainSize(context,hyperHost,baseName + "*.vmdk",
+                            volumeTO.getPoolUuid(), newPath);
+                    
+                    if(volumeTO.getType()== Volume.Type.ROOT){
+                        // add memory snapshot size
+                        size = size + getVMSnapshotChainSize(context,hyperHost,cmd.getVmName()+"*.vmsn",volumeTO.getPoolUuid(),null);
+                    }
+                    
+                    volumeTO.setChainSize(size);
+                    volumeTO.setPath(newPath);
                 }
                 return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), volumeTOs);
             }
@@ -1322,16 +1385,21 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         if (vmdkName.endsWith(".vmdk")) {
                             vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
                         }
-                        String[] s = vmdkName.split("-");
-                        mapNewDisk.put(s[0], vmdkName);
+                        String baseName = extractSnapshotBaseFileName(vmdkName);
+                        mapNewDisk.put(baseName, vmdkName);
                     }
                 }
                 for (VolumeTO volumeTo : listVolumeTo) {
-                    String key = null;
-                    String parentUUID = volumeTo.getPath();
-                    String[] s = parentUUID.split("-");
-                    key = s[0];
-                    volumeTo.setPath(mapNewDisk.get(key));
+                    String baseName = extractSnapshotBaseFileName(volumeTo.getPath());
+                    String newPath = mapNewDisk.get(baseName);
+                    long size = getVMSnapshotChainSize(context,hyperHost,
+                            baseName + "*.vmdk", volumeTo.getPoolUuid(), newPath);
+                    if(volumeTo.getType()== Volume.Type.ROOT){
+                        // add memory snapshot size
+                        size = size + getVMSnapshotChainSize(context,hyperHost,cmd.getVmName()+"*.vmsn",volumeTo.getPoolUuid(),null);
+                    }                    
+                    volumeTo.setChainSize(size);
+                    volumeTo.setPath(newPath);
                 }
                 return new DeleteVMSnapshotAnswer(cmd, listVolumeTo);
             }

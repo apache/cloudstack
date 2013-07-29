@@ -6668,6 +6668,60 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
+    private long getVMSnapshotChainSize(Connection conn, VolumeTO volumeTo, String vmName) 
+            throws BadServerResponse, XenAPIException, XmlRpcException {
+        Set<VDI> allvolumeVDIs = VDI.getByNameLabel(conn, volumeTo.getName());
+        long size = 0;
+        for (VDI vdi : allvolumeVDIs) {
+            try {
+                if (vdi.getIsASnapshot(conn)
+                        && vdi.getSmConfig(conn).get("vhd-parent") != null) {
+                    String parentUuid = vdi.getSmConfig(conn).get("vhd-parent");
+                    VDI parentVDI = VDI.getByUuid(conn, parentUuid);
+                    // add size of snapshot vdi node, usually this only contains meta data
+                    size = size + vdi.getPhysicalUtilisation(conn);
+                    // add size of snapshot vdi parent, this contains data
+                    if (parentVDI != null)
+                        size = size
+                                + parentVDI.getPhysicalUtilisation(conn)
+                                        .longValue();
+                }
+            } catch (Exception e) {
+                s_logger.debug("Exception occurs when calculate "
+                        + "snapshot capacity for volumes: " + e.getMessage());
+                continue;
+            }
+        }
+        if (volumeTo.getType() == Volume.Type.ROOT) {
+            Map<VM, VM.Record> allVMs = VM.getAllRecords(conn);
+            // add size of memory snapshot vdi
+            if (allVMs.size() > 0) {
+                for (VM vmr : allVMs.keySet()) {
+                    try {
+                        String vName = vmr.getNameLabel(conn);
+                        if (vName != null && vName.contains(vmName)
+                                && vmr.getIsASnapshot(conn)) {
+
+                            VDI memoryVDI = vmr.getSuspendVDI(conn);
+                            size = size
+                                    + memoryVDI.getParent(conn)
+                                            .getPhysicalUtilisation(conn);
+                            size = size
+                                    + memoryVDI.getPhysicalUtilisation(conn);
+                        }
+                    } catch (Exception e) {
+                        s_logger.debug("Exception occurs when calculate "
+                                + "snapshot capacity for memory: "
+                                + e.getMessage());
+                        continue;
+                    }
+                }
+            }
+        }
+        return size;
+    }
+    
+
     protected Answer execute(final CreateVMSnapshotCommand cmd) {
         String vmName = cmd.getVmName();
         String vmSnapshotName = cmd.getTarget().getSnapshotName();
@@ -6745,7 +6799,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             // extract VM snapshot ref from result
             String ref = result.substring("<value>".length(), result.length() - "</value>".length());
             vmSnapshot = Types.toVM(ref);
+            try {
+                Thread.sleep(5000);
+            } catch (final InterruptedException ex) {
 
+            }
+            // calculate used capacity for this VM snapshot
+            for (VolumeTO volumeTo : cmd.getVolumeTOs()){
+                long size = getVMSnapshotChainSize(conn,volumeTo,cmd.getVmName());
+                volumeTo.setChainSize(size);
+            }
+            
             success = true;
             return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
         } catch (Exception e) {
@@ -6862,6 +6926,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (VDI vdi : vdiList) {
                 vdi.destroy(conn);
             }
+
+            try {
+                Thread.sleep(5000);
+            } catch (final InterruptedException ex) {
+
+            }
+            // re-calculate used capacify for this VM snapshot
+            for (VolumeTO volumeTo : cmd.getVolumeTOs()){
+                long size = getVMSnapshotChainSize(conn,volumeTo,cmd.getVmName());
+                volumeTo.setChainSize(size);
+            }
+            
             return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
         } catch (Exception e) {
             s_logger.warn("Catch Exception: " + e.getClass().toString()
