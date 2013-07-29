@@ -967,6 +967,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         List<UserVm> vmsToAdd = new ArrayList<UserVm>();
+        
+        if (instanceIds == null || instanceIds.isEmpty()) {
+            s_logger.warn("List of vms to assign to the lb, is empty");
+            return false;
+        }
 
         for (Long instanceId : instanceIds) {
             if (mappedInstanceIds.contains(instanceId)) {
