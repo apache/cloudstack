@@ -174,7 +174,8 @@ specify a valid config file" % cfgFile)
         if cacheStorages is None:
             return
         for cache in cacheStorages:
-            cachecmd = createSecondaryStagingStore.createSecondaryStagingStoreCmd()
+            cachecmd = createSecondaryStagingStore.\
+                createSecondaryStagingStoreCmd()
             cachecmd.url = cache.url
             cachecmd.provider = cache.provider
             cachecmd.zoneid = zoneId
