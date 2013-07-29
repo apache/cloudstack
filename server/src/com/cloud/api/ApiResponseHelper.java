@@ -2001,6 +2001,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsPersistent(offering.getIsPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
+        response.setConcurrentConnections(offering.getConcurrentConnections());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();

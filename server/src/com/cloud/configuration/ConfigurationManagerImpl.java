@@ -3926,7 +3926,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
         
-        if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+        if (!serviceProviderMap.containsKey(Service.Lb) && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
                 maxconn=Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
@@ -4718,9 +4718,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 offering.setAvailability(availability);
             }
         }
-
-        if (maxconn != null) {
-            offering.setConcurrentConnections(maxconn);
+        if (_ntwkOffServiceMapDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Lb)){
+            if (maxconn != null) {
+                 offering.setConcurrentConnections(maxconn);
+            }
         }
 
         if (_networkOfferingDao.update(id, offering)) {

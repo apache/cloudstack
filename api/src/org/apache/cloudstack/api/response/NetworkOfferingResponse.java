@@ -91,6 +91,8 @@ public class NetworkOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.EGRESS_DEFAULT_POLICY) @Param(description="true if network offering supports persistent networks, false otherwise")
     private Boolean egressDefaultPolicy;
 
+    @SerializedName(ApiConstants.MAX_CONNECTIONS) @Param(description = "maximum number of concurrents connections to be handled by lb")
+    private Integer concurrentConnections;
 
     public void setId(String id) {
         this.id = id;
@@ -171,6 +173,10 @@ public class NetworkOfferingResponse extends BaseResponse {
 
     public void setEgressDefaultPolicy(Boolean egressDefaultPolicy) {
         this.egressDefaultPolicy = egressDefaultPolicy;
+    }
+
+    public  void setConcurrentConnections(Integer concurrentConnections) {
+       this.concurrentConnections = concurrentConnections;
     }
 
 }
