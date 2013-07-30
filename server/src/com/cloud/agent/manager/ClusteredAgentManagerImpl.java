@@ -208,7 +208,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         // for agents that are self-managed, threshold to be considered as disconnected after pingtimeout
-        long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingTimeout);
+        long cutSeconds = (System.currentTimeMillis() >> 10) - getTimeout();
         List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, _loadSize.value().longValue(), _nodeId);
         List<HostVO> appliances = _hostDao.findAndUpdateApplianceToLoad(cutSeconds, _nodeId);
         hosts.addAll(appliances);
@@ -720,7 +720,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
         for (ManagementServerHostVO vo : nodeList) {
             s_logger.info("Marking hosts as disconnected on Management server" + vo.getMsid());
-            long lastPing = (System.currentTimeMillis() >> 10) - _pingTimeout;
+            long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
             s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
             cleanupTransferMap(vo.getMsid());
