@@ -110,22 +110,22 @@ public class UriUtils {
             URI uri = new URI(url);
             if(uri.getScheme().equalsIgnoreCase("http")) {
                 httpConn = (HttpURLConnection) uri.toURL().openConnection();
-                remoteSize = Long.parseLong(httpConn.getHeaderField("content-length"));
+                if (httpConn != null) {
+                    remoteSize = Long.parseLong(httpConn.getHeaderField("content-length"));
+                    httpConn.disconnect();
+                }
             }
             else if(uri.getScheme().equalsIgnoreCase("https")) {
                 httpsConn = (HttpsURLConnection) uri.toURL().openConnection();
-                remoteSize = Long.parseLong(httpsConn.getHeaderField("content-length"));
+                if (httpsConn != null) {
+                    remoteSize = Long.parseLong(httpsConn.getHeaderField("content-length"));
+                    httpsConn.disconnect();
+                }
             }
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to establish connection with URL " + url);
-        } finally {
-            if (httpConn != null) {
-                httpConn.disconnect();
-            } else if (httpsConn != null) {
-                httpsConn.disconnect();
-            }
         }
         return remoteSize;
     }
