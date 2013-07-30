@@ -113,7 +113,7 @@ class TestInternalLb(cloudstackTestCase):
         self.networkOffering.update(self.apiclient, state="Enabled")
 
         #2) Create VPC and network in it
-        vpcOffering = VpcOffering.list(self.apiclient)
+        vpcOffering = VpcOffering.list(self.apiclient,isdefault=True)
         self.assert_(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
         self.services["vpc"] = {}
         self.services["vpc"]["name"] = "vpc-internallb"
