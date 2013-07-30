@@ -1932,6 +1932,12 @@
                                             args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').hide();
                                         }
 
+                                        if (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"] input[type=checkbox]').is(':checked') == true) {
+                                            args.$form.find('.form-item[rel=\"egresspolicy\"]').css('display', 'inline-block');
+                                        } else {
+                                            args.$form.find('.form-item[rel=\"egresspolicy\"]').css('display', 'none');
+                                        }
+
                                         //show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5
                                         if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler' || args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')) {
                                             args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').css('display', 'inline-block');
@@ -2361,6 +2367,19 @@
                                                 }]
                                             });
                                         }
+                                    },
+
+                                    egresspolicy: {
+                                        label: 'Default egress policy',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: [
+                                                    { id: 'ALLOW', description: 'Allow' },
+                                                    { id: 'DENY', description: 'Deny' }
+                                                ]
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -2485,7 +2504,6 @@
                                     inputData['conservemode'] = false;
                                 }
 
-
                                 // Make service provider map
                                 var serviceProviderIndex = 0;
                                 $.each(serviceProviderMap, function(key, value) {
@@ -2496,6 +2514,12 @@
 
                                 if (args.$form.find('.form-item[rel=availability]').css("display") == "none")
                                     inputData['availability'] = 'Optional';
+
+                                if (args.$form.find('.form-item[rel=egresspolicy]').is(':visible')) {
+                                    inputData['egressdefaultpolicy'] = formData.egresspolicy === 'ALLOW' ? true : false;
+                                } else {
+                                    delete inputData.egresspolicy;
+                                }
 
                                 if (args.$form.find('.form-item[rel=systemOfferingForRouter]').css("display") == "none")
                                     delete inputData.systemOfferingForRouter;
@@ -2721,6 +2745,13 @@
                                     ispersistent: {
                                         label: 'Persistent ',
                                         converter: cloudStack.converters.toBooleanText
+                                    },
+
+                                    egressdefaultpolicy: {
+                                        label: 'label.egress.default.policy',
+                                        converter: function(str) {
+                                            return str === true ? 'Allow' : 'Deny';
+                                        }
                                     },
 
                                     availability: {
