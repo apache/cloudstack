@@ -300,6 +300,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
 
+        HostVO host = _hostDao.findById(hostId);
+        if (host.getHypervisorType() != HypervisorType.VMware) {
+            return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+        }
+
         if (cmd instanceof CopyCommand) {
             CopyCommand cpyCommand = (CopyCommand)cmd;
             DataTO srcData = cpyCommand.getSrcTO();
@@ -343,9 +348,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }
 
-        HostVO host = _hostDao.findById(hostId);
         long dcId = host.getDataCenterId();
-
         Pair<HostVO, SecondaryStorageVmVO> cmdTarget = _secStorageMgr.assignSecStorageVm(dcId, cmd);
         if(cmdTarget != null) {
             // TODO, we need to make sure agent is actually connected too
