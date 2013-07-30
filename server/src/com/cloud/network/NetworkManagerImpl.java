@@ -540,8 +540,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             String guestType = vlan.getVlanType().toString();
 
             if (!isIpDedicated(addr)) {
-                String eventType =  addr.isPortable() ? EventTypes.EVENT_PORTABLE_IP_ASSIGN : EventTypes.EVENT_NET_IP_ASSIGN;
-                UsageEventUtils.publishUsageEvent(eventType, owner.getId(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
                         addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
                         addr.getSystem(), addr.getClass().getName(), addr.getUuid());
             }
@@ -843,6 +842,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             ipaddr.setAllocatedInDomainId(ipOwner.getDomainId());
             ipaddr.setAllocatedToAccountId(ipOwner.getId());
             ipaddr= _ipAddressDao.persist(ipaddr);
+
+            String guestType = vlan.getVlanType().toString();
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN, ipaddr.getId(),
+                    ipaddr.getDataCenterId(), ipaddr.getId(), ipaddr.getAddress().toString(), ipaddr.isSourceNat(), null,
+                    ipaddr.getSystem(), ipaddr.getClass().getName(), ipaddr.getUuid());
 
             txn.commit();
 
