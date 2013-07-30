@@ -635,21 +635,21 @@ class TestRebootRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during fetching source NAT: %s" % e)
 
         self.public_ip = PublicIPAddress.create(
-                                           self.apiclient,
-                                           self.vm_1.account,
-                                           self.vm_1.zoneid,
-                                           self.vm_1.domainid,
-                                           self.services["server"]
-                                           )
-        # Open up firewall port for SSH        
+                                            self.apiclient,
+                                            self.vm_1.account,
+                                            self.vm_1.zoneid,
+                                            self.vm_1.domainid,
+                                            self.services["server"]
+                                            )
+        #Open up firewall port for SSH
         fw_rule = FireWallRule.create(
-                            self.apiclient,
-                            ipaddressid=self.public_ip.ipaddress.id,
-                            protocol=self.services["lbrule"]["protocol"],
-                            cidrlist=['0.0.0.0/0'],
-                            startport=self.services["lbrule"]["publicport"],
-                            endport=self.services["lbrule"]["publicport"]
-                            )
+                             self.apiclient,
+                             ipaddressid=self.public_ip.ipaddress.id,
+                             protocol=self.services["lbrule"]["protocol"],
+                             cidrlist=['0.0.0.0/0'],
+                             startport=self.services["lbrule"]["publicport"],
+                             endport=self.services["lbrule"]["publicport"]
+                             )
 
         lb_rule = LoadBalancerRule.create(
                                             self.apiclient,
@@ -659,16 +659,16 @@ class TestRebootRouter(cloudstackTestCase):
                                         )
         lb_rule.assign(self.apiclient, [self.vm_1])
         self.nat_rule = NATRule.create(
-                                    self.apiclient,
-                                    self.vm_1,
-                                    self.services["natrule"],
-                                    ipaddressid=self.public_ip.ipaddress.id
-                                    )
+                                     self.apiclient,
+                                     self.vm_1,
+                                     self.services["natrule"],
+                                     ipaddressid=self.public_ip.ipaddress.id
+                                     )
         self.cleanup = [
                         self.vm_1,
                         lb_rule,
-                        self.service_offering,
                         self.nat_rule,
+                        self.service_offering,
                         self.account,
                         ]
         return
@@ -683,6 +683,9 @@ class TestRebootRouter(cloudstackTestCase):
         #   still works through the sourceNAT Ip
 
         #Retrieve router for the user account
+
+        self.debug("Public IP: %s" % self.vm_1.ssh_ip)
+        self.debug("Public IP: %s" % self.public_ip.ipaddress.ipaddress)
         routers = list_routers(
                                 self.apiclient,
                                 account=self.account.name,
@@ -732,7 +735,7 @@ class TestRebootRouter(cloudstackTestCase):
             self.debug("SSH into VM (ID : %s ) after reboot" % self.vm_1.id)
 
             remoteSSHClient(
-                                    self.nat_rule.ipaddress,
+                                    self.public_ip.ipaddress.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
@@ -740,7 +743,7 @@ class TestRebootRouter(cloudstackTestCase):
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
-                      (self.vm_1.ipaddress, e))
+                      (self.public_ip.ipaddress.ipaddress, e))
         return
 
     def tearDown(self):
