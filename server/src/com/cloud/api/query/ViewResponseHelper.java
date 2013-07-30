@@ -204,8 +204,11 @@ public class ViewResponseHelper {
         for (ProjectAccountJoinVO proj : projectAccounts){
             ProjectAccountResponse resp = ApiDBUtils.newProjectAccountResponse(proj);
             // update user list
-            List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
-            resp.setUsers(ViewResponseHelper.createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
+            Account caller = UserContext.current().getCaller();
+            if (ApiDBUtils.isAdmin(caller)) {
+                List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+                resp.setUsers(ViewResponseHelper.createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
+            }
             responseList.add(resp);
         }
         return responseList;
