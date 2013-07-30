@@ -279,7 +279,7 @@
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${cs.commons-io.version}</version>
-        <scope>provided</scope>
+        <scope>provided,runtime</scope>
       </dependency>
       <dependency>
         <groupId>org.reflections</groupId>
