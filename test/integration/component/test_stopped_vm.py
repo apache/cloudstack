@@ -71,7 +71,7 @@ class Services:
                 },
                 "volume": {
                     "diskname": "DataDisk",
-                    "url": '',
+                    "url": 'http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2',
                     "format": 'VHD'
                 },
                 "iso":  # ISO settings for Attach/Detach ISO tests
