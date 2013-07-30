@@ -360,6 +360,12 @@ name-label=&quot;e6849e96-86c3-4f2c-8fcc-350cc711be3d&quot;
       through the use of XenServer network name labels. The name labels are placed on physical
       interfaces or bonds and configured in &PRODUCT;. In some simple cases the name labels are not
       required.</para>
+    <para>When configuring networks in a XenServer environment, network traffic labels must be
+      properly configured to ensure that the virtual interfaces are created by &PRODUCT; are bound
+      to the correct physical device. The name-label of the XenServer network must match the
+      XenServer traffic label specified while creating the &PRODUCT; network. This is set by running
+      the following command:</para>
+    <programlisting>xe network-param-set uuid=&lt;network id&gt; name-label=&lt;CloudStack traffic label&gt;</programlisting>
     <section id="xenserver-public-network-config">
       <title>Configuring Public Network with a Dedicated NIC for XenServer (Optional)</title>
       <para>&PRODUCT; supports the use of a second NIC (or bonded pair of NICs, described in <xref
