@@ -109,7 +109,7 @@ class TestNetworkACL(cloudstackTestCase):
         self.assert_(networkOffering is not None and len(networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC
-        vpcOffering = VpcOffering.list(self.apiclient)
+        vpcOffering = VpcOffering.list(self.apiclient,isdefault=True)
         self.assert_(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
         self.services["vpc"] = {}
         self.services["vpc"]["name"] = "vpc-networkacl"
