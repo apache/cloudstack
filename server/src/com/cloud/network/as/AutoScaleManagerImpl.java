@@ -313,7 +313,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
-        Long autoscaleUserId = cmd.getAutoscaleUserId();
+        long autoscaleUserId = cmd.getAutoscaleUserId();
 
         DataCenter zone = _configMgr.getZone(zoneId);
 
@@ -338,10 +338,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
          */
         ApiDispatcher.processParameters(new DeployVMCmd(), deployParams);
 
+<<<<<<< HEAD
         if (autoscaleUserId == null) {
             autoscaleUserId = CallContext.current().getCallingUserId();
         }
 
+=======
+>>>>>>> a9148d9... CLOUDSTACK-3948: fixed createAutoscaleVmProfile - for situation when no autoscaleUserId is passed in, take it from caller user id, not caller account id
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
         profileVO = checkValidityAndPersist(profileVO);

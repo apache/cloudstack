@@ -116,11 +116,11 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return otherDeployParams;
     }
 
-    public Long getAutoscaleUserId() {
+    public long getAutoscaleUserId() {
         if (autoscaleUserId != null) {
             return autoscaleUserId;
         } else {
-            return CallContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingUserId();
         }
     }
 
