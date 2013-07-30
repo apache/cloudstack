@@ -1000,7 +1000,7 @@ ServerResource {
         File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
 
         if (! f.isDirectory()){
-            s_logger.debug("failing to get physical interface from bridge"
+            s_logger.debug("failing to get physical interface from bridge "
                            + bridgeName + ", does " + f.getAbsolutePath()
                            + "exist?");
             return "";
@@ -1012,13 +1012,14 @@ ServerResource {
             String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
             if (fname.startsWith("eth") || fname.startsWith("bond")
-                || fname.startsWith("vlan") || fname.startsWith("em")) {
+                || fname.startsWith("vlan") || fname.startsWith("em")
+                || fname.matches("^p\\d+p\\d+")) {
                 return fname;
             }
         }
 
-        s_logger.debug("failing to get physical interface from bridge"
-                        + bridgeName + ", did not find an eth*, bond*, or vlan* in "
+        s_logger.debug("failing to get physical interface from bridge "
+                        + bridgeName + ", did not find an eth*, bond*, vlan*, em*, or p*p* in "
                         + f.getAbsolutePath());
         return "";
     }
