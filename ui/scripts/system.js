@@ -6886,7 +6886,7 @@
                                                         label: 'scaleUp System VM',
                                                         createForm: {
                                                             title: 'label.change.service.offering',
-                                                            desc: '',
+                                                            desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',  
                                                             fields: {
                                                                 serviceOfferingId: {
                                                                     label: 'label.compute.offering',
@@ -7917,9 +7917,8 @@
                                 label: 'scaleUp Router VM',
                                 createForm: {
                                     title: 'label.change.service.offering',
-                                    desc: '',
+                                    desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',  
                                     fields: {
-
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
                                             select: function(args) {
@@ -8534,7 +8533,7 @@
                                 label: 'scaleUp System VM',
                                 createForm: {
                                     title: 'label.change.service.offering',
-                                    desc: '',
+                                    desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',  
                                     fields: {
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
