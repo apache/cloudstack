@@ -300,11 +300,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
 
-        HostVO host = _hostDao.findById(hostId);
-        if (host.getHypervisorType() != HypervisorType.VMware) {
-            return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
-        }
-
         if (cmd instanceof CopyCommand) {
             CopyCommand cpyCommand = (CopyCommand)cmd;
             DataTO srcData = cpyCommand.getSrcTO();
@@ -312,17 +307,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             DataTO destData = cpyCommand.getDestTO();
             DataStoreTO destStoreTO = destData.getDataStore();
 
-            if ((HypervisorType.VMware == srcData.getHypervisorType() ||
-                    HypervisorType.VMware == destData.getHypervisorType()
-            )) {
-                needDelegation = true;
-            }
-
             if (srcData.getObjectType() == DataObjectType.VOLUME) {
                 VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;
                 if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
                     needDelegation = true;
                 }
+            }
+
+            if (!needDelegation && !(HypervisorType.VMware == srcData.getHypervisorType() ||
+                    HypervisorType.VMware == destData.getHypervisorType()
+            )) {
+                return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
             }
 
             if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
@@ -347,7 +342,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         if(!needDelegation) {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }
-
+        HostVO host = _hostDao.findById(hostId);
         long dcId = host.getDataCenterId();
         Pair<HostVO, SecondaryStorageVmVO> cmdTarget = _secStorageMgr.assignSecStorageVm(dcId, cmd);
         if(cmdTarget != null) {
