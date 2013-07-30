@@ -307,10 +307,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             DataTO destData = cpyCommand.getDestTO();
             DataStoreTO destStoreTO = destData.getDataStore();
 
-            if (!(HypervisorType.VMware == srcData.getHypervisorType() ||
+            if ((HypervisorType.VMware == srcData.getHypervisorType() ||
                     HypervisorType.VMware == destData.getHypervisorType()
             )) {
-                return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+                needDelegation = true;
+            }
+
+            if (srcData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;
+                if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
+                    needDelegation = true;
+                }
             }
 
             if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
