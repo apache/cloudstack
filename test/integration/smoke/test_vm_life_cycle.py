@@ -760,6 +760,8 @@ class TestVMLifeCycle(cloudstackTestCase):
             for k in i.split():
                 result.append(k)
 
+        self.debug("Size of the mounted iso in %s" % res)
+
         # Get ISO size
         iso_response = list_isos(
                                  self.apiclient,
