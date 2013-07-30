@@ -247,22 +247,22 @@ class TestCreateRvRNetwork(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=True
                                             )
+        cls._cleanup.append(cls.network_offering)
+
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
 
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        ]
         return
 
     @classmethod
@@ -449,22 +449,20 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=True
                                             )
+        cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        ]
         return
 
     @classmethod
@@ -660,22 +658,20 @@ class TestRVRInternals(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=True
                                             )
+        cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        ]
         return
 
     @classmethod
@@ -965,22 +961,20 @@ class TestRvRRedundancy(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=True
                                             )
+        cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        ]
         return
 
     @classmethod
@@ -995,12 +989,14 @@ class TestRvRRedundancy(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
         self.account = Account.create(
                                      self.apiclient,
                                      self.services["account"],
                                      admin=True,
                                      domainid=self.domain.id
                                      )
+        self.cleanup.insert(0, self.account)
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
                                                     self.network_offering.id)
@@ -1028,9 +1024,6 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         # wait for VR to update state
         time.sleep(self.services["sleep"])
-
-        self.cleanup = []
-        self.cleanup.insert(0, self.account)
         return
 
     def tearDown(self):

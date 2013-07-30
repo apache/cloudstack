@@ -193,19 +193,18 @@ class TestVPCNetwork(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
         return
 
     @classmethod
@@ -1051,19 +1050,18 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -1555,19 +1553,18 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -2135,15 +2132,18 @@ class TestVPCNetworkGc(cloudstackTestCase):
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls._cleanup = []
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.account = Account.create(
@@ -2152,6 +2152,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                      admin=True,
                                      domainid=cls.domain.id
                                      )
+        cls._cleanup.append(cls.account)
 
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
         cls.vpc = VPC.create(
@@ -2168,6 +2169,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                             cls.services["network_offering"],
                                             conservemode=False
                                             )
+        cls._cleanup.append(cls.nw_off)
         # Enable Network offering
         cls.nw_off.update(cls.api_client, state='Enabled')
 
@@ -2243,12 +2245,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                 services=cls.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
-        cls._cleanup = [
-                        cls.account,
-                        cls.service_offering,
-                        cls.vpc_off,
-                        cls.nw_off
-                        ]
         return
 
     @classmethod
