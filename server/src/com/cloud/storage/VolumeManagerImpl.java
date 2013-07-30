@@ -105,9 +105,8 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -270,8 +269,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected UserDao _userDao;
     @Inject
     protected ClusterDao _clusterDao;
-    @Inject
-    protected UsageEventDao _usageEventDao;
     @Inject
     protected VirtualMachineManager _vmMgr;
     @Inject
@@ -606,13 +603,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         createdVolume = createVolumeFromSnapshot(volume,
                 snapshot);
 
-        UsageEventVO usageEvent = new UsageEventVO(
-                EventTypes.EVENT_VOLUME_CREATE,
-                createdVolume.getAccountId(),
-                createdVolume.getDataCenterId(), createdVolume.getId(),
-                createdVolume.getName(), createdVolume.getDiskOfferingId(),
-                null, createdVolume.getSize());
-        _usageEventDao.persist(usageEvent);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
+                createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
 
         return _volsDao.findById(createdVolume.getId());
     }
@@ -704,12 +696,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 throw new CloudRuntimeException("create volume failed:" + result.getResult());
             }
 
-
-            UsageEventVO usageEvent = new UsageEventVO(
-                    EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
-                    volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    volume.getDiskOfferingId(), null, volume.getSize());
-            _usageEventDao.persist(usageEvent);
             return result.getVolume();
         } catch (InterruptedException e) {
             s_logger.error("create volume failed", e);
@@ -1028,6 +1014,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         volume = _volsDao.persist(volume);
+        if (cmd.getSnapshotId() == null) {
+            // for volume created from snapshot, create usage event after volume creation
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId,
+                    null, size, Volume.class.getName(), volume.getUuid());
+        }
 
         CallContext.current().setEventDetails("Volume Id: " + volume.getId());
 
@@ -1260,10 +1251,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
             _volsDao.update(volume.getId(), volume);
             // Log usage event for volumes belonging user VM's only
-            UsageEventVO usageEvent = new UsageEventVO(
-                    EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(),
-                    volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
@@ -1342,10 +1331,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     }
 
                     // Log usage event for volumes belonging user VM's only
-                    UsageEventVO usageEvent = new UsageEventVO(
-                            EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
-                            volume.getDataCenterId(), volume.getId(), volume.getName());
-                    _usageEventDao.persist(usageEvent);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                            Volume.class.getName(), volume.getUuid());
                 }
             }
             // expunge volume from primary if volume is on primary
@@ -1418,11 +1405,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         // Save usage event and update resource count for user vm volumes
         if (vm instanceof UserVm) {
 
-            UsageEventVO usageEvent = new UsageEventVO(
-                    EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(),
-                    vol.getDataCenterId(), vol.getId(), vol.getName(),
-                    offering.getId(), null, size);
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
+                    Volume.class.getName(), vol.getUuid());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(),
                     ResourceType.volume);
@@ -1469,11 +1453,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 offeringId = offering.getId();
             }
 
-            UsageEventVO usageEvent = new UsageEventVO(
-                    EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(),
-                    vol.getDataCenterId(), vol.getId(), vol.getName(),
-                    offeringId, template.getId(), vol.getSize());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, null, size,
+                    Volume.class.getName(), vol.getUuid());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(),
                     ResourceType.volume);
