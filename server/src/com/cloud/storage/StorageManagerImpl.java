@@ -406,6 +406,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm,
             final Set<StoragePool> avoid) {
 
+        Long podId = null;
+        if (pod != null) {
+            podId = pod.getId();
+        } else if (clusterId != null) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            if (cluster != null) {
+                podId = cluster.getPodId();
+            }
+        }
+
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
 
@@ -413,7 +423,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             for (StoragePool pool : avoid) {
                 avoidList.addPool(pool.getId());
             }
-            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), clusterId, hostId, null, null);
+            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
 
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
             if (poolList != null && !poolList.isEmpty()) {
