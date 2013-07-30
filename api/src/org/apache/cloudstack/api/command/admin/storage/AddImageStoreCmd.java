@@ -141,7 +141,7 @@ public class AddImageStoreCmd extends BaseCmd {
             if (result != null ) {
                     storeResponse = _responseGenerator.createImageStoreResponse(result);
                     storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("secondarystorage");
+                    storeResponse.setObjectName("imagestore");
                     this.setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
