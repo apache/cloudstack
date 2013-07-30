@@ -955,7 +955,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
-                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null) {
+                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null &&
+                        !ipToAssoc.isPortable()) {
                     isSourceNat = true;
                 }
             }
