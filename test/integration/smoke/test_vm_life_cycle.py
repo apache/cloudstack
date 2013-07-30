@@ -747,20 +747,12 @@ class TestVMLifeCycle(cloudstackTestCase):
                 self.services["mount"] = diskdevice
                 break
         else:
-            self.skipTest("No mount points matched. Mount was unsuccessful")
+            self.fail("No mount points matched. Mount was unsuccessful")
 
         c = "mount |grep %s|head -1" % self.services["mount"]
         res = ssh_client.execute(c)
-        self.debug("Found a mount point at %s" % res)
-
-        # Res may contain more than one strings depending on environment
-        # Split strings to form new list which is used for assertion on ISO size 
-        result = []
-        for i in res:
-            for k in i.split():
-                result.append(k)
-
-        self.debug("Size of the mounted iso in %s" % res)
+        size = ssh_client.execute("du %s | tail -1" % self.services["mount"])
+        self.debug("Found a mount point at %s with size" % (res, size))
 
         # Get ISO size
         iso_response = list_isos(
@@ -772,13 +764,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        iso_size = iso_response[0].size
 
-        self.assertEqual(
-                         str(iso_size) in result,
-                         True,
-                         "ISO size mismatch. reported size within guest %s" % str(iso_size)
-                         )
         try:
             #Unmount ISO
             command = "umount %s" % self.services["mount_dir"]
