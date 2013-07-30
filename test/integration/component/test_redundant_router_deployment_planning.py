@@ -233,7 +233,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
 
         if len(pods) < 2:
-            raise unittest.SkipTest("The env don't have 2 pods req for test")
+            raise self.SkipTest("The env don't have 2 pods req for test")
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -380,7 +380,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          "List clusters should not return empty response"
                          )
         if len(clusters) < 2:
-            raise unittest.SkipTest(
+            raise self.SkipTest(
                             "The env don't have 2 clusters req for test")
 
         self.debug("disable all pods except one!")
@@ -600,7 +600,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
 
         if len(storage_pools) < 2:
-            raise unittest.SkipTest(
+            raise self.SkipTest(
                             "The env don't have 2 storage pools req for test")
 
         self.debug("disable all pods except one!")
@@ -841,7 +841,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
 
         if len(hosts) < 2:
-            raise unittest.SkipTest(
+            raise self.SkipTest(
                             "The env don't have 2 hosts req for test")
 
         self.debug("disable all pods except one!")
