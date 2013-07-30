@@ -2107,6 +2107,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             // for kvm, need to log into kvm host, restart cloudstack-agent
             if (host.getHypervisorType() == HypervisorType.KVM) {
+
+                boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
+                if (!sshToAgent) {
+                    s_logger.info("Configuration tells us not to SSH into Agents. Please restart the Agent (" + hostId + ")  manually");
+                    return true;
+                }
+
                 _hostDao.loadDetails(host);
                 String password = host.getDetail("password");
                 String username = host.getDetail("username");
