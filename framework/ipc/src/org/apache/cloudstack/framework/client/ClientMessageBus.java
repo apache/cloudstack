@@ -16,17 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.job;
+package org.apache.cloudstack.framework.client;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.apache.cloudstack.framework.messagebus.MessageBusBase;
+import org.apache.cloudstack.framework.transport.TransportMultiplexier;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Job {
+public class ClientMessageBus extends MessageBusBase implements TransportMultiplexier {
 
-
-
+	@Override
+	public void onTransportMessage(String senderEndpointAddress,
+			String targetEndpointAddress, String multiplexer, String message) {
+		// TODO Auto-generated method stub
+	}
 }

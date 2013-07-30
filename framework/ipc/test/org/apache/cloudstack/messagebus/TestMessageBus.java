@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import junit.framework.TestCase;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.junit.Assert;
@@ -112,5 +113,43 @@ public class TestMessageBus extends TestCase {
 		Mockito.verify(subscriberAtParentLevel, Mockito.times(0)).onPublishMessage(null, "VM.123", null);
 		
 		_messageBus.clearAll();
+	}
+	
+	public void testMessageDetector() {
+		MessageDetector detector = new MessageDetector();
+		detector.open(_messageBus, new String[] {"VM", "Host"});
+		
+		Thread thread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				for(int i = 0; i < 2; i++) {
+					try {
+						Thread.sleep(3000);
+					} catch (InterruptedException e) {
+					}
+					_messageBus.publish(null, "Host", PublishScope.GLOBAL, null);
+				}
+			}
+		});
+		thread.start();
+		
+		try {
+			int count = 0;
+			while(count < 2) {
+				if(detector.waitAny(1000)) {
+					System.out.println("Detected signal on bus");
+					count++;
+				} else {
+					System.out.println("Waiting timed out");
+				}
+			}
+		} finally {
+			detector.close();
+		}
+		
+		try {
+			thread.join();
+		} catch (InterruptedException e) {
+		}
 	}
 }

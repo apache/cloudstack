@@ -14,13 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.config;
 
-import java.util.List;
-
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+public interface Configurable {
+    ConfigKey<?>[] getConfigKeys();
 }

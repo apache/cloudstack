@@ -14,13 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.framework.jobs;
 
-import java.util.List;
+import java.util.concurrent.CancellationException;
 
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
+import com.cloud.utils.SerialVersionUID;
 
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+
+/**
+ * This exception is fired when the job has been cancelled
+ *
+ */
+public class JobCancellationException extends CancellationException {
+    
+    private static final long serialVersionUID = SerialVersionUID.AffinityConflictException;
+
+    public enum Reason {
+        RequestedByUser,
+        RequestedByCaller,
+        TimedOut;
+    }
+
+    Reason reason;
+
+    public JobCancellationException(Reason reason) {
+        super("The job was cancelled due to " + reason.toString());
+        this.reason = reason;
+    }
+
+    public Reason getReason() {
+        return reason;
+    }
+
 }

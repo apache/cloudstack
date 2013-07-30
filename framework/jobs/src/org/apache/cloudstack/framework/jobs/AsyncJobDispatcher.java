@@ -14,13 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.framework.jobs;
 
-import java.util.List;
+import com.cloud.utils.component.Adapter;
 
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+//
+// We extend it from Adapter interface for
+//	1)	getName()/setName()
+//	2)	Confirming to general adapter pattern used across CloudStack
+//
+public interface AsyncJobDispatcher extends Adapter {
+	void runJob(AsyncJob job);
 }

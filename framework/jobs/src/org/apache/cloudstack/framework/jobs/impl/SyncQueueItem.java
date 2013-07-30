@@ -14,13 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.framework.jobs.impl;
 
-import java.util.List;
+public interface SyncQueueItem {
+    public final String AsyncJobContentType = "AsyncJob";
 
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
+    /**
+     * @return queue item id
+     */
+    long getId();
 
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+    /**
+     * @return queue id
+     */
+    Long getQueueId();
+
+    /**
+     * @return subject object type pointed by the queue item
+     */
+    String getContentType();
+    
+    /**
+     * @return subject object id pointed by the queue item
+     */
+    Long getContentId();
 }

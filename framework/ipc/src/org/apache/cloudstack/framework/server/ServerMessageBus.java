@@ -16,8 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.job;
+package org.apache.cloudstack.framework.server;
 
-public class JobInterceptor {
+import org.apache.cloudstack.framework.messagebus.MessageBusBase;
+import org.apache.cloudstack.framework.transport.TransportMultiplexier;
 
+public class ServerMessageBus extends MessageBusBase implements TransportMultiplexier {
+
+	@Override
+	public void onTransportMessage(String senderEndpointAddress,
+			String targetEndpointAddress, String multiplexer, String message) {
+		// TODO Auto-generated method stub
+	}
 }

@@ -22,20 +22,20 @@ package org.apache.cloudstack.framework.async;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.apache.log4j.Logger;
-
-import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+
+import org.apache.log4j.Logger;
 
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
     private static final Logger s_logger = Logger.getLogger(AsyncCallbackDispatcher.class);
 
     private Method _callbackMethod;
-	private T _targetObject;
+	private final T _targetObject;
 	private Object _contextObject;
 	private Object _resultObject;
 	private AsyncCallbackDriver _driver = new InplaceAsyncCallbackDriver();
@@ -84,6 +84,7 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
         }
 	    });
 	    en.setCallbackFilter(new CallbackFilter() {
+	        @Override
 	        public int accept(Method method) {
 	            if (method.getParameterTypes().length == 0 && method.getName().equals("finalize")) {
 	                return 1;
@@ -115,6 +116,7 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
 		return (P)_contextObject;
 	}
 
+	@Override
 	public void complete(Object resultObject) {
 		_resultObject = resultObject;
 		_driver.performCompletionCallback(this);

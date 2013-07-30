@@ -19,7 +19,7 @@ package com.cloud.server;
 import java.util.List;
 
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.ManagementServerHost;
 import com.cloud.utils.db.Merovingian2;
 
 /**
@@ -34,12 +34,12 @@ public class LockMasterListener implements ClusterManagerListener {
     }
 
     @Override
-    public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
     }
 
     @Override
-    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-        for (ManagementServerHostVO node : nodeList) {
+    public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
+        for (ManagementServerHost node : nodeList) {
             _lockMaster.cleanupForServer(node.getMsid());
         }
     }

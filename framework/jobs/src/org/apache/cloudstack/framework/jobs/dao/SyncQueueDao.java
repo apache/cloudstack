@@ -14,13 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.framework.jobs.dao;
 
-import java.util.List;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
+import com.cloud.utils.db.GenericDao;
 
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+public interface SyncQueueDao extends GenericDao<SyncQueueVO, Long>{
+	public void ensureQueue(String syncObjType, long syncObjId);
+	public SyncQueueVO find(String syncObjType, long syncObjId);
 }

@@ -25,7 +25,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.ManagementServerHost;
 
 @Local(value=VirtualMachineManager.class)
 public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImpl implements ClusterManagerListener {
@@ -37,13 +37,13 @@ public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImp
     }
     
     @Override
-    public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
         
     }
     
     @Override
-    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-        for (ManagementServerHostVO node : nodeList) {
+    public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
+        for (ManagementServerHost node : nodeList) {
             cancelWorkItems(node.getMsid());
         }
     }

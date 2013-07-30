@@ -14,13 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.framework.jobs.dao;
 
+import java.util.Date;
 import java.util.List;
 
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+import com.cloud.utils.db.GenericDao;
+
+public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
+	AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
+	List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);
+	
+	AsyncJobVO findPseudoJob(long threadId, long msid);
+	void cleanupPseduoJobs(long msid);
+	
+	List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit);
+	List<AsyncJobVO> getExpiredUnfinishedJobs(Date cutTime, int limit);
+	void resetJobProcess(long msid, int jobResultCode, String jobResultMessage);
+	List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit);
 }
