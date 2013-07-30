@@ -291,7 +291,7 @@
                             data: data2,
                             success: function(json) {
                                 dataFns.systemVmCount($.extend(data, {
-                                    secondaryStorageCount: json.listimagestoreresponse.imagestore ? json.listimagestoreresponse.count : 0
+                                    secondaryStorageCount: json.listimagestoresresponse.imagestore ? json.listimagestoresresponse.count : 0
                                 }));
                             }
                         });
@@ -7336,7 +7336,7 @@
                                                         data: data,
                                                         success: function(json) {
                                                             args.response.success({
-                                                                data: json.listimagestoreresponse.imagestore
+                                                                data: json.listimagestoresresponse.imagestore
                                                             });
                                                         },
                                                         error: function(json) {
@@ -14794,7 +14794,7 @@
                                                 url: createURL('addImageStore'),
                                                 data: data,
                                                 success: function(json) {
-                                                    var item = json.addimagestoreresponse.secondarystorage;
+                                                    var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
                                                     });
@@ -14844,7 +14844,7 @@
                                                 data: data,
                                                 success: function(json) {
                                                     havingS3 = true;
-                                                    var item = json.addimagestoreresponse.secondarystorage;
+                                                    var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
                                                     });
@@ -14904,7 +14904,7 @@
                                                 data: data,
                                                 success: function(json) {
                                                     havingSwift = true;
-                                                    var item = json.addimagestoreresponse.secondarystorage;
+                                                    var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
                                                     });
@@ -15014,7 +15014,7 @@
                                                 dataType: "json",
                                                 async: true,
                                                 success: function(json) {
-                                                    var item = json.listimagestoreresponse.imagestore[0];
+                                                    var item = json.listimagestoresresponse.imagestore[0];
                                                     args.response.success({
                                                         actionFilter: secondarystorageActionfilter,
                                                         data: item
