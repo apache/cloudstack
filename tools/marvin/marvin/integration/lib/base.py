@@ -275,14 +275,14 @@ class VirtualMachine:
         @return:
         """
         public_ip = PublicIPAddress.create(
-            apiclient,
-            virtual_machine.account,
-            virtual_machine.zoneid,
-            virtual_machine.domainid,
-            services
+            apiclient=apiclient,
+            accountid=virtual_machine.account,
+            zoneid=virtual_machine.zoneid,
+            domainid=virtual_machine.domainid,
+            services=services
         )
         FireWallRule.create(
-            apiclient,
+            apiclient=apiclient,
             ipaddressid=public_ip.ipaddress.id,
             protocol='TCP',
             cidrlist=['0.0.0.0/0'],
@@ -290,9 +290,9 @@ class VirtualMachine:
             endport=22
         )
         nat_rule = NATRule.create(
-            apiclient,
-            virtual_machine,
-            services,
+            apiclient=apiclient,
+            virtual_machine=virtual_machine,
+            services=services,
             ipaddressid=public_ip.ipaddress.id
         )
         virtual_machine.ssh_ip = nat_rule.ipaddress
