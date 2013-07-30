@@ -86,29 +86,29 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualSCSISharing;
 
 public class VmwareStorageProcessor implements StorageProcessor {
-	private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
-	private VmwareHostService hostService;
-	private boolean _fullCloneFlag;
-	private VmwareStorageMount mountService;
-	private VmwareResource resource;
-	private Integer _timeout;
-	protected Integer _shutdown_waitMs;
-	private final Gson _gson;
-	private final StorageLayer _storage = new JavaStorageLayer();
-	public VmwareStorageProcessor(VmwareHostService hostService, boolean fullCloneFlag, VmwareStorageMount mountService,
-			Integer timeout,
-			VmwareResource resource,
-			Integer shutdownWaitMs) {
-		this.hostService = hostService;
-		this._fullCloneFlag = fullCloneFlag;
-		this.mountService = mountService;
-		this._timeout = timeout;
-		this.resource = resource;
-		this._shutdown_waitMs = shutdownWaitMs;
-		_gson = GsonHelper.getGsonLogger();
-	}
-	
-	private String getOVFFilePath(String srcOVAFileName) {
+    private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
+    private VmwareHostService hostService;
+    private boolean _fullCloneFlag;
+    private VmwareStorageMount mountService;
+    private VmwareResource resource;
+    private Integer _timeout;
+    protected Integer _shutdown_waitMs;
+    private final Gson _gson;
+    private final StorageLayer _storage = new JavaStorageLayer();
+    public VmwareStorageProcessor(VmwareHostService hostService, boolean fullCloneFlag, VmwareStorageMount mountService,
+                                  Integer timeout,
+                                  VmwareResource resource,
+                                  Integer shutdownWaitMs) {
+        this.hostService = hostService;
+        this._fullCloneFlag = fullCloneFlag;
+        this.mountService = mountService;
+        this._timeout = timeout;
+        this.resource = resource;
+        this._shutdown_waitMs = shutdownWaitMs;
+        _gson = GsonHelper.getGsonLogger();
+    }
+
+    private String getOVFFilePath(String srcOVAFileName) {
         File file = new File(srcOVAFileName);
         assert(_storage != null);
         String[] files = _storage.listFiles(file.getParent());
@@ -122,144 +122,144 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
         return null;
     }
-	 private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-		        String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
+    private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
+                                                    String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
 
-		        s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: "
-		            + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
-		            + ", templateName: " + templateName);
+        s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: "
+                + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
+                + ", templateName: " + templateName);
 
-		        String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
-		        s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
+        String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
+        s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
-		        String srcOVAFileName = secondaryMountPoint + "/" +  templatePathAtSecondaryStorage +
-		            templateName + "." + ImageFormat.OVA.getFileExtension();
+        String srcOVAFileName = secondaryMountPoint + "/" +  templatePathAtSecondaryStorage +
+                templateName + "." + ImageFormat.OVA.getFileExtension();
 
-		        String srcFileName = getOVFFilePath(srcOVAFileName);
-		        if(srcFileName == null) {
-		            Script command = new Script("tar", 0, s_logger);
-		            command.add("--no-same-owner");
-		            command.add("-xf", srcOVAFileName);
-		            command.setWorkDir(secondaryMountPoint + "/" +  templatePathAtSecondaryStorage);
-		            s_logger.info("Executing command: " + command.toString());
-		            String result = command.execute();
-		            if(result != null) {
-		                String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
-		                s_logger.error(msg);
-		                throw new Exception(msg);
-		            }
-		        }
+        String srcFileName = getOVFFilePath(srcOVAFileName);
+        if(srcFileName == null) {
+            Script command = new Script("tar", 0, s_logger);
+            command.add("--no-same-owner");
+            command.add("-xf", srcOVAFileName);
+            command.setWorkDir(secondaryMountPoint + "/" +  templatePathAtSecondaryStorage);
+            s_logger.info("Executing command: " + command.toString());
+            String result = command.execute();
+            if(result != null) {
+                String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
 
-		        srcFileName = getOVFFilePath(srcOVAFileName);
-		        if(srcFileName == null) {
-		            String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
-		            s_logger.error(msg);
-		            throw new Exception(msg);
-		        }
+        srcFileName = getOVFFilePath(srcOVAFileName);
+        if(srcFileName == null) {
+            String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
 
-		        String vmName = templateUuid;
-		        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
+        String vmName = templateUuid;
+        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
 
-		        VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
-		        if(vmMo == null) {
-		            String msg = "Failed to import OVA template. secondaryStorage: "
-		                + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
-		                + ", templateName: " + templateName + ", templateUuid: " + templateUuid;
-		            s_logger.error(msg);
-		            throw new Exception(msg);
-		        }
+        VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+        if(vmMo == null) {
+            String msg = "Failed to import OVA template. secondaryStorage: "
+                    + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
+                    + ", templateName: " + templateName + ", templateUuid: " + templateUuid;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
 
-		        if(vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
-		            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateUuid);
-		            vmMo.markAsTemplate();
-		        } else {
-		            vmMo.destroy();
-		            String msg = "Unable to create base snapshot for template, templateName: " + templateName + ", templateUuid: " + templateUuid;
-		            s_logger.error(msg);
-		            throw new Exception(msg);
-		        }
-		    }
-	
-	@Override
-	public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
-		DataTO srcData = cmd.getSrcTO();
-		TemplateObjectTO template = (TemplateObjectTO)srcData;
-		DataStoreTO srcStore = srcData.getDataStore();
-		if (!(srcStore instanceof NfsTO)) {
-			return new CopyCmdAnswer("unsupported protocol");
-		}
-		NfsTO nfsImageStore = (NfsTO)srcStore;
-		DataTO destData = cmd.getDestTO();
-		DataStoreTO destStore = destData.getDataStore();
-		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)destStore;
-		String secondaryStorageUrl = nfsImageStore.getUrl();
-		assert (secondaryStorageUrl != null);
+        if(vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
+            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateUuid);
+            vmMo.markAsTemplate();
+        } else {
+            vmMo.destroy();
+            String msg = "Unable to create base snapshot for template, templateName: " + templateName + ", templateUuid: " + templateUuid;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+    }
 
-		String templateUrl = secondaryStorageUrl + File.separator + srcData.getPath();
+    @Override
+    public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        TemplateObjectTO template = (TemplateObjectTO)srcData;
+        DataStoreTO srcStore = srcData.getDataStore();
+        if (!(srcStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("unsupported protocol");
+        }
+        NfsTO nfsImageStore = (NfsTO)srcStore;
+        DataTO destData = cmd.getDestTO();
+        DataStoreTO destStore = destData.getDataStore();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)destStore;
+        String secondaryStorageUrl = nfsImageStore.getUrl();
+        assert (secondaryStorageUrl != null);
 
-		String templateName = null;
-		String mountPoint = null;
-		if (templateUrl.endsWith(".ova")) {
-			int index = templateUrl.lastIndexOf("/");
-			mountPoint = templateUrl.substring(0, index);
-			mountPoint = mountPoint.substring(secondaryStorageUrl.length() + 1);
-			if (!mountPoint.endsWith("/")) {
-				mountPoint = mountPoint + "/";
-			}
+        String templateUrl = secondaryStorageUrl + File.separator + srcData.getPath();
 
-			templateName = templateUrl.substring(index + 1).replace("." + ImageFormat.OVA.getFileExtension(), "");
+        String templateName = null;
+        String mountPoint = null;
+        if (templateUrl.endsWith(".ova")) {
+            int index = templateUrl.lastIndexOf("/");
+            mountPoint = templateUrl.substring(0, index);
+            mountPoint = mountPoint.substring(secondaryStorageUrl.length() + 1);
+            if (!mountPoint.endsWith("/")) {
+                mountPoint = mountPoint + "/";
+            }
 
-			if (templateName == null || templateName.isEmpty()) {
-				templateName = template.getName();
-			}
-		} else {
-			mountPoint = templateUrl.substring(secondaryStorageUrl.length() + 1);
-			if (!mountPoint.endsWith("/")) {
-				mountPoint = mountPoint + "/";
-			}
-			templateName = template.getName();
-		}
+            templateName = templateUrl.substring(index + 1).replace("." + ImageFormat.OVA.getFileExtension(), "");
 
-		VmwareContext context = hostService.getServiceContext(cmd);
-		try {
-			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            if (templateName == null || templateName.isEmpty()) {
+                templateName = template.getName();
+            }
+        } else {
+            mountPoint = templateUrl.substring(secondaryStorageUrl.length() + 1);
+            if (!mountPoint.endsWith("/")) {
+                mountPoint = mountPoint + "/";
+            }
+            templateName = template.getName();
+        }
 
-			String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + primaryStore.getUuid() + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
-			// truncate template name to 32 chars to ensure they work well with vSphere API's.
-			templateUuidName = templateUuidName.replace("-", "");
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-			DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
-			VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
+            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + primaryStore.getUuid() + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
+            // truncate template name to 32 chars to ensure they work well with vSphere API's.
+            templateUuidName = templateUuidName.replace("-", "");
 
-			if (templateMo == null) {
-			    if(s_logger.isInfoEnabled())
-			        s_logger.info("Template " + templateName + " is not setup yet, setup template from secondary storage with uuid name: " + templateUuidName);
-				ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
-				assert (morDs != null);
-				DatastoreMO primaryStorageDatastoreMo = new DatastoreMO(context, morDs);
+            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+            VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
 
-				copyTemplateFromSecondaryToPrimary(hyperHost,
-					primaryStorageDatastoreMo, secondaryStorageUrl,
-					mountPoint, templateName, templateUuidName);
-			} else {
-				s_logger.info("Template " + templateName + " has already been setup, skip the template setup process in primary storage");
-			}
+            if (templateMo == null) {
+                if(s_logger.isInfoEnabled())
+                    s_logger.info("Template " + templateName + " is not setup yet, setup template from secondary storage with uuid name: " + templateUuidName);
+                ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
+                assert (morDs != null);
+                DatastoreMO primaryStorageDatastoreMo = new DatastoreMO(context, morDs);
 
-			TemplateObjectTO newTemplate = new TemplateObjectTO();
-			newTemplate.setPath(templateUuidName);
-			return new CopyCmdAnswer(newTemplate);
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
+                copyTemplateFromSecondaryToPrimary(hyperHost,
+                        primaryStorageDatastoreMo, secondaryStorageUrl,
+                        mountPoint, templateName, templateUuidName);
+            } else {
+                s_logger.info("Template " + templateName + " has already been setup, skip the template setup process in primary storage");
+            }
 
-			String msg = "Unable to execute PrimaryStorageDownloadCommand due to exception";
-			s_logger.error(msg, e);
-			return new CopyCmdAnswer(msg);
-		}
-	}
-	private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
-            String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(templateUuidName);
+            return new CopyCmdAnswer(newTemplate);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                hostService.invalidateServiceContext(context);
+            }
+
+            String msg = "Unable to execute PrimaryStorageDownloadCommand due to exception";
+            s_logger.error(msg, e);
+            return new CopyCmdAnswer(msg);
+        }
+    }
+    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
+                                        String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
 
         ManagedObjectReference morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
         if (morBaseSnapshot == null) {
@@ -292,8 +292,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return true;
     }
 
-	private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
-            String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
+    private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
+                                      String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
 
         if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
             dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
@@ -319,109 +319,117 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return true;
     }
 
-	@Override
-	public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
-		DataTO srcData = cmd.getSrcTO();
-		TemplateObjectTO template = (TemplateObjectTO)srcData;
-		DataTO destData = cmd.getDestTO();
-		VolumeObjectTO volume = (VolumeObjectTO)destData;
-		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
-		PrimaryDataStoreTO srcStore = (PrimaryDataStoreTO)template.getDataStore();
-
-		
-		try {
-			VmwareContext context = this.hostService.getServiceContext(null);
-			VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
-			DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
-			VirtualMachineMO vmMo = null;
-			ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
-			if (morDatastore == null)
-				throw new Exception("Unable to find datastore in vSphere");
-
-			DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+    @Override
+    public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        TemplateObjectTO template = (TemplateObjectTO)srcData;
+        DataTO destData = cmd.getDestTO();
+        VolumeObjectTO volume = (VolumeObjectTO)destData;
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
+        PrimaryDataStoreTO srcStore = (PrimaryDataStoreTO)template.getDataStore();
 
 
-			// attach volume id to make the name unique
-			String vmdkName = volume.getName() + "-" + volume.getId();
-			if (srcStore == null) {
-				// create a root volume for blank VM
-				String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
+        try {
+            VmwareContext context = this.hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
+            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+            VirtualMachineMO vmMo = null;
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
+            if (morDatastore == null)
+                throw new Exception("Unable to find datastore in vSphere");
 
-				try {
-					vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
-					if (vmMo == null) {
-						throw new Exception("Unable to create a dummy VM for volume creation");
-					}
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
-					String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName);
-					synchronized (this) {
-						s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-						VmwareHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
-						vmMo.createDisk(volumeDatastorePath, (int) (volume.getSize() / (1024L * 1024L)), morDatastore, -1);
-						vmMo.detachDisk(volumeDatastorePath, false);
-					}
 
-					VolumeObjectTO newVol = new VolumeObjectTO();
-					newVol.setPath(vmdkName);
+            // attach volume id to make the name unique
+            String vmdkName = volume.getName() + "-" + volume.getId();
+            if (srcStore == null) {
+                // create a root volume for blank VM
+                String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
+
+                try {
+                    vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
+                    if (vmMo == null) {
+                        throw new Exception("Unable to create a dummy VM for volume creation");
+                    }
+
+                    String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName);
+                    synchronized (this) {
+                        s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
+                        VmwareHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
+                        vmMo.createDisk(volumeDatastorePath, (int) (volume.getSize() / (1024L * 1024L)), morDatastore, -1);
+                        vmMo.detachDisk(volumeDatastorePath, false);
+                    }
+
+                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    newVol.setPath(vmdkName);
                     newVol.setSize(volume.getSize());
-					return new CopyCmdAnswer(newVol);
-				} finally {
-					vmMo.detachAllDisks();
+                    return new CopyCmdAnswer(newVol);
+                } finally {
+                    vmMo.detachAllDisks();
 
-					s_logger.info("Destroy dummy VM after volume creation");
-					vmMo.destroy();
-				}
-			} else {
-				String templatePath = template.getPath();
-				VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
-				if (vmTemplate == null) {
-					s_logger.warn("Template host in vSphere is not in connected state, request template reload");
-					return new CopyCmdAnswer("Template host in vSphere is not in connected state, request template reload");
-				}
+                    s_logger.info("Destroy dummy VM after volume creation");
+                    vmMo.destroy();
+                }
+            } else {
+                String templatePath = template.getPath();
+                VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
+                if (vmTemplate == null) {
+                    s_logger.warn("Template host in vSphere is not in connected state, request template reload");
+                    return new CopyCmdAnswer("Template host in vSphere is not in connected state, request template reload");
+                }
 
-				ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-				ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-				//createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
-				if (!_fullCloneFlag) {
-					createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
-				} else {
-					createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
-				}
+                ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+                ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+                //createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                if (!_fullCloneFlag) {
+                    createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                } else {
+                    createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                }
 
-				vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
-				assert (vmMo != null);
+                vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
+                assert (vmMo != null);
 
-				s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
-				vmMo.detachAllDisks();
+                s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
+                vmMo.detachAllDisks();
 
-				s_logger.info("destroy volume-wrapper VM " + vmdkName);
-				vmMo.destroy();
+                s_logger.info("destroy volume-wrapper VM " + vmdkName);
+                vmMo.destroy();
 
-				String srcFile = String.format("[%s] %s/", dsMo.getName(), vmdkName);
-				dsMo.deleteFile(srcFile, dcMo.getMor(), true);
-				VolumeObjectTO newVol = new VolumeObjectTO();
-				newVol.setPath(vmdkName);
+                String srcFile = String.format("[%s] %s/", dsMo.getName(), vmdkName);
+                dsMo.deleteFile(srcFile, dcMo.getMor(), true);
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(vmdkName);
                 newVol.setSize(volume.getSize());
-				return new CopyCmdAnswer(newVol);
-			}
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-				this.hostService.invalidateServiceContext(null);
-			}
+                return new CopyCmdAnswer(newVol);
+            }
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                this.hostService.invalidateServiceContext(null);
+            }
 
-			String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-			s_logger.error(msg, e);
-			return new CopyCmdAnswer(e.toString());
-		}
-	}
+            String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new CopyCmdAnswer(e.toString());
+        }
+    }
 
     private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath,
                                                           DatastoreMO dsMo, String secStorageUrl) throws Exception {
-        //srcVolumePath has volumes/dc/id/uuid
+
+        String volumeFolder = null;
+        String volumeName = null;
+        String sufix = ".ova";
         int index = srcVolumePath.lastIndexOf(File.separator);
-        String volumeFolder = srcVolumePath;
-        String volumeName = srcVolumePath.substring(index + 1);
+        if (srcVolumePath.endsWith(sufix)) {
+            volumeFolder = srcVolumePath.substring(0, index);
+            volumeName = srcVolumePath.substring(index + 1).replace(sufix, "");
+        } else {
+            volumeFolder = srcVolumePath;
+            volumeName = srcVolumePath.substring(index + 1);
+        }
 
         String newVolume    = UUID.randomUUID().toString().replaceAll("-", "");
         restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, volumeFolder, volumeName);
@@ -445,8 +453,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-	@Override
-	public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
+    @Override
+    public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
         VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
         VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -566,8 +574,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-	@Override
-	public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
+    @Override
+    public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
         VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
         VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
         String vmName = srcVolume.getVmName();
@@ -596,167 +604,167 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg, e);
             return new CopyCmdAnswer("CopyVolumeCommand failed due to exception: " + e.toString());
         }
-	}
-	
-	private void postCreatePrivateTemplate(String installFullPath, long templateId,
-	        String templateName, long size, long virtualSize) throws Exception {
+    }
 
-	        // TODO a bit ugly here
-	        BufferedWriter out = null;
-	        try {
-	            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties")));
-	            out.write("filename=" + templateName + ".ova");
-	            out.newLine();
-	            out.write("description=");
-	            out.newLine();
-	            out.write("checksum=");
-	            out.newLine();
-	            out.write("hvm=false");
-	            out.newLine();
-	            out.write("size=" + size);
-	            out.newLine();
-	            out.write("ova=true");
-	            out.newLine();
-	            out.write("id=" + templateId);
-	            out.newLine();
-	            out.write("public=false");
-	            out.newLine();
-	            out.write("ova.filename=" + templateName + ".ova");
-	            out.newLine();
-	            out.write("uniquename=" + templateName);
-	            out.newLine();
-	            out.write("ova.virtualsize=" + virtualSize);
-	            out.newLine();
-	            out.write("virtualsize=" + virtualSize);
-	            out.newLine();
-	            out.write("ova.size=" + size);
-	            out.newLine();
-	        } finally {
-	            if(out != null)
-	                out.close();
-	        }
-	    }
+    private void postCreatePrivateTemplate(String installFullPath, long templateId,
+                                           String templateName, long size, long virtualSize) throws Exception {
 
-	private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, String installPath, long templateId, String templateUniqueName,
-	        String secStorageUrl, String volumePath, String workerVmName) throws Exception {
+        // TODO a bit ugly here
+        BufferedWriter out = null;
+        try {
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties")));
+            out.write("filename=" + templateName + ".ova");
+            out.newLine();
+            out.write("description=");
+            out.newLine();
+            out.write("checksum=");
+            out.newLine();
+            out.write("hvm=false");
+            out.newLine();
+            out.write("size=" + size);
+            out.newLine();
+            out.write("ova=true");
+            out.newLine();
+            out.write("id=" + templateId);
+            out.newLine();
+            out.write("public=false");
+            out.newLine();
+            out.write("ova.filename=" + templateName + ".ova");
+            out.newLine();
+            out.write("uniquename=" + templateName);
+            out.newLine();
+            out.write("ova.virtualsize=" + virtualSize);
+            out.newLine();
+            out.write("virtualsize=" + virtualSize);
+            out.newLine();
+            out.write("ova.size=" + size);
+            out.newLine();
+        } finally {
+            if(out != null)
+                out.close();
+        }
+    }
 
-	        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
-	        String installFullPath = secondaryMountPoint + "/" + installPath;
-	        synchronized(installPath.intern()) {
-	            Script command = new Script(false, "mkdir", _timeout, s_logger);
-	            command.add("-p");
-	            command.add(installFullPath);
+    private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, String installPath, long templateId, String templateUniqueName,
+                                                                 String secStorageUrl, String volumePath, String workerVmName) throws Exception {
 
-	            String result = command.execute();
-	            if(result != null) {
-	                String msg = "unable to prepare template directory: "
-	                    + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
-	        }
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String installFullPath = secondaryMountPoint + "/" + installPath;
+        synchronized(installPath.intern()) {
+            Script command = new Script(false, "mkdir", _timeout, s_logger);
+            command.add("-p");
+            command.add(installFullPath);
 
-	        VirtualMachineMO clonedVm = null;
-	        try {
-	            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
-	            if(volumeDeviceInfo == null) {
-	                String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
+            String result = command.execute();
+            if(result != null) {
+                String msg = "unable to prepare template directory: "
+                        + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
 
-	            if(!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
-	                String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
+        VirtualMachineMO clonedVm = null;
+        try {
+            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
+            if(volumeDeviceInfo == null) {
+                String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-	            // 4 MB is the minimum requirement for VM memory in VMware
-	            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
-	                VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-	            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-	            if(clonedVm == null) {
-	                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
+            if(!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
+                String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-	            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
+            // 4 MB is the minimum requirement for VM memory in VMware
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
+                    VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
+            if(clonedVm == null) {
+                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-	            long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
-	            VmdkProcessor processor = new VmdkProcessor();
-	            Map<String, Object> params = new HashMap<String, Object>();
-	            params.put(StorageLayer.InstanceConfigKey, _storage);
-	            processor.configure("VMDK Processor", params);
-	            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
+            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
 
-	            postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
-	            return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
+            long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
+            VmdkProcessor processor = new VmdkProcessor();
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            processor.configure("VMDK Processor", params);
+            long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
-	        } finally {
-	            if(clonedVm != null) {
-	                clonedVm.detachAllDisks();
-	                clonedVm.destroy();
-	            }
+            postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
 
-	            vmMo.removeSnapshot(templateUniqueName, false);
-	        }
-	    }
+        } finally {
+            if(clonedVm != null) {
+                clonedVm.detachAllDisks();
+                clonedVm.destroy();
+            }
 
-	@Override
-	public Answer createTemplateFromVolume(CopyCommand cmd) {
-		VolumeObjectTO volume = (VolumeObjectTO)cmd.getSrcTO();
-		TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
-		DataStoreTO imageStore = template.getDataStore();
-		
-		if (!(imageStore instanceof NfsTO)) {
-			return new CopyCmdAnswer("unsupported protocol");
-		}
-		NfsTO nfsImageStore = (NfsTO)imageStore;
-		String secondaryStoragePoolURL = nfsImageStore.getUrl();
-		String volumePath = volume.getPath();
+            vmMo.removeSnapshot(templateUniqueName, false);
+        }
+    }
 
-		String details = null;
+    @Override
+    public Answer createTemplateFromVolume(CopyCommand cmd) {
+        VolumeObjectTO volume = (VolumeObjectTO)cmd.getSrcTO();
+        TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
+        DataStoreTO imageStore = template.getDataStore();
 
-		VmwareContext context = hostService.getServiceContext(cmd);
-		try {
-			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+        if (!(imageStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("unsupported protocol");
+        }
+        NfsTO nfsImageStore = (NfsTO)imageStore;
+        String secondaryStoragePoolURL = nfsImageStore.getUrl();
+        String volumePath = volume.getPath();
 
-			VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(volume.getVmName());
-			if (vmMo == null) {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
-				vmMo = hyperHost.findVmOnPeerHyperHost(volume.getVmName());
+        String details = null;
 
-				if(vmMo == null) {
-					String msg = "Unable to find the owner VM for volume operation. vm: " + volume.getVmName();
-					s_logger.error(msg);
-					throw new Exception(msg);
-				}
-			}
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-			Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo,
-					template.getPath(), template.getId(), template.getName(),
-					secondaryStoragePoolURL, volumePath,
-					hostService.getWorkerName(context, cmd, 0));
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(volume.getVmName());
+            if (vmMo == null) {
+                if(s_logger.isDebugEnabled())
+                    s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
+                vmMo = hyperHost.findVmOnPeerHyperHost(volume.getVmName());
 
-			TemplateObjectTO newTemplate = new TemplateObjectTO();
-			newTemplate.setPath(result.first());
-			newTemplate.setFormat(ImageFormat.OVA);
-			newTemplate.setSize(result.third());
-			return new CopyCmdAnswer(newTemplate);
+                if(vmMo == null) {
+                    String msg = "Unable to find the owner VM for volume operation. vm: " + volume.getVmName();
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            }
 
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
+            Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo,
+                    template.getPath(), template.getId(), template.getName(),
+                    secondaryStoragePoolURL, volumePath,
+                    hostService.getWorkerName(context, cmd, 0));
 
-			s_logger.error("Unexpecpted exception ", e);
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(result.first());
+            newTemplate.setFormat(ImageFormat.OVA);
+            newTemplate.setSize(result.third());
+            return new CopyCmdAnswer(newTemplate);
 
-			details = "CreatePrivateTemplateFromVolumeCommand exception: " + e.toString();
-			return new CopyCmdAnswer(details);
-		}
-	}
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                hostService.invalidateServiceContext(context);
+            }
+
+            s_logger.error("Unexpecpted exception ", e);
+
+            details = "CreatePrivateTemplateFromVolumeCommand exception: " + e.toString();
+            return new CopyCmdAnswer(details);
+        }
+    }
 
     private void writeMetaOvaForTemplate(String installFullPath, String ovfFilename, String vmdkFilename,
                                          String templateName, long diskSize) throws Exception {
@@ -927,7 +935,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     uniqeName,
                     nfsSvr.getUrl(), snapshot.getPath(),
                     template.getId()
-                    );
+            );
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -947,134 +955,134 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,
-	        String secStorageUrl, String secStorageDir, String exportName,
-	        String workerVmName) throws Exception {
+                                                String secStorageUrl, String secStorageDir, String exportName,
+                                                String workerVmName) throws Exception {
 
-	        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
-	        String exportPath =  secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
-	        
-	        synchronized(exportPath.intern()) {
-	            if(!new File(exportPath).exists()) {
-	                Script command = new Script(false, "mkdir", _timeout, s_logger);
-	                command.add("-p");
-	                command.add(exportPath);
-	                if(command.execute() != null)
-	                    throw new Exception("unable to prepare snapshot backup directory");
-	            }
-	        }
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String exportPath =  secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
 
-	        VirtualMachineMO clonedVm = null;
-	        try {
+        synchronized(exportPath.intern()) {
+            if(!new File(exportPath).exists()) {
+                Script command = new Script(false, "mkdir", _timeout, s_logger);
+                command.add("-p");
+                command.add(exportPath);
+                if(command.execute() != null)
+                    throw new Exception("unable to prepare snapshot backup directory");
+            }
+        }
 
-	            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
-	            if(volumeDeviceInfo == null) {
-	                String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
+        VirtualMachineMO clonedVm = null;
+        try {
 
-	            // 4 MB is the minimum requirement for VM memory in VMware
-	            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
-	                VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-	            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-	            if(clonedVm == null) {
-	                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
+            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
+            if(volumeDeviceInfo == null) {
+                String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-	            clonedVm.exportVm(exportPath, exportName, false, false);
-	        } finally {
-	            if(clonedVm != null) {
-	                clonedVm.detachAllDisks();
-	                clonedVm.destroy();
-	            }
-	        }
-	    }
+            // 4 MB is the minimum requirement for VM memory in VMware
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
+                    VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
+            if(clonedVm == null) {
+                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-	
-	private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath,
-	        String volumePath, String snapshotUuid, String secStorageUrl,
-	        String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
-
-	        String backupUuid = UUID.randomUUID().toString();
-	        exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl,
-	        		installPath, backupUuid, workerVmName);
-	        return backupUuid + "/" + backupUuid;
-	    }
-	@Override
-	public Answer backupSnapshot(CopyCommand cmd) {
-		SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
-		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcSnapshot.getDataStore();
-		SnapshotObjectTO destSnapshot = (SnapshotObjectTO)cmd.getDestTO();
-		DataStoreTO destStore = destSnapshot.getDataStore();
-		if (!(destStore instanceof NfsTO)) {
-			return new CopyCmdAnswer("unsupported protocol");
-		}
-
-		NfsTO destNfsStore = (NfsTO)destStore;
+            clonedVm.exportVm(exportPath, exportName, false, false);
+        } finally {
+            if(clonedVm != null) {
+                clonedVm.detachAllDisks();
+                clonedVm.destroy();
+            }
+        }
+    }
 
 
-		String secondaryStorageUrl = destNfsStore.getUrl();
-		String snapshotUuid = srcSnapshot.getPath();
-		String prevSnapshotUuid = srcSnapshot.getParentSnapshotPath();
-		String prevBackupUuid = destSnapshot.getParentSnapshotPath();
-		VirtualMachineMO workerVm=null;
-		String workerVMName = null;
-		String volumePath = srcSnapshot.getVolume().getPath();
-		ManagedObjectReference morDs = null;
-		DatastoreMO dsMo=null;
+    private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath,
+                                                    String volumePath, String snapshotUuid, String secStorageUrl,
+                                                    String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
 
-		// By default assume failure
-		String details = null;
-		boolean success = false;
-		String snapshotBackupUuid = null;
+        String backupUuid = UUID.randomUUID().toString();
+        exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl,
+                installPath, backupUuid, workerVmName);
+        return backupUuid + "/" + backupUuid;
+    }
+    @Override
+    public Answer backupSnapshot(CopyCommand cmd) {
+        SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcSnapshot.getDataStore();
+        SnapshotObjectTO destSnapshot = (SnapshotObjectTO)cmd.getDestTO();
+        DataStoreTO destStore = destSnapshot.getDataStore();
+        if (!(destStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("unsupported protocol");
+        }
 
-		VmwareContext context = hostService.getServiceContext(cmd);
-		VirtualMachineMO vmMo = null;
-		String vmName = srcSnapshot.getVmName();
-		try {
-			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-			morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
+        NfsTO destNfsStore = (NfsTO)destStore;
 
-			try {
-				vmMo = hyperHost.findVmOnHyperHost(vmName);
-				if (vmMo == null) {
-					if(s_logger.isDebugEnabled())
-						s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
 
-					vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
-					if(vmMo == null) {
-						dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
+        String secondaryStorageUrl = destNfsStore.getUrl();
+        String snapshotUuid = srcSnapshot.getPath();
+        String prevSnapshotUuid = srcSnapshot.getParentSnapshotPath();
+        String prevBackupUuid = destSnapshot.getParentSnapshotPath();
+        VirtualMachineMO workerVm=null;
+        String workerVMName = null;
+        String volumePath = srcSnapshot.getVolume().getPath();
+        ManagedObjectReference morDs = null;
+        DatastoreMO dsMo=null;
 
-						workerVMName = hostService.getWorkerName(context, cmd, 0);
+        // By default assume failure
+        String details = null;
+        boolean success = false;
+        String snapshotBackupUuid = null;
 
-						// attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
-						if (!hyperHost.createBlankVm(workerVMName, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier.OTHER_GUEST.value(), morDs, false)) {
-							String msg = "Unable to create worker VM to execute BackupSnapshotCommand";
-							s_logger.error(msg);
-							throw new Exception(msg);
-						}
-						vmMo = hyperHost.findVmOnHyperHost(workerVMName);
-						if (vmMo == null) {
-							throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
-						}
-						workerVm = vmMo;
+        VmwareContext context = hostService.getServiceContext(cmd);
+        VirtualMachineMO vmMo = null;
+        String vmName = srcSnapshot.getVmName();
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
 
-						// attach volume to worker VM
-						String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumePath);
-						vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
-					}
-				}
+            try {
+                vmMo = hyperHost.findVmOnHyperHost(vmName);
+                if (vmMo == null) {
+                    if(s_logger.isDebugEnabled())
+                        s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
 
-				if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + srcSnapshot.getName(), false, false)) {
-					throw new Exception("Failed to take snapshot " + srcSnapshot.getName() + " on vm: " + vmName);
-				}
+                    vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                    if(vmMo == null) {
+                        dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 
-				snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
-						hostService.getWorkerName(context, cmd, 1));
+                        workerVMName = hostService.getWorkerName(context, cmd, 0);
 
-				success = (snapshotBackupUuid != null);
+                        // attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
+                        if (!hyperHost.createBlankVm(workerVMName, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier.OTHER_GUEST.value(), morDs, false)) {
+                            String msg = "Unable to create worker VM to execute BackupSnapshotCommand";
+                            s_logger.error(msg);
+                            throw new Exception(msg);
+                        }
+                        vmMo = hyperHost.findVmOnHyperHost(workerVMName);
+                        if (vmMo == null) {
+                            throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
+                        }
+                        workerVm = vmMo;
+
+                        // attach volume to worker VM
+                        String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumePath);
+                        vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
+                    }
+                }
+
+                if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + srcSnapshot.getName(), false, false)) {
+                    throw new Exception("Failed to take snapshot " + srcSnapshot.getName() + " on vm: " + vmName);
+                }
+
+                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
+                        hostService.getWorkerName(context, cmd, 1));
+
+                success = (snapshotBackupUuid != null);
 
                 if (!success) {
                     details = "Failed to backUp the snapshot with uuid: " + snapshotUuid + " to secondary storage.";
@@ -1085,40 +1093,40 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     newSnapshot.setPath(destSnapshot.getPath() + "/" + snapshotBackupUuid);
                     return new CopyCmdAnswer(newSnapshot);
                 }
-			} finally {
-				if(vmMo != null){
-					ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
-					if (snapshotMor != null){
-						vmMo.removeSnapshot(snapshotUuid, false);
-					}
-				}
+            } finally {
+                if(vmMo != null){
+                    ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
+                    if (snapshotMor != null){
+                        vmMo.removeSnapshot(snapshotUuid, false);
+                    }
+                }
 
-				try {
-					if (workerVm != null) {
-						// detach volume and destroy worker vm
-						workerVm.detachAllDisks();
-						workerVm.destroy();
-					}
-				} catch (Throwable e) {
-					s_logger.warn("Failed to destroy worker VM: " + workerVMName);
-				}
-			}
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
+                try {
+                    if (workerVm != null) {
+                        // detach volume and destroy worker vm
+                        workerVm.detachAllDisks();
+                        workerVm.destroy();
+                    }
+                } catch (Throwable e) {
+                    s_logger.warn("Failed to destroy worker VM: " + workerVMName);
+                }
+            }
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                hostService.invalidateServiceContext(context);
+            }
 
-			s_logger.error("Unexpecpted exception ", e);
+            s_logger.error("Unexpecpted exception ", e);
 
-			details = "BackupSnapshotCommand exception: " + e.toString();
-			return new CopyCmdAnswer(details);
-		}
-	}
+            details = "BackupSnapshotCommand exception: " + e.toString();
+            return new CopyCmdAnswer(details);
+        }
+    }
 
-	@Override
-	public Answer attachIso(AttachCommand cmd) {
-		return this.attachIso(cmd.getDisk(), true, cmd.getVmName());
-	}
+    @Override
+    public Answer attachIso(AttachCommand cmd) {
+        return this.attachIso(cmd.getDisk(), true, cmd.getVmName());
+    }
 
     @Override
     public Answer attachVolume(AttachCommand cmd) {
@@ -1131,26 +1139,26 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return attachVolume(cmd, disk, isAttach, isManaged, vmName, iScsiName, storageHost, storagePort, null, null, null, null);
     }
 
-	private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName,
-	        String iScsiName, String storageHost, int storagePort, String initiatorUsername, String initiatorPassword,
-	        String targetUsername, String targetPassword) {
+    private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName,
+                                String iScsiName, String storageHost, int storagePort, String initiatorUsername, String initiatorPassword,
+                                String targetUsername, String targetPassword) {
 
-		VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
-		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
-		try {
-			VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
-			VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
-			if (vmMo == null) {
-				String msg = "Unable to find the VM to execute AttachVolumeCommand, vmName: " + vmName;
-				s_logger.error(msg);
-				throw new Exception(msg);
-			}
+        VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+        try {
+            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "Unable to find the VM to execute AttachVolumeCommand, vmName: " + vmName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
             ManagedObjectReference morDs = null;
 
             if (isAttach && isManaged) {
                 morDs = this.hostService.handleDatastoreAndVmdkAttach(cmd, iScsiName, storageHost, storagePort,
-                            initiatorUsername, initiatorPassword, targetUsername, targetPassword);
+                        initiatorUsername, initiatorPassword, targetUsername, targetPassword);
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
@@ -1162,41 +1170,41 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 throw new Exception(msg);
             }
 
-			DatastoreMO dsMo = new DatastoreMO(this.hostService.getServiceContext(null), morDs);
-			String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), isManaged ? dsMo.getName() : volumeTO.getPath());
+            DatastoreMO dsMo = new DatastoreMO(this.hostService.getServiceContext(null), morDs);
+            String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), isManaged ? dsMo.getName() : volumeTO.getPath());
 
             disk.setVdiUuid(datastoreVolumePath);
 
-			AttachAnswer answer = new AttachAnswer(disk);
-			if (isAttach) {
-				vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
-			} else {
-				vmMo.removeAllSnapshots();
-				vmMo.detachDisk(datastoreVolumePath, false);
+            AttachAnswer answer = new AttachAnswer(disk);
+            if (isAttach) {
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
+            } else {
+                vmMo.removeAllSnapshots();
+                vmMo.detachDisk(datastoreVolumePath, false);
 
                 if (isManaged) {
                     this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
                 }
-			}
+            }
 
-			return answer;
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-				this.hostService.invalidateServiceContext(null);
-			}
+            return answer;
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                this.hostService.invalidateServiceContext(null);
+            }
 
-			String msg = "AttachVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-			s_logger.error(msg, e);
-			return new AttachAnswer(msg);
-		}
-	}
-	
-	  private static String getSecondaryDatastoreUUID(String storeUrl) {
-	        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
-	    }
+            String msg = "AttachVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new AttachAnswer(msg);
+        }
+    }
 
-	public synchronized ManagedObjectReference prepareSecondaryDatastoreOnHost(String storeUrl) throws Exception {
+    private static String getSecondaryDatastoreUUID(String storeUrl) {
+        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+    }
+
+    public synchronized ManagedObjectReference prepareSecondaryDatastoreOnHost(String storeUrl) throws Exception {
         String storeName = getSecondaryDatastoreUUID(storeUrl);
         URI uri = new URI(storeUrl);
 
@@ -1208,96 +1216,96 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         return morDatastore;
     }
-	private Answer attachIso(DiskTO disk, boolean isAttach, String vmName) {
-		
+    private Answer attachIso(DiskTO disk, boolean isAttach, String vmName) {
 
-	        try {
-	            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
-	            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
-	            if (vmMo == null) {
-	                String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + vmName;
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
-	            TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
-	            NfsTO nfsImageStore = (NfsTO)iso.getDataStore();
-	            String storeUrl = null;
-	            if (nfsImageStore != null)
-	                storeUrl = nfsImageStore.getUrl();
-	            if (storeUrl == null) {
-	                if (!iso.getName().equalsIgnoreCase("vmware-tools.iso")) {
-	                    String msg = "ISO store root url is not found in AttachIsoCommand";
-	                    s_logger.error(msg);
-	                    throw new Exception(msg);
-	                } else {
-	                    if (isAttach) {
-	                        vmMo.mountToolsInstaller();
-	                    } else {
-	                        try{
-	                            vmMo.unmountToolsInstaller();
-	                        }catch(Throwable e){
-	                            vmMo.detachIso(null);
-	                        }
-	                    }
 
-	                    return new AttachAnswer(disk);
-	                }
-	            }
+        try {
+            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + vmName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+            NfsTO nfsImageStore = (NfsTO)iso.getDataStore();
+            String storeUrl = null;
+            if (nfsImageStore != null)
+                storeUrl = nfsImageStore.getUrl();
+            if (storeUrl == null) {
+                if (!iso.getName().equalsIgnoreCase("vmware-tools.iso")) {
+                    String msg = "ISO store root url is not found in AttachIsoCommand";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                } else {
+                    if (isAttach) {
+                        vmMo.mountToolsInstaller();
+                    } else {
+                        try{
+                            vmMo.unmountToolsInstaller();
+                        }catch(Throwable e){
+                            vmMo.detachIso(null);
+                        }
+                    }
 
-	            ManagedObjectReference morSecondaryDs = prepareSecondaryDatastoreOnHost(storeUrl);
-	            String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
-	            if (!isoPath.startsWith(storeUrl)) {
-	                assert (false);
-	                String msg = "ISO path does not start with the secondary storage root";
-	                s_logger.error(msg);
-	                throw new Exception(msg);
-	            }
+                    return new AttachAnswer(disk);
+                }
+            }
 
-	            int isoNameStartPos = isoPath.lastIndexOf('/');
-	            String isoFileName = isoPath.substring(isoNameStartPos + 1);
-	            String isoStorePathFromRoot = isoPath.substring(storeUrl.length(), isoNameStartPos);
+            ManagedObjectReference morSecondaryDs = prepareSecondaryDatastoreOnHost(storeUrl);
+            String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
+            if (!isoPath.startsWith(storeUrl)) {
+                assert (false);
+                String msg = "ISO path does not start with the secondary storage root";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-	            // TODO, check if iso is already attached, or if there is a previous
-	            // attachment
-	            DatastoreMO secondaryDsMo = new DatastoreMO(this.hostService.getServiceContext(null), morSecondaryDs);
-	            String storeName = secondaryDsMo.getName();
-	            String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
+            int isoNameStartPos = isoPath.lastIndexOf('/');
+            String isoFileName = isoPath.substring(isoNameStartPos + 1);
+            String isoStorePathFromRoot = isoPath.substring(storeUrl.length(), isoNameStartPos);
 
-	            if (isAttach) {
-	                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false);
-	            } else {
-	                vmMo.detachIso(isoDatastorePath);
-	            }
+            // TODO, check if iso is already attached, or if there is a previous
+            // attachment
+            DatastoreMO secondaryDsMo = new DatastoreMO(this.hostService.getServiceContext(null), morSecondaryDs);
+            String storeName = secondaryDsMo.getName();
+            String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
 
-	            return new AttachAnswer(disk);
-	        } catch (Throwable e) {
-	            if (e instanceof RemoteException) {
-	                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-	                this.hostService.invalidateServiceContext(null);
-	            }
+            if (isAttach) {
+                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false);
+            } else {
+                vmMo.detachIso(isoDatastorePath);
+            }
 
-	            if(isAttach) {
-	                String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
-	                s_logger.error(msg, e);
-	                return new AttachAnswer(msg);
-	            } else {
-	                String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
-	                s_logger.warn(msg, e);
-	                return new AttachAnswer(msg);
-	            }
-	        }
-	}
-	@Override
-	public Answer dettachIso(DettachCommand cmd) {
-		return this.attachIso(cmd.getDisk(), false, cmd.getVmName());
-	}
+            return new AttachAnswer(disk);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                this.hostService.invalidateServiceContext(null);
+            }
 
-	@Override
-	public Answer dettachVolume(DettachCommand cmd) {
-		return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort());
-	}
+            if(isAttach) {
+                String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
+                s_logger.error(msg, e);
+                return new AttachAnswer(msg);
+            } else {
+                String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
+                s_logger.warn(msg, e);
+                return new AttachAnswer(msg);
+            }
+        }
+    }
+    @Override
+    public Answer dettachIso(DettachCommand cmd) {
+        return this.attachIso(cmd.getDisk(), false, cmd.getVmName());
+    }
 
-	protected VirtualMachineMO prepareVolumeHostDummyVm(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {
+    @Override
+    public Answer dettachVolume(DettachCommand cmd) {
+        return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort());
+    }
+
+    protected VirtualMachineMO prepareVolumeHostDummyVm(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {
         assert (hyperHost != null);
 
         VirtualMachineMO vmMo = null;
@@ -1324,78 +1332,78 @@ public class VmwareStorageProcessor implements StorageProcessor {
         vmMo = hyperHost.findVmOnHyperHost(vmName);
         return vmMo;
     }
-	@Override
-	public Answer createVolume(CreateObjectCommand cmd) {
+    @Override
+    public Answer createVolume(CreateObjectCommand cmd) {
 
-		VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
-		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
-       
-		try {
-			VmwareContext context = this.hostService.getServiceContext(null);
-			VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
-			DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+        VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
 
-			ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
-			if (morDatastore == null)
-				throw new Exception("Unable to find datastore in vSphere");
+        try {
+            VmwareContext context = this.hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
+            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
 
-			DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
-			// create data volume
-			VirtualMachineMO vmMo = null;
-			String volumeUuid = UUID.randomUUID().toString().replace("-", "");
-			String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeUuid);
-			String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
-			try {
-				vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
-				if (vmMo == null) {
-					throw new Exception("Unable to create a dummy VM for volume creation");
-				}
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
+            if (morDatastore == null)
+                throw new Exception("Unable to find datastore in vSphere");
 
-				synchronized (this) {
-					// s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-					VmwareHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+            // create data volume
+            VirtualMachineMO vmMo = null;
+            String volumeUuid = UUID.randomUUID().toString().replace("-", "");
+            String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeUuid);
+            String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
+            try {
+                vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
+                if (vmMo == null) {
+                    throw new Exception("Unable to create a dummy VM for volume creation");
+                }
 
-					vmMo.createDisk(volumeDatastorePath, (int) (volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
-					vmMo.detachDisk(volumeDatastorePath, false);
-				}
+                synchronized (this) {
+                    // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
+                    VmwareHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
 
-				VolumeObjectTO newVol = new VolumeObjectTO();
-				newVol.setPath(volumeUuid);
-				newVol.setSize(volume.getSize() / (1024L * 1024L));
-				return new CreateObjectAnswer(newVol);
-			} finally {
-				s_logger.info("Destroy dummy VM after volume creation");
-				vmMo.detachAllDisks();
-				vmMo.destroy();
-			}
+                    vmMo.createDisk(volumeDatastorePath, (int) (volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                    vmMo.detachDisk(volumeDatastorePath, false);
+                }
 
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-				this.hostService.invalidateServiceContext(null);
-			}
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(volumeUuid);
+                newVol.setSize(volume.getSize() / (1024L * 1024L));
+                return new CreateObjectAnswer(newVol);
+            } finally {
+                s_logger.info("Destroy dummy VM after volume creation");
+                vmMo.detachAllDisks();
+                vmMo.destroy();
+            }
 
-			String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-			s_logger.error(msg, e);
-			return new CreateObjectAnswer(e.toString());
-		}
-	}
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                this.hostService.invalidateServiceContext(null);
+            }
 
-	@Override
-	public Answer createSnapshot(CreateObjectCommand cmd) {
-		// snapshot operation (create or destroy) is handled inside BackupSnapshotCommand(), we just fake
-		// a success return here
-		String snapshotUUID = UUID.randomUUID().toString();
-		SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-		newSnapshot.setPath(snapshotUUID);
-		return new CreateObjectAnswer(newSnapshot);
-	}
+            String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new CreateObjectAnswer(e.toString());
+        }
+    }
 
-	@Override
-	public Answer deleteVolume(DeleteCommand cmd) {
-		if (s_logger.isInfoEnabled()) {
-			s_logger.info("Executing resource DestroyCommand: " + _gson.toJson(cmd));
-		}
+    @Override
+    public Answer createSnapshot(CreateObjectCommand cmd) {
+        // snapshot operation (create or destroy) is handled inside BackupSnapshotCommand(), we just fake
+        // a success return here
+        String snapshotUUID = UUID.randomUUID().toString();
+        SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+        newSnapshot.setPath(snapshotUUID);
+        return new CreateObjectAnswer(newSnapshot);
+    }
+
+    @Override
+    public Answer deleteVolume(DeleteCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource DestroyCommand: " + _gson.toJson(cmd));
+        }
 
 		/*
 		 * DestroyCommand content example
@@ -1409,258 +1417,262 @@ public class VmwareStorageProcessor implements StorageProcessor {
 		 * "poolId":0,"deviceId":0 } }
 		 */
 
-		try {
-			VmwareContext context = this.hostService.getServiceContext(null);
-			VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
-			VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
-			PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
+        try {
+            VmwareContext context = this.hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
+            VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
+            PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
 
-			ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
-			if (morDs == null) {
-				String msg = "Unable to find datastore based on volume mount point " + store.getPath();
-				s_logger.error(msg);
-				throw new Exception(msg);
-			}
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
+            if (morDs == null) {
+                String msg = "Unable to find datastore based on volume mount point " + store.getPath();
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-			DatastoreMO dsMo = new DatastoreMO(context, morDs);
+            DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
-			ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
-			ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-			ClusterMO clusterMo = new ClusterMO(context, morCluster);
+            ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+            ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
-			if (vol.getVolumeType() == Volume.Type.ROOT) {
-				String vmName = vol.getVmName();
-				if (vmName != null) {
-					VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
-					if (vmMo != null) {
-						if (s_logger.isInfoEnabled()) {
-							s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
-						}
+            if (vol.getVolumeType() == Volume.Type.ROOT) {
+                String vmName = vol.getVmName();
+                if (vmName != null) {
+                    VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
+                    if (vmMo != null) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
+                        }
 
-						HostMO hostMo = vmMo.getRunningHost();
-						List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
+                        HostMO hostMo = vmMo.getRunningHost();
+                        List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
-						// tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
-						if (this.resource.getVmState(vmMo) != State.Stopped)
-							vmMo.safePowerOff(_shutdown_waitMs);
-						vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
-						vmMo.destroy();
+                        // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
+                        if (this.resource.getVmState(vmMo) != State.Stopped)
+                            vmMo.safePowerOff(_shutdown_waitMs);
+                        vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                        vmMo.destroy();
 
-						for (NetworkDetails netDetails : networks) {
-							if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
-								if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
-									this.resource.cleanupNetwork(hostMo, netDetails);
-								}
-							}
-						}
-					}
+                        for (NetworkDetails netDetails : networks) {
+                            if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
+                                if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
+                                    this.resource.cleanupNetwork(hostMo, netDetails);
+                                }
+                            }
+                        }
+                    }
 
-					if (s_logger.isInfoEnabled())
-						s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
-					dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
+                    if (s_logger.isInfoEnabled())
+                        s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
+                    dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
 
-					// root volume may be created via linked-clone, delete the delta disk as well
-					if (_fullCloneFlag) {
-						if (s_logger.isInfoEnabled()) {
-							s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
-						}
-						dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
-					} else {
-						if (s_logger.isInfoEnabled()) {
-							s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-delta.vmdk");
-						}
-						dsMo.deleteFile(vol.getPath() + "-delta.vmdk", morDc, true);
-					}
-					return new Answer(cmd, true, "Success");
-				}
+                    // root volume may be created via linked-clone, delete the delta disk as well
+                    if (_fullCloneFlag) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
+                        }
+                        dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
+                    } else {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-delta.vmdk");
+                        }
+                        dsMo.deleteFile(vol.getPath() + "-delta.vmdk", morDc, true);
+                    }
+                    return new Answer(cmd, true, "Success");
+                }
 
-				if (s_logger.isInfoEnabled()) {
-					s_logger.info("Destroy root volume directly from datastore");
-				}
-			} else {
-				// evitTemplate will be converted into DestroyCommand, test if we are running in this case
-				VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
-				if (vmMo != null) {
-					if (s_logger.isInfoEnabled())
-						s_logger.info("Destroy template volume " + vol.getPath());
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Destroy root volume directly from datastore");
+                }
+            } else {
+                // evitTemplate will be converted into DestroyCommand, test if we are running in this case
+                VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
+                if (vmMo != null) {
+                    if (s_logger.isInfoEnabled())
+                        s_logger.info("Destroy template volume " + vol.getPath());
 
-					vmMo.destroy();
-					return new Answer(cmd, true, "Success");
-				}
-			}
+                    vmMo.destroy();
+                    return new Answer(cmd, true, "Success");
+                }
+            }
 
-			String chainInfo = vol.getChainInfo();
-			if (chainInfo != null && !chainInfo.isEmpty()) {
-				s_logger.info("Destroy volume by chain info: " + chainInfo);
-				String[] diskChain = _gson.fromJson(chainInfo, String[].class);
+            String chainInfo = vol.getChainInfo();
+            if (chainInfo != null && !chainInfo.isEmpty()) {
+                s_logger.info("Destroy volume by chain info: " + chainInfo);
+                String[] diskChain = _gson.fromJson(chainInfo, String[].class);
 
-				if (diskChain != null && diskChain.length > 0) {
-					for (String backingName : diskChain) {
-						if (s_logger.isInfoEnabled()) {
-							s_logger.info("Delete volume backing file: " + backingName);
-						}
-						dsMo.deleteFile(backingName, morDc, true);
-					}
-				} else {
-					if (s_logger.isInfoEnabled()) {
-						s_logger.info("Empty disk chain info, fall back to try to delete by original backing file name");
-					}
-					dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
+                if (diskChain != null && diskChain.length > 0) {
+                    for (String backingName : diskChain) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Delete volume backing file: " + backingName);
+                        }
+                        dsMo.deleteFile(backingName, morDc, true);
+                    }
+                } else {
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Empty disk chain info, fall back to try to delete by original backing file name");
+                    }
+                    dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
 
-					if (s_logger.isInfoEnabled()) {
-						s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
-					}
-					dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
-				}
-			} else {
-				if (s_logger.isInfoEnabled()) {
-					s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
-				}
-				dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
+                    }
+                    dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
+                }
+            } else {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
+                }
+                dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
 
-				if (s_logger.isInfoEnabled()) {
-					s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
-				}
-				dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
-			}
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
+                }
+                dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
+            }
 
-			return new Answer(cmd, true, "Success");
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-				this.hostService.invalidateServiceContext(null);
-			}
+            return new Answer(cmd, true, "Success");
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                this.hostService.invalidateServiceContext(null);
+            }
 
-			String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-			s_logger.error(msg, e);
-			return new Answer(cmd, false, msg);
-		}
-	}
-	
-	 private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
-		        String secStorageUrl, String secStorageDir, String backupName) throws Exception {
+            String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+    }
 
-		        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
-		        String srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
-		            + backupName + "." + ImageFormat.OVA.getFileExtension();
-		        String snapshotDir = "";
-		        if (backupName.contains("/")){
-		            snapshotDir = backupName.split("/")[0];
-		        }
+    private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
+                                             String secStorageUrl, String secStorageDir, String backupName) throws Exception {
 
-		        File ovafile = new File(srcOVAFileName);
-		        String srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
-		                + backupName + ".ovf";
-		        File ovfFile = new File(srcOVFFileName);
-		        // String srcFileName = getOVFFilePath(srcOVAFileName);
-		        if (!ovfFile.exists()) {
-		            srcOVFFileName = getOVFFilePath(srcOVAFileName);
-		            if(srcOVFFileName == null && ovafile.exists() ) {  // volss: ova file exists; o/w can't do tar
-		                Script command = new Script("tar", 0, s_logger);
-		                command.add("--no-same-owner");
-		                command.add("-xf", srcOVAFileName);
-		                command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir + "/" + snapshotDir);
-		                s_logger.info("Executing command: " + command.toString());
-		                String result = command.execute();
-		                if(result != null) {
-		                        String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
-		                        s_logger.error(msg);
-		                        throw new Exception(msg);
-		                }
-		            } else {
-		               String msg = "Unable to find snapshot OVA file at: " + srcOVAFileName;
-		               s_logger.error(msg);
-		               throw new Exception(msg);
-		           }
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String srcOVAFileName = null;
+        String srcOVFFileName = null;
 
-		           srcOVFFileName = getOVFFilePath(srcOVAFileName);
-		        }
-		        if(srcOVFFileName == null) {
-		            String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
-		            s_logger.error(msg);
-		            throw new Exception(msg);
-		        }
+        srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+                + backupName + "." + ImageFormat.OVA.getFileExtension();
+        srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+                + backupName + ".ovf";
 
-		        VirtualMachineMO clonedVm = null;
-		        try {
-		            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
-		            clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
-		            if(clonedVm == null)
-		                throw new Exception("Unable to create container VM for volume creation");
+        String snapshotDir = "";
+        if (backupName.contains("/")){
+            snapshotDir = backupName.split("/")[0];
+        }
 
-		            clonedVm.moveAllVmDiskFiles(primaryDsMo, "", false);
-		            clonedVm.detachAllDisks();
-		            return _storage.getSize(srcOVFFileName);
-		        } finally {
-		            if(clonedVm != null) {
-		                clonedVm.detachAllDisks();
-		                clonedVm.destroy();
-		            }
-		        }
-		    }
+        File ovafile = new File(srcOVAFileName);
 
-	@Override
-	public Answer createVolumeFromSnapshot(CopyCommand cmd) {
-		DataTO srcData = cmd.getSrcTO();
-		SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
-		DataTO destData = cmd.getDestTO();
-		PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
-		DataStoreTO imageStore = srcData.getDataStore();
+        File ovfFile = new File(srcOVFFileName);
+        // String srcFileName = getOVFFilePath(srcOVAFileName);
+        if (!ovfFile.exists()) {
+            srcOVFFileName = getOVFFilePath(srcOVAFileName);
+            if(srcOVFFileName == null && ovafile.exists() ) {  // volss: ova file exists; o/w can't do tar
+                Script command = new Script("tar", 0, s_logger);
+                command.add("--no-same-owner");
+                command.add("-xf", srcOVAFileName);
+                command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir + "/" + snapshotDir);
+                s_logger.info("Executing command: " + command.toString());
+                String result = command.execute();
+                if(result != null) {
+                    String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+                srcOVFFileName = getOVFFilePath(srcOVAFileName);
+            } else if (srcOVFFileName == null){
+                String msg = "Unable to find snapshot OVA file at: " + srcOVAFileName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
+        if(srcOVFFileName == null) {
+            String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        VirtualMachineMO clonedVm = null;
+        try {
+            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
+            clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
+            if(clonedVm == null)
+                throw new Exception("Unable to create container VM for volume creation");
+
+            clonedVm.moveAllVmDiskFiles(primaryDsMo, "", false);
+            clonedVm.detachAllDisks();
+            return _storage.getSize(srcOVFFileName);
+        } finally {
+            if(clonedVm != null) {
+                clonedVm.detachAllDisks();
+                clonedVm.destroy();
+            }
+        }
+    }
+
+    @Override
+    public Answer createVolumeFromSnapshot(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
+        DataTO destData = cmd.getDestTO();
+        PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
+        DataStoreTO imageStore = srcData.getDataStore();
 
 
-		if (!(imageStore instanceof NfsTO)) {
-			return new CopyCmdAnswer("unsupported protocol");
-		}
+        if (!(imageStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("unsupported protocol");
+        }
 
-		NfsTO nfsImageStore = (NfsTO)imageStore;
-		String primaryStorageNameLabel = pool.getUuid();
-	
+        NfsTO nfsImageStore = (NfsTO)imageStore;
+        String primaryStorageNameLabel = pool.getUuid();
+
         String secondaryStorageUrl = nfsImageStore.getUrl();
-		String backedUpSnapshotUuid = snapshot.getPath();
-		int index = backedUpSnapshotUuid.lastIndexOf(File.separator);
-		String backupPath = backedUpSnapshotUuid.substring(0, index);
-		backedUpSnapshotUuid = backedUpSnapshotUuid.substring(index + 1);
-		String details = null;
-		String newVolumeName = UUID.randomUUID().toString().replaceAll("-", "");
+        String backedUpSnapshotUuid = snapshot.getPath();
+        int index = backedUpSnapshotUuid.lastIndexOf(File.separator);
+        String backupPath = backedUpSnapshotUuid.substring(0, index);
+        backedUpSnapshotUuid = backedUpSnapshotUuid.substring(index + 1);
+        String details = null;
+        String newVolumeName = UUID.randomUUID().toString().replaceAll("-", "");
 
-		VmwareContext context = hostService.getServiceContext(cmd);
-		try {
-			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-			ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
-					primaryStorageNameLabel);
-			if (morPrimaryDs == null) {
-				String msg = "Unable to find datastore: " + primaryStorageNameLabel;
-				s_logger.error(msg);
-				throw new Exception(msg);
-			}
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
+                    primaryStorageNameLabel);
+            if (morPrimaryDs == null) {
+                String msg = "Unable to find datastore: " + primaryStorageNameLabel;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
 
-			DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-			Long size = restoreVolumeFromSecStorage(hyperHost, primaryDsMo,
-					newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
+            DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
+            Long size = restoreVolumeFromSecStorage(hyperHost, primaryDsMo,
+                    newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
 
-			VolumeObjectTO newVol = new VolumeObjectTO();
-			newVol.setPath(newVolumeName);
-			newVol.setSize(size);
-			return new CopyCmdAnswer(newVol);
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(newVolumeName);
+            newVol.setSize(size);
+            return new CopyCmdAnswer(newVol);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                hostService.invalidateServiceContext(context);
+            }
 
-			s_logger.error("Unexpecpted exception ", e);
-			details = "CreateVolumeFromSnapshotCommand exception: " + e.toString();
-		}
-		return new CopyCmdAnswer(details);
-	}
+            s_logger.error("Unexpecpted exception ", e);
+            details = "CreateVolumeFromSnapshotCommand exception: " + e.toString();
+        }
+        return new CopyCmdAnswer(details);
+    }
 
-	@Override
-	public Answer deleteSnapshot(DeleteCommand cmd) {
-		SnapshotObjectTO snapshot = (SnapshotObjectTO)cmd.getData();
-		DataStoreTO store = snapshot.getDataStore();
-		if (store.getRole() == DataStoreRole.Primary) {
-			return new Answer(cmd);
-		} else {
-			return new Answer(cmd, false, "unsupported command");
-		}
-	}
+    @Override
+    public Answer deleteSnapshot(DeleteCommand cmd) {
+        SnapshotObjectTO snapshot = (SnapshotObjectTO)cmd.getData();
+        DataStoreTO store = snapshot.getDataStore();
+        if (store.getRole() == DataStoreRole.Primary) {
+            return new Answer(cmd);
+        } else {
+            return new Answer(cmd, false, "unsupported command");
+        }
+    }
 }
