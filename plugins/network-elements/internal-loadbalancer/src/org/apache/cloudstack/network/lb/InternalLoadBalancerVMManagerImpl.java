@@ -454,7 +454,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
                 _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork),
                 _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(), guestNetwork));
 
-        NetworkOffering offering =_networkOfferingDao.findById(guestNetworkId);
+        NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn= null;
         if (offering.getConcurrentConnections() == null) {
             maxconn =  _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
