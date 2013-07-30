@@ -18,6 +18,7 @@ package com.cloud.hypervisor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -73,15 +74,22 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         NicVO nicVO = _nicDao.findById(profile.getId());
-        to.setUuid(nicVO.getUuid());
-        //check whether the this nic has secondary ip addresses set
-        //set nic secondary ip address in NicTO which are used for security group
-        // configuration. Use full when vm stop/start
-        List <String> secIps = null;
-        if (nicVO.getSecondaryIp()) {
-            secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
+        if(nicVO != null){
+            to.setUuid(nicVO.getUuid());
+            //check whether the this nic has secondary ip addresses set
+            //set nic secondary ip address in NicTO which are used for security group
+            // configuration. Use full when vm stop/start
+            List <String> secIps = null;
+            if (nicVO.getSecondaryIp()) {
+                secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
+            }
+            to.setNicSecIps(secIps);
+        } else {
+            //Workaround for dynamically created nics
+            //FixMe: uuid and secondary IPs can be made part of nic profile
+            to.setUuid(UUID.randomUUID().toString());
         }
-        to.setNicSecIps(secIps);
+
         return to;
     }
 

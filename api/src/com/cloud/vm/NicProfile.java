@@ -66,6 +66,10 @@ public class NicProfile implements InternalIdentity {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDns2() {
         return dns2;
     }

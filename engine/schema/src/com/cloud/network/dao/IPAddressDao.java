@@ -80,4 +80,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     boolean deletePublicIPRange(long vlanDbId) ;
 
     void lockRange(long vlandbId);
+
+    List<IPAddressVO> listByAssociatedVmId(long vmId);
 }

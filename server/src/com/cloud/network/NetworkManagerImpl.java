@@ -2168,6 +2168,80 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
+    /*
+    Prepare All Nics for migration including the nics dynamically created and not stored in DB
+    This is a temporary workaround work KVM migration
+    Once clean fix is added by stored dynamically nics is DB, this workaround won't be needed
+     */
+    @Override
+    public void prepareAllNicsForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest) {
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        Long guestNetworkId = null;
+        for (NicVO nic : nics) {
+            NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            if(network.getTrafficType().equals(TrafficType.Guest) && network.getGuestType().equals(GuestType.Isolated)){
+                guestNetworkId = network.getId();
+            }
+            Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+
+            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+                    _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+            if(guru instanceof NetworkMigrationResponder){
+                if(!((NetworkMigrationResponder) guru).prepareMigration(profile, network, vm, dest, context)){
+                    s_logger.error("NetworkGuru "+guru+" prepareForMigration failed."); // XXX: Transaction error
+                }
+            }
+            for (NetworkElement element : _networkElements) {
+                if(element instanceof NetworkMigrationResponder){
+                    if(!((NetworkMigrationResponder) element).prepareMigration(profile, network, vm, dest, context)){
+                        s_logger.error("NetworkElement "+element+" prepareForMigration failed."); // XXX: Transaction error
+                    }
+                }
+            }
+            guru.updateNicProfile(profile, network);
+            vm.addNic(profile);
+        }
+
+        List<String> addedURIs = new ArrayList<String>();
+        if(guestNetworkId != null){
+            List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(guestNetworkId, null);
+            for (IPAddressVO userIp : publicIps){
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                URI broadcastUri = BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag());
+                long ntwkId = publicIp.getNetworkId();
+                Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ntwkId, vm.getId(),
+                        broadcastUri.toString());
+                if(nic == null && !addedURIs.contains(broadcastUri.toString())){
+                    //Nic details are not available in DB
+                    //Create nic profile for migration
+                    s_logger.debug("Creating nic profile for migration. BroadcastUri: "+broadcastUri.toString()+" NetworkId: "+ntwkId+" Vm: "+vm.getId());
+                    NetworkVO network = _networksDao.findById(ntwkId);
+                    Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+                    NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+                    NicProfile profile = new NicProfile();
+                    profile.setDeviceId(255); //dummyId
+                    profile.setIp4Address(userIp.getAddress().toString());
+                    profile.setNetmask(publicIp.getNetmask());
+                    profile.setGateway(publicIp.getGateway());
+                    profile.setMacAddress(publicIp.getMacAddress());
+                    profile.setBroadcastType(network.getBroadcastDomainType());
+                    profile.setTrafficType(network.getTrafficType());
+                    profile.setBroadcastUri(broadcastUri);
+                    profile.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
+                    profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
+                    profile.setName(_networkModel.getNetworkTag(vm.getHypervisorType(), network));
+
+                    guru.updateNicProfile(profile, network);
+                    vm.addNic(profile);
+                    addedURIs.add(broadcastUri.toString());
+                }
+            }
+        }
+    }
+
+
     private NicProfile findNicProfileById(VirtualMachineProfile<? extends VMInstanceVO> vm, long id){
         for(NicProfile nic: vm.getNics()){
             if(nic.getId() == id){
@@ -4368,7 +4442,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         return profiles;
     }
-
 
     @Override
     public int getNetworkLockTimeout() {

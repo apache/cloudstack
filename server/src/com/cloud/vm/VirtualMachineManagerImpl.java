@@ -1521,12 +1521,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         VirtualMachineProfile<VMInstanceVO> vmSrc = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+
         for(NicProfile nic: _networkMgr.getNicProfiles(vm)){
             vmSrc.addNic(nic);
         }
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
-        _networkMgr.prepareNicForMigration(profile, dest);
+
+        if(vm.getType().equals(VirtualMachine.Type.DomainRouter) && vm.getHypervisorType().equals(HypervisorType.KVM)){
+            //Include nics hot plugged and not stored in DB
+            _networkMgr.prepareAllNicsForMigration(profile, dest);
+        } else {
+            _networkMgr.prepareNicForMigration(profile, dest);
+        }
         volumeMgr.prepareForMigration(profile, dest);
 
         VirtualMachineTO to = toVmTO(profile);

@@ -1413,11 +1413,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public void prepareAllNicsForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 
-
-
-
-	@Override
+    @Override
 	public void prepareNicForMigration(
 			VirtualMachineProfile<? extends VMInstanceVO> vm,
 			DeployDestination dest) {
