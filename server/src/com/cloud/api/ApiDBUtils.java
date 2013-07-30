@@ -25,21 +25,6 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.network.vpc.VpcGatewayVO;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcOffering;
-import com.cloud.network.vpc.VpcProvisioningService;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.NetworkACLDao;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -53,8 +38,8 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -150,8 +135,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.dao.AccountGuestVlanMapDao;
-import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -177,6 +160,8 @@ import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -201,10 +186,23 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcProvisioningService;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -214,6 +212,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -235,12 +234,10 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -251,15 +248,14 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPairVO;
@@ -406,6 +402,8 @@ public class ApiDBUtils {
     static GlobalLoadBalancingRulesService _gslbService;
     static NetworkACLDao _networkACLDao;
     static ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    static AccountService _accountService;
+    
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -516,6 +514,7 @@ public class ApiDBUtils {
     @Inject private GlobalLoadBalancingRulesService gslbService;
     @Inject private NetworkACLDao networkACLDao;
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject private AccountService accountService;
 
     @PostConstruct
     void init() {
@@ -626,6 +625,7 @@ public class ApiDBUtils {
         _statsCollector = StatsCollector.getInstance();
         _networkACLDao = networkACLDao;
         _serviceOfferingDetailsDao = serviceOfferingDetailsDao;
+        _accountService = accountService;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1692,5 +1692,9 @@ public class ApiDBUtils {
     public static Map<String, String> getServiceOfferingDetails(long serviceOfferingId) {
         Map<String, String> details = _serviceOfferingDetailsDao.findDetails(serviceOfferingId);
         return details.isEmpty() ? null : details;
+    }
+    
+    public static boolean isAdmin(Account account) {
+        return _accountService.isAdmin(account.getType());
     }
 }
