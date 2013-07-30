@@ -563,7 +563,8 @@
                                 var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                                 if (items != null && items.length > 0) {
                                     args.response.success({
-                                        data: items[0]
+                                        data: items[0],
+                                        actionFilter: vnmcActionFilter
                                     });
                                 } else {
                                     args.response.success({
