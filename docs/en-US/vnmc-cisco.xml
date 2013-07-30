@@ -20,16 +20,16 @@
 -->
 <section id="vnmc-cisco">
   <title>External Guest Firewall Integration for Cisco VNMC (Optional)</title>
-  <para>Cisco Virtual Network Management Center (VNMC) provides centralized multi-device and
-    policy management for Cisco Network Virtual Services. When Cisco VNMC is integrated with
-    ASA 1000v Cloud Firewall and Cisco Nexus 1000v dvSwitch in &PRODUCT; you will be able to: </para>
+  <para>Cisco Virtual Network Management Center (VNMC) provides centralized multi-device and policy
+    management for Cisco Network Virtual Services. When Cisco VNMC is integrated with ASA 1000v
+    Cloud Firewall and Cisco Nexus 1000v dvSwitch in &PRODUCT; you will be able to: </para>
   <itemizedlist>
     <listitem>
       <para>Configure Cisco ASA 1000v Firewalls</para>
     </listitem>
     <listitem>
-      <para>Create and apply security profiles that contain ACL policy sets for both ingress
-        and egress traffic, connection timeout, NAT policy sets, and TCP intercept</para>
+      <para>Create and apply security profiles that contain ACL policy sets for both ingress and
+        egress traffic, connection timeout, NAT policy sets, and TCP intercept</para>
     </listitem>
   </itemizedlist>
   <para>&PRODUCT; supports Cisco VNMC on Cisco Nexus 1000v dvSwich-enabled VMware
@@ -46,22 +46,21 @@
           addCiscoAsa1000vResource. You can configure one per guest network.</para>
       </listitem>
       <listitem>
-        <para>A Cloud administrator creates an Isolated guest network offering by using ASA
-          1000v as the service provider for Firewall, Source NAT, Port Forwarding, and Static
-          NAT. </para>
+        <para>A Cloud administrator creates an Isolated guest network offering by using ASA 1000v as
+          the service provider for Firewall, Source NAT, Port Forwarding, and Static NAT. </para>
       </listitem>
     </itemizedlist>
   </section>
   <section id="deploy-vnmc">
-    <title>Cisco ASA 1000v Firewall, Cisco Nexus 1000v dvSwitch, and Cisco VNMC
+    <title>Using Cisco ASA 1000v Firewall, Cisco Nexus 1000v dvSwitch, and Cisco VNMC in a
       Deployment</title>
     <section id="prereq-asa">
       <title>Prerequisites</title>
       <itemizedlist>
         <listitem>
-          <para>Ensure that Cisco ASA 1000v appliance is set up externally and then registered
-            with &PRODUCT; by using the admin API. Typically, you can create a pool of ASA
-            1000v appliances and register them with &PRODUCT;.</para>
+          <para>Ensure that Cisco ASA 1000v appliance is set up externally and then registered with
+            &PRODUCT; by using the admin API. Typically, you can create a pool of ASA 1000v
+            appliances and register them with &PRODUCT;.</para>
           <para>Specify the following to set up a Cisco ASA 1000v instance:</para>
           <itemizedlist>
             <listitem>
@@ -71,17 +70,17 @@
               <para>Standalone or HA mode</para>
             </listitem>
             <listitem>
-              <para>Port profiles for the Management and HA network interfaces. This need to
-                be pre-created on Nexus dvSwitch switch.</para>
+              <para>Port profiles for the Management and HA network interfaces. This need to be
+                pre-created on Nexus dvSwitch switch.</para>
             </listitem>
             <listitem>
-              <para>Port profiles for both internal and external network interfaces. This need
-                to be pre-created on Nexus dvSwitch switch, and to be updated appropriately
-                while implementing guest networks.</para>
+              <para>Port profiles for both internal and external network interfaces. This need to be
+                pre-created on Nexus dvSwitch switch, and to be updated appropriately while
+                implementing guest networks.</para>
             </listitem>
             <listitem>
-              <para>The Management IP for Cisco ASA 1000v appliance. Specify the gateway such
-                that the VNMC IP is reachable.</para>
+              <para>The Management IP for Cisco ASA 1000v appliance. Specify the gateway such that
+                the VNMC IP is reachable.</para>
             </listitem>
             <listitem>
               <para>Administrator credentials</para>
@@ -99,10 +98,20 @@
             appliances.</para>
         </listitem>
         <listitem>
-          <para>Ensure that Cisco Nexus 1000v appliance is set up and configured in &PRODUCT;
-            when adding VMware cluster.</para>
+          <para>Ensure that Cisco Nexus 1000v appliance is set up and configured in &PRODUCT; when
+            adding VMware cluster.</para>
         </listitem>
       </itemizedlist>
+    </section>
+    <section id="notes-vnmc">
+      <title>Guidelines</title>
+      <para>When a guest network is created with Cisco VNMC firewall provider, an additional public
+        IP is acquired along with the Source NAT IP. The Source NAT IP is used for the ASA outside
+        interface, whereas the addition IP is used to workaround an ASA limitation. Ensure that this
+        additional public IP is not released. You can identify this IP as soon as the network is in
+        implemented state and before acquiring any further public IPs. The additional IP is the one
+        that is not marked as Source NAT. You can find the IP used for the ASA outside interface by
+        looking at the Cisco VNMC used in your guest network.</para>
     </section>
     <section id="how-to-asa">
       <title>Using Cisco ASA 1000v Services</title>
@@ -120,11 +129,13 @@
           <para>See <xref linkend="add-asa"/>.</para>
         </listitem>
         <listitem>
-          <para>Create a Network Offering and use Cisco VNMC as the service provider for desired services.</para>
+          <para>Create a Network Offering and use Cisco VNMC as the service provider for desired
+            services.</para>
           <para>See <xref linkend="asa-offering"/>.</para>
         </listitem>
         <listitem>
-          <para>Create an Isolated Guest Network by using the network offering you just created.</para>
+          <para>Create an Isolated Guest Network by using the network offering you just
+            created.</para>
         </listitem>
       </orderedlist>
     </section>
@@ -164,8 +175,8 @@
             <para>Host: The IP address of the VNMC instance.</para>
           </listitem>
           <listitem>
-            <para>Username: The user name of the account on the VNMC instance that &PRODUCT;
-              should use.</para>
+            <para>Username: The user name of the account on the VNMC instance that &PRODUCT; should
+              use.</para>
           </listitem>
           <listitem>
             <para>Password: The password of the account.</para>
@@ -209,16 +220,15 @@
         <para>Click the Add CiscoASA1000v Resource and provide the following:</para>
         <itemizedlist>
           <listitem>
-            <para>Host: The management IP address of the ASA 1000v instance. The IP address is
-              used to connect to ASA 1000V.</para>
+            <para>Host: The management IP address of the ASA 1000v instance. The IP address is used
+              to connect to ASA 1000V.</para>
           </listitem>
           <listitem>
-            <para>Inside Port Profile: The Inside Port Profile configuration on Cisco
-              Nexus1000v dvSwitch.</para>
+            <para>Inside Port Profile: The Inside Port Profile configuration on Cisco Nexus1000v
+              dvSwitch.</para>
           </listitem>
           <listitem>
-            <para>Cluster: The VMware cluster to which you are adding the ASA 1000v
-              instance.</para>
+            <para>Cluster: The VMware cluster to which you are adding the ASA 1000v instance.</para>
             <para>Ensure that the cluster is Cisco Nexus 1000v dvSwitch enabled.</para>
           </listitem>
         </itemizedlist>
@@ -230,8 +240,7 @@
   </section>
   <section id="asa-offering">
     <title>Creating a Network Offering Using Cisco ASA 1000v</title>
-    <para>To have Cisco ASA 1000v support for a guest network, create a network offering as
-      follows: </para>
+    <para>To have Cisco ASA 1000v support for a guest network, create a network offering as follows: </para>
     <orderedlist>
       <listitem>
         <para>Log in to the &PRODUCT; UI as a user or admin.</para>
@@ -250,51 +259,50 @@
               offering.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Description</emphasis>: A short description of the
-              offering that can be displayed to users.</para>
+            <para><emphasis role="bold">Description</emphasis>: A short description of the offering
+              that can be displayed to users.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Network Rate</emphasis>: Allowed data transfer rate in
-              MB per second.</para>
+            <para><emphasis role="bold">Network Rate</emphasis>: Allowed data transfer rate in MB
+              per second.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Traffic Type</emphasis>: The type of network traffic
-              that will be carried on the network.</para>
+            <para><emphasis role="bold">Traffic Type</emphasis>: The type of network traffic that
+              will be carried on the network.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Guest Type</emphasis>: Choose whether the guest
-              network is isolated or shared.</para>
+            <para><emphasis role="bold">Guest Type</emphasis>: Choose whether the guest network is
+              isolated or shared.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Persistent</emphasis>: Indicate whether the guest
-              network is persistent or not. The network that you can provision without having
-              to deploy a VM on it is termed persistent network. </para>
+            <para><emphasis role="bold">Persistent</emphasis>: Indicate whether the guest network is
+              persistent or not. The network that you can provision without having to deploy a VM on
+              it is termed persistent network. </para>
           </listitem>
           <listitem>
             <para><emphasis role="bold">VPC</emphasis>: This option indicate whether the guest
-              network is Virtual Private Cloud-enabled. A Virtual Private Cloud (VPC) is a
-              private, isolated part of &PRODUCT;. A VPC can have its own virtual network
-              topology that resembles a traditional physical network. For more information on
-              VPCs, see <xref linkend="vpc"/>.</para>
+              network is Virtual Private Cloud-enabled. A Virtual Private Cloud (VPC) is a private,
+              isolated part of &PRODUCT;. A VPC can have its own virtual network topology that
+              resembles a traditional physical network. For more information on VPCs, see <xref
+                linkend="vpc"/>.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Specify VLAN</emphasis>: (Isolated guest networks
-              only) Indicate whether a VLAN should be specified when this offering is
-              used.</para>
+            <para><emphasis role="bold">Specify VLAN</emphasis>: (Isolated guest networks only)
+              Indicate whether a VLAN should be specified when this offering is used.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Supported Services</emphasis>: Use Cisco VNMC as the
-              service provider for Firewall, Source NAT, Port Forwarding, and Static NAT to
-              create an Isolated guest network offering.</para>
+            <para><emphasis role="bold">Supported Services</emphasis>: Use Cisco VNMC as the service
+              provider for Firewall, Source NAT, Port Forwarding, and Static NAT to create an
+              Isolated guest network offering.</para>
           </listitem>
           <listitem>
             <para><emphasis role="bold">System Offering</emphasis>: Choose the system service
               offering that you want virtual routers to use in this network.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Conserve mode</emphasis>: Indicate whether to use
-              conserve mode. In this mode, network resources are allocated only when the first
-              virtual machine starts in the network.</para>
+            <para><emphasis role="bold">Conserve mode</emphasis>: Indicate whether to use conserve
+              mode. In this mode, network resources are allocated only when the first virtual
+              machine starts in the network.</para>
           </listitem>
         </itemizedlist>
       </listitem>
@@ -303,4 +311,5 @@
         <para>The network offering is created.</para>
       </listitem>
     </orderedlist>
-  </section></section>
+  </section>
+</section>
