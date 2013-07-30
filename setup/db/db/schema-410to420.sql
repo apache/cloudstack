@@ -2191,6 +2191,7 @@ ALTER TABLE `cloud`.`usage_event` ADD COLUMN `virtual_size` bigint unsigned;
 ALTER TABLE `cloud_usage`.`usage_event` ADD COLUMN `virtual_size` bigint unsigned;
 ALTER TABLE `cloud_usage`.`usage_storage` ADD COLUMN `virtual_size` bigint unsigned;
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `virtual_size` bigint unsigned;
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.max.conn', '4096', 'Load Balancer(haproxy) maximum number of concurrent connections(global max)');
 
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vmsnapshot`;
@@ -2208,3 +2209,5 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'kvm.ssh.to.agent', 'true', 'Specify whether or not the management server is allowed to SSH into KVM Agents');
