@@ -52,6 +52,7 @@ import com.cloud.upgrade.dao.Upgrade227to228;
 import com.cloud.upgrade.dao.Upgrade228to229;
 import com.cloud.upgrade.dao.Upgrade229to2210;
 import com.cloud.upgrade.dao.Upgrade301to302;
+import com.cloud.upgrade.dao.Upgrade302to303;
 import com.cloud.upgrade.dao.Upgrade302to40;
 import com.cloud.upgrade.dao.Upgrade303to304;
 import com.cloud.upgrade.dao.Upgrade304to305;
@@ -156,6 +157,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         _upgradeMap.put("2.2.14", new DbUpgrade[] { new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
                 new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420() });
+        
+        
 
         _upgradeMap.put("3.0.0", new DbUpgrade[] { new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420() });
 
@@ -171,7 +174,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         _upgradeMap.put("4.1.0", new DbUpgrade[] { new Upgrade410to420() });
         
-        //CP Upgraes
+        //CP Upgrades
         _upgradeMap.put("3.0.3", new DbUpgrade[] { new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
         
         _upgradeMap.put("3.0.4", new DbUpgrade[] { new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
@@ -181,6 +184,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("3.0.6", new DbUpgrade[] { new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
         
         _upgradeMap.put("3.0.7", new DbUpgrade[] { new Upgrade307to410(), new Upgrade410to420() });
+        
+        _upgradeMap.put("2.2.15", new DbUpgrade[] { new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
+                new Upgrade302to303(), new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(),  new Upgrade306to307(),new Upgrade307to410(), new Upgrade410to420()});
+        
+        _upgradeMap.put("2.2.16", new DbUpgrade[] { new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
+                new Upgrade302to303(), new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(),  new Upgrade306to307(),new Upgrade307to410(), new Upgrade410to420()});
     }
 
     protected void runScript(Connection conn, File file) {
