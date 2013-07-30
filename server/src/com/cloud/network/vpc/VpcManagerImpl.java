@@ -314,8 +314,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         if (!sourceNatSvc) {
-            s_logger.debug("Automatically adding source nat service to the list of VPC services");
-            svcProviderMap.put(Service.SourceNat, defaultProviders);
+            throw new InvalidParameterValueException("SourceNat service is required by VPC offering");
         }
         
         if (!firewallSvs) {
