@@ -172,7 +172,6 @@ var	keyboardTables = [
                {X11: [ {keycode: 222, entry: X11_KEY_CIRCUMFLEX_ACCENT},
                         {keycode: 220, entry: X11_KEY_YEN_MARK},
                         {keycode: 186, entry: X11_KEY_COLON, browser: "Chrome"},
-                        {keycode: 9,  entry: 9, guestos: "XenServer"},
                         {keycode: 226, entry: X11_KEY_REVERSE_SOLIUS},
 
                         {keycode: 240, entry: [
