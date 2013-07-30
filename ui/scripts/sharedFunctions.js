@@ -797,6 +797,7 @@ cloudStack.preFilter = {
         if (isAdmin()) {
             args.$form.find('.form-item[rel=isPublic]').css('display', 'inline-block');
             args.$form.find('.form-item[rel=isFeatured]').css('display', 'inline-block');
+            args.$form.find('.form-item[rel=isrouting]').css('display', 'inline-block');
         } else {
             if (g_userPublicTemplateEnabled == "true") {
                 args.$form.find('.form-item[rel=isPublic]').css('display', 'inline-block');
