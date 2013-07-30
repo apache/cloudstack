@@ -2805,13 +2805,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             return false;
         }
 
-        // Don't allow to delete network via api call when it has vms assigned to it
-        int nicCount = getActiveNicsInNetwork(networkId);
-        if (nicCount > 0) {
-            s_logger.debug("Unable to remove the network id=" + networkId + " as it has active Nics.");
-            return false;
-        }
-
         // Make sure that there are no user vms in the network that are not Expunged/Error
         List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
@@ -2820,6 +2813,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
                 return false;
             }
+        }
+
+        // Don't allow to delete network via api call when it has vms assigned to it
+        int nicCount = getActiveNicsInNetwork(networkId);
+        if (nicCount > 0) {
+            s_logger.debug("The network id=" + networkId + " has active Nics, but shouldn't.");
+            // at this point we have already determined that there are no active user vms in network
+            // if the op_networks table shows active nics, it's a bug in releasing nics updating op_networks
+            _networksDao.changeActiveNicsBy(networkId, (-1 * nicCount)); 
         }
 
         //In Basic zone, make sure that there are no non-removed console proxies and SSVMs using the network

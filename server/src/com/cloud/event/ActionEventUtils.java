@@ -200,6 +200,10 @@ public class ActionEventUtils {
 
     private static long getDomainId(long accountId){
         AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
+        if (account == null) {
+            s_logger.error("Failed to find account(including removed ones) by id '" + accountId + "'");
+            return 0;
+        }
         return account.getDomainId();
     }
 }
