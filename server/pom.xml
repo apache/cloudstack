@@ -21,7 +21,6 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -77,7 +76,6 @@
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>${cs.codec.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -94,7 +92,6 @@
     <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
-      <version>0.9.8</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>

@@ -274,13 +274,12 @@
         <artifactId>commons-configuration</artifactId>
         <version>${cs.configuration.version}</version>
       </dependency>
-      <!-- Test dependency in mysql for db tests -->
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${cs.commons-io.version}</version>
-        <scope>provided,runtime</scope>
       </dependency>
+      <!-- Test dependency in mysql for db tests -->
       <dependency>
         <groupId>org.reflections</groupId>
         <artifactId>reflections</artifactId>
