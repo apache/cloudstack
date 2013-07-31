@@ -73,6 +73,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
     }
 
     @Override
+    @DB
     public String getCurrentVersion() {
         Connection conn = null;
         try {

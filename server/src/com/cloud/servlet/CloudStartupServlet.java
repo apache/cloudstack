@@ -29,6 +29,7 @@ import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Transaction;
 
 public class CloudStartupServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
@@ -47,7 +48,13 @@ public class CloudStartupServlet extends HttpServlet {
 			public void run() {
 				if(ComponentContext.getApplicationContext() != null) {
 					_timer.cancel();
-					ComponentContext.initComponentsLifeCycle();
+					
+					Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+					try {
+						ComponentContext.initComponentsLifeCycle();
+					} finally {
+						txn.close();
+					}
 				}
 			}
     	}, 0, 1000);
