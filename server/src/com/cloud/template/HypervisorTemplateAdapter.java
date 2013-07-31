@@ -214,6 +214,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
+                String etype = EventTypes.EVENT_TEMPLATE_CREATE;
+                if (tmplt.getFormat() == ImageFormat.ISO) {
+                    etype = EventTypes.EVENT_ISO_CREATE;
+                }
                 // get physical size from template_store_ref table
                 long physicalSize = 0;
                 DataStore ds = template.getDataStore();
@@ -227,7 +231,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 Scope dsScope = ds.getScope();
                 if (dsScope.getScopeType() == ScopeType.ZONE) {
                     if (dsScope.getScopeId() != null) {
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null,
+                        UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null,
                                 null, physicalSize, template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                     }
                     else{
@@ -235,7 +239,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     }
                 } else if (dsScope.getScopeType() == ScopeType.REGION) {
                     // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), -1, template.getId(), template.getName(), null, null,
+                    UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), -1, template.getId(), template.getName(), null, null,
                             physicalSize, template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                 }
                 _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
