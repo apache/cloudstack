@@ -465,7 +465,6 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected Answer execute(VmDataCommand cmd) {
-        List<String[]> vmData = cmd.getVmData();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
@@ -477,7 +476,7 @@ public class VirtualRoutingResource implements Manager {
 
         String args = "-d " + json;
 
-        final String result = routerProxy("vmdata_kvm.py", routerIp, args);
+        final String result = routerProxy("vmdata.py", routerIp, args);
         if (result != null) {
             return new Answer(cmd, false, "VmDataCommand failed, check agent logs");
         }

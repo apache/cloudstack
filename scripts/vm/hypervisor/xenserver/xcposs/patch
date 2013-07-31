@@ -41,7 +41,6 @@ setup_iscsi.sh=..,0755,/usr/lib/xcp/bin
 pingtest.sh=../../..,0755,/usr/lib/xcp/bin
 dhcp_entry.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 ipassoc.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
-vm_data.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 save_password_to_domr.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 networkUsage.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
 call_firewall.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
