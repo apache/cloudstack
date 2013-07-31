@@ -249,7 +249,11 @@
                         response: {
                             success: function(args) {
                                 $(args.data).each(function() {
-                                    var id = this.id !== undefined ? this.id : this.name;
+                                    var id;
+                                    if (field.valueField)
+                                        id = this[field.valueField];
+                                    else
+                                        id = this.id !== undefined ? this.id : this.name;
                                     var description = this.description;
 
                                     if (args.descriptionField)
