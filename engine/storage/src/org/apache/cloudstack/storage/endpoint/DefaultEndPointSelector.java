@@ -55,7 +55,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
-    private String findOneHostOnPrimaryStorage = "select id from host where " + "status = 'Up' and type = 'Routing' ";
+    private String findOneHostOnPrimaryStorage = "select id from host where status = 'Up' and type = 'Routing' and resource_state = 'Enabled'";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
