@@ -752,7 +752,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         c = "mount |grep %s|head -1" % self.services["mount"]
         res = ssh_client.execute(c)
         size = ssh_client.execute("du %s | tail -1" % self.services["mount"])
-        self.debug("Found a mount point at %s with size" % (res, size))
+        self.debug("Found a mount point at %s with size %s" % (res, size))
 
         # Get ISO size
         iso_response = list_isos(
