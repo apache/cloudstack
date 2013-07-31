@@ -25,11 +25,6 @@ from nose.plugins.base import Plugin
 from functools import partial
 
 
-def testCaseLogger(message, logger=None):
-    if logger is not None:
-        logger.debug(message)
-
-
 class MarvinPlugin(Plugin):
     """
     Custom plugin for the cloudstackTestCases to be run using nose
@@ -68,10 +63,6 @@ class MarvinPlugin(Plugin):
         deploy.loadCfg() if options.load else deploy.deploy()
         self.setClient(deploy.testClient)
         self.setConfig(deploy.getCfg())
-
-        cfg = nose.config.Config()
-        cfg.logStream = self.result_stream
-        cfg.debugLog = self.debug_stream
 
         self.testrunner = nose.core.TextTestRunner(stream=self.result_stream,
                                                    descriptions=True,
@@ -133,21 +124,18 @@ class MarvinPlugin(Plugin):
     def beforeTest(self, test):
         testname = test.__str__().split()[0]
         self.testclient.identifier = '-'.join([self.identifier, testname])
+        self.logger.name = test.__str__()
 
     def _injectClients(self, test):
-        testcaselogger = logging.getLogger("testclient.testcase.%s" %
-                                           test.__name__)
         self.debug_stream. \
             setFormatter(logging.
                          Formatter("%(asctime)s - %(levelname)s - %(name)s" +
                                    " - %(message)s"))
-
-        testcaselogger.addHandler(self.debug_stream)
-        testcaselogger.setLevel(logging.DEBUG)
-
+        setattr(test, "debug", self.logger.debug)
+        setattr(test, "info", self.logger.info)
+        setattr(test, "warn", self.logger.warning)
         setattr(test, "testClient", self.testclient)
         setattr(test, "config", self.config)
-        setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
         if self.testclient.identifier is None:
             self.testclient.identifier = self.identifier
         setattr(test, "clstestclient", self.testclient)

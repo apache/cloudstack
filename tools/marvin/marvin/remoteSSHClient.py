@@ -24,7 +24,7 @@ from contextlib import closing
 
 
 class remoteSSHClient(object):
-    def __init__(self, host, port, user, passwd, retries=10, delay=5,
+    def __init__(self, host, port, user, passwd, retries=5, delay=30,
                  log_lvl=logging.INFO, keyPairFileLocation=None):
         self.host = host
         self.port = port
@@ -69,7 +69,7 @@ class remoteSSHClient(object):
                                               + "login to %s on port %s" %
                                               (str(host), port))
             else:
-                return
+                return self.ssh
 
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)
