@@ -1080,6 +1080,51 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
                     soId, templateId, hypervisorType, event.getCreateDate(), null);
             m_usageInstanceDao.persist(usageInstanceNew);
+        } else if (EventTypes.EVENT_VM_DYNAMIC_SCALE.equals(event.getType())) {
+            // Ending the running vm event
+            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+            sc.addAnd("endDate", SearchCriteria.Op.NULL);
+            sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
+            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            if (usageInstances != null) {
+                if (usageInstances.size() > 1) {
+                    s_logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
+                }
+                for (UsageVMInstanceVO usageInstance : usageInstances) {
+                    usageInstance.setEndDate(event.getCreateDate());
+                    m_usageInstanceDao.update(usageInstance);
+                }
+            }
+
+            sc = m_usageInstanceDao.createSearchCriteria();
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+            sc.addAnd("endDate", SearchCriteria.Op.NULL);
+            sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
+            usageInstances = m_usageInstanceDao.search(sc, null);
+            if (usageInstances == null || (usageInstances.size() == 0)) {
+                s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+            } else if (usageInstances.size() == 1) {
+                UsageVMInstanceVO usageInstance = usageInstances.get(0);
+                if(usageInstance.getSerivceOfferingId() != soId){
+                    //Service Offering changed after Vm creation
+                    //End current Allocated usage and create new Allocated Vm entry with new soId
+                    usageInstance.setEndDate(event.getCreateDate());
+                    m_usageInstanceDao.update(usageInstance);
+                    usageInstance.setServiceOfferingId(soId);
+                    usageInstance.setStartDate(event.getCreateDate());
+                    usageInstance.setEndDate(null);
+                    m_usageInstanceDao.persist(usageInstance);
+                }
+            }
+
+            Long templateId = event.getTemplateId();
+            String hypervisorType = event.getResourceType();
+
+            // add this VM to the usage helper table with new service offering Id
+            UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName,
+                    soId, templateId, hypervisorType, event.getCreateDate(), null);
+            m_usageInstanceDao.persist(usageInstanceNew);
         }
     }
 

@@ -70,7 +70,7 @@ public class EventTypes {
     public static final String EVENT_VM_REBOOT = "VM.REBOOT";
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
-    public static final String EVENT_VM_SCALE = "VM.SCALE";
+    public static final String EVENT_VM_DYNAMIC_SCALE = "VM.DYNAMIC.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
@@ -93,7 +93,6 @@ public class EventTypes {
     public static final String EVENT_PROXY_STOP = "PROXY.STOP";
     public static final String EVENT_PROXY_REBOOT = "PROXY.REBOOT";
     public static final String EVENT_PROXY_HA = "PROXY.HA";
-    public static final String EVENT_PROXY_SCALE = "PROXY.SCALE";
 
 
     // VNC Console Events
@@ -218,7 +217,6 @@ public class EventTypes {
     public static final String EVENT_SSVM_STOP = "SSVM.STOP";
     public static final String EVENT_SSVM_REBOOT = "SSVM.REBOOT";
     public static final String EVENT_SSVM_HA = "SSVM.HA";
-    public static final String EVENT_SSVM_SCALE = "SSVM.SCALE";
 
     // Service Offerings
     public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";

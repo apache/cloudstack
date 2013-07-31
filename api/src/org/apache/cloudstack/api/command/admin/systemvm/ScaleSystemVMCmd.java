@@ -111,23 +111,17 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale system vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade system vm");
         }
     }
 
     @Override
     public String getEventType() {
-        VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
-        if(type == VirtualMachine.Type.ConsoleProxy){
-            return EventTypes.EVENT_PROXY_SCALE;
-        }
-        else{
-            return EventTypes.EVENT_SSVM_SCALE;
-        }
+        return EventTypes.EVENT_VM_UPGRADE;
     }
 
     @Override
     public String getEventDescription() {
-        return  "scaling system vm: " + getId() + " to service offering: " + getServiceOfferingId();
+        return  "Upgrading system vm: " + getId() + " to service offering: " + getServiceOfferingId();
     }
 }

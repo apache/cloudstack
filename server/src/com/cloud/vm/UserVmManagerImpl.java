@@ -758,14 +758,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /*
      * TODO: cleanup eventually - Refactored API call
      */
+    // This method will be deprecated as we use ScaleVMCmd for both stopped VMs and running VMs
     public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ResourceAllocationException {
         Long vmId = cmd.getId();
         Long svcOffId = cmd.getServiceOfferingId();
-        return upgradeStoppedVirtualMachine(vmId, svcOffId);
-    }
-
-
-    private UserVm upgradeStoppedVirtualMachine(Long vmId, Long svcOffId) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
@@ -829,6 +825,70 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Generate usage event for VM upgrade
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_UPGRADE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), vmInstance.getHostName(),
                 vmInstance.getServiceOfferingId(), vmInstance.getTemplateId(), vmInstance.getHypervisorType().toString(), VirtualMachine.class.getName(), vmInstance.getUuid());
+
+        return _vmDao.findById(vmInstance.getId());
+    }
+
+    private UserVm upgradeStoppedVirtualMachine(Long vmId, Long svcOffId) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+
+        // Verify input parameters
+        //UserVmVO vmInstance = _vmDao.findById(vmId);
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+        if (vmInstance == null) {
+            throw new InvalidParameterValueException(
+                    "unable to find a virtual machine with id " + vmId);
+        }
+
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Check resource limits for CPU and Memory.
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(svcOffId);
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
+
+        int newCpu = newServiceOffering.getCpu();
+        int newMemory = newServiceOffering.getRamSize();
+        int currentCpu = currentServiceOffering.getCpu();
+        int currentMemory = currentServiceOffering.getRamSize();
+
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.cpu,
+                    newCpu - currentCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.memory,
+                    newMemory - currentMemory);
+        }
+
+        // Check that the specified service offering ID is valid
+        _itMgr.checkIfCanUpgrade(vmInstance, svcOffId);
+
+        // remove diskAndMemory VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
+            if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory){
+                if(!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)){
+                    String errMsg = "Failed to remove VM snapshot during upgrading, snapshot id " + vmSnapshotVO.getId();
+                    s_logger.debug(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+
+            }
+        }
+
+        _itMgr.upgradeVmDb(vmId, svcOffId);
+
+        // Increment or decrement CPU and Memory count accordingly.
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
+        } else if (currentCpu > newCpu) {
+            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (currentCpu - newCpu));
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
+        } else if (currentMemory > newMemory) {
+            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (currentMemory - newMemory));
+        }
 
         return _vmDao.findById(vmInstance.getId());
 
@@ -1083,17 +1143,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
+    @ActionEvent(eventType = EventTypes.EVENT_VM_UPGRADE, eventDescription = "Upgrading VM", async = true)
     public UserVm
     upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
 
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
+        CallContext.current().setEventDetails("Vm Id: " + vmId);
+
         boolean  result = upgradeVirtualMachine(vmId, newServiceOfferingId);
         if(result){
-            return _vmDao.findById(vmId);
-        }else{
-            return null;
+            UserVmVO vmInstance = _vmDao.findById(vmId);
+            if(vmInstance.getState().equals(State.Stopped)){
+                // Generate usage event for VM upgrade
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_UPGRADE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), vmInstance.getHostName(),
+                        vmInstance.getServiceOfferingId(), vmInstance.getTemplateId(), vmInstance.getHypervisorType().toString(), VirtualMachine.class.getName(), vmInstance.getUuid());
+            }
+            if(vmInstance.getState().equals(State.Running)){
+                // Generate usage event for Dynamic scaling of VM
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DYNAMIC_SCALE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), vmInstance.getHostName(),
+                        vmInstance.getServiceOfferingId(), vmInstance.getTemplateId(), vmInstance.getHypervisorType().toString(), VirtualMachine.class.getName(), vmInstance.getUuid());
+            }
+            return vmInstance;
+        } else {
+            throw new CloudRuntimeException("Failed to scale the VM");
         }
 
     }
@@ -1135,7 +1208,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
-        Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
@@ -1144,7 +1216,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             upgradeStoppedVirtualMachine(vmId, newServiceOfferingId);
             return true;
         }
+        if(vmInstance.getState().equals(State.Running)){
+            return upgradeRunningVirtualMachine(vmId, newServiceOfferingId);
+        }
+        return false;
+    }
 
+    private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
+
+        Account caller = CallContext.current().getCallingAccount();
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
@@ -1237,13 +1318,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // Decrement CPU and Memory count accordingly.
                         if (newCpu > currentCpu) {
                             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
-                    }
+                        }
                         if (newMemory > currentMemory) {
                             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
                         }
                     }
-
-
                 }
             }
         }
