@@ -103,10 +103,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     @Inject
     DataStoreManager storeMgr;
 
-    final Map<TemplateDataStoreVO, DownloadListener> _listenerTemplateMap = new ConcurrentHashMap<TemplateDataStoreVO, DownloadListener>();
-    final Map<VolumeDataStoreVO, DownloadListener> _listenerVolMap = new ConcurrentHashMap<VolumeDataStoreVO, DownloadListener>();
-
-
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
@@ -189,15 +185,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
 
-            DownloadListener old = null;
-            synchronized (_listenerTemplateMap) {
-                old = _listenerTemplateMap.put(vmTemplateStore, dl);
-            }
-            if (old != null) {
-                s_logger.info("abandon obsolete download listener");
-                old.abandon();
-            }
-
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
@@ -269,13 +256,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
             if (downloadJobExists) {
                 dl.setCurrState(volumeHost.getDownloadState());
-            }
-            DownloadListener old = null;
-            synchronized (_listenerVolMap) {
-                old = _listenerVolMap.put(volumeHost, dl);
-            }
-            if (old != null) {
-                old.abandon();
             }
 
             try {
