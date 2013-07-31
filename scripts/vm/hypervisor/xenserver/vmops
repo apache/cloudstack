@@ -486,6 +486,11 @@ def can_bridge_firewall(session, args):
     try:
         util.pread2(['ebtables', '-V'])
         util.pread2(['ipset', '-V'])
+        cmd = ['cat', '/etc/xensource/network.conf']
+        result = util.pread2(cmd)
+        if result.lower().strip() != "bridge":
+            return 'false'
+
     except:
         return 'false'
 
@@ -749,7 +754,11 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
     try:
         for vif in vifs:
             # only allow source mac that belongs to the vm
-	    util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+            try:
+                util.pread2(['ebtables', '-t', 'nat', '-I', 'PREROUTING', '-i', vif, '-s', '!' , vm_mac, '-j', 'DROP'])
+            except:
+                util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+
             # do not allow fake dhcp responses
             util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '68', '-j', 'DROP'])
             # do not allow snooping of dhcp requests
