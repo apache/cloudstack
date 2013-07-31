@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
+import com.google.gson.Gson;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -54,6 +55,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import com.cloud.agent.api.to.DhcpTO;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
@@ -2220,25 +2222,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected Answer execute(final VmDataCommand cmd) {
         Connection conn = getConnection();
         String routerPrivateIpAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String vmIpAddress = cmd.getVmIpAddress();
-        List<String[]> vmData = cmd.getVmData();
-        String[] vmDataArgs = new String[vmData.size() * 2 + 4];
-        vmDataArgs[0] = "routerIP";
-        vmDataArgs[1] = routerPrivateIpAddress;
-        vmDataArgs[2] = "vmIP";
-        vmDataArgs[3] = vmIpAddress;
-        int i = 4;
-        for (String[] vmDataEntry : vmData) {
-            String folder = vmDataEntry[0];
-            String file = vmDataEntry[1];
-            String contents = (vmDataEntry[2] != null) ? vmDataEntry[2] : "none";
+        Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
+        data.put(cmd.getVmIpAddress(), cmd.getVmData());
+        String json = new Gson().toJson(data);
+        json = Base64.encodeBase64String(json.getBytes());
 
-            vmDataArgs[i] = folder + "," + file;
-            vmDataArgs[i + 1] = contents;
-            i += 2;
-        }
+        String args = "vmdata.py " + routerPrivateIpAddress + " -d " + json;
 
-        String result = callHostPlugin(conn, "vmops", "vm_data", vmDataArgs);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "vm_data failed");
