@@ -1703,7 +1703,7 @@
                                 title: 'label.acquire.new.secondary.ip',
                                 desc: 'message.acquire.ip.nic',
                                 fields: {
-                                    ipaddr: {
+                                    ipaddress: {
                                         label: 'label.ip.address'
                                     }
                                 }
@@ -1718,8 +1718,8 @@
                                     nicId: args.context.nics[0].id
                                 };
 
-                                if (args.data.ipaddr) {
-                                    dataObj.ipaddr = args.data.ipaddr;
+                                if (args.data.ipaddress) {
+                                    dataObj.ipaddress = args.data.ipaddress;
                                 }
 
                                 $.ajax({
