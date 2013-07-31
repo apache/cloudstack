@@ -7388,7 +7388,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     serializeProperties(s3, S3Utils.ClientOptions.class));
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
-                    iSCSIFlag.toString(), "key", key));
+                    iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));
             final String result = callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
