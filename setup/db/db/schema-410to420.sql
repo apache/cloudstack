@@ -2211,3 +2211,14 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
 ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'kvm.ssh.to.agent', 'true', 'Specify whether or not the management server is allowed to SSH into KVM Agents');
+
+#update the account_vmstats_view - count only user vms
+DROP VIEW IF EXISTS `cloud`.`account_vmstats_view`;
+CREATE VIEW `cloud`.`account_vmstats_view` AS
+    SELECT 
+        account_id, state, count(*) as vmcount
+    from
+        `cloud`.`vm_instance`
+    where
+        vm_type = 'User'
+    group by account_id , state;
