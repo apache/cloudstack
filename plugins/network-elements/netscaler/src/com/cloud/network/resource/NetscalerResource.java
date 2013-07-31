@@ -896,6 +896,7 @@ public class NetscalerResource implements ServerResource {
 
                         // Add/Delete GSLB service corresponding the service running on each site
                         String serviceName = GSLB.generateUniqueServiceName(siteName, servicePublicIp, servicePublicPort);
+                        String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
                         if (!site.forRevoke()) {
                             // create a 'gslbservice' object
                             GSLB.createService(_netscalerService, serviceName, site.getServiceType(),
@@ -908,17 +909,12 @@ public class NetscalerResource implements ServerResource {
                             GSLB.createGslbServiceMonitor(_netscalerService, servicePublicIp, serviceName);
 
                             // bind the monitor to the GSLB service
-                            GSLB.createGslbServiceGslbMonitorBinding(_netscalerService, servicePublicIp, serviceName);
+                            GSLB.createGslbServiceGslbMonitorBinding(_netscalerService, monitorName, serviceName);
 
                         } else {
 
-                            String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
-
                             // delete GSLB service and GSLB monitor binding
                             GSLB.deleteGslbServiceGslbMonitorBinding(_netscalerService, monitorName, serviceName);
-
-                            // delete the GSLB service monitor
-                            GSLB.deleteGslbServiceMonitor(_netscalerService, monitorName);
 
                             // Unbind GSLB service with GSLB virtual server
                             GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
@@ -926,6 +922,9 @@ public class NetscalerResource implements ServerResource {
                             // delete 'gslbservice' object
                             gslbservice service = GSLB.getServiceObject(_netscalerService, serviceName);
                             GSLB.deleteService(_netscalerService, serviceName);
+
+                            // delete the GSLB service monitor
+                            GSLB.deleteGslbServiceMonitor(_netscalerService, monitorName);
                         }
 
                         if (site.forRevoke()) { // delete the site if its for revoke
@@ -954,10 +953,7 @@ public class NetscalerResource implements ServerResource {
                         String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
 
                         // delete GSLB service and GSLB monitor binding
-                        GSLB.deleteGslbServiceGslbMonitorBinding(_netscalerService, servicePublicIp, serviceName);
-
-                        // delete the GSLB service monitor
-                        GSLB.deleteGslbServiceMonitor(_netscalerService, monitorName);
+                        GSLB.deleteGslbServiceGslbMonitorBinding(_netscalerService, monitorName, serviceName);
 
                         // remove binding between virtual server and services
                         GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
@@ -967,6 +963,9 @@ public class NetscalerResource implements ServerResource {
 
                         // delete GSLB site object
                         GSLB.deleteSite(_netscalerService, siteName);
+
+                        // delete the GSLB service monitor
+                        GSLB.deleteGslbServiceMonitor(_netscalerService, monitorName);
                     }
                 }
 
@@ -1494,10 +1493,9 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static void createGslbServiceGslbMonitorBinding(nitro_service nsService, String servicePublicIp,
+        private static void createGslbServiceGslbMonitorBinding(nitro_service nsService, String monitorName,
                                                             String serviceName) {
             try {
-                String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
                 gslbservice_lbmonitor_binding monitorBinding = new gslbservice_lbmonitor_binding();
                 monitorBinding.set_monitor_name(monitorName);
                 monitorBinding.set_servicename(serviceName);
@@ -1513,10 +1511,19 @@ public class NetscalerResource implements ServerResource {
                                                                 String serviceName) {
             try {
                 gslbservice_lbmonitor_binding[] monitorBindings = gslbservice_lbmonitor_binding.get(nsService, serviceName);
-                gslbservice_lbmonitor_binding.delete(nsService, monitorBindings);
+                if (monitorBindings != null && monitorBindings.length > 0) {
+                    for (gslbservice_lbmonitor_binding binding : monitorBindings) {
+                        if (binding.get_monitor_name().equalsIgnoreCase(monitorName)) {
+                            s_logger.info("Found a binding between monitor " + binding.get_monitor_name() + " and "
+                                    + binding.get_servicename());
+                            gslbservice_lbmonitor_binding.delete(nsService, binding);
+                        }
+                    }
+                }
             } catch (Exception e) {
-                s_logger.warn("Failed to delet GSLB monitor " + monitorName + "and GSLB service " +  serviceName +
-                        " binding due to " + e.getMessage());
+                s_logger.debug("Failed to delete GSLB monitor " + monitorName + " and GSLB service " +  serviceName +
+                        " binding due to " + e.getMessage() + " but moving on ..., will be cleaned up as part of GSLB " +
+                        " service delete any way..");
             }
         }
 
