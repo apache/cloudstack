@@ -18,6 +18,9 @@
 package com.cloud.upgrade.dao;
 
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.storage.Upload;
+import com.cloud.storage.UploadVO;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -178,6 +181,79 @@ public class Upgrade410to420 implements DbUpgrade {
         }
 
     }
+
+    private void dropUploadTable(Connection conn) {
+
+        PreparedStatement pstmt0 = null;
+        PreparedStatement pstmt1 = null;
+        PreparedStatement pstmt2 = null;
+        PreparedStatement pstmt3 = null;
+
+        ResultSet rs0 = null;
+        ResultSet rs2 = null;
+
+        try {
+            // Read upload table - Templates
+            s_logger.debug("Populating template_store_ref table");
+            pstmt0 = conn.prepareStatement("SELECT url, created, type_id, host_id from upload where type=?");
+            pstmt0.setString(1, "TEMPLATE");
+            rs0 = pstmt0.executeQuery();
+            pstmt1 = conn.prepareStatement("UPDATE template_store_ref SET download_url=?, download_url_created=? where template_id=? and store_id=?");
+
+            //Update template_store_ref
+            while(rs0.next()){
+                pstmt1.setString(1, rs0.getString("url"));
+                pstmt1.setDate(2, rs0.getDate("created"));
+                pstmt1.setLong(3, rs0.getLong("type_id"));
+                pstmt1.setLong(4, rs0.getLong("host_id"));
+                pstmt1.executeUpdate();
+            }
+
+
+
+            // Read upload table - Volumes
+            s_logger.debug("Populating volume store ref table");
+            pstmt2 = conn.prepareStatement("SELECT url, created, type_id, host_id, install_path from upload where type=?");
+            pstmt2.setString(1, "VOLUME");
+            rs2 = pstmt2.executeQuery();
+
+            pstmt3 = conn.prepareStatement("INSERT IGNORE INTO volume_store_ref (volume_id, store_id, zone_id, created, state, download_url, download_url_created, install_path) VALUES (?,?,?,?,?,?,?,?)");
+            //insert into template_store_ref
+            while(rs2.next()){
+                pstmt3.setLong(1, rs2.getLong("type_id"));
+                pstmt3.setLong(2, rs2.getLong("host_id"));
+                pstmt3.setLong(3, 1l);// ???
+                pstmt3.setDate(4, rs2.getDate("created"));
+                pstmt3.setString(5, "Ready");
+                pstmt3.setString(6, rs2.getString("url"));
+                pstmt3.setDate(7, rs2.getDate("created"));
+                pstmt3.setString(8, rs2.getString("install_path"));
+                pstmt3.executeUpdate();
+            }
+
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
+        } finally {
+            try {
+                if (pstmt0 != null) {
+                    pstmt0.close();
+                }
+                if (pstmt1 != null) {
+                    pstmt1.close();
+                }
+                if (pstmt2 != null) {
+                    pstmt2.close();
+                }
+                if (pstmt3 != null) {
+                    pstmt3.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+    }
+
 
 	private void updateSystemVmTemplates(Connection conn) {
 	    // TODO: system vm template migration after storage refactoring
