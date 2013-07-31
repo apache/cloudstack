@@ -137,6 +137,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
+            if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                }
+                return null;
+            }
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
             updateBuilder.setDownloadState(answer.getDownloadStatus());
@@ -184,6 +190,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(store.getId(), obj.getId());
         if (volStoreVO != null) {
+            if (volStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Volume is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                }
+                return null;
+            }
             VolumeDataStoreVO updateBuilder = _volumeStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
             updateBuilder.setDownloadState(answer.getDownloadStatus());

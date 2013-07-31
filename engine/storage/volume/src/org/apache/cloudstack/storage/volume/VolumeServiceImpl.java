@@ -34,6 +34,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -67,10 +68,13 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -992,12 +996,41 @@ public class VolumeServiceImpl implements VolumeService {
                 vo.processEvent(Event.OperationFailed);
             } else {
                 vo.processEvent(Event.OperationSuccessed, result.getAnswer());
-            }
 
-            _resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage, vo.getSize());
+                if (vo.getSize() != null) {
+                    // publish usage events
+                    // get physical size from volume_store_ref table
+                    long physicalSize = 0;
+                    DataStore ds = vo.getDataStore();
+                    VolumeDataStoreVO volStore = _volumeStoreDao.findByStoreVolume(ds.getId(), vo.getId());
+                    if (volStore != null) {
+                        physicalSize = volStore.getPhysicalSize();
+                    } else {
+                        s_logger.warn("No entry found in volume_store_ref for volume id: " + vo.getId() + " and image store id: " + ds.getId()
+                                + " at the end of uploading volume!");
+                    }
+                    Scope dsScope = ds.getScope();
+                    if (dsScope.getScopeType() == ScopeType.ZONE) {
+                        if (dsScope.getScopeId() != null) {
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), dsScope.getScopeId(), vo.getId(), vo.getName(), null,
+                                    null, physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
+                        }
+                        else{
+                            s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
+                        }
+                    } else if (dsScope.getScopeType() == ScopeType.REGION) {
+                        // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), -1, vo.getId(), vo.getName(), null,
+                                null, physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
+
+                        _resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage, vo.getSize());
+                    }
+                }
+            }
             VolumeApiResult res = new VolumeApiResult(vo);
             context.future.complete(res);
             return null;
+
         } catch (Exception e) {
             s_logger.error("register volume failed: ", e);
             VolumeApiResult res = new VolumeApiResult(null);
