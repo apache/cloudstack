@@ -1129,7 +1129,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     serializeProperties(s3, S3Utils.ClientOptions.class));
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
-                    iSCSIFlag.toString(), "key", key));
+                    iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));
             final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
