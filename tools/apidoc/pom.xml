@@ -17,7 +17,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.1.1-SNAPSHOT</version>
+        <version>4.1.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -29,7 +29,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <client.config.base>../../client/target/cloud-client-ui-4.1.1-SNAPSHOT/WEB-INF/</client.config.base>
+        <client.config.base>../../client/target/cloud-client-ui-4.1.2-SNAPSHOT/WEB-INF/</client.config.base>
         <client.config.jars>${client.config.base}/lib</client.config.jars>
         <client.config.conf>${client.config.base}/classes</client.config.conf>
     </properties>
