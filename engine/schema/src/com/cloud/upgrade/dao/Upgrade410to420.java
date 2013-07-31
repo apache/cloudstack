@@ -230,7 +230,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
                 try {
                     //Get 4.2.0 system Vm template Id for corresponding hypervisor
-                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like ? and removed is null order by id desc limit 1");
+                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1");
                     pstmt.setString(1, hypervisorAndTemplateName.getValue());
                     rs = pstmt.executeQuery();
                     if(rs.next()){
