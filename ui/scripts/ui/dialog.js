@@ -264,7 +264,7 @@
                                 });
 
                                 if (field.defaultValue) {
-                                    $input.val(_s(field.defaultValue));
+                                    $input.val(_s(strOrFunc(field.defaultValue, args.data)));
                                 }
 
                                 $input.trigger('change');
@@ -367,7 +367,7 @@
                             type: 'checkbox'
                         }).appendTo($value);
                         if (field.isChecked) {
-                            $input.attr('checked', 'checked');
+                            $input.attr('checked', strOrFunc(field.isChecked));
                         } else {
                             // This is mainly for IE compatibility
                             setTimeout(function() {
@@ -421,7 +421,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(field.defaultValue);
+                        $input.val(strOrFunc(field.defaultValue));
                     }
                 } else if (field.isDatepicker) { //jQuery datepicker
                     $input = $('<input>').attr({
@@ -430,7 +430,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(field.defaultValue);
+                        $input.val(strOrFunc(field.defaultValue));
                     }
                     if (field.id) {
                         $input.attr('id', field.id);
@@ -525,7 +525,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(field.defaultValue);
+                        $input.val(strOrFunc(field.defaultValue));
                     }
                     if (field.id) {
                         $input.attr('id', field.id);

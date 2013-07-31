@@ -1453,3 +1453,9 @@ cloudStack.api = {
         };
     }
 };
+
+function strOrFunc(arg, args) {
+    if (typeof arg === 'function')
+        return arg(args);
+    return arg;
+}
