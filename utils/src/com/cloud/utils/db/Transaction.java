@@ -299,13 +299,19 @@ public class Transaction {
         if (se == null) {
             return false;
         }
+        
+        StringBuffer sb = new StringBuffer();
         for (; stack < stacks.length; stack++) {
             String methodName = stacks[stack].getMethodName();
+            sb.append(" ").append(methodName);
             if (methodName.equals(se.ref)){
                 return true;
             }
         }
-        return false;
+        
+        // relax stack structure for several places that @DB required injection is not in place
+        s_logger.warn("Non-standard stack context that Transaction context is manaully placed into the calling chain. Stack chain: " + sb);
+        return true;
     }
 
     protected static String buildName() {

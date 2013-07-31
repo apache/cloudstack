@@ -46,10 +46,10 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     private String guid;
 
     @Column(name = "name")
-    private String name;
+    private String vmwareDatacenterName;
 
     @Column(name = "vcenter_host")
-    private String vCenterHost;
+    private String vcenterHost;
 
     @Column(name = "uuid")
     private String uuid;
@@ -73,7 +73,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
 
     @Override
     public String getVmwareDatacenterName() {
-        return name;
+        return vmwareDatacenterName;
     }
 
     @Override
@@ -93,7 +93,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
 
     @Override
     public String getVcenterHost() {
-        return vCenterHost;
+        return vcenterHost;
     }
 
     public void setUuid(String uuid) {
@@ -105,11 +105,11 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     public void setVmwareDatacenterName(String name) {
-        this.name = name;
+        this.vmwareDatacenterName = name;
     }
 
     public void setVcenterHost(String vCenterHost) {
-        this.vCenterHost = vCenterHost;
+        this.vcenterHost = vCenterHost;
     }
 
     public void setUser(String user) {
@@ -141,9 +141,9 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
 
     public VmwareDatacenterVO(String guid, String name, String vCenterHost, String user, String password) {
         this.uuid = UUID.randomUUID().toString();
-        this.name = name;
+        this.vmwareDatacenterName = name;
         this.guid = guid;
-        this.vCenterHost = vCenterHost;
+        this.vcenterHost = vCenterHost;
         this.user = user;
         this.password = password;
     }
