@@ -3032,6 +3032,9 @@ class AffinityGroup:
 
 class StaticRoute:
     """Manage static route lifecycle"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+
     @classmethod
     def create(cls, apiclient, cidr, gatewayid):
         """Create static route"""
