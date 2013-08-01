@@ -1431,7 +1431,7 @@ public class CitrixHelper {
         _xenServer620GuestOsMap.put("Windows Server 2008 SP2 (64-bit)", "Windows Server 2008 SP2 (64-bit)");
         _xenServer620GuestOsMap.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 (64-bit)");
         _xenServer620GuestOsMap.put("Windows Server 2008 R2 SP1 (64-bit)", "Windows Server 2008 R2 SP1 (64-bit)");
-        _xenServer620GuestOsMap.put("Windows Server 2012 (64-bit)", "Windows Server 2012 (64-bit) (experimental)");
+        _xenServer620GuestOsMap.put("Windows Server 2012 (64-bit)", "Windows Server 2012 (64-bit)");
         _xenServer620GuestOsMap.put("Windows Vista SP2 (32-bit)", "Windows Vista (32-bit)");
         _xenServer620GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
         _xenServer620GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit)");
