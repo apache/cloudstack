@@ -102,14 +102,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     SnapshotManager.DELTAMAX);
             int deltaSnap = _deltaSnapshotMax;
 
+            SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
+                    DataStoreRole.Image);
             int i;
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
-            for (i = 1; i < deltaSnap; i++) {
-                parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
-                        DataStoreRole.Image);
-                if (parentSnapshotOnBackupStore == null) {
-                    break;
-                }
+            for (i = 1; (i < deltaSnap && (parentSnapshotOnBackupStore != null)); i++) {
                 Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
 
                 if (prevBackupId == 0) {
