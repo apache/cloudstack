@@ -1073,8 +1073,8 @@ class PublicIPAddress:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, accountid=None, zoneid=None, domainid=None,
-               isportable=None, services=None, networkid=None, projectid=None, vpcid=None):
+    def create(cls, apiclient, accountid=None, zoneid=None, domainid=None, services=None,
+               networkid=None, projectid=None, vpcid=None, isportable=None):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
 
