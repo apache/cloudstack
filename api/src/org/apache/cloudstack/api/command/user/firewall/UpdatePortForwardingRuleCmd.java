@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
@@ -126,5 +127,23 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 //        } else {
 //            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update port forwarding rule");
 //        }
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getIp().getAssociatedWithNetworkId();
+    }
+
+    private IpAddress getIp() {
+        IpAddress ip = _networkService.getIp(publicIpId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id " + publicIpId);
+        }
+        return ip;
     }
 }

@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -112,5 +113,19 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update load balancer rule");
         }
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        LoadBalancer lb = _lbService.findById(getId());
+        if (lb == null) {
+            throw new InvalidParameterValueException("Unable to find load balancer rule " + getId());
+        }
+        return lb.getNetworkId();
     }
 }
