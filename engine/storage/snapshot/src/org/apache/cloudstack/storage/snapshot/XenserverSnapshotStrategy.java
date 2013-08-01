@@ -140,7 +140,20 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             }
             s_logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
             SnapshotInfo parent = snapshot.getParent();
-            result = this.snapshotSvr.deleteSnapshot(snapshot);
+            boolean deleted = false;
+            if (parent != null) {
+                if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
+                    //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
+                    //Instead, mark it as destroyed in the db.
+                    s_logger.debug("for empty delta snapshot, only mark it as destroyed in db");
+                    snapshot.processEvent(Event.DestroyRequested);
+                    snapshot.processEvent(Event.OperationSuccessed);
+                    deleted = true;
+                }
+            }
+            if (!deleted) {
+                result = this.snapshotSvr.deleteSnapshot(snapshot);
+            }
             snapshot = parent;
         }
         return result;
