@@ -179,7 +179,7 @@ class S3Client(object):
             max_error_retry, self.DEFAULT_MAX_ERROR_RETRY)
 
     def build_canocialized_resource(self, bucket, key):
-        return "/" + join([bucket, key], '/')
+        return "/" + join([bucket, key], "/")
 
     def noop_send_body(connection):
         pass
@@ -255,6 +255,10 @@ class S3Client(object):
         return signature, request_date
 
     def put(self, bucket, key, src_filename):
+
+        if not os.path.isfile(src_filename):
+            raise Exception(
+                "Attempt to put " + src_filename + " that does not exist.")
 
         headers = {
             self.HEADER_CONTENT_MD5: compute_md5(src_filename),

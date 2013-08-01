@@ -81,6 +81,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -1073,8 +1074,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         try {
 
-            final List<String> parameters = flattenProperties(s3,
-                    S3Utils.ClientOptions.class);
+            final List<String> parameters = newArrayList(flattenProperties(s3,
+                    S3Utils.ClientOptions.class));
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
                     iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));

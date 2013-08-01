@@ -290,6 +290,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -7404,8 +7405,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         try {
 
-            final List<String> parameters = flattenProperties(s3,
-                    S3Utils.ClientOptions.class);
+            final List<String> parameters = newArrayList(flattenProperties(s3,
+                    S3Utils.ClientOptions.class));
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
                     iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));
