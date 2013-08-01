@@ -339,14 +339,14 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         try:
             urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
             if not testnegative:
-                self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                self.debug("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
             else:
-                self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
-        except:
+                self.fail("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+        except Exception, e:
             if not testnegative:
-                self.fail("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                self.fail("Failed to wget from VM=%s http server on public_ip=%s because of %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
             else:
-                self.debug("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                self.debug("Failed to wget from VM=%s http server on public_ip=%s because of %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
 
     def create_StaticNatRule_For_VM(self, vm, public_ip, network):
         self.debug("Enabling static NAT for IP: %s" %
