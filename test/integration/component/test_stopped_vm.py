@@ -432,15 +432,13 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_05_deploy_startvm_false_change_so(self):
-        """Test Deploy Virtual Machine with startVM=false and
-            change service offering
+        """Test Deploy Virtual Machine with startVM=false and change service offering
         """
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false. Attach volume to the instance
         # 2. listVM command should return the deployed VM.State of this VM
         #    should be "Stopped".
-        # 3. Attach volume should be successful
         # 4. Change service offering
 
         self.debug("Deploying instance in the account: %s" %
@@ -452,7 +450,6 @@ class TestDeployVM(cloudstackTestCase):
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
-                                    diskofferingid=self.disk_offering.id,
                                 )
 
         self.debug("Deployed instance in account: %s" %
@@ -479,37 +476,11 @@ class TestDeployVM(cloudstackTestCase):
             "Stopped",
             "VM should be in Stopped state after deployment with startvm=false"
         )
-        self.debug("Creating a volume in account: %s" %
-                                                    self.account.name)
-        volume = Volume.create(
+        medium_service_off = ServiceOffering.create(
                                 self.apiclient,
-                                self.services["volume"],
-                                zoneid=self.zone.id,
-                                account=self.account.name,
-                                domainid=self.account.domainid,
-                                diskofferingid=self.disk_offering.id
+                                self.services["service_offering"]
                                 )
-        self.debug("Created volume in account: %s" % self.account.name)
-        self.debug("Attaching volume to instance: %s" %
-                                                self.virtual_machine.name)
-        try:
-            self.virtual_machine.attach_volume(self.apiclient, volume)
-        except Exception as e:
-            self.fail("Attach volume failed!")
-        self.debug("Fetching details of medium service offering")
-        medium_service_offs = ServiceOffering.list(
-                                                  self.apiclient,
-                                                  name="Medium Instance"
-                                                  )
-        if isinstance(medium_service_offs, list):
-            medium_service_off = medium_service_offs[0]
-        else:
-            self.debug("Service offering not found! Creating a new one..")
-            medium_service_off = ServiceOffering.create(
-                                    self.apiclient,
-                                    self.services["service_offering"]
-                                    )
-            self.cleanup.append(medium_service_off)
+        self.cleanup.append(medium_service_off)
 
         self.debug("Changing service offering for instance: %s" %
                                                     self.virtual_machine.name)
@@ -525,22 +496,11 @@ class TestDeployVM(cloudstackTestCase):
         self.virtual_machine.start(self.apiclient)
         self.debug("Instance: %s started" % self.virtual_machine.name)
 
-        self.debug("Detaching the disk: %s" % volume.name)
-        self.virtual_machine.detach_volume(self.apiclient, volume)
-        self.debug("Datadisk %s detached!" % volume.name)
+        listedvm = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+        self.assert_(isinstance(listedvm, list))
+        self.assert_(len(listedvm) > 0)
+        self.assertEqual(listedvm[0].serviceofferingid, medium_service_off.id, msg="VM did not change service offering")
 
-        volumes = Volume.list(
-                              self.apiclient,
-                              virtualmachineid=self.virtual_machine.id,
-                              type='DATADISK',
-                  id=volume.id,
-                              listall=True
-                              )
-        self.assertEqual(
-                         volumes,
-                         None,
-                         "List Volumes should not list any volume for instance"
-                         )
         return
 
     @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
