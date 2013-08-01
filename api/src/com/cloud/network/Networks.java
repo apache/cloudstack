@@ -91,7 +91,7 @@ public class Networks {
             @Override
             public <T> URI toUri(T value) {
                 try {
-                    return new URI("lswitch",value.toString(),null,null);
+                    return new URI("lswitch", value.toString(), null, null);
                 } catch (URISyntaxException e) {
                     throw new CloudRuntimeException(
                             "Unable to convert to broadcast URI: " + value);
@@ -181,6 +181,7 @@ public class Networks {
          * @return the value of this
          */
         public static BroadcastDomainType toEnumValue(String scheme) {
+            // scheme might be null and some of the enumvalue.scheme are as well, so
             if (scheme == null) {
                 return UnDecided;
             }
@@ -242,7 +243,7 @@ public class Networks {
                 try {
                     URI uri = new URI(candidate);
                     BroadcastDomainType tiep = getSchemeValue(uri);
-                    if (tiep.scheme.equals(uri.getScheme())) {
+                    if (tiep.scheme != null && tiep.scheme.equals(uri.getScheme())) {
                         return uri;
                     } else {
                         throw new CloudRuntimeException("string '" + candidate + "' has an unknown BroadcastDomainType.");

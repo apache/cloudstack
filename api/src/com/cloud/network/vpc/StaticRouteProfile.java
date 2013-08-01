@@ -41,7 +41,7 @@ public class StaticRouteProfile implements StaticRoute {
         this.gatewayId = staticRoute.getVpcGatewayId();
         this.state = staticRoute.getState();
         this.vpcId = staticRoute.getVpcId();
-        this.vlanTag = gateway.getVlanTag();
+        this.vlanTag = gateway.getBroadcastUri();
         this.gateway = gateway.getGateway();
         this.netmask = gateway.getNetmask();
         this.ipAddress = gateway.getIp4Address();

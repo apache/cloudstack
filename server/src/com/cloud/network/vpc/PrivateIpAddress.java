@@ -19,7 +19,7 @@ package com.cloud.network.vpc;
 
 
 public class PrivateIpAddress implements PrivateIp{
-    String vlanTag;
+    String broadcastUri;
     String gateway;
     String netmask;
     String ipAddress;
@@ -29,16 +29,16 @@ public class PrivateIpAddress implements PrivateIp{
     
     /**
      * @param privateIp
-     * @param vlanTag
+     * @param broadcastUri
      * @param gateway
      * @param netmask
      * @param macAddress TODO
      * @param physicalNetworkId TODO
      */
-    public PrivateIpAddress(PrivateIpVO privateIp, String vlanTag, String gateway, String netmask, String macAddress) {
+    public PrivateIpAddress(PrivateIpVO privateIp, String broadcastUri, String gateway, String netmask, String macAddress) {
         super();
         this.ipAddress = privateIp.getIpAddress();
-        this.vlanTag = vlanTag;
+        this.broadcastUri = broadcastUri;
         this.gateway = gateway;
         this.netmask = netmask;
         this.macAddress = macAddress;
@@ -47,8 +47,8 @@ public class PrivateIpAddress implements PrivateIp{
     }
 
     @Override
-    public String getVlanTag() {
-        return vlanTag;
+    public String getBroadcastUri() {
+        return broadcastUri;
     }
 
     @Override

@@ -1793,7 +1793,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected void assignPublicIpAddress(VirtualMachineMO vmMo, final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws Exception {
+            final boolean sourceNat, final String broadcastId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws Exception {
+
+        /**
+         * TODO support other networks
+         */
+        URI broadcastUri = BroadcastDomainType.fromString(broadcastId);
+        if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+            throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + broadcastId);
+        }
+        String vlanId = BroadcastDomainType.getValue(broadcastUri);
 
         String publicNeworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
         Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
@@ -2011,7 +2020,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             for (IpAddressTO ip : ips) {
-                assignPublicIpAddress(vmMo, routerName, controlIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
+                assignPublicIpAddress(vmMo, routerName, controlIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(), ip.getVlanNetmask(),
                         ip.getVifMacAddress());
                 results[i++] = ip.getPublicIp() + " - success";
             }

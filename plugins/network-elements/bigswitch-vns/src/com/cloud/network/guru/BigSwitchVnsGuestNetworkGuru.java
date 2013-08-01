@@ -247,7 +247,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
         String tenantId = profile.getNetworkDomain();
 
         DeleteVnsNetworkCommand cmd = new DeleteVnsNetworkCommand(tenantId,
-                        networkObject.getBroadcastUri().getSchemeSpecificPart());
+                BroadcastDomainType.getValue(networkObject.getBroadcastUri()));
         _agentMgr.easySend(bigswitchVnsHost.getId(), cmd);
 
         super.shutdown(profile, offering);

@@ -19,11 +19,12 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.*;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,6 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -156,7 +158,7 @@ public interface NetworkService {
      * @param networkName
      * @param displayText
      * @param physicalNetworkId
-     * @param vlan
+     * @param broadcastUri TODO set the guru name based on the broadcastUri?
      * @param startIp
      * @param endIP TODO
      * @param gateway
@@ -169,8 +171,8 @@ public interface NetworkService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-                                     String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
+    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri,
+            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */

@@ -42,7 +42,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger
             .getLogger(BridgeVifDriver.class);
     private int _timeout;
-    
+
     private static final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
 
@@ -54,13 +54,12 @@ public class BridgeVifDriver extends VifDriverBase {
         // Set the domr scripts directory
         params.put("domr.scripts.dir", "scripts/network/domr/kvm");
 
-
-        String networkScriptsDir = (String) params.get("network.scripts.dir");
+        String networkScriptsDir = (String)params.get("network.scripts.dir");
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
 
-        String value = (String) params.get("scripts.timeout");
+        String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         _modifyVlanPath = Script.findScript(networkScriptsDir, "modifyvlan.sh");
@@ -94,10 +93,10 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1)? nic.getNetworkRateMbps().intValue() * 128: 0;
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null && !trafficLabel.isEmpty()) {
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                     String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
@@ -113,10 +112,10 @@ public class BridgeVifDriver extends VifDriverBase {
             createControlNetwork();
             intf.defBridgeNet(_bridges.get("linklocal"), null, nic.getMac(), getGuestNicModel(guestOsType));
         } else if (nic.getType() == Networks.TrafficType.Public) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1)? nic.getNetworkRateMbps().intValue() * 128: 0;
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null && !trafficLabel.isEmpty()){
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
                     String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
@@ -143,7 +142,7 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
-        String brName = "br" + pifName + "-"+ vnetId;
+        String brName = "br" + pifName + "-" + vnetId;
         String oldStyleBrName = "cloudVirBr" + vnetId;
 
         String cmdout = Script.runSimpleBashScript("brctl show | grep " + oldStyleBrName);
@@ -170,7 +169,7 @@ public class BridgeVifDriver extends VifDriverBase {
             command.add("-p", pif);
             command.add("-b", brName);
             command.add("-o", "add");
-            
+
             final String result = command.execute();
             if (result != null) {
                 throw new InternalErrorException("Failed to create vnet " + vnetId
@@ -178,20 +177,20 @@ public class BridgeVifDriver extends VifDriverBase {
             }
         }
     }
-    
-    private void deleteVnetBr(String brName){
+
+    private void deleteVnetBr(String brName) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName + "/brif | grep vnet");
             if (cmdout != null && cmdout.contains("vnet")) {
                 // Active VM remains on that bridge
                 return;
             }
-            
+
             Pattern oldStyleBrNameRegex = Pattern.compile("^cloudVirBr(\\d+)$");
             Pattern brNameRegex = Pattern.compile("^br(\\S+)-(\\d+)$");
             Matcher oldStyleBrNameMatcher = oldStyleBrNameRegex.matcher(brName);
             Matcher brNameMatcher = brNameRegex.matcher(brName);
-            
+
             String pName = null;
             String vNetId = null;
             if (oldStyleBrNameMatcher.find()) {
@@ -199,25 +198,25 @@ public class BridgeVifDriver extends VifDriverBase {
                 pName = "undefined";
                 vNetId = oldStyleBrNameMatcher.group(1);
             } else if (brNameMatcher.find()) {
-                if(brNameMatcher.group(1) != null || !brNameMatcher.group(1).isEmpty()) {
+                if (brNameMatcher.group(1) != null || !brNameMatcher.group(1).isEmpty()) {
                     pName = brNameMatcher.group(1);
                 } else {
                     pName = "undefined";
                 }
                 vNetId = brNameMatcher.group(2);
             }
-            
+
             if (vNetId == null || vNetId.isEmpty()) {
-                s_logger.debug("unable to get a vNet ID from name "+ brName);
+                s_logger.debug("unable to get a vNet ID from name " + brName);
                 return;
             }
-            
+
             final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
             command.add("-o", "delete");
             command.add("-v", vNetId);
             command.add("-p", pName);
             command.add("-b", brName);
-            
+
             final String result = command.execute();
             if (result != null) {
                 s_logger.debug("Delete bridge " + brName + " failed: " + result);

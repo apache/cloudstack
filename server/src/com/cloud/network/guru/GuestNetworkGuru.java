@@ -114,7 +114,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     // Currently set to anything except STT for the Nicira integration.
     protected IsolationMethod[] _isolationMethods;
-    
+
     String _defaultGateway;
     String _defaultCidr;
 
@@ -143,7 +143,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             // Can't tell if there is no physical network
             return false;
         }
-        
+
         List<String> methods = physicalNetwork.getIsolationMethods();
         if (methods.isEmpty()) {
             // The empty isolation method is assumed to be VLAN
@@ -151,16 +151,16 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             methods = new ArrayList<String>(1);
             methods.add("VLAN");
         }
-        
+
         for (IsolationMethod m : _isolationMethods) {
             if (methods.contains(m.toString())) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     public IsolationMethod[] getIsolationMethods() {
         return _isolationMethods;
     }
@@ -215,7 +215,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         return network;
     }
 
-    @Override @DB
+    @Override
+    @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (s_logger.isDebugEnabled()) {
@@ -233,7 +234,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             nic.deallocate();
         }
     }
-    
 
     public int getVlanOffset(long physicalNetworkId, int vlanTag) {
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
@@ -247,13 +247,13 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         Integer lowestVlanTag = null;
         List<Pair<Integer, Integer>> vnetList = pNetwork.getVnet();
         //finding the vlanrange in which the vlanTag lies.
-        for (Pair <Integer,Integer> vnet : vnetList){
-            if (vlanTag >= vnet.first() && vlanTag <= vnet.second()){
+        for (Pair<Integer, Integer> vnet : vnetList) {
+            if (vlanTag >= vnet.first() && vlanTag <= vnet.second()) {
                 lowestVlanTag = vnet.first();
             }
         }
         if (lowestVlanTag == null) {
-            throw new InvalidParameterValueException ("The vlan tag does not belong to any of the existing vlan ranges");
+            throw new InvalidParameterValueException("The vlan tag does not belong to any of the existing vlan ranges");
         }
         return vlanTag - lowestVlanTag;
     }
@@ -268,12 +268,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
-    		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+            long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
-                		"part of network " + network + " implement ", DataCenter.class, dcId);
+                        "part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
@@ -282,7 +282,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
     }
-    
+
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest,
             ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
@@ -292,7 +292,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         //get physical network id
         Long physicalNetworkId = network.getPhysicalNetworkId();
-        
+
        // physical network id can be null in Guest Network in Basic zone, so locate the physical network
        if (physicalNetworkId == null) {
            physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
@@ -317,10 +317,10 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException,
-    InsufficientAddressCapacityException {
+            InsufficientAddressCapacityException {
 
         assert (network.getTrafficType() == TrafficType.Guest) : "Look at my name!  Why are you calling" +
-        		" me when the traffic type is : " + network.getTrafficType();
+                " me when the traffic type is : " + network.getTrafficType();
 
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
@@ -350,7 +350,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                         }
                     }
                 }
-                
+
                 if (isGateway) {
                     guestIp = network.getGateway();
                 } else {
@@ -410,10 +410,10 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        
+
         if (profile.getBroadcastDomainType() == BroadcastDomainType.Vlan &&
         		profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
-        s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+            s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(),
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(),

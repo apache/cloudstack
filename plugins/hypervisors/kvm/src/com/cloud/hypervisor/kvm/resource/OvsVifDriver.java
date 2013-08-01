@@ -37,17 +37,17 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
-    
+
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
         super.configure(params);
 
-        String networkScriptsDir = (String) params.get("network.scripts.dir");
+        String networkScriptsDir = (String)params.get("network.scripts.dir");
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
 
-        String value = (String) params.get("scripts.timeout");
+        String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         createControlNetwork(_bridges.get("linklocal"));
@@ -60,7 +60,7 @@ public class OvsVifDriver extends VifDriverBase {
 
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
         intf.setVirtualPortType("openvswitch");
-        
+
         String vlanId = null;
         String logicalSwitchUuid = null;
         if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) {
@@ -74,10 +74,10 @@ public class OvsVifDriver extends VifDriverBase {
         }
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1)? nic.getNetworkRateMbps().intValue() * 128: 0;
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan)
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null && !trafficLabel.isEmpty()) {
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                     intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
@@ -99,10 +99,10 @@ public class OvsVifDriver extends VifDriverBase {
             createControlNetwork(_bridges.get("linklocal"));
             intf.defBridgeNet(_bridges.get("linklocal"), null, nic.getMac(), getGuestNicModel(guestOsType));
         } else if (nic.getType() == Networks.TrafficType.Public) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1)? nic.getNetworkRateMbps().intValue() * 128: 0;
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null && !trafficLabel.isEmpty()){
+                if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
                     intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
@@ -128,18 +128,6 @@ public class OvsVifDriver extends VifDriverBase {
         // Libvirt apparently takes care of this, see BridgeVifDriver unplug
     }
 
-    private String setVnetBrName(String pifName, String vnetId) {
-        String brName = "br" + pifName + "-"+ vnetId;
-        String oldStyleBrName = "cloudVirBr" + vnetId;
-
-        if (isBridgeExists(oldStyleBrName)) {
-            s_logger.info("Using old style bridge name for vlan " + vnetId + " because existing bridge " + oldStyleBrName + " was found");
-            brName = oldStyleBrName;
-        }
-
-        return brName;
-    }
-    
     private void deleteExitingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");

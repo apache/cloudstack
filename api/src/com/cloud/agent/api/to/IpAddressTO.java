@@ -26,7 +26,7 @@ public class IpAddressTO {
     private boolean add;
     private boolean oneToOneNat;
     private boolean firstIP;
-    private String vlanId;
+    private String broadcastUri;
     private String vlanGateway;
     private String vlanNetmask;
     private String vifMacAddress;
@@ -34,14 +34,14 @@ public class IpAddressTO {
     private TrafficType trafficType;
     private String networkName;
 
-    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId,
+    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String broadcastUri,
             String vlanGateway, String vlanNetmask, String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
         this.add = add;
         this.firstIP = firstIP;
         this.sourceNat = sourceNat;
-        this.vlanId = vlanId;
+        this.broadcastUri = broadcastUri;
         this.vlanGateway = vlanGateway;
         this.vlanNetmask = vlanNetmask;
         this.vifMacAddress = vifMacAddress;
@@ -97,8 +97,8 @@ public class IpAddressTO {
         return sourceNat;
     }
 
-    public String getVlanId() {
-        return vlanId;
+    public String getBroadcastUri() {
+        return broadcastUri;
     }
 
     public String getVlanGateway() {

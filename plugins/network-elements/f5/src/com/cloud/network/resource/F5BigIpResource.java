@@ -294,8 +294,9 @@ public class F5BigIpResource implements ServerResource {
             try {		
                 IpAddressTO[] ips = cmd.getIpAddresses();
                 for (IpAddressTO ip : ips) {
-                // TODO BroadcastDomain.getValue(ip.getVlanId) ???
-                    long guestVlanTag = Long.valueOf(ip.getVlanId());
+                // is it saver to use Long.valueOf(BroadcastDomain.getValue(ip.getBroadcastUri())) ???
+                    // i.o.w. can this contain vlan:// then change !!!
+                    long guestVlanTag = Long.valueOf(ip.getBroadcastUri());
                     // It's a hack, using isOneToOneNat field for indicate if it's inline or not
                     boolean inline = ip.isOneToOneNat();
                     String vlanSelfIp = inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();

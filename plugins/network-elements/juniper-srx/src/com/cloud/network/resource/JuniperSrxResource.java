@@ -68,6 +68,7 @@ import com.cloud.host.Host;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
@@ -697,11 +698,11 @@ public class JuniperSrxResource implements ServerResource {
             String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);    
             
             Long publicVlanTag = null;
-            if (ip.getVlanId() != null && !ip.getVlanId().equals("untagged")) {
+            if (ip.getBroadcastUri() != null && !ip.getBroadcastUri().equals("untagged")) {
             	try {
                     publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(ip.getVlanId()));
             	} catch (Exception e) {
-            		throw new ExecutionException("Could not parse public VLAN tag: " + ip.getVlanId());
+			throw new ExecutionException("Could not parse public VLAN tag: " + ip.getBroadcastUri());
             	}
             } 
 

@@ -78,10 +78,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     IpAddressManager _ipAddrMgr;
 
-
     public ExternalGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN };
+        _isolationMethods = new IsolationMethod[] {IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN};
     }
 
     @Override
@@ -101,15 +100,15 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return false;
         }
     }
-    
+
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-    	
+
         if (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()))) {
             return null;
         }
 
-        NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
@@ -151,7 +150,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
 
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanTag));
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN,
+                    "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
         } else {
             vlanTag = Integer.parseInt(BroadcastDomainType.getValue(config.getBroadcastUri()));
             implemented.setBroadcastUri(config.getBroadcastUri());
@@ -195,20 +195,20 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         // Mask the destination address of all port forwarding rules in this network with the new guest VLAN offset
         List<PortForwardingRuleVO> pfRulesInNetwork = _pfRulesDao.listByNetwork(config.getId());
         for (PortForwardingRuleVO pfRule : pfRulesInNetwork) {
-        	if (pfRule.getDestinationIpAddress() != null) {
-        		long ipMask = getIpMask(pfRule.getDestinationIpAddress().addr(), cidrSize);
-        		String maskedDestinationIpAddress = NetUtils.long2Ip(newCidrAddress | ipMask);
-        		pfRule.setDestinationIpAddress(new Ip(maskedDestinationIpAddress));
-        		_pfRulesDao.update(pfRule.getId(), pfRule);
-        	}
+            if (pfRule.getDestinationIpAddress() != null) {
+                long ipMask = getIpMask(pfRule.getDestinationIpAddress().addr(), cidrSize);
+                String maskedDestinationIpAddress = NetUtils.long2Ip(newCidrAddress | ipMask);
+                pfRule.setDestinationIpAddress(new Ip(maskedDestinationIpAddress));
+                _pfRulesDao.update(pfRule.getId(), pfRule);
+            }
         }
         // Mask the destination address of all static nat rules in this network with the new guest VLAN offset
         // Here the private ip of the nic get updated. When secondary ip are present the gc will not triggered
-        List <IPAddressVO> ipAddrsOfNw = _ipAddressDao.listStaticNatPublicIps(config.getId());
-        for (IPAddressVO ip: ipAddrsOfNw) {
+        List<IPAddressVO> ipAddrsOfNw = _ipAddressDao.listStaticNatPublicIps(config.getId());
+        for (IPAddressVO ip : ipAddrsOfNw) {
             if (ip.getVmIp() != null) {
                 long ipMask = getIpMask(ip.getVmIp(), cidrSize);
-                String maskedVmIp =  NetUtils.long2Ip(newCidrAddress | ipMask);
+                String maskedVmIp = NetUtils.long2Ip(newCidrAddress | ipMask);
                 ip.setVmIp(maskedVmIp);
                 _ipAddressDao.update(ip.getId(), ip);
             }
@@ -224,10 +224,10 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIpv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
-        
+
         NicProfile profile = super.allocate(config, nic, vm);
 
-    	boolean _isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
+        boolean _isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
         if (_isEnabled) {
             return null;
         }
@@ -243,14 +243,15 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         return profile;
     }
 
-    @Override @DB
+    @Override
+    @DB
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
         super.deallocate(config, nic, vm);
 
         if (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()))) {
             return;
         }
-        
+
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setIp4Address(null);
             nic.setGateway(null);
@@ -264,11 +265,11 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
-    	boolean _isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
+        boolean _isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
         if (_isEnabled) {
             return;
         }
-        
+
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
@@ -305,16 +306,16 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        
+
         if (network != null && _networkModel.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
             return true;
         } else {
             return super.release(nic, vm, reservationId);
         }
     }
-    
+
     private long getIpMask(String ipAddress, long cidrSize) {
-    	return NetUtils.ip2Long(ipAddress) & ~(0xffffffffffffffffl << (32 - cidrSize));
+        return NetUtils.ip2Long(ipAddress) & ~(0xffffffffffffffffl << (32 - cidrSize));
     }
 
 }

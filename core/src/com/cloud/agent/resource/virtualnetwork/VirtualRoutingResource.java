@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.agent.resource.virtualnetwork;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import com.google.gson.Gson;
 
 import com.cloud.agent.api.Answer;
@@ -69,27 +91,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -99,7 +100,7 @@ import java.util.Map;
  *    || Param Name | Description | Values | Default ||
  *  }
  **/
-@Local(value={VirtualRoutingResource.class})
+@Local(value = {VirtualRoutingResource.class})
 public class VirtualRoutingResource implements Manager {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private String _savepasswordPath; 	// This script saves a random password to the DomR file system
@@ -126,13 +127,13 @@ public class VirtualRoutingResource implements Manager {
 
     public Answer executeRequest(final Command cmd) {
         try {
-            if (cmd instanceof SetPortForwardingRulesVpcCommand ) {
+            if (cmd instanceof SetPortForwardingRulesVpcCommand) {
                 return execute((SetPortForwardingRulesVpcCommand)cmd);
-            } else if (cmd instanceof SetPortForwardingRulesCommand){
+            } else if (cmd instanceof SetPortForwardingRulesCommand) {
                 return execute((SetPortForwardingRulesCommand)cmd);
-            } else if (cmd instanceof SetStaticRouteCommand){
+            } else if (cmd instanceof SetStaticRouteCommand) {
                 return execute((SetStaticRouteCommand)cmd);
-            } else if (cmd instanceof SetStaticNatRulesCommand){
+            } else if (cmd instanceof SetStaticNatRulesCommand) {
                 return execute((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
                 return execute((LoadBalancerConfigCommand)cmd);
@@ -140,22 +141,22 @@ public class VirtualRoutingResource implements Manager {
                 return execute((IpAssocCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
                 return execute((CheckConsoleProxyLoadCommand)cmd);
-            } else if(cmd instanceof WatchConsoleProxyLoadCommand) {
+            } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
                 return execute((WatchConsoleProxyLoadCommand)cmd);
-            }  else if (cmd instanceof SavePasswordCommand) {
+            } else if (cmd instanceof SavePasswordCommand) {
                 return execute((SavePasswordCommand)cmd);
-            }  else if (cmd instanceof DhcpEntryCommand) {
+            } else if (cmd instanceof DhcpEntryCommand) {
                 return execute((DhcpEntryCommand)cmd);
             } else if (cmd instanceof CreateIpAliasCommand) {
-                return execute((CreateIpAliasCommand) cmd);
+                return execute((CreateIpAliasCommand)cmd);
             } else if (cmd instanceof DnsMasqConfigCommand) {
-                return execute((DnsMasqConfigCommand) cmd);
+                return execute((DnsMasqConfigCommand)cmd);
             } else if (cmd instanceof DeleteIpAliasCommand) {
-                return execute((DeleteIpAliasCommand) cmd);
+                return execute((DeleteIpAliasCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
-                return execute ((VmDataCommand)cmd);
+                return execute((VmDataCommand)cmd);
             } else if (cmd instanceof CheckRouterCommand) {
-                return execute ((CheckRouterCommand)cmd);
+                return execute((CheckRouterCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
                 return execute((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
@@ -180,20 +181,20 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(VpnUsersCfgCommand cmd) {
-        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {         
+        for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
             String args = "";
             if (!userpwd.isAdd()) {
-                args +="-U ";
-                args +=userpwd.getUsername();
+                args += "-U ";
+                args += userpwd.getUsername();
             } else {
-                args +="-u ";
+                args += "-u ";
                 args += userpwd.getUsernamePassword();
             }
             String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (result != null) {
                 return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
             }
-        }       
+        }
         return new Answer(cmd);
     }
 
@@ -210,7 +211,7 @@ public class VirtualRoutingResource implements Manager {
             args += cmd.getLocalIp();
             args += " -c ";
         } else {
-            args +="-d ";
+            args += "-d ";
             args += " -s ";
             args += cmd.getVpnServerIp();
         }
@@ -223,7 +224,7 @@ public class VirtualRoutingResource implements Manager {
 
     private Answer execute(SetFirewallRulesCommand cmd) {
         String[] results = new String[cmd.getRules().length];
-        for (int i =0; i < cmd.getRules().length; i++) {
+        for (int i = 0; i < cmd.getRules().length; i++) {
             results[i] = "Failed";
         }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -240,8 +241,8 @@ public class VirtualRoutingResource implements Manager {
         final Script command = new Script(_firewallPath, _timeout, s_logger);
         command.add(routerIp);
         command.add("-F");
-        
-        if (trafficType == FirewallRule.TrafficType.Egress){
+
+        if (trafficType == FirewallRule.TrafficType.Egress) {
             command.add("-E");
             if (egressDefault.equals("true")) {
                 command.add("-P ", "1");
@@ -260,14 +261,13 @@ public class VirtualRoutingResource implements Manager {
             }
             command.add("-a", sb.toString());
         }
-       
+
         String result = command.execute();
         if (result != null) {
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
         return new SetFirewallRulesAnswer(cmd, true, null);
-        
-        
+
     }
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
@@ -310,8 +310,8 @@ public class VirtualRoutingResource implements Manager {
             args += " -r " + rule.getDstIp();
 
             String result = routerProxy("vpc_staticnat.sh", routerIp, args);
-            
-            if(result == null) {
+
+            if (result == null) {
                 results[i++] = null;
             } else {
                 results[i++] = "Failed";
@@ -321,9 +321,9 @@ public class VirtualRoutingResource implements Manager {
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
 
     }
-    
+
     private Answer execute(SetStaticNatRulesCommand cmd) {
-        if ( cmd.getVpcId() != null ) {
+        if (cmd.getVpcId() != null) {
             return SetVPCStaticNatRules(cmd);
         }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -335,18 +335,18 @@ public class VirtualRoutingResource implements Manager {
             final Script command = new Script(_firewallPath, _timeout, s_logger);
             command.add(routerIp);
             command.add(rule.revoked() ? "-D" : "-A");
-            
+
             //1:1 NAT needs instanceip;publicip;domrip;op
             command.add(" -l ", rule.getSrcIp());
             command.add(" -r ", rule.getDstIp());
-            
-            if (rule.getProtocol() != null) { 
+
+            if (rule.getProtocol() != null) {
                 command.add(" -P ", rule.getProtocol().toLowerCase());
             }
-            
+
             command.add(" -d ", rule.getStringSrcPortRange());
-            command.add(" -G ") ;
-            
+            command.add(" -G ");
+
             result = command.execute();
             if (result == null) {
                 results[i++] = null;
@@ -358,7 +358,7 @@ public class VirtualRoutingResource implements Manager {
 
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
-    
+
     protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
@@ -374,62 +374,62 @@ public class VirtualRoutingResource implements Manager {
             tmpCfgFileContents += "\n";
         }
         File permKey = new File("/root/.ssh/id_rsa.cloud");
-       
+
         try {
-        	SshHelper.scpTo(routerIp, 3922, "root", permKey, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
+            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
 
-        	String[][] rules = cfgtr.generateFwRules(cmd);
+            String[][] rules = cfgtr.generateFwRules(cmd);
 
-        	String[] addRules = rules[LoadBalancerConfigurator.ADD];
-        	String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
-        	String[] statRules = rules[LoadBalancerConfigurator.STATS];
+            String[] addRules = rules[LoadBalancerConfigurator.ADD];
+            String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+            String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
-        	String ip = cmd.getNic().getIp();
-        	String args = " -i " + ip;
-        	StringBuilder sb = new StringBuilder();
-        	if (addRules.length > 0) {
-        		for (int i = 0; i < addRules.length; i++) {
-        			sb.append(addRules[i]).append(',');
-        		}
+            String ip = cmd.getNic().getIp();
+            String args = " -i " + ip;
+            StringBuilder sb = new StringBuilder();
+            if (addRules.length > 0) {
+                for (int i = 0; i < addRules.length; i++) {
+                    sb.append(addRules[i]).append(',');
+                }
 
-        		args += " -a " + sb.toString();
-        	}
+                args += " -a " + sb.toString();
+            }
 
-        	sb = new StringBuilder();
-        	if (removeRules.length > 0) {
-        		for (int i = 0; i < removeRules.length; i++) {
-        			sb.append(removeRules[i]).append(',');
-        		}
+            sb = new StringBuilder();
+            if (removeRules.length > 0) {
+                for (int i = 0; i < removeRules.length; i++) {
+                    sb.append(removeRules[i]).append(',');
+                }
 
-        		args += " -d " + sb.toString();
-        	}
+                args += " -d " + sb.toString();
+            }
 
-        	sb = new StringBuilder();
-        	if (statRules.length > 0) {
-        		for (int i = 0; i < statRules.length; i++) {
-        			sb.append(statRules[i]).append(',');
-        		}
+            sb = new StringBuilder();
+            if (statRules.length > 0) {
+                for (int i = 0; i < statRules.length; i++) {
+                    sb.append(statRules[i]).append(',');
+                }
 
-        		args += " -s " + sb.toString();
-        	}
+                args += " -s " + sb.toString();
+            }
 
-        	String result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
+            String result = routerProxy("vpc_loadbalancer.sh", routerIp, args);
 
-        	if (result != null) {
-        		return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
-        	}
-        	return new Answer(cmd);
+            if (result != null) {
+                return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
+            }
+            return new Answer(cmd);
 
         } catch (Exception e) {
-        	return new Answer(cmd, e);
+            return new Answer(cmd, e);
         }
     }
 
     private Answer execute(LoadBalancerConfigCommand cmd) {
-        if ( cmd.getVpcId() != null ) {
+        if (cmd.getVpcId() != null) {
             return VPCLoadBalancerConfig(cmd);
         }
-        
+
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         File tmpCfgFile = null;
         try {
@@ -439,9 +439,8 @@ public class VirtualRoutingResource implements Manager {
             String[][] rules = cfgtr.generateFwRules(cmd);
             if (routerIp != null) {
                 tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
-                final PrintWriter out
-                = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
-                for (int i=0; i < config.length; i++) {
+                final PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
+                for (int i = 0; i < config.length; i++) {
                     out.println(config[i]);
                 }
                 out.close();
@@ -468,7 +467,7 @@ public class VirtualRoutingResource implements Manager {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         Map<String, List<String[]>> data = new HashMap<String, List<String[]>>();
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
- 
+
         String json = new Gson().toJson(data);
         s_logger.debug("JSON IS:" + json);
 
@@ -491,20 +490,21 @@ public class VirtualRoutingResource implements Manager {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         for (IpAddressTO ip : ips) {
-            result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
-                     ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
-                     ip.getVifMacAddress(), 2, false);
+            result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(),
+                    ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(), ip.getVlanNetmask(),
+                    ip.getVifMacAddress(), 2, false);
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {
-                results[i++] = ip.getPublicIp() + " - success";;
+                results[i++] = ip.getPublicIp() + " - success";
+                ;
             }
         }
         return new IpAssocAnswer(cmd, results);
     }
 
     private String setLoadBalancerConfig(final String cfgFile,
-            final String[] addRules, final String[] removeRules, final String[] statsRules,String routerIp) {
+            final String[] addRules, final String[] removeRules, final String[] statsRules, String routerIp) {
 
         if (routerIp == null) {
             routerIp = "none";
@@ -517,7 +517,7 @@ public class VirtualRoutingResource implements Manager {
 
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
-            for (int i=0; i< addRules.length; i++) {
+            for (int i = 0; i < addRules.length; i++) {
                 sb.append(addRules[i]).append(',');
             }
             command.add("-a", sb.toString());
@@ -525,7 +525,7 @@ public class VirtualRoutingResource implements Manager {
 
         sb = new StringBuilder();
         if (removeRules.length > 0) {
-            for (int i=0; i< removeRules.length; i++) {
+            for (int i = 0; i < removeRules.length; i++) {
                 sb.append(removeRules[i]).append(',');
             }
             command.add("-d", sb.toString());
@@ -533,12 +533,12 @@ public class VirtualRoutingResource implements Manager {
 
         sb = new StringBuilder();
         if (statsRules.length > 0) {
-            for (int i=0; i< statsRules.length; i++) {
+            for (int i = 0; i < statsRules.length; i++) {
                 sb.append(statsRules[i]).append(',');
             }
             command.add("-s", sb.toString());
         }
-        
+
         return command.execute();
     }
 
@@ -547,7 +547,7 @@ public class VirtualRoutingResource implements Manager {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmName = cmd.getVmName();
         final String vmIpAddress = cmd.getVmIpAddress();
-        final String local =  vmName;
+        final String local = vmName;
 
         // Run save_password_to_domr.sh
         final String result = savePassword(routerPrivateIPAddress, vmIpAddress, password, local);
@@ -558,79 +558,79 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
-    protected Answer execute (final DhcpEntryCommand cmd) {
-        final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
+    protected Answer execute(final DhcpEntryCommand cmd) {
+        final Script command = new Script(_dhcpEntryPath, _timeout, s_logger);
         command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
         if (cmd.getVmIpAddress() != null) {
-        command.add("-v", cmd.getVmIpAddress());
+            command.add("-v", cmd.getVmIpAddress());
         }
         command.add("-m", cmd.getVmMac());
         command.add("-n", cmd.getVmName());
-        
+
         if (cmd.getDefaultRouter() != null) {
             command.add("-d", cmd.getDefaultRouter());
         }
         if (cmd.getStaticRoutes() != null) {
-        	command.add("-s", cmd.getStaticRoutes());
+            command.add("-s", cmd.getStaticRoutes());
         }
-        
+
         if (cmd.getDefaultDns() != null) {
-        	command.add("-N", cmd.getDefaultDns());
+            command.add("-N", cmd.getDefaultDns());
         }
 
         if (cmd.getVmIp6Address() != null) {
-        	command.add("-6", cmd.getVmIp6Address());
-        	command.add("-u", cmd.getDuid());
+            command.add("-6", cmd.getVmIp6Address());
+            command.add("-u", cmd.getDuid());
         }
-        
+
         if (!cmd.isDefault()) {
-        	command.add("-z");
+            command.add("-z");
         }
 
         final String result = command.execute();
-        return new Answer(cmd, result==null, result);
+        return new Answer(cmd, result == null, result);
     }
 
     protected Answer execute(final CreateIpAliasCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final Script command  = new Script(_createIpAliasPath, _timeout, s_logger);
+        final Script command = new Script(_createIpAliasPath, _timeout, s_logger);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
         String args = "";
         command.add(routerIp);
         for (IpAliasTO ipaliasto : ipAliasTOs) {
-            args = args + ipaliasto.getAlias_count()+":"+ipaliasto.getRouterip()+":"+ipaliasto.getNetmask()+"-";
+            args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
         command.add(args);
         final String result = command.execute();
-        return new Answer(cmd, result==null, result);
+        return new Answer(cmd, result == null, result);
     }
 
     protected Answer execute(final DeleteIpAliasCommand cmd) {
-        final Script command  = new Script(_deleteIpAliasPath, _timeout, s_logger);
+        final Script command = new Script(_deleteIpAliasPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String args ="";
+        String args = "";
         command.add(routerIp);
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
-            args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
+            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        args = args + "- " ;
+        args = args + "- ";
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
-            args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
+            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
         command.add(args);
         final String result = command.execute();
-        return new Answer(cmd, result==null, result);
+        return new Answer(cmd, result == null, result);
     }
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
-        final Script command  = new Script(_callDnsMasqPath, _timeout, s_logger);
+        final Script command = new Script(_callDnsMasqPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<DhcpTO> dhcpTos = cmd.getIps();
-        String args ="";
-        for(DhcpTO dhcpTo : dhcpTos) {
-            args = args + dhcpTo.getRouterIp()+":"+dhcpTo.getGateway()+":"+dhcpTo.getNetmask()+":"+dhcpTo.getStartIpOfSubnet()+"-";
+        String args = "";
+        for (DhcpTO dhcpTo : dhcpTos) {
+            args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
         }
         command.add(routerIp);
         command.add(args);
@@ -641,14 +641,13 @@ public class VirtualRoutingResource implements Manager {
     public String getRouterStatus(String routerIP) {
         return routerProxyWithParser("checkrouter.sh", routerIP, null);
     }
-    
-    
+
     public String routerProxyWithParser(String script, String routerIP, String args) {
-        final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
+        final Script command = new Script(_routerProxyPath, _timeout, s_logger);
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         command.add(script);
         command.add(routerIP);
-        if ( args != null ) {
+        if (args != null) {
             command.add(args);
         }
         String result = command.execute(parser);
@@ -660,24 +659,24 @@ public class VirtualRoutingResource implements Manager {
 
     private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
         final String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-    
+
         String args = "";
         for (String ip : cmd.getVpnIps()) {
             args += " " + ip;
         }
-        
+
         final String result = routerProxy("checkbatchs2svpn.sh", routerIP, args);
         if (result != null) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
         return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
     }
-    
+
     public String routerProxy(String script, String routerIP, String args) {
-        final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
+        final Script command = new Script(_routerProxyPath, _timeout, s_logger);
         command.add(script);
         command.add(routerIP);
-        if ( args != null ) {
+        if (args != null) {
             command.add(args);
         }
         return command.execute();
@@ -685,7 +684,7 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(CheckRouterCommand cmd) {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-    
+
         final String result = getRouterStatus(routerPrivateIPAddress);
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
@@ -695,7 +694,7 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(BumpUpPriorityCommand cmd) {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final Script command  = new Script(_bumpUpPriorityPath, _timeout, s_logger);
+        final Script command = new Script(_bumpUpPriorityPath, _timeout, s_logger);
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         command.add(routerPrivateIPAddress);
         String result = command.execute(parser);
@@ -711,7 +710,7 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(GetDomRVersionCmd cmd) {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-    
+
         final String result = getDomRVersion(routerPrivateIPAddress);
         if (result == null || result.isEmpty()) {
             return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
@@ -730,37 +729,37 @@ public class VirtualRoutingResource implements Manager {
     protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
-    
+
     protected Answer execute(Site2SiteVpnCfgCommand cmd) {
         String args;
         if (cmd.isCreate()) {
             args = "-A";
             args += " -l ";
-	        args += cmd.getLocalPublicIp();
+            args += cmd.getLocalPublicIp();
             args += " -n ";
-	        args += cmd.getLocalGuestCidr();
+            args += cmd.getLocalGuestCidr();
             args += " -g ";
-	        args += cmd.getLocalPublicGateway();
+            args += cmd.getLocalPublicGateway();
             args += " -r ";
-	        args += cmd.getPeerGatewayIp();
+            args += cmd.getPeerGatewayIp();
             args += " -N ";
-	        args += cmd.getPeerGuestCidrList();
+            args += cmd.getPeerGuestCidrList();
             args += " -e ";
-	        args += "\"" + cmd.getEspPolicy() + "\"";
+            args += "\"" + cmd.getEspPolicy() + "\"";
             args += " -i ";
-	        args += "\"" + cmd.getIkePolicy() + "\"";
+            args += "\"" + cmd.getIkePolicy() + "\"";
             args += " -t ";
-	        args += Long.toString(cmd.getIkeLifetime());
+            args += Long.toString(cmd.getIkeLifetime());
             args += " -T ";
-	        args += Long.toString(cmd.getEspLifetime());
+            args += Long.toString(cmd.getEspLifetime());
             args += " -s ";
-	        args += "\"" + cmd.getIpsecPsk() + "\"";
-	        args += " -d ";
-	        if (cmd.getDpd()) {
-	            args += "1";
-	        } else {
-	            args += "0";
-	        }
+            args += "\"" + cmd.getIpsecPsk() + "\"";
+            args += " -d ";
+            if (cmd.getDpd()) {
+                args += "1";
+            } else {
+                args += "0";
+            }
         } else {
             args = "-D";
             args += " -r ";
@@ -807,7 +806,7 @@ public class VirtualRoutingResource implements Manager {
                     success = false;
                 }
             }
-        } catch(final IOException e) {
+        } catch (final IOException e) {
             s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
             success = false;
         }
@@ -815,11 +814,8 @@ public class VirtualRoutingResource implements Manager {
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
-
-
-
     public String savePassword(final String privateIpAddress, final String vmIpAddress, final String password, final String localPath) {
-        final Script command  = new Script(_savepasswordPath, _startTimeout, s_logger);
+        final Script command = new Script(_savepasswordPath, _startTimeout, s_logger);
         command.add("-r", privateIpAddress);
         command.add("-v", vmIpAddress);
         command.add("-p", password);
@@ -830,7 +826,7 @@ public class VirtualRoutingResource implements Manager {
 
     public String assignGuestNetwork(final String dev, final String routerIP,
             final String routerGIP, final String gateway, final String cidr,
-            final String netmask, final String dns, final String domainName){
+            final String netmask, final String dns, final String domainName) {
 
         String args = " -C";
         args += " -d " + dev;
@@ -838,17 +834,17 @@ public class VirtualRoutingResource implements Manager {
         args += " -g " + gateway;
         args += " -m " + cidr;
         args += " -n " + netmask;
-        if ( dns != null && !dns.isEmpty() ) {
+        if (dns != null && !dns.isEmpty()) {
             args += " -s " + dns;
         }
-        if ( domainName != null && !domainName.isEmpty() ) {
+        if (domainName != null && !domainName.isEmpty()) {
             args += " -e " + domainName;
         }
         return routerProxy("vpc_guestnw.sh", routerIP, args);
     }
 
     public String assignNetworkACL(final String routerIP, final String dev,
-                                   final String routerGIP, final String netmask, final String rule, String privateGw){
+            final String routerGIP, final String netmask, final String rule, String privateGw) {
         String args = " -d " + dev;
         if (privateGw != null) {
             args += " -a " + rule;
@@ -897,7 +893,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP,
-                                    final String nicname, final String gateway, final String netmask, final String subnet, boolean sourceNat) throws InternalErrorException {
+            final String nicname, final String gateway, final String netmask, final String subnet, boolean sourceNat) throws InternalErrorException {
         String args = "";
         String snatArgs = "";
 
@@ -922,7 +918,7 @@ public class VirtualRoutingResource implements Manager {
 
         String result = routerProxy("vpc_ipassoc.sh", routerIP, args);
         if (result != null) {
-            throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:"+result);
+            throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:" + result);
         }
         if (sourceNat) {
             snatArgs += " -l " + pubIP;
@@ -930,7 +926,7 @@ public class VirtualRoutingResource implements Manager {
 
             result = routerProxy("vpc_privateGateway.sh", routerIP, snatArgs);
             if (result != null) {
-                throw new InternalErrorException("KVM plugin \"vpc_privateGateway\" failed:"+result);
+                throw new InternalErrorException("KVM plugin \"vpc_privateGateway\" failed:" + result);
             }
 
         }
@@ -940,7 +936,7 @@ public class VirtualRoutingResource implements Manager {
         String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             String[] results = new String[cmd.getStaticRoutes().length];
-            String [][] rules = cmd.generateSRouteRules();
+            String[][] rules = cmd.generateSRouteRules();
             StringBuilder sb = new StringBuilder();
             String[] srRules = rules[0];
 
@@ -952,7 +948,7 @@ public class VirtualRoutingResource implements Manager {
             String result = routerProxy("vpc_staticroute.sh", routerIP, args);
 
             if (result != null) {
-                for (int i=0; i < results.length; i++) {
+                for (int i = 0; i < results.length; i++) {
                     results[i] = "Failed";
                 }
                 return new SetStaticRouteAnswer(cmd, false, results);
@@ -966,12 +962,11 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
-
     public String assignPublicIpAddress(final String vmName,
             final String privateIpAddress, final String publicIpAddress,
             final boolean add, final boolean firstIP, final boolean sourceNat,
-            final String vlanId, final String vlanGateway,
-            final String vlanNetmask, final String vifMacAddress, int nicNum, boolean newNic){
+            final String broadcastUri, final String vlanGateway,
+            final String vlanNetmask, final String vifMacAddress, int nicNum, boolean newNic) {
 
         String args = "";
         if (add) {
@@ -981,7 +976,7 @@ public class VirtualRoutingResource implements Manager {
         }
         String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
         if (sourceNat) {
-            args +=" -s";
+            args += " -s";
         }
         if (firstIP) {
             args += " -f";
@@ -993,7 +988,7 @@ public class VirtualRoutingResource implements Manager {
         args += " -c ";
         args += publicNic;
 
-        args +=" -g ";
+        args += " -g ";
         args += vlanGateway;
 
         if (newNic) {
@@ -1002,7 +997,7 @@ public class VirtualRoutingResource implements Manager {
 
         return routerProxy("ipassoc.sh", privateIpAddress, args);
     }
-    
+
     private void deleteBridge(String brName) {
         Script cmd = new Script("/bin/sh", _timeout);
         cmd.add("-c");
@@ -1025,7 +1020,7 @@ public class VirtualRoutingResource implements Manager {
     private void stopDnsmasq(String dnsmasqName) {
         Script cmd = new Script("/bin/sh", _timeout);
         cmd.add("-c");
-        cmd.add("kill -9 `cat /var/run/libvirt/network/"  + dnsmasqName +".pid`");
+        cmd.add("kill -9 `cat /var/run/libvirt/network/" + dnsmasqName + ".pid`");
         cmd.execute();
     }
 
@@ -1094,13 +1089,13 @@ public class VirtualRoutingResource implements Manager {
 
         _scriptsDir = (String)params.get("domr.scripts.dir");
         if (_scriptsDir == null) {
-            if(s_logger.isInfoEnabled()) {
-                s_logger.info("VirtualRoutingResource _scriptDir can't be initialized from domr.scripts.dir param, use default" );
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("VirtualRoutingResource _scriptDir can't be initialized from domr.scripts.dir param, use default");
             }
             _scriptsDir = getDefaultScriptsDir();
         }
 
-        if(s_logger.isInfoEnabled()) {
+        if (s_logger.isInfoEnabled()) {
             s_logger.info("VirtualRoutingResource _scriptDir to use: " + _scriptsDir);
         }
 
@@ -1135,12 +1130,12 @@ public class VirtualRoutingResource implements Manager {
         }
 
         _savepasswordPath = findScript("save_password_to_domr.sh");
-        if(_savepasswordPath == null) {
+        if (_savepasswordPath == null) {
             throw new ConfigurationException("Unable to find save_password_to_domr.sh");
         }
 
         _dhcpEntryPath = findScript("dhcp_entry.sh");
-        if(_dhcpEntryPath == null) {
+        if (_dhcpEntryPath == null) {
             throw new ConfigurationException("Unable to find dhcp_entry.sh");
         }
 
@@ -1157,10 +1152,10 @@ public class VirtualRoutingResource implements Manager {
         _privateEthIf = _privateEthIf.toLowerCase();
 
         _bumpUpPriorityPath = findScript("bumpUpPriority.sh");
-        if(_bumpUpPriorityPath == null) {
+        if (_bumpUpPriorityPath == null) {
             throw new ConfigurationException("Unable to find bumpUpPriority.sh");
         }
-        
+
         _routerProxyPath = findScript("router_proxy.sh");
         if (_routerProxyPath == null) {
             throw new ConfigurationException("Unable to find router_proxy.sh");
@@ -1171,16 +1166,15 @@ public class VirtualRoutingResource implements Manager {
         }
         _deleteIpAliasPath = findScript("deleteipAlias.sh");
         if (_deleteIpAliasPath == null) {
-            throw  new ConfigurationException("unable to find deleteipAlias.sh");
+            throw new ConfigurationException("unable to find deleteipAlias.sh");
         }
         _callDnsMasqPath = findScript("call_dnsmasq.sh");
         if (_callDnsMasqPath == null) {
-            throw  new ConfigurationException("unable to find call_dnsmasq.sh");
+            throw new ConfigurationException("unable to find call_dnsmasq.sh");
         }
-        
+
         return true;
     }
-
 
     public String connect(final String ipAddress) {
         return connect(ipAddress, _port);
@@ -1207,7 +1201,8 @@ public class VirtualRoutingResource implements Manager {
                 if (sch != null) {
                     try {
                         sch.close();
-                    } catch (final IOException e) {}
+                    } catch (final IOException e) {
+                    }
                 }
             }
             try {
@@ -1221,17 +1216,15 @@ public class VirtualRoutingResource implements Manager {
         return "Unable to connect";
     }
 
-
     @Override
     public String getName() {
         return _name;
     }
-    
+
     @Override
     public void setName(String name) {
-    	_name = name;
+        _name = name;
     }
-
 
     @Override
     public boolean start() {
@@ -1245,29 +1238,27 @@ public class VirtualRoutingResource implements Manager {
 
     @Override
     public int getRunLevel() {
-    	return ComponentLifecycle.RUN_LEVEL_COMPONENT;
+        return ComponentLifecycle.RUN_LEVEL_COMPONENT;
     }
-    
+
     public void setRunLevel() {
     }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 }
-
-

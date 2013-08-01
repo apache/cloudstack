@@ -2942,7 +2942,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result) {
         PrivateGatewayResponse response = new PrivateGatewayResponse();
         response.setId(result.getUuid());
-        response.setVlan(result.getVlanTag());
+        response.setBroadcastUri(result.getBroadcastUri());
         response.setGateway(result.getGateway());
         response.setNetmask(result.getNetmask());
         if (result.getVpcId() != null) {

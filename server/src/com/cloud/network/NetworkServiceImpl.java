@@ -18,6 +18,7 @@ package com.cloud.network;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
@@ -1124,8 +1125,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         		} else {
         			ipv4 = true;
         		}
-        	}
-        	catch (UnknownHostException e) {
+            } catch (UnknownHostException e) {
         		s_logger.error("Unable to convert gateway IP to a InetAddress", e);
         		throw new InvalidParameterValueException("Gateway parameter is invalid");
         	}
@@ -3805,13 +3805,21 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override @DB
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId,
-                                        String vlan, String startIp, String endIp, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
+            String broadcastUriString, String startIp, String endIp, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         Account owner = _accountMgr.getAccount(networkOwnerId);
 
-        // Get system network offeirng
-        NetworkOfferingVO ntwkOff = findSystemNetworkOffering(NetworkOffering.SystemPrivateGatewayNetworkOffering);
+        // Get system network offering
+        NetworkOfferingVO ntwkOff = null;
+        if (networkOfferingId != null)
+        {
+            ntwkOff = _networkOfferingDao.findById(networkOfferingId);
+        }
+        if (ntwkOff == null)
+        {
+            ntwkOff = findSystemNetworkOffering(NetworkOffering.SystemPrivateGatewayNetworkOffering);
+        }
 
         // Validate physical network
         PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
@@ -3843,6 +3851,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
 
+        URI uri = BroadcastDomainType.fromString(broadcastUriString);
+        String uriString = uri.toString();
+        BroadcastDomainType tiep = BroadcastDomainType.getSchemeValue(uri);
+        // numeric vlan or vlan uri are ok for now
+        // TODO make a test for any supported scheme
+        if (!(tiep == BroadcastDomainType.Vlan
+        || tiep == BroadcastDomainType.Lswitch)) {
+            throw new InvalidParameterValueException("unsupported type of broadcastUri specified: " + broadcastUriString);
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -3851,18 +3868,18 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         DataCenterVO dc = _dcDao.lockRow(pNtwk.getDataCenterId(), true);
 
         //check if we need to create guest network
-        Network privateNetwork = _networksDao.getPrivateNetwork(BroadcastDomainType.Vlan.toUri(vlan).toString(), cidr,
-                networkOwnerId, pNtwk.getDataCenterId());
+        Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr,
+                networkOwnerId, pNtwk.getDataCenterId(), null);
         if (privateNetwork == null) {
             //create Guest network
-            privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan,
+            privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, uriString,
                     null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null);
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
             //Do not allow multiple private gateways with same Vlan within a VPC
             if(vpcId.equals(privateNetwork.getVpcId())){
-                throw new InvalidParameterValueException("Private network for the vlan: " + vlan + " and cidr  "+ cidr +"  already exists " +
+                throw new InvalidParameterValueException("Private network for the vlan: " + uriString + " and cidr  "+ cidr +"  already exists " +
                         "for Vpc "+vpcId+" in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
             }
         }

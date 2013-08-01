@@ -562,13 +562,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
 
     @Override
-    public NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId) {
+    public NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId, Long networkOfferingId) {
+        if (networkOfferingId == null) {
+            networkOfferingId = _ntwkOffDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering).getId();
+        }
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", zoneId);
         sc.setParameters("broadcastUri", broadcastUri);
         sc.setParameters("cidr", cidr);
         sc.setParameters("account", accountId);
-        sc.setParameters("offering", _ntwkOffDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering).getId());
+        sc.setParameters("offering", networkOfferingId);
         return findOneBy(sc);
     }
 

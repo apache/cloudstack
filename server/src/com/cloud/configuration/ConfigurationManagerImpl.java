@@ -1906,7 +1906,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             || zone.getNetworkType() == NetworkType.Basic) {
                         broadcastDomainType = BroadcastDomainType.Vlan;
                     } else {
-                        continue;
+                        continue; // so broadcastDomainType remains null! why have None/Undecided/UnKnown?
                     }
                 } else if (offering.getTrafficType() == TrafficType.Guest) {
                     continue;
@@ -2434,6 +2434,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String newVlanGateway = cmd.getGateway();
         String newVlanNetmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
+        // TODO decide if we should be forgiving or demand a valid and complete URI
+        if (!((vlanId == null)
+            || ("".equals(vlanId))
+            || vlanId.startsWith(BroadcastDomainType.Vlan.scheme())))
+            vlanId = BroadcastDomainType.Vlan.toUri(vlanId).toString();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();

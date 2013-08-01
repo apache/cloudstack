@@ -1062,7 +1062,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return network.getNetwork();
         } else if (type == BroadcastDomainType.Pvlan) {
             assert BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Pvlan;
-            // TODO considder moving this NetUtils method to BroadcastDomainType
+            // should we consider moving this NetUtils method to BroadcastDomainType?
             long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(uri));
             return enableVlanNetwork(conn, vlan, network);
         }
@@ -2445,7 +2445,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             IpAddressTO[] ips = cmd.getIpAddresses();
             for (IpAddressTO ip : ips) {
 
-                assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
+                assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(),
                         ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getNetworkRate(), ip.getTrafficType(), ip.getNetworkName());
                 results[i++] = ip.getPublicIp() + " - success";
             }
@@ -4202,10 +4202,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         NicTO nic = new NicTO();
         nic.setType(ip.getTrafficType());
         nic.setName(ip.getNetworkName());
-        if (ip.getVlanId() == null) {
+        if (ip.getBroadcastUri() == null) {
             nic.setBroadcastType(BroadcastDomainType.Native);
         } else {
-            URI uri = BroadcastDomainType.fromString(ip.getVlanId());
+            URI uri = BroadcastDomainType.fromString(ip.getBroadcastUri());
             nic.setBroadcastType(BroadcastDomainType.getSchemeValue(uri));
             nic.setBroadcastUri(uri);
         }

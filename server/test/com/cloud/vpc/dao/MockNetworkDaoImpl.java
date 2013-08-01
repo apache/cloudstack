@@ -328,7 +328,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
      * @see com.cloud.network.dao.NetworkDao#getPrivateNetwork(java.lang.String, java.lang.String, long, long)
      */
     @Override
-    public NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId) {
+    public NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId, Long netofferid) {
         // TODO Auto-generated method stub
         return null;
     }

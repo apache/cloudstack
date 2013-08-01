@@ -26,7 +26,7 @@ public interface PrivateIp {
     /**
      * @return
      */
-    String getVlanTag();
+    String getBroadcastUri();
 
     /**
      * @return

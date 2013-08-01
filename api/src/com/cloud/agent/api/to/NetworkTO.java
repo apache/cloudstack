@@ -163,6 +163,10 @@ public class NetworkTO {
     }
 
     public void setBroadcastUri(URI broadcastUri) {
+        // only do this if the scheme needs aligning with the broadcastUri
+        if(broadcastUri != null && getBroadcastType() == null) {
+            setBroadcastType(BroadcastDomainType.getSchemeValue(broadcastUri));
+        }
         this.broadcastUri = broadcastUri;
     }
 

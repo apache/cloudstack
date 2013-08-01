@@ -50,7 +50,7 @@ public class VpcGatewayVO implements VpcGateway {
     String netmask;
     
     @Column(name="vlan_tag") 
-    String vlanTag;
+    String broadcastUri;
     
     @Column(name = "type")
     @Enumerated(value = EnumType.STRING)
@@ -102,7 +102,7 @@ public class VpcGatewayVO implements VpcGateway {
      * @param vpcId
      * @param zoneId
      * @param networkId
-     * @param vlanTag TODO
+     * @param broadcastUri TODO
      * @param gateway TODO
      * @param netmask TODO
      * @param accountId TODO
@@ -110,14 +110,14 @@ public class VpcGatewayVO implements VpcGateway {
      * @param account_id
      * @param sourceNat
      */
-    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String vlanTag, 
+    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String broadcastUri, 
             String gateway, String netmask, long accountId, long domainId, boolean sourceNat, long networkACLId) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;
         this.zoneId = zoneId;
         this.networkId = networkId;
-        this.vlanTag = vlanTag;
+        this.broadcastUri = broadcastUri;
         this.gateway = gateway;
         this.netmask = netmask;
         this.uuid = UUID.randomUUID().toString();
@@ -182,8 +182,8 @@ public class VpcGatewayVO implements VpcGateway {
     }
 
     @Override
-    public String getVlanTag() {
-        return vlanTag;
+    public String getBroadcastUri() {
+        return broadcastUri;
     }
     
     @Override

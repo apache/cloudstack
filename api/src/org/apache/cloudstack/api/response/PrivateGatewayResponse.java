@@ -45,8 +45,8 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the private gateway belongs to")
     private String zoneName;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the private gateway")
-    private String vlan;
+    @SerializedName(ApiConstants.VLAN) @Param(description="the network implementation uri for the private gateway")
+    private String broadcastUri;
 
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the private gateaway belongs to")
     private String vpcId;
@@ -105,8 +105,8 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
         this.zoneId = zoneId;
     }
 
-    public void setVlan(String vlan) {
-        this.vlan = vlan;
+    public void setBroadcastUri(String broadcastUri) {
+        this.broadcastUri = broadcastUri;
     }
 
     public void setZoneName(String zoneName) {

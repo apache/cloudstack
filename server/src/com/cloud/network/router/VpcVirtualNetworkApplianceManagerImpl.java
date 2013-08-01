@@ -433,7 +433,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (final PublicIpAddress ipAddr : ipAddrList) {
                 boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
                 
-                String macAddress = vlanMacAddress.get(ipAddr.getVlanTag());
+                String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
                 
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, false,
                         ipAddr.isSourceNat(), ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), macAddress,
@@ -580,7 +580,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                                 " as its nic is already gone from VPC router " + router);
                     } else {
                         macAddress = nic.getMacAddress();
-                        vlanMacAddress.put(ipAddr.getVlanTag(), macAddress);
+                        vlanMacAddress.put(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())), macAddress);
                         ipsToSend.add(ipAddr);
                     }
                 }
@@ -653,7 +653,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         });
     }
 
-    
     protected boolean sendNetworkACLs(VirtualRouter router, List<? extends NetworkACLItem> rules, long guestNetworkId, boolean isPrivateGateway)
             throws ResourceUnavailableException {
         Commands cmds = new Commands(Command.OnError.Continue);
@@ -1118,7 +1117,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         // Ensure that in multiple vlans case we first send all ip addresses of vlan1, then all ip addresses of vlan2, etc..
         Map<String, ArrayList<PrivateIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PrivateIpAddress>>();
         for (final PrivateIpAddress ipAddress : ips) {
-            String vlanTag = ipAddress.getVlanTag();
+            String vlanTag = ipAddress.getBroadcastUri();
             ArrayList<PrivateIpAddress> ipList = vlanIpMap.get(vlanTag);
             if (ipList == null) {
                 ipList = new ArrayList<PrivateIpAddress>();
@@ -1136,7 +1135,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (final PrivateIpAddress ipAddr : ipAddrList) {
                 Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
                 IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false,
-                        ipAddr.getSourceNat(), ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
+                        ipAddr.getSourceNat(), ipAddr.getBroadcastUri(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
                         null, false);
 
                 ip.setTrafficType(network.getTrafficType());
@@ -1210,7 +1209,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 publicVlans.add(publicIp.getVlanTag());
             }
         }
-        
+
         return networks;
     }
 
@@ -1229,20 +1228,21 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork),
                     _networkModel.getNetworkTag(vm.getHypervisorType(), privateNetwork));
         } else {
-            String vlanTag = BroadcastDomainType.getValue(privateNetwork.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
-            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, privateNetwork.getGateway(), netmask,
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask,
                     NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
             
-            URI netUri = BroadcastDomainType.fromString(ip.getVlanTag());
+            URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
             privateNicProfile.setIp4Address(ip.getIpAddress());
             privateNicProfile.setGateway(ip.getGateway());
             privateNicProfile.setNetmask(ip.getNetmask());
             privateNicProfile.setIsolationUri(netUri);
             privateNicProfile.setBroadcastUri(netUri);
-            privateNicProfile.setBroadcastType(BroadcastDomainType.Vlan);
+            // can we solve this in setBroadcastUri()???
+            // or more plugable construct is desirable
+            privateNicProfile.setBroadcastType(BroadcastDomainType.getSchemeValue(netUri));
             privateNicProfile.setFormat(AddressFormat.Ip4);
-            privateNicProfile.setReservationId(String.valueOf(ip.getVlanTag()));
+            privateNicProfile.setReservationId(String.valueOf(ip.getBroadcastUri()));
             privateNicProfile.setMacAddress(ip.getMacAddress());
         }
        

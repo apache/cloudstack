@@ -1720,15 +1720,15 @@ ServerResource {
     	return new Answer(cmd, true, result);
     }
 
-    private void VifHotPlug(Connect conn, String vmName, String vlanId,
+    private void VifHotPlug(Connect conn, String vmName, String broadcastUri,
             String macAddr) throws InternalErrorException, LibvirtException {
         NicTO nicTO = new NicTO();
         nicTO.setMac(macAddr);
         nicTO.setType(TrafficType.Public);
-        if (vlanId == null) {
+        if (broadcastUri == null) {
             nicTO.setBroadcastType(BroadcastDomainType.Native);
         } else {
-            URI uri = BroadcastDomainType.fromString(vlanId);
+            URI uri = BroadcastDomainType.fromString(broadcastUri);
             nicTO.setBroadcastType(BroadcastDomainType.getSchemeValue(uri));
             nicTO.setBroadcastUri(uri);
         }
@@ -1908,7 +1908,7 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
             Integer devNum = 0;
-            String pubVlan = pubIP.getVlanId();
+            String pubVlan = pubIP.getBroadcastUri();
             List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
 
             for (InterfaceDef pluggedNic : pluggedNics) {
@@ -1972,7 +1972,7 @@ ServerResource {
             }
 
             for (IpAddressTO ip : ips) {
-                String nicName = "eth" + vlanToNicNum.get(ip.getVlanId());
+                String nicName = "eth" + vlanToNicNum.get(ip.getBroadcastUri());
                 String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
                 String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
                 _virtRouterResource.assignVpcIpToRouter(routerIP, ip.isAdd(), ip.getPublicIp(),
@@ -2023,18 +2023,18 @@ ServerResource {
             int nicNum = 0;
             boolean newNic = false;
             for (IpAddressTO ip : ips) {
-                if (!vlanAllocatedToVM.containsKey(ip.getVlanId())) {
+                if (!vlanAllocatedToVM.containsKey(ip.getBroadcastUri())) {
                     /* plug a vif into router */
-                    VifHotPlug(conn, routerName, ip.getVlanId(),
+                    VifHotPlug(conn, routerName, ip.getBroadcastUri(),
                             ip.getVifMacAddress());
-                    vlanAllocatedToVM.put(ip.getVlanId(), nicPos++);
+                    vlanAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
                     newNic = true;
                 }
-                nicNum = vlanAllocatedToVM.get(ip.getVlanId());
+                nicNum = vlanAllocatedToVM.get(ip.getBroadcastUri());
                 networkUsage(routerIp, "addVif", "eth" + nicNum);
                 result = _virtRouterResource.assignPublicIpAddress(routerName,
                         routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(),
-                        ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(),
+                        ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(),
                         ip.getVlanNetmask(), ip.getVifMacAddress(), nicNum, newNic);
 
                 if (result != null) {

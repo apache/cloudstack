@@ -150,6 +150,7 @@ public interface VpcService {
      * @param gateway
      * @param netmask
      * @param gatewayOwnerId
+     * @param networkOfferingId
      * @param isSourceNat
      * @param aclId
      * @return
@@ -157,7 +158,7 @@ public interface VpcService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId,
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId, Long networkOfferingId,
         Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /**

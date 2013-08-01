@@ -24,6 +24,8 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import junit.framework.Assert;
@@ -61,8 +63,9 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@Ignore("Requires database to be set up")
+//@Ignore("Requires database to be set up")
 public class CreatePrivateNetworkTest {
 
     private static final Logger s_logger = Logger
@@ -109,6 +112,10 @@ public class CreatePrivateNetworkTest {
                 false, false, false, false);
         when(networkService._networkOfferingDao.findById(anyLong()))
                 .thenReturn(ntwkOff);
+        List<NetworkOfferingVO>netofferlist = new ArrayList<NetworkOfferingVO>();
+        netofferlist.add(ntwkOff);
+        when(networkService._networkOfferingDao.listSystemNetworkOfferings())
+                .thenReturn(netofferlist);
 
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L,
                 "2-5", "200", 1L, null, "testphysicalnetwork");
@@ -122,7 +129,7 @@ public class CreatePrivateNetworkTest {
                 .thenReturn(dc);
 
         when(networkService._networksDao.getPrivateNetwork(anyString(),
-                anyString(), eq(1L), eq(1L))).thenReturn(null);
+                anyString(), eq(1L), eq(1L), anyLong())).thenReturn(null);
 
         Network net = new NetworkVO(1L, TrafficType.Guest, Mode.None,
                 BroadcastDomainType.Vlan, 1L, 1L, 1L, 1L, "bla", "fake",
@@ -139,6 +146,7 @@ public class CreatePrivateNetworkTest {
 
         when(networkService._privateIpDao.findByIpAndSourceNetworkId(
                 net.getId(), "10.1.1.2")).thenReturn(null);
+        when(networkService._privateIpDao.findByIpAndSourceNetworkIdAndVpcId(eq(1L), anyString(), eq(1L))).thenReturn(null);
     }
 
     @Test
@@ -149,26 +157,26 @@ public class CreatePrivateNetworkTest {
         /* Network nw; */
         try {
             /* nw = */
-            networkService.createPrivateNetwork("bla", "fake", 1L, "vlan:1", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, null);
+            networkService.createPrivateNetwork("bla", "fake", 1L, "vlan:1", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, true, 1L);
             /* nw = */
-            networkService.createPrivateNetwork("bla", "fake", 1L, "lswitch:3", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, null);
+            networkService.createPrivateNetwork("bla", "fake", 1L, "lswitch:3", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, false, 1L);
             boolean invalid = false;
             boolean unsupported = false;
             try {
                 /* nw = */
-                networkService.createPrivateNetwork("bla", "fake", 1, "bla:2", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, null);
-            } catch (InvalidParameterValueException e) {
+                networkService.createPrivateNetwork("bla", "fake", 1, "bla:2", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, true, 1L);
+            } catch (CloudRuntimeException e) {
                 Assert.assertEquals("unexpected parameter exception",
-                        "unsupported type of broadcastUri specified: bla:2",
+                        "string 'bla:2' has an unknown BroadcastDomainType.",
                         e.getMessage());
                 invalid = true;
             }
             try {
                 /* nw = */
-                networkService.createPrivateNetwork("bla", "fake", 1, "mido:4", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, null);
+                networkService.createPrivateNetwork("bla", "fake", 1, "mido://4", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, false, 1L);
             } catch (InvalidParameterValueException e) {
                 Assert.assertEquals("unexpected parameter exception",
-                        "unsupported type of broadcastUri specified: mido:4",
+                        "unsupported type of broadcastUri specified: mido://4",
                         e.getMessage());
                 unsupported = true;
             }

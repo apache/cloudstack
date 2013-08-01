@@ -102,11 +102,11 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         if ("external".equalsIgnoreCase(dhcpStrategy)) {
             rsStrategy = ReservationStrategy.Create;
         }
-        
+
         if (nic != null && nic.getRequestedIpv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
-       
+
         if (nic == null) {
             nic = new NicProfile(rsStrategy, null, null, null, null);
         } else if (nic.getIp4Address() == null) {
@@ -114,7 +114,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         } else {
             nic.setStrategy(ReservationStrategy.Create);
         }
-        
+
         if (rsStrategy == ReservationStrategy.Create) {
             String mac = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
             nic.setMacAddress(mac);
@@ -139,24 +139,24 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                 if (mapVO.getPodId() != dest.getPod().getId()) {
                     Transaction txn = Transaction.currentTxn();
                     txn.start();
-                    
+
                     //release the old ip here
                     _ipAddrMgr.markIpAsUnavailable(ipVO.getId());
                     _ipAddressDao.unassignIpAddress(ipVO.getId());
-                    
+
                     txn.commit();
-                    
+
                     nic.setIp4Address(null);
                     getNewIp = true;
                 }
             }
         }
-        
+
         if (getNewIp) {
             //we don't set reservationStrategy to Create because we need this method to be called again for the case when vm fails to deploy in Pod1, and we try to redeploy it in Pod2
             getIp(nic, dest.getPod(), vm, network);
         }
-        
+
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
@@ -215,5 +215,5 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
     }
-    
+
 }

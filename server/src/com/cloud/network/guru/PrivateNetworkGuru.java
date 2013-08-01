@@ -65,7 +65,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     protected NetworkModel _networkMgr;
     @Inject
     EntityManager _entityMgr;
-    
+
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
 
     protected PrivateNetworkGuru() {
@@ -106,7 +106,16 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(),
+        BroadcastDomainType broadcastType;
+        if (userSpecified != null)
+        {
+            broadcastType = userSpecified.getBroadcastDomainType();
+        }
+        else
+        {
+            broadcastType = BroadcastDomainType.Vlan;
+        }
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Static, broadcastType, offering.getId(),
                 State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) ||
@@ -127,7 +136,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             }
         } else {
             throw new CloudRuntimeException("Can't design network " + network + "; netmask/gateway must be passed in");
-           
+
         }
 
         return network;
@@ -138,19 +147,18 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
-        
+
         PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null) {
             _privateIpDao.releaseIpAddress(nic.getIp4Address(), nic.getNetworkId());
         }
         nic.deallocate();
     }
-    
-    
+
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest,
             ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
-        
+
         return network;
     }
 
@@ -162,11 +170,11 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         if (!canHandle(offering, dc)) {
             return null;
         }
-        
+
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
         }
-        
+
         getIp(nic, dc, network);
 
         if (nic.getIp4Address() == null) {
@@ -177,10 +185,9 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
         return nic;
     }
-    
-    
+
     protected void getIp(NicProfile nic, DataCenter dc, Network network)
-            throws InsufficientVirtualNetworkCapcityException,InsufficientAddressCapacityException {
+            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
@@ -191,18 +198,17 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIp4Address(ip.getIpAddress());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
-            nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-            nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getBroadcastUri()));
+            nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getBroadcastUri()));
             nic.setBroadcastType(BroadcastDomainType.Vlan);
             nic.setFormat(AddressFormat.Ip4);
-            nic.setReservationId(String.valueOf(ip.getVlanTag()));
+            nic.setReservationId(String.valueOf(ip.getBroadcastUri()));
             nic.setMacAddress(ip.getMacAddress());
         }
 
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
     }
-    
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
@@ -230,7 +236,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        
+
     }
 
     @Override

@@ -57,7 +57,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = { NetworkGuru.class })
+@Local(value = {NetworkGuru.class})
 public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(BaremetaNetworkGuru.class);
     @Inject

@@ -89,7 +89,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = { ExternalDeviceUsageManager.class })
+@Local(value = {ExternalDeviceUsageManager.class})
 public class ExternalDeviceUsageManagerImpl extends ManagerBase implements ExternalDeviceUsageManager {
 
     String _name;
@@ -150,7 +150,6 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
     @Inject
     NetworkModel _networkModel;
 
-
     ScheduledExecutorService _executor;
     private int _externalNetworkStatsInterval;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDeviceUsageManagerImpl.class);
@@ -199,26 +198,26 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         if (fwDeviceForNetwork != null) {
             long fwDeviceId = fwDeviceForNetwork.getExternalFirewallDeviceId();
             ExternalFirewallDeviceVO fwDevice = _externalFirewallDeviceDao.findById(fwDeviceId);
-            assert(fwDevice != null);
+            assert (fwDevice != null);
             return fwDevice;
         }
         return null;
     }
 
     @Override
-    public void updateExternalLoadBalancerNetworkUsageStats(long loadBalancerRuleId){
+    public void updateExternalLoadBalancerNetworkUsageStats(long loadBalancerRuleId) {
 
         LoadBalancerVO lb = _loadBalancerDao.findById(loadBalancerRuleId);
-        if(lb == null){
-            if(s_logger.isDebugEnabled()){
+        if (lb == null) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Cannot update usage stats, LB rule is not found");
             }
             return;
         }
         long networkId = lb.getNetworkId();
         Network network = _networkDao.findById(networkId);
-        if(network == null){
-            if(s_logger.isDebugEnabled()){
+        if (network == null) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Cannot update usage stats, Network is not found");
             }
             return;
@@ -226,7 +225,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
         ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
         if (lbDeviceVO == null) {
-            if(s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Cannot update usage stats,  No external LB device found");
             }
             return;
@@ -237,7 +236,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
         if (externalLoadBalancer != null) {
             ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
-            lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+            lbAnswer = (ExternalNetworkResourceUsageAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             if (lbAnswer == null || !lbAnswer.getResult()) {
                 String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
                 String msg = "Unable to get external load balancer stats for network" + networkId + " due to: " + details + ".";
@@ -255,7 +254,8 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
         String publicIp = _networkModel.getIp(lb.getSourceIpAddressId()).getAddress().addr();
         DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-        String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + externalLoadBalancer.getName();
+        String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID "
+                + externalLoadBalancer.getName();
 
         long newCurrentBytesSent = 0;
         long newCurrentBytesReceived = 0;
@@ -294,12 +294,13 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                 txn.start();
                 userStats = _userStatsDao.lock(accountId, zone.getId(), networkId, publicIp, externalLoadBalancer.getId(), externalLoadBalancer.getType().toString());
 
-                if(userStats != null){
+                if (userStats != null) {
                     long oldNetBytesSent = userStats.getNetBytesSent();
                     long oldNetBytesReceived = userStats.getNetBytesReceived();
                     long oldCurrentBytesSent = userStats.getCurrentBytesSent();
                     long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
-                    String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " + userStats.getAccountId() + ".";
+                    String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId()
+                            + ", account ID: " + userStats.getAccountId() + ".";
 
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
@@ -318,12 +319,12 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     } else {
                         s_logger.debug("Failed to update stats for " + statsEntryIdentifier);
                     }
-                }else {
+                } else {
                     s_logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
                 }
 
                 txn.commit();
-            }catch (final Exception e) {
+            } catch (final Exception e) {
                 txn.rollback();
                 throw new CloudRuntimeException("Problem getting stats after reboot/stop ", e);
             }
@@ -398,14 +399,14 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                         // Get network stats from the external firewall
                         ExternalNetworkResourceUsageAnswer firewallAnswer = null;
                         HostVO externalFirewall = null;
-                        if(fwDeviceVO != null){
+                        if (fwDeviceVO != null) {
                             externalFirewall = _hostDao.findById(fwDeviceVO.getHostId());
                             if (externalFirewall != null) {
                                 Long fwDeviceId = new Long(externalFirewall.getId());
-                                if(!fwDeviceUsageAnswerMap.containsKey(fwDeviceId)){
-                                    try{
+                                if (!fwDeviceUsageAnswerMap.containsKey(fwDeviceId)) {
+                                    try {
                                         ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
-                                        firewallAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalFirewall.getId(), cmd);
+                                        firewallAnswer = (ExternalNetworkResourceUsageAnswer)_agentMgr.easySend(externalFirewall.getId(), cmd);
                                         if (firewallAnswer == null || !firewallAnswer.getResult()) {
                                             String details = (firewallAnswer != null) ? firewallAnswer.getDetails() : "details unavailable";
                                             String msg = "Unable to get external firewall stats for network" + zone.getName() + " due to: " + details + ".";
@@ -413,7 +414,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                         } else {
                                             fwDeviceUsageAnswerMap.put(fwDeviceId, firewallAnswer);
                                         }
-                                    } catch (Exception e){
+                                    } catch (Exception e) {
                                         String msg = "Unable to get external firewall stats for network" + zone.getName();
                                         s_logger.error(msg, e);
                                     }
@@ -423,19 +424,20 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                     }
                                     firewallAnswer = fwDeviceUsageAnswerMap.get(fwDeviceId);
                                 }
-                            }}
+                            }
+                        }
 
                         // Get network stats from the external load balancer
                         ExternalNetworkResourceUsageAnswer lbAnswer = null;
                         HostVO externalLoadBalancer = null;
-                        if(lbDeviceVO !=null){
+                        if (lbDeviceVO != null) {
                             externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
                             if (externalLoadBalancer != null) {
                                 Long lbDeviceId = new Long(externalLoadBalancer.getId());
                                 if (!lbDeviceUsageAnswerMap.containsKey(lbDeviceId)) {
                                     try {
                                         ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
-                                        lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+                                        lbAnswer = (ExternalNetworkResourceUsageAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
                                         if (lbAnswer == null || !lbAnswer.getResult()) {
                                             String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
                                             String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
@@ -443,7 +445,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                         } else {
                                             lbDeviceUsageAnswerMap.put(lbDeviceId, lbAnswer);
                                         }
-                                    } catch (Exception e){
+                                    } catch (Exception e) {
                                         String msg = "Unable to get external load balancer stats for " + zone.getName();
                                         s_logger.error(msg, e);
                                     }
@@ -456,7 +458,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                             }
                         }
 
-                        if(firewallAnswer == null && lbAnswer == null){
+                        if (firewallAnswer == null && lbAnswer == null) {
                             continue;
                         }
 
@@ -483,7 +485,8 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             long oldNetBytesReceived = userStats.getNetBytesReceived();
             long oldCurrentBytesSent = userStats.getCurrentBytesSent();
             long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
-            String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " + userStats.getAccountId() + ".";
+            String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: "
+                    + userStats.getAccountId() + ".";
 
             userStats.setCurrentBytesSent(newCurrentBytesSent);
             if (oldCurrentBytesSent > newCurrentBytesSent) {
@@ -584,7 +587,8 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             }
         }
 
-        private boolean createOrUpdateStatsEntry(boolean create, long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer, boolean inline) {
+        private boolean createOrUpdateStatsEntry(boolean create, long accountId, long zoneId, long networkId, String publicIp, long hostId,
+                ExternalNetworkResourceUsageAnswer answer, boolean inline) {
             if (create) {
                 return createStatsEntry(accountId, zoneId, networkId, publicIp, hostId);
             } else {
@@ -598,8 +602,8 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
          * balancing rules
          */
         private boolean manageStatsEntries(boolean create, long accountId, long zoneId, Network network,
-                                           HostVO externalFirewall, ExternalNetworkResourceUsageAnswer firewallAnswer,
-                                           HostVO externalLoadBalancer, ExternalNetworkResourceUsageAnswer lbAnswer) {
+                HostVO externalFirewall, ExternalNetworkResourceUsageAnswer firewallAnswer,
+                HostVO externalLoadBalancer, ExternalNetworkResourceUsageAnswer lbAnswer) {
             String accountErrorMsg = "Failed to update external network stats entry. Details: account ID = " + accountId;
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             try {
@@ -615,7 +619,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     }
                 }
 
-                if(externalFirewall != null && firewallAnswer != null){
+                if (externalFirewall != null && firewallAnswer != null) {
                     if (!sharedSourceNat) {
                         // Manage the entry for this network's source NAT IP address
                         List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);

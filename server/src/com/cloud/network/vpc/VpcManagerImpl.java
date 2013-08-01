@@ -45,6 +45,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -297,6 +298,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
         defaultProviders.add(Provider.VPCVirtualRouter);
+        // Just here for 4.1, replaced by commit 836ce6c1 in newer versions
+        Set<Network.Provider> sdnProviders = new HashSet<Network.Provider>();
+        sdnProviders.add(Provider.NiciraNvp);
 
         boolean sourceNatSvc = false;
         boolean firewallSvs = false;
@@ -308,7 +312,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
             }
 
-            svcProviderMap.put(service, defaultProviders);
+            if (service == Service.Connectivity) {
+                s_logger.debug("Applying Connectivity workaround, setting provider to NiciraNvp");
+                svcProviderMap.put(service, sdnProviders);
+            }
+            else {
+                svcProviderMap.put(service, defaultProviders);
+            }
             if (service == Service.NetworkACL) {
                 firewallSvs = true;
             }
@@ -319,7 +329,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         if (!sourceNatSvc) {
-            throw new InvalidParameterValueException("SourceNat service is required by VPC offering");
+            s_logger.debug("Automatically adding source nat service to the list of VPC services");
+            svcProviderMap.put(Service.SourceNat, defaultProviders);
         }
         
         if (!firewallSvs) {
@@ -1327,7 +1338,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<VpcGatewayVO> gateways = _vpcGatewayDao.listByVpcIdAndType(vpcId, VpcGateway.Type.Private);
 
         if (gateways != null) {
-            List<PrivateGateway> pvtGateway = new ArrayList();
+            List<PrivateGateway> pvtGateway = new ArrayList<PrivateGateway>();
             for (VpcGatewayVO gateway: gateways) {
                 pvtGateway.add(getPrivateGatewayProfile(gateway));
             }
@@ -1355,8 +1366,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
-           String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat, Long aclId) throws ResourceAllocationException,
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String broadcastUri, String ipAddress,
+            String gateway, String netmask, long gatewayOwnerId, Long networkOfferingId, Boolean isSourceNat, Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
@@ -1367,22 +1378,58 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
+        PhysicalNetwork physNet = null;
         //Validate physical network
         if (physicalNetworkId == null) {
             List<? extends PhysicalNetwork> pNtwks = _ntwkModel.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
             if (pNtwks.isEmpty() || pNtwks.size() != 1) {
                 throw new InvalidParameterValueException("Physical network can't be determined; pass physical network id");
             }
-            physicalNetworkId = pNtwks.get(0).getId();
+            physNet = pNtwks.get(0);
+            physicalNetworkId = physNet.getId();
         }
+        
+        if (physNet == null) {
+            physNet = _entityMgr.findById(PhysicalNetwork.class,physicalNetworkId);
+        }
+        Long dcId = physNet.getDataCenterId();
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
         s_logger.debug("Creating Private gateway for VPC " + vpc);
-        //1) create private network
-        String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
-        Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId,
-                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
+        //1) create private network unless it is existing and lswitch'd
+        Network privateNtwk = null;
+        if (BroadcastDomainType.getSchemeValue(BroadcastDomainType.fromString(broadcastUri)) == BroadcastDomainType.Lswitch) {
+            String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+
+            privateNtwk = _ntwkDao.getPrivateNetwork(broadcastUri, cidr,
+                    gatewayOwnerId, dcId, networkOfferingId);
+            s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
+        }
+        if (privateNtwk == null) {
+            s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
+            String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
+            privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
+                broadcastUri, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
+        } else { // create the nic/ip as createPrivateNetwork doesn''t do that work for us now
+            DataCenterVO dc = _dcDao.lockRow(physNet.getDataCenterId(), true);
+
+            //add entry to private_ip_address table
+            PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkId(privateNtwk.getId(), ipAddress);
+            if (privateIp != null) {
+                throw new InvalidParameterValueException("Private ip address " + ipAddress + " already used for private gateway" +
+                        " in zone " + _entityMgr.findById(DataCenter.class,dcId).getName());
+            }
+
+            Long mac = dc.getMacAddress();
+            Long nextMac = mac + 1;
+            dc.setMacAddress(nextMac);
+
+            privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, true);
+            _privateIpDao.persist(privateIp);
+
+            _dcDao.update(dc.getId(), dc);
+        }
 
         long networkAclId = NetworkACL.DEFAULT_DENY;
         if (aclId != null) {
@@ -1399,7 +1446,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         //2) create gateway entry
         VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
+                privateNtwk.getId(), broadcastUri, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);

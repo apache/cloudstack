@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -64,8 +65,12 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the Private gateaway")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, required=true, description="the Vlan for the private gateway")
-    private String vlan;
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, required = true, description = "the network implementation uri for the private gateway")
+    private String broadcastUri;
+
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, required = false, entityType = NetworkOfferingResponse.class,
+            description = "the uuid of the network offering to use for the private gateways network connection")
+    private Long networkOfferingId;
 
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
             required=true, description="the VPC network belongs to")
@@ -89,8 +94,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         return gateway;
     }
 
-    public String getVlan() {
-        return vlan;
+    public String getBroadcastUri() {
+        return broadcastUri;
     }
 
     public String getNetmask() {
@@ -103,6 +108,10 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
+    }
+
+    private Long getNetworkOfferingId() {
+        return networkOfferingId;
     }
 
     public Long getVpcId() {
@@ -135,7 +144,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         PrivateGateway result = null;
         try {
             result = _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(),
-                    getVlan(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(), getIsSourceNat(), getAclId());
+                    getBroadcastUri(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(), getNetworkOfferingId(), getIsSourceNat(), getAclId());
         } catch (InsufficientCapacityException ex){
             s_logger.info(ex);
             s_logger.trace(ex);
