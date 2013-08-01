@@ -66,6 +66,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("secondaryip", AllFieldsSearch.entity().getSecondaryIp(), Op.EQ);
         AllFieldsSearch.and("nicid", AllFieldsSearch.entity().getId(), Op.EQ);
+        AllFieldsSearch.and("strategy", AllFieldsSearch.entity().getReservationStrategy(), Op.EQ);
         AllFieldsSearch.done();
 
         IpSearch = createSearchBuilder(String.class);
