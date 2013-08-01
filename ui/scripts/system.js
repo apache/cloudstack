@@ -1117,68 +1117,6 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
-                            },
-
-                            addVlanRange: {
-                                label: 'Add VLAN Range',
-                                title: 'Add VLAN Range',
-
-                                messages: {
-                                    confirm: function(args) {
-                                        return 'Are you sure you want to add another VLAN Range to this guest network?';
-                                    },
-                                    notification: function(args) {
-                                        return 'VLAN Range added';
-                                    }
-                                },
-
-                                createForm: {
-                                    title: 'Add VLAN Range',
-                                    fields: {
-                                        startvlan: {
-                                            label: 'Vlan Start',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
-                                        endvlan: {
-                                            label: 'Vlan End',
-                                            validation: {
-                                                required: true
-                                            }
-                                        }
-                                    }
-
-                                },
-
-                                action: function(args) {
-                                    var array1 = [];                                    
-                                    if (args.data.startvlan != "" && args.data.endvlan != "") {
-                                    	var newVlanRange = todb(args.data.startvlan) + "-" + todb(args.data.endvlan);                                    	
-                                    	if(selectedPhysicalNetworkObj.vlan == "")
-                                    		array1.push("&vlan=" + newVlanRange);	
-                                    	else	
-                                            array1.push("&vlan=" + selectedPhysicalNetworkObj.vlan + "," + newVlanRange);
-                                    }
-                                    $.ajax({
-                                        url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
-                                        dataType: "json",
-                                        success: function(json) {
-                                            var jobId = json.updatephysicalnetworkresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jobId
-                                                }
-                                            });
-                                        },
-                                        error: function(json) {
-                                            args.response.error(parseXMLHttpResponse(json));
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
                             }
                         },
 
