@@ -1151,11 +1151,13 @@
                                 },
 
                                 action: function(args) {
-
-                                    var array1 = [];
+                                    var array1 = [];                                    
                                     if (args.data.startvlan != "" && args.data.endvlan != "") {
-                                        array1.push("&vlan=" + todb(args.data.startvlan) + "-" + todb(args.data.endvlan));
-
+                                    	var newVlanRange = todb(args.data.startvlan) + "-" + todb(args.data.endvlan);                                    	
+                                    	if(selectedPhysicalNetworkObj.vlan == "")
+                                    		array1.push("&vlan=" + newVlanRange);	
+                                    	else	
+                                            array1.push("&vlan=" + selectedPhysicalNetworkObj.vlan + "," + newVlanRange);
                                     }
                                     $.ajax({
                                         url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
@@ -1168,85 +1170,15 @@
                                                 }
                                             });
                                         },
-
                                         error: function(json) {
                                             args.response.error(parseXMLHttpResponse(json));
-
                                         }
-
                                     });
-
-
                                 },
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
-
-
-                            },
-
-                            removeVlanRange: {
-                                label: 'Remove VLAN Range',
-                                messages: {
-                                    confirm: function(args) {
-                                        return 'Are you sure you want to remove an existing VLAN Range from this guest network?';
-                                    },
-                                    notification: function(args) {
-                                        return 'VLAN Range removed';
-                                    }
-                                },
-
-                                createForm: {
-                                    title: 'Remove VLAN Range',
-                                    fields: {
-                                        startvlan: {
-                                            label: 'Vlan Start',
-                                            validation: {
-                                                required: true
-                                            }
-                                        },
-                                        endvlan: {
-                                            label: 'Vlan End',
-                                            validation: {
-                                                required: true
-                                            }
-                                        }
-                                    }
-
-                                },
-
-                                action: function(args) {
-
-                                    var array1 = [];
-                                    if (args.data.startvlan != "" && args.data.endvlan != "") {
-                                        array1.push("&removevlan=" + args.data.startvlan + "-" + args.data.endvlan);
-                                    }
-                                    $.ajax({
-                                        url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
-                                        dataType: "json",
-                                        success: function(json) {
-                                            var jobId = json.updatephysicalnetworkresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jobId
-                                                }
-                                            });
-                                        },
-
-                                        error: function(json) {
-                                            args.response.error(parseXMLHttpResponse(json));
-
-                                        }
-
-                                    });
-
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-
                             }
-
                         },
 
                         tabFilter: function(args) {
