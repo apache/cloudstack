@@ -109,7 +109,7 @@ def echo(fn):
         name = fn.__name__
         log("enter %s ####" % name)
         res = fn(*v, **k)
-        log("exit %s with result %s" % name, res)
+        log("exit %s with result %s" % (name, res))
         return res
     return wrapped
 
