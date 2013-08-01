@@ -1199,7 +1199,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Volume.Type type = volume.getType();
 
         VDI vdi = mount(conn, vmName, volume);
-
+        if ( vdi != null ) {
+            Map<String, String> smConfig = vdi.getSmConfig(conn);
+            for (String key : smConfig.keySet()) {
+                if (key.startsWith("host_")) {
+                    vdi.removeFromSmConfig(conn, key);
+                    break;
+                }
+            }
+        }
         VBD.Record vbdr = new VBD.Record();
         vbdr.VM = vm;
         if (vdi != null) {
