@@ -1639,6 +1639,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false,
                 RedundantState.UNKNOWN, offerHA, false, vpcId);
+                router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
                 _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null);
