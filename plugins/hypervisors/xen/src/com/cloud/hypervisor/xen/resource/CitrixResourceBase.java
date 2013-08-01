@@ -7407,9 +7407,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             final List<String> parameters = newArrayList(flattenProperties(s3,
                     S3Utils.ClientOptions.class));
+            // https workaround for Introspector bug that does not
+            // recognize Boolean accessor methods ...
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
-                    iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));
+                    iSCSIFlag.toString(), "bucket", s3.getBucketName(),
+                    "key", key, "https", s3.isHttps() != null ? s3.isHttps().toString()
+                    : "null"));
             final String result = callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));

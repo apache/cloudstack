@@ -68,6 +68,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -1076,9 +1077,13 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             final List<String> parameters = newArrayList(flattenProperties(s3,
                     S3Utils.ClientOptions.class));
+            // https workaround for Introspector bug that does not
+            // recognize Boolean accessor methods ...
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
-                    iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));
+                    iSCSIFlag.toString(), "bucket", s3.getBucketName(),
+                    "key", key, "https", s3.isHttps() != null ? s3.isHttps().toString()
+                    : "null"));
             final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
