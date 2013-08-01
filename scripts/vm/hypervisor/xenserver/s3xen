@@ -78,6 +78,11 @@ def optional_str_value(value, default):
     return default
 
 
+def is_blank(value):
+
+    return not is_not_blank(value)
+
+
 def is_not_blank(value):
 
     if to_none(value) is None or not isinstance(value, basestring):
