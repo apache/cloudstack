@@ -25,7 +25,6 @@ from marvin.integration.lib.common import *
 #Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
 
 
 class Services:
@@ -720,7 +719,7 @@ class TestTemplates(cloudstackTestCase):
         cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.services["service_offering"],
                                         )
 
         # create virtual machine
@@ -888,13 +887,13 @@ class TestTemplates(cloudstackTestCase):
         self.assertEqual(
                             templates[0].size,
                             self.volume.size,
-                            "Check if size of snapshot and template matches"
+                            "Derived template size (%s) does not match snapshot size (%s)" % (templates[0].size, self.volume.size)
                         )
         return
 
     @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
-    def test_03_resuse_template_name(self):
+    def test_03_reuse_template_name(self):
         """TS_BUG_011-Test Reusing deleted template name
         """
 
