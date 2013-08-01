@@ -384,7 +384,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum diskProtocol {
+        public enum diskProtocol {
             RBD("rbd"), SHEEPDOG("sheepdog");
             String _diskProtocol;
 
