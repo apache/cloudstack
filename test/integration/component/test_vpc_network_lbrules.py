@@ -198,8 +198,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        #cls.services["virtual_machine"]["template"] = cls.template.id
-        cls.services["virtual_machine"]["template"] = "719b88ea-5b54-4317-8bb3-d6b0b12da89c"
+        cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
