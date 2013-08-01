@@ -85,6 +85,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name="iops_write_rate")
     Long iopsWriteRate;
 
+    @Column(name="cache_mode")
+    String cacheMode;
+
     @Column(name="type")
     Type type;
 
@@ -160,6 +163,18 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
     }
 
     public boolean isDisplayOffering() {

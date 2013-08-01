@@ -328,6 +328,9 @@ cloudStack.docs = {
     },
     helpDiskOfferingHypervisorSnapshotReserve: {
         desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware) (Ex. The value 25 means 25%.)).',
+    },
+    helpDiskOfferingCacheMode: {
+        desc: 'The write caching mode to use for disks created with this disk offering. This can improve write performance.',
         externalLink: ''
     },
     helpDiskOfferingStorageTags: {

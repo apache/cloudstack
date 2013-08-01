@@ -79,6 +79,9 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk offering")
     private Long iopsWriteRate;
 
+    @SerializedName("cacheMode") @Param(description="the cache mode to use for this disk offering. none, writeback or writethrough")
+    private String cacheMode;
+
     @SerializedName("displayoffering") @Param(description="whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
@@ -185,6 +188,14 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setMaxIops(Long maxIops) {
         this.maxIops = maxIops;
+    }
+
+    public String getCacheMode() {
+        return this.cacheMode;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
     }
 
     public String getStorageType() {

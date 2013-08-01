@@ -427,6 +427,23 @@ public class LibvirtVMDef {
             }
         }
 
+        public enum diskCacheMode {
+            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+            String _diskCacheMode;
+
+            diskCacheMode(String cacheMode) {
+                _diskCacheMode = cacheMode;
+            }
+
+            @Override
+            public String toString() {
+                if (_diskCacheMode == null) {
+                    return "none";
+                }
+                return _diskCacheMode;
+            }
+        }
+
         private deviceType _deviceType; /* floppy, disk, cdrom */
         private diskType _diskType;
         private diskProtocol _diskProtocol;
@@ -445,6 +462,7 @@ public class LibvirtVMDef {
         private Long _bytesWriteRate;
         private Long _iopsReadRate;
         private Long _iopsWriteRate;
+        private diskCacheMode _diskCacheMode;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -606,6 +624,10 @@ public class LibvirtVMDef {
             _iopsWriteRate = iopsWriteRate;
         }
 
+        public void setCacheMode(diskCacheMode cacheMode) {
+            _diskCacheMode = cacheMode;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -616,7 +638,7 @@ public class LibvirtVMDef {
             diskBuilder.append(" type='" + _diskType + "'");
             diskBuilder.append(">\n");
             diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                    + "' cache='none' " + "/>\n");
+                    + "' cache='" + _diskCacheMode + "' " + "/>\n");
             if (_diskType == diskType.FILE) {
                 diskBuilder.append("<source ");
                 if (_sourcePath != null) {

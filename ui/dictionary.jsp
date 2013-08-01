@@ -1078,6 +1078,7 @@ dictionary = {
 'label.storage.tags': '<fmt:message key="label.storage.tags" />',
 'label.storage.type': '<fmt:message key="label.storage.type" />',
 'label.qos.type': '<fmt:message key="label.qos.type" />',
+'label.cache.mode': '<fmt:message key="label.cache.mode" />',
 'label.subdomain.access': '<fmt:message key="label.subdomain.access" />',
 'label.submit': '<fmt:message key="label.submit" />',
 'label.submitted.by': '<fmt:message key="label.submitted.by" />',
