@@ -22,8 +22,6 @@ import nose.core
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin import deployDataCenter
 from nose.plugins.base import Plugin
-from functools import partial
-
 
 class MarvinPlugin(Plugin):
     """
