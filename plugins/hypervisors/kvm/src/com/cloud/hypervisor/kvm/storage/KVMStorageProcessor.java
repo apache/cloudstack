@@ -67,6 +67,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -626,6 +627,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
+        KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
             if (!attach) {
                 dm = conn.domainLookupByName(vmName);
@@ -646,11 +648,17 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 diskdef = new DiskDef();
-                if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
-                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO,
-                            DiskDef.diskFmtType.QCOW2);
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    diskdef.defNetworkBasedDisk(attachingDisk.getPath(),
+                            attachingPool.getSourceHost(), attachingPool.getSourcePort(),
+                            attachingPool.getAuthUserName(), attachingPool.getUuid(), devId,
+                            DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId,
+                            DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO);
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId,
+                            DiskDef.diskBus.VIRTIO);
                 }
             }
 

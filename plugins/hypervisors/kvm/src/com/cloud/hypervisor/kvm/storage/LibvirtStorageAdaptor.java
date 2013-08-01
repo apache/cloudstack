@@ -634,7 +634,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             format = PhysicalDiskFormat.RAW;
 
             try {
-                s_logger.info("Creating RBD image " + pool.getSourcePort() + "/" + name + " with size " + size);
+                s_logger.info("Creating RBD image " + pool.getSourceDir() + "/" + name + " with size " + size);
 
                 Rados r = new Rados(pool.getAuthUserName());
                 r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
@@ -653,7 +653,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException(e.toString());
             }
 
-            volPath = name;
+            volPath = pool.getSourceDir() + "/" + name;
             volName = name;
             volCapacity = size;
             volAllocation = size;
