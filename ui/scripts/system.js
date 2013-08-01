@@ -6923,16 +6923,16 @@
 
                                                         action: function(args) {
                                                             $.ajax({
-                                                                url: createURL("scaleVirtualMachine&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                                                                url: createURL("scaleSystemVm&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
                                                                 dataType: "json",
                                                                 async: true,
                                                                 success: function(json) {
-                                                                    var jid = json.scalevirtualmachineresponse.jobid;
+                                                                    var jid = json.changeserviceforsystemvmresponse.jobid;
                                                                     args.response.success({
                                                                         _custom: {
                                                                             jobId: jid,
                                                                             getUpdatedItem: function(json) {
-                                                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                                                return json.queryasyncjobresultresponse.jobresult.systemvm;
                                                                             },
                                                                             getActionFilter: function() {
                                                                                 return systemvmActionfilter;
@@ -7951,16 +7951,16 @@
 
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("scaleVirtualMachine&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                                        url: createURL("scaleSystemVm&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jid = json.scalevirtualmachineresponse.jobid;
+                                            var jid = json.changeserviceforsystemvmresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId: jid,
                                                     getUpdatedItem: function(json) {
-                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                        return json.queryasyncjobresultresponse.jobresult.systemvm;
                                                     },
                                                     getActionFilter: function() {
                                                         return routerActionfilter;
@@ -8570,16 +8570,16 @@
 
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("scaleVirtualMachine&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                                        url: createURL("scaleSystemVm&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jid = json.scalevirtualmachineresponse.jobid;
+                                            var jid = json.changeserviceforsystemvmresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId: jid,
                                                     getUpdatedItem: function(json) {
-                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                        return json.queryasyncjobresultresponse.jobresult.systemvm;
                                                     },
                                                     getActionFilter: function() {
                                                         return vmActionfilter;
