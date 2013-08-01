@@ -270,7 +270,7 @@ class S3Client(object):
         headers = {
             self.HEADER_CONTENT_MD5: compute_md5(src_filename),
             self.HEADER_CONTENT_TYPE: 'application/octet-stream',
-            self.HEADER_CONTENT_LENGTH: os.stat(src_filename).st_size,
+            self.HEADER_CONTENT_LENGTH: str(os.stat(src_filename).st_size),
         }
 
         def send_body(connection):
