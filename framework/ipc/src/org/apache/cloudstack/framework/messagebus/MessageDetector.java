@@ -19,57 +19,57 @@
 package org.apache.cloudstack.framework.messagebus;
 
 public class MessageDetector implements MessageSubscriber {
-	
-	private MessageBus _messageBus;
-	private String[] _subjects;
-	
-	private volatile boolean _signalled = false;
-	
-	public MessageDetector() {
-		_messageBus = null;
-		_subjects = null;
-	}
-	
-	public boolean waitAny(long timeoutInMiliseconds) {
-		_signalled = false;
-		synchronized(this) {
-			try {
-				wait(timeoutInMiliseconds);
-			} catch (InterruptedException e) {
-			}
-		}
-		return _signalled;
-	}
-	
-	public void open(MessageBus messageBus, String[] subjects) {
-		assert(messageBus != null);
-		assert(subjects != null);
-		
-		_messageBus = messageBus;
-		_subjects = subjects;
-		
-		if(subjects != null) {
-			for(String subject : subjects) {
-				messageBus.subscribe(subject, this);
-			}
-		}
-	}
-	
-	public void close() {
-		if(_subjects != null) {
-			assert(_messageBus != null);
-			
-			for(String subject : _subjects) {
-				_messageBus.unsubscribe(subject, this);
-			}
-		}
-	}
 
-	@Override
-	public void onPublishMessage(String senderAddress, String subject, Object args) {
-		synchronized(this) {
-			_signalled = true;
-			notifyAll();
-		}
-	}
+    private MessageBus _messageBus;
+    private String[] _subjects;
+
+    private volatile boolean _signalled = false;
+
+    public MessageDetector() {
+        _messageBus = null;
+        _subjects = null;
+    }
+
+    public boolean waitAny(long timeoutInMiliseconds) {
+        _signalled = false;
+        synchronized (this) {
+            try {
+                wait(timeoutInMiliseconds);
+            } catch (InterruptedException e) {
+            }
+        }
+        return _signalled;
+    }
+
+    public void open(MessageBus messageBus, String[] subjects) {
+        assert (messageBus != null);
+        assert (subjects != null);
+
+        _messageBus = messageBus;
+        _subjects = subjects;
+
+        if (subjects != null) {
+            for (String subject : subjects) {
+                messageBus.subscribe(subject, this);
+            }
+        }
+    }
+
+    public void close() {
+        if (_subjects != null) {
+            assert (_messageBus != null);
+
+            for (String subject : _subjects) {
+                _messageBus.unsubscribe(subject, this);
+            }
+        }
+    }
+
+    @Override
+    public void onPublishMessage(String senderAddress, String subject, Object args) {
+        synchronized (this) {
+            _signalled = true;
+            notifyAll();
+        }
+    }
 }
