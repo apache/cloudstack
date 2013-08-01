@@ -22,6 +22,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 public class SnapshotObjectTO implements DataTO {
     private String path;
@@ -40,8 +41,12 @@ public class SnapshotObjectTO implements DataTO {
     public SnapshotObjectTO(SnapshotInfo snapshot) {
         this.path = snapshot.getPath();
         this.setId(snapshot.getId());
-        this.volume = (VolumeObjectTO) snapshot.getBaseVolume().getTO();
-        this.setVmName(snapshot.getBaseVolume().getAttachedVmName());
+        VolumeInfo vol = snapshot.getBaseVolume();
+        if (vol != null) {
+            this.volume = (VolumeObjectTO)vol.getTO();
+            this.setVmName(vol.getAttachedVmName());
+        }
+
         SnapshotInfo parentSnapshot = snapshot.getParent();
         if (parentSnapshot != null) {
             this.parentSnapshotPath = parentSnapshot.getPath();
