@@ -2236,33 +2236,32 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
-            releaseNic(vmProfile, nic);
+            releaseNic(vmProfile, nic.getId());
         }
     }
 
-
+    
     @Override
     @DB
     public void releaseNic(VirtualMachineProfile vmProfile, Nic nic)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        NicVO nicVO = _nicDao.findById(nic.getId());
-        releaseNic(vmProfile, nicVO);
+        releaseNic(vmProfile, nic.getId());
     }
 
     @DB
-    protected void releaseNic(VirtualMachineProfile vmProfile, NicVO nicVO)
+    protected void releaseNic(VirtualMachineProfile vmProfile, long nicId)
             throws ConcurrentOperationException, ResourceUnavailableException {
         //lock the nic
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        NicVO nic = _nicDao.lockRow(nicVO.getId(), true);
+        NicVO nic = _nicDao.lockRow(nicId, true);
         if (nic == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on nic " + nic);
         }
 
         Nic.State originalState = nic.getState();
-        NetworkVO network = _networksDao.findById(nicVO.getNetworkId());
+        NetworkVO network = _networksDao.findById(nic.getNetworkId());
 
         if (originalState == Nic.State.Reserved || originalState == Nic.State.Reserving) {
             if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
