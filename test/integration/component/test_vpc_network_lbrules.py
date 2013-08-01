@@ -975,14 +975,10 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         public_ip_1 = self.acquire_Public_IP(network_1)
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_2, vm_1])
         public_ip_1.delete(self.apiclient)
-        lb_rules = LoadBalancerRule.list(self.apiclient,
+
+        with self.assertRaises(Exception):
+            lb_rules = LoadBalancerRule.list(self.apiclient,
                                         id=lb_rule.id,
                                         listall=True
                                         )
-        self.assertEqual(lb_rules,
-                        None,
-                        "Failed LB rule is present on the VR"
-                        )
-
-
         return
