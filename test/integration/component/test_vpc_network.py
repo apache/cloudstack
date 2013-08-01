@@ -2283,7 +2283,9 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                   )
         for vm in vms:
             if vm.state == "Stopped":
-                vm.start(self.apiclient)
+                cmd = startVirtualMachine.startVirtualMachineCmd()
+                cmd.id = vm.id
+                self.apiclient.startVirtualMachine(cmd)
         return
 
     def validate_vpc_offering(self, vpc_offering):
