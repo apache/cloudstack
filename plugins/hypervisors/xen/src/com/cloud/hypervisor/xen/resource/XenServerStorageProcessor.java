@@ -71,21 +71,16 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.cloud.utils.ReflectUtil.flattenProperties;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -1066,53 +1061,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return lfilename;
     }
 
-    private static List<String> serializeProperties(final Object object,
-            final Class<?> propertySet) {
-
-        assert object != null;
-        assert propertySet != null;
-        assert propertySet.isAssignableFrom(object.getClass());
-
-        try {
-
-            final BeanInfo beanInfo = Introspector.getBeanInfo(propertySet);
-            final PropertyDescriptor[] descriptors = beanInfo
-                    .getPropertyDescriptors();
-
-            final List<String> serializedProperties = new ArrayList<String>();
-            for (final PropertyDescriptor descriptor : descriptors) {
-
-                serializedProperties.add(descriptor.getName());
-                final Object value = descriptor.getReadMethod().invoke(object);
-                serializedProperties.add(value != null ? value.toString()
-                        : "null");
-
-            }
-
-            return Collections.unmodifiableList(serializedProperties);
-
-        } catch (IntrospectionException e) {
-            s_logger.warn(
-                    "Ignored IntrospectionException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        } catch (IllegalArgumentException e) {
-            s_logger.warn(
-                    "Ignored IllegalArgumentException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        } catch (IllegalAccessException e) {
-            s_logger.warn(
-                    "Ignored IllegalAccessException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        } catch (InvocationTargetException e) {
-            s_logger.warn(
-                    "Ignored InvocationTargetException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        }
-
-        return Collections.emptyList();
-
-    }
-
     private boolean backupSnapshotToS3(final Connection connection,
             final S3TO s3, final String srUuid, final String snapshotUuid,
             final Boolean iSCSIFlag, final int wait) {
@@ -1125,8 +1073,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         try {
 
-            final List<String> parameters = new ArrayList<String>(
-                    serializeProperties(s3, S3Utils.ClientOptions.class));
+            final List<String> parameters = flattenProperties(s3,
+                    S3Utils.ClientOptions.class);
             parameters.addAll(Arrays.asList("operation", "put", "directory",
                     dir, "filename", filename, "iSCSIFlag",
                     iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key", key));

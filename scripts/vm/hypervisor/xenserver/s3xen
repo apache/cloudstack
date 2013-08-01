@@ -306,7 +306,7 @@ def parseArguments(args):
     # the com.cloud.utils.S3Utils#ClientOptions interface
     client = S3Client(
         args['accessKey'], args['secretKey'], args['endPoint'],
-        args['isHttps'], args['connectionTimeout'], args['socketTimeout'])
+        args['https'], args['connectionTimeout'], args['socketTimeout'])
 
     operation = args['operation']
     bucket = args['bucket']
