@@ -270,7 +270,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
-            newVol.setSize(vol.getSize());
+            newVol.setSize(volume.getSize());
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
