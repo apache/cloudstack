@@ -43,6 +43,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.config.ConfigKey;
 import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.config.Configurable;
 import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -120,7 +121,7 @@ import com.cloud.utils.time.InaccurateClock;
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
 @Local(value = { AgentManager.class })
-public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory {
+public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory, Configurable {
     protected static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
     protected static final Logger status_logger = Logger.getLogger(Status.class);
 
@@ -1575,6 +1576,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return -1;
         }
 
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {Workers, Port, PingInterval, PingTimeout, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize};
     }
 
 }
