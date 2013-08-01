@@ -65,9 +65,9 @@ class Services:
                     "memory": 128,      # In MBs
                 },
                 "disk_offering": {
-                    "displaytext": "Small volume",
-                    "name": "Small volume",
-                    "disksize": 20
+                    "displaytext": "Tiny volume",
+                    "name": "Tiny volume",
+                    "disksize": 1
                 },
                 "volume": {
                     "diskname": "DataDisk",
@@ -680,9 +680,8 @@ class TestDeployVM(cloudstackTestCase):
         return
 
     @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
-    def test_08_deploy_attach_volume(self):
-        """Test Deploy Virtual Machine with startVM=false and
-            attach volume already attached to different machine
+    def test_08_deploy_attached_volume(self):
+        """Test Deploy Virtual Machine with startVM=false and attach volume already attached to different machine
         """
 
         # Validate the following:
@@ -794,7 +793,7 @@ class TestDeployVM(cloudstackTestCase):
         try:
             self.virtual_machine_1.attach_volume(self.apiclient, volume)
         except Exception as e:
-            self.fail("Attach volume failed!")
+            self.fail("Attach volume failed with %s!" % e)
 
         volumes = Volume.list(
                               self.apiclient,
