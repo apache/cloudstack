@@ -56,13 +56,8 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-304to305.sql");
         }
-        
-        String vmWareTemplateInsertScript = Script.findScript("", "db/vmwaretmplinsert-304to305.sql");
-        if (vmWareTemplateInsertScript == null) {
-            throw new CloudRuntimeException("Unable to find db/vmwaretmplinsert-304to305.sql");
-        }
 
-        return new File[] { new File(vmWareTemplateInsertScript), new File(script) };
+        return new File[] { new File(script) };
     }
 
     @Override
