@@ -130,31 +130,44 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot) {
         s_logger.debug("delete snapshot chain for snapshot: " + snapshot.getId());
         boolean result = false;
-        while (snapshot != null && (snapshot.getState() == Snapshot.State.Destroying || snapshot.getState()
-                == Snapshot.State.Destroyed || snapshot.getState() == Snapshot.State.Error)) {
-            SnapshotInfo child = snapshot.getChild();
+        boolean resultIsSet = false;   //need to track, the snapshot itself is deleted or not.
+        try {
+            while (snapshot != null && (snapshot.getState() == Snapshot.State.Destroying || snapshot.getState()
+                    == Snapshot.State.Destroyed || snapshot.getState() == Snapshot.State.Error)) {
+                SnapshotInfo child = snapshot.getChild();
 
-            if (child != null) {
-                s_logger.debug("the snapshot has child, can't delete it on the storage");
-                break;
-            }
-            s_logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
-            SnapshotInfo parent = snapshot.getParent();
-            boolean deleted = false;
-            if (parent != null) {
-                if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
-                    //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
-                    //Instead, mark it as destroyed in the db.
-                    s_logger.debug("for empty delta snapshot, only mark it as destroyed in db");
-                    snapshot.processEvent(Event.DestroyRequested);
-                    snapshot.processEvent(Event.OperationSuccessed);
-                    deleted = true;
+                if (child != null) {
+                    s_logger.debug("the snapshot has child, can't delete it on the storage");
+                    break;
                 }
+                s_logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
+                SnapshotInfo parent = snapshot.getParent();
+                boolean deleted = false;
+                if (parent != null) {
+                    if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
+                        //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
+                        //Instead, mark it as destroyed in the db.
+                        s_logger.debug("for empty delta snapshot, only mark it as destroyed in db");
+                        snapshot.processEvent(Event.DestroyRequested);
+                        snapshot.processEvent(Event.OperationSuccessed);
+                        deleted = true;
+                        if (!resultIsSet) {
+                            result = true;
+                            resultIsSet = true;
+                        }
+                    }
+                }
+                if (!deleted) {
+                    boolean r = this.snapshotSvr.deleteSnapshot(snapshot);
+                    if (!resultIsSet) {
+                        result = r;
+                        resultIsSet = true;
+                    }
+                }
+                snapshot = parent;
             }
-            if (!deleted) {
-                result = this.snapshotSvr.deleteSnapshot(snapshot);
-            }
-            snapshot = parent;
+        } catch (Exception e) {
+            s_logger.debug("delete snapshot failed: ", e);
         }
         return result;
     }
