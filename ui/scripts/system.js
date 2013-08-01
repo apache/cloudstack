@@ -1082,22 +1082,23 @@
                         actions: {
                             edit: {
                                 label: 'label.edit',
-                                action: function(args) {
-                                    var vlan;
-                                    if (args.data.endVlan == null || args.data.endVlan.length == 0)
-                                        vlan = args.data.startVlan;
-                                    else
-                                        vlan = args.data.startVlan + "-" + args.data.endVlan;
-
-                                    var array1 = [];
-                                    if (vlan != null && vlan.length > 0)
-                                        array1.push("&vlan=" + todb(vlan));
-                                    if (args.data.tags != null && args.data.tags.length > 0)
-                                        array1.push("&tags=" + todb(args.data.tags));
-
+                                action: function(args) {                                   
+                                    var data = {
+                                    	id: selectedPhysicalNetworkObj.id,
+                                    };                                 
+                                    if (args.data.vlan != null && args.data.vlan.length > 0) {
+                                    	$.extend(data, {
+                                    		vlan: args.data.vlan
+                                    	});
+                                    }                                        
+                                    if (args.data.tags != null && args.data.tags.length > 0) {
+                                    	$.extend(data, {
+                                    		tags: args.data.tags
+                                    	});
+                                    }    
                                     $.ajax({
-                                        url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
-                                        dataType: "json",
+                                        url: createURL('updatePhysicalNetwork'),
+                                        data: data,
                                         success: function(json) {
                                             var jobId = json.updatephysicalnetworkresponse.jobid;
 
@@ -1208,14 +1209,9 @@
                                         label: 'label.state'
                                     },
                                     vlan: {
-                                        label: 'VLAN Range(s)'
-                                        // isEditable: true
-                                    },
-                                    /*  endVlan: {
-                      label: 'label.end.vlan',
-                      isEditable: true
-                    },*/
-
+                                        label: 'VLAN Range(s)',
+                                        isEditable: true
+                                    },   
                                     tags: {
                                         label: 'Tags',
                                         isEditable: true
