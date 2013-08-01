@@ -184,7 +184,12 @@ class S3Client(object):
             max_error_retry, self.DEFAULT_MAX_ERROR_RETRY)
 
     def build_canocialized_resource(self, bucket, key):
-        return "/" + join([bucket, key], "/")
+        if not key.startswith("/"):
+            uri = bucket + "/" + key
+        else:
+            uri = bucket + key
+
+        return "/" + uri
 
     def noop_send_body(connection):
         pass
@@ -205,9 +210,6 @@ class S3Client(object):
         headers['Date'] = request_date
 
         def perform_request():
-            print "method=", method, ", uri=", uri, ", headers=", headers,
-            " endpoint=", self.end_point
-
             connection = None
             if self.https_flag:
                 connection = HTTPSConnection(self.end_point)
@@ -225,7 +227,7 @@ class S3Client(object):
                 fn_send_body(connection)
 
                 response = connection.getresponse()
-                log("Sent " + method + " request to " + self.end_point + "/" +
+                log("Sent " + method + " request to " + self.end_point +
                     uri + " with headers " + str(headers) +
                     ".  Received response status " + str(response.status) +
                     ": " + response.reason)
