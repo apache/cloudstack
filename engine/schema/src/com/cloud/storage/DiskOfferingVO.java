@@ -24,8 +24,8 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -37,7 +37,9 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
 
 @Entity
 @Table(name = "disk_offering")
@@ -120,6 +122,10 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="iops_write_rate")
     Long iopsWriteRate;
 
+    @Column(name="cache_mode", updatable = true, nullable=false)
+    @Enumerated(value=EnumType.STRING)
+    private DiskCacheMode cacheMode;
+
     @Column(name="display_offering")
     boolean displayOffering = true;
 
@@ -132,6 +138,24 @@ public class DiskOfferingVO implements DiskOffering {
 
     public DiskOfferingVO() {
         uuid = UUID.randomUUID().toString();
+    }
+
+    public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized,
+            Boolean isCustomizedIops, Long minIops, Long maxIops, DiskCacheMode cacheMode) {
+        this.domainId = domainId;
+        this.name = name;
+        this.displayText = displayText;
+        this.diskSize = diskSize;
+        this.tags = tags;
+        this.recreatable = false;
+        this.type = Type.Disk;
+        this.useLocalStorage = false;
+        this.customized = isCustomized;
+        this.uuid = UUID.randomUUID().toString();
+        this.customizedIops = isCustomizedIops;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        this.cacheMode = cacheMode;
     }
 
     public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized,
@@ -235,6 +259,16 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public void setMaxIops(Long maxIops) {
         this.maxIops = maxIops;
+    }
+
+    @Override
+    public DiskCacheMode getCacheMode() {
+        return cacheMode;
+    }
+
+    @Override
+    public void setCacheMode(DiskCacheMode cacheMode) {
+        this.cacheMode = cacheMode;
     }
 
 	@Override

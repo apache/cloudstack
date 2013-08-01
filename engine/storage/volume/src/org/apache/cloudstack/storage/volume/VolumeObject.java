@@ -39,6 +39,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
@@ -210,6 +211,15 @@ public class VolumeObject implements VolumeInfo {
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
         if (diskOfferingVO != null) {
             return diskOfferingVO.getIopsWriteRate();
+        }
+        return null;
+    }
+
+    @Override
+    public DiskCacheMode getCacheMode() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getCacheMode();
         }
         return null;
     }

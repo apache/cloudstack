@@ -36,6 +36,7 @@ import org.xml.sax.SAXException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskCacheMode;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
 
@@ -69,6 +70,7 @@ public class LibvirtDomainXMLParser {
                 DiskDef def = new DiskDef();
                 if (type.equalsIgnoreCase("network")) {
                     String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskCacheMode = getAttrValue("driver", "cache", disk);
                     String diskPath = getAttrValue("source", "name", disk);
                     String protocol = getAttrValue("source", "protocol", disk);
                     String authUserName = getAttrValue("auth", "username", disk);
@@ -78,9 +80,12 @@ public class LibvirtDomainXMLParser {
                     String diskLabel = getAttrValue("target", "dev", disk);
                     String bus = getAttrValue("target", "bus", disk);
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
-                                            DiskDef.diskBus.valueOf(bus.toUpperCase()), DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
+                                            DiskDef.diskBus.valueOf(bus.toUpperCase()),
+                                            DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
+                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskCacheMode = getAttrValue("driver", "cache", disk);
                     String diskFile = getAttrValue("source", "file", disk);
                     String diskDev = getAttrValue("source", "dev", disk);
 
@@ -103,6 +108,7 @@ public class LibvirtDomainXMLParser {
                     } else if (type.equalsIgnoreCase("block")) {
                         def.defBlockBasedDisk(diskDev, diskLabel,
                                 DiskDef.diskBus.valueOf(bus.toUpperCase()));
+                        def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
                     }
                 }
 

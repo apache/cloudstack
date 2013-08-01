@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.Volume;
 
 public interface VolumeInfo extends DataObject, Volume {
@@ -45,4 +46,6 @@ public interface VolumeInfo extends DataObject, Volume {
     Long getBytesWriteRate();
     Long getIopsReadRate();
     Long getIopsWriteRate();
+
+    DiskCacheMode getCacheMode();
 }

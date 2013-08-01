@@ -193,6 +193,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskCacheMode;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FilesystemDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GraphicDef;
@@ -1510,6 +1511,7 @@ ServerResource {
             volume.setBytesWriteRate(dskch.getBytesWriteRate());
             volume.setIopsReadRate(dskch.getIopsReadRate());
             volume.setIopsWriteRate(dskch.getIopsWriteRate());
+            volume.setCacheMode(dskch.getCacheMode());
             return new CreateAnswer(cmd, volume);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());
@@ -2815,7 +2817,8 @@ ServerResource {
                     cmd.getPoolUuid());
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), disk,
-                    cmd.getDeviceId().intValue(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
+                    cmd.getDeviceId().intValue(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(),
+                    cmd.getCacheMode());
         } catch (LibvirtException e) {
             return new AttachVolumeAnswer(cmd, e.toString());
         } catch (InternalErrorException e) {
@@ -3775,6 +3778,8 @@ ServerResource {
                     disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
                 if ((volumeObjectTO.getIopsWriteRate() != null) && (volumeObjectTO.getIopsWriteRate() > 0))
                     disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
+                if (volumeObjectTO.getCacheMode() != null)
+                    disk.setCacheMode(DiskDef.diskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString()));
             }
             vm.getDevices().addDevice(disk);
         }
@@ -3886,7 +3891,7 @@ ServerResource {
 
     protected synchronized String attachOrDetachDisk(Connect conn,
             boolean attach, String vmName, KVMPhysicalDisk attachingDisk,
-            int devId, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) throws LibvirtException, InternalErrorException {
+            int devId, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate, String cacheMode) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -3934,6 +3939,10 @@ ServerResource {
                     diskdef.setIopsReadRate(iopsReadRate);
                 if ((iopsWriteRate != null) && (iopsWriteRate > 0))
                     diskdef.setIopsWriteRate(iopsWriteRate);
+
+                if (cacheMode != null) {
+                    diskdef.setCacheMode(DiskDef.diskCacheMode.valueOf(cacheMode));
+                }
             }
 
             String xml = diskdef.toString();
