@@ -7394,14 +7394,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private boolean backupSnapshotToS3(final Connection connection,
-            final S3TO s3, final String srUuid, final String snapshotUuid,
-            final Boolean iSCSIFlag, final int wait) {
+                                       final S3TO s3, final String srUuid, final String snapshotUuid,
+                                       final Boolean iSCSIFlag, final int wait) {
 
         final String filename = iSCSIFlag ? "VHD-" + snapshotUuid
                 : snapshotUuid + ".vhd";
         final String dir = (iSCSIFlag ? "/dev/VG_XenStorage-"
                 : "/var/run/sr-mount/") + srUuid;
-        final String key = StringUtils.join("/", "snapshots", snapshotUuid);
+        final String key = String.format("/snapshots/%1$s", snapshotUuid);
 
         try {
 
@@ -7409,11 +7409,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     S3Utils.ClientOptions.class));
             // https workaround for Introspector bug that does not
             // recognize Boolean accessor methods ...
-            parameters.addAll(Arrays.asList("operation", "put", "directory",
-                    dir, "filename", filename, "iSCSIFlag",
-                    iSCSIFlag.toString(), "bucket", s3.getBucketName(),
-                    "key", key, "https", s3.isHttps() != null ? s3.isHttps().toString()
-                    : "null"));
+            parameters.addAll(Arrays.asList("operation", "put", "filename",
+                    dir + "/" + filename, "iSCSIFlag", iSCSIFlag.toString(),
+                    "bucket", s3.getBucketName(), "key", key, "https",
+                    s3.isHttps() != null ? s3.isHttps().toString()
+                            : "null"));
             final String result = callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
