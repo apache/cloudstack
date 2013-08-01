@@ -71,6 +71,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             cls.services["service_offering"]
         )
         cls.account = Account.create(cls.apiClient, services=cls.services["account"])
+        cls.cleanup = [cls.account]
         cls.template = get_template(
             cls.apiClient,
             cls.zone.id,
@@ -79,7 +80,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))
-        cls.cleanup = [cls.account]
+
 
         # Generate userdata of 2500 bytes. This is larger than the 2048 bytes limit.
         # CS however allows for upto 4K bytes in the code. So this must succeed.
