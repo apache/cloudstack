@@ -109,7 +109,7 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=5, timeout=30, keyPairFileLocation=None):
+def is_server_ssh_ready(ipaddress, port, username, password, retries=10, timeout=30, keyPairFileLocation=None):
     """Return ssh handle else wait till sshd is running"""
     try:
         ssh = remoteSSHClient(
