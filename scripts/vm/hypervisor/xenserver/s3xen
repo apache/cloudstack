@@ -352,7 +352,7 @@ def s3(session, args):
             client.delete(bucket, key, filename)
         else:
             raise RuntimeError(
-                "S3 plugin does not support operation " + operation))
+                "S3 plugin does not support operation " + operation)
 
         return 'true'
 
