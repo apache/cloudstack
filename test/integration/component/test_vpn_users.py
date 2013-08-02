@@ -149,10 +149,10 @@ class TestVPNUsers(cloudstackTestCase):
                                     )
             self.public_ip = PublicIPAddress.create(
                                                self.apiclient,
-                                               self.virtual_machine.account,
-                                               self.virtual_machine.zoneid,
-                                               self.virtual_machine.domainid,
-                                               self.services["virtual_machine"]
+                                               accountid=self.virtual_machine.account,
+                                               zoneid=self.virtual_machine.zoneid,
+                                               domainid=self.virtual_machine.domainid,
+                                               services=self.services["virtual_machine"]
                                                )
             return
         except cloudstackAPIException as e:
