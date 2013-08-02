@@ -572,7 +572,9 @@ public enum Config {
             return "TemplateManager";
         } else if (_componentClass == VpcManager.class) {
             return "VpcManager";
-        }else {
+        } else if (_componentClass == SnapshotManager.class) {
+            return "SnapshotManager";
+        } else {
             return "none";
         }
     }

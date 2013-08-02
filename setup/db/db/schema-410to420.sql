@@ -2222,3 +2222,5 @@ CREATE VIEW `cloud`.`account_vmstats_view` AS
     where
         vm_type = 'User'
     group by account_id , state;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'KVM.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');
