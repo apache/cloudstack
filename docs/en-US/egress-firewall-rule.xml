@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="egress-firewall-rule">
-  <title>Creating Egress Firewall Rules in an Advanced Zone</title>
+  <title>Egress Firewall Rules in an Advanced Zone</title>
   <para>The egress traffic originates from a private network to a public network, such as the
     Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed from a
     guest network to the Internet. However, you can control the egress traffic in an Advanced zone
@@ -27,7 +27,7 @@
     to the rule is allowed and the remaining traffic is blocked. When all the firewall rules are
     removed the default policy, Block, is applied.</para>
   <para>Egress firewall rules are supported on Juniper SRX and virtual router.</para>
-    <note>
+  <note>
     <para>The egress firewall rules are not supported on shared networks.</para>
   </note>
   <para>Consider the following scenarios to apply egress firewall rules:</para>
@@ -44,55 +44,117 @@
         specified for TCP, UDP or for ICMP type and code.</para>
     </listitem>
   </itemizedlist>
-  <para>To configure an egress firewall rule:</para>
-  <orderedlist>
-    <listitem>
-      <para>Log in to the &PRODUCT; UI as an administrator or end user. </para>
-    </listitem>
-    <listitem>
-      <para>In the left navigation, choose Network.</para>
-    </listitem>
-    <listitem>
-      <para>In Select view, choose Guest networks, then click the Guest network you want.</para>
-    </listitem>
-    <listitem>
-      <para>To add an egress rule, click the Egress rules tab and fill out the following fields to
-        specify what type of traffic is allowed to be sent out of VM instances in this guest
-        network:</para>
-      <mediaobject>
-        <imageobject>
-          <imagedata fileref="./images/egress-firewall-rule.png"/>
-        </imageobject>
-        <textobject>
-          <phrase>egress-firewall-rule.png: adding an egress firewall rule</phrase>
-        </textobject>
-      </mediaobject>
-      <itemizedlist>
-        <listitem>
-          <para><emphasis role="bold">CIDR</emphasis>: (Add by CIDR only) To send traffic only to
-            the IP addresses within a particular address block, enter a CIDR or a comma-separated
-            list of CIDRs. The CIDR is the base IP address of the destination. For example,
-            192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Protocol</emphasis>: The networking protocol that VMs uses to
-            send outgoing traffic. The TCP and UDP protocols are typically used for data exchange
-            and end-user communications. The ICMP protocol is typically used to send error messages
-            or network monitoring data.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">Start Port, End Port</emphasis>: (TCP, UDP only) A range of
-            listening ports that are the destination for the outgoing traffic. If you are opening a
-            single port, use the same number in both fields.</para>
-        </listitem>
-        <listitem>
-          <para><emphasis role="bold">ICMP Type, ICMP Code</emphasis>: (ICMP only) The type of
-            message and error code that are sent.</para>
-        </listitem>
-      </itemizedlist>
-    </listitem>
-    <listitem>
-      <para>Click Add.</para>
-    </listitem>
-  </orderedlist>
+  <section>
+    <title>Configuring an Egress Firewall Rule</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user. </para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, choose Network.</para>
+      </listitem>
+      <listitem>
+        <para>In Select view, choose Guest networks, then click the Guest network you want.</para>
+      </listitem>
+      <listitem>
+        <para>To add an egress rule, click the Egress rules tab and fill out the following fields to
+          specify what type of traffic is allowed to be sent out of VM instances in this guest
+          network:</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="./images/egress-firewall-rule.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>egress-firewall-rule.png: adding an egress firewall rule</phrase>
+          </textobject>
+        </mediaobject>
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">CIDR</emphasis>: (Add by CIDR only) To send traffic only to
+              the IP addresses within a particular address block, enter a CIDR or a comma-separated
+              list of CIDRs. The CIDR is the base IP address of the destination. For example,
+              192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Protocol</emphasis>: The networking protocol that VMs uses
+              to send outgoing traffic. The TCP and UDP protocols are typically used for data
+              exchange and end-user communications. The ICMP protocol is typically used to send
+              error messages or network monitoring data.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Start Port, End Port</emphasis>: (TCP, UDP only) A range of
+              listening ports that are the destination for the outgoing traffic. If you are opening
+              a single port, use the same number in both fields.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">ICMP Type, ICMP Code</emphasis>: (ICMP only) The type of
+              message and error code that are sent.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>Click Add.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="default-egress-policy">
+    <title>Changing the Default Egress Policy</title>
+    <para>You can configure the default policy of egress firewall rules in Isolated Advanced
+      networks. Use the create network offering option to determine whether the default policy
+      should be block or allow all the traffic to the public network from a guest network. If no
+      policy is specified, by default all the traffic is allowed from the guest network that you
+      create by using this network offering.</para>
+    <para>You have two options: Allow and Deny.</para>
+    <formalpara>
+      <title>Allow</title>
+      <para>If you select Allow for a network offering, by default egress traffic is allowed.
+        However, when an egress rule is configured for a guest network, rules are applied to block
+        the specified traffic and rest are allowed. If no egress rules are configured for the
+        network, egress traffic is accepted.</para>
+    </formalpara>
+    <formalpara>
+      <title>Deny</title>
+      <para>If you select Deny for a network offering, by default egress traffic for the guest
+        network is blocked. However, when an egress rules is configured for a guest network, rules
+        are applied to allow the specified traffic. While implementing a guest network, &PRODUCT;
+        adds the firewall egress rule specific to the default egress policy for the guest
+        network.</para>
+    </formalpara>
+    <para>This feature is supported only on virtual router and Juniper SRX.</para>
+    <orderedlist>
+      <listitem>
+        <para>Create a network offering with your desirable default egress policy:</para>
+        <orderedlist numeration="loweralpha">
+          <listitem>
+            <para>Log in with admin privileges to the &PRODUCT; UI.</para>
+          </listitem>
+          <listitem>
+            <para>In the left navigation bar, click Service Offerings.</para>
+          </listitem>
+          <listitem>
+            <para>In Select Offering, choose Network Offering.</para>
+          </listitem>
+          <listitem>
+            <para>Click Add Network Offering.</para>
+          </listitem>
+          <listitem>
+            <para>In the dialog, make necessary choices, including firewall provider.</para>
+          </listitem>
+          <listitem>
+            <para>In the Default egress policy field, specify the behaviour.</para>
+          </listitem>
+          <listitem>
+            <para>Click OK.</para>
+          </listitem>
+        </orderedlist>
+      </listitem>
+      <listitem>
+        <para>Create an isolated network by using this network offering.</para>
+        <para>Based on your selection, the network will have the egress public traffic blocked or
+          allowed.</para>
+      </listitem>
+    </orderedlist>
+    <para>On upgrade existing network offerings with firewall service providers will have the
+      default egress policy DENY.</para>
+  </section>
 </section>

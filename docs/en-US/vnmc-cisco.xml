@@ -107,11 +107,11 @@
       <title>Guidelines</title>
       <para>When a guest network is created with Cisco VNMC firewall provider, an additional public
         IP is acquired along with the Source NAT IP. The Source NAT IP is used for the ASA outside
-        interface, whereas the addition IP is used to workaround an ASA limitation. Ensure that this
-        additional public IP is not released. You can identify this IP as soon as the network is in
-        implemented state and before acquiring any further public IPs. The additional IP is the one
-        that is not marked as Source NAT. You can find the IP used for the ASA outside interface by
-        looking at the Cisco VNMC used in your guest network.</para>
+        interface, whereas the additional IP is used to workaround an ASA limitation. Ensure that
+        this additional public IP is not released. You can identify this IP as soon as the network
+        is in implemented state and before acquiring any further public IPs. The additional IP is
+        the one that is not marked as Source NAT. You can find the IP used for the ASA outside
+        interface by looking at the Cisco VNMC used in your guest network.</para>
     </section>
     <section id="how-to-asa">
       <title>Using Cisco ASA 1000v Services</title>
