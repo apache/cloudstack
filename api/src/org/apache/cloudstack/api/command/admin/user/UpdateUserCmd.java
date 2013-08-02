@@ -18,17 +18,18 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -36,6 +37,10 @@ import com.cloud.user.UserAccount;
 
 @APICommand(name = "updateUser", description="Updates a user account", responseObject=UserResponse.class)
 public class UpdateUserCmd extends BaseCmd {
+
+    @Inject
+    private LdapValidator _ldapValidator;
+
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
     private static final String s_name = "updateuserresponse";
@@ -137,11 +142,13 @@ public class UpdateUserCmd extends BaseCmd {
     public void execute(){
         CallContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _regionService.updateUser(this);
-
+	if (_ldapValidator.isLdapEnabled()) {
+	    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Password cannot be changed when LDAP is enabled");
+	}
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+	    setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update user");
         }

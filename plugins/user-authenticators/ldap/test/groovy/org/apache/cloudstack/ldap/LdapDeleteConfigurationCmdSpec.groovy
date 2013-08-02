@@ -46,7 +46,7 @@ class LdapDeleteConfigurationCmdSpec extends spock.lang.Specification {
         thrown ServerApiException
     }
 
-    def "Test getEntityOwnerId is 0"() {
+    def "Test getEntityOwnerId is 1"() {
         given:
         def ldapManager = Mock(LdapManager)
         def ldapDeleteConfigurationCmd = new LdapDeleteConfigurationCmd(ldapManager)

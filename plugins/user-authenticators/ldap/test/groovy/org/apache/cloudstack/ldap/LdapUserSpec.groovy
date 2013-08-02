@@ -76,4 +76,26 @@ class LdapUserSpec extends spock.lang.Specification {
         "A"       | "B"
         "A"       | "A"
     }
+
+    def "Testing that LdapUsers equality"() {
+	given:
+	def userA = new LdapUser(usernameA, "", "", "", "")
+	def userB = new LdapUser(usernameB, "", "", "", "")
+	expect:
+	userA.equals(userA) == true
+	userA.equals(new Object()) == false
+	userA.equals(userB) == false
+	where:
+	usernameA | usernameB
+	"A"       | "B"
+    }
+
+    def "Testing LdapUsers hashCode generation"() {
+	given:
+	def userA = new LdapUser(usernameA, "", "", "", "")
+	expect:
+	userA.hashCode() == usernameA.hashCode()
+	where:
+	usernameA = "A"
+    }
 }

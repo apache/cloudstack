@@ -27,6 +27,7 @@ import javax.naming.directory.DirContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapCreateAccount;
 import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
@@ -42,7 +43,7 @@ import com.cloud.utils.Pair;
 
 @Component
 @Local(value = LdapManager.class)
-public class LdapManagerImpl implements LdapManager {
+public class LdapManagerImpl implements LdapManager, LdapValidator {
     private static final Logger s_logger = Logger.getLogger(LdapManagerImpl.class.getName());
 
     @Inject
@@ -201,5 +202,10 @@ public class LdapManagerImpl implements LdapManager {
         } finally {
             closeContext(context);
         }
+    }
+
+    @Override
+    public boolean isLdapEnabled() {
+	return listConfigurations(new LdapListConfigurationCmd(this)).second() > 0;
     }
 }

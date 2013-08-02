@@ -47,7 +47,7 @@ class LdapListAllUsersCmdSpec extends spock.lang.Specification {
         when:
         ldapListAllUsersCmd.execute()
         then:
-        thrown ServerApiException
+	ldapListAllUsersCmd.responseObject.getResponses().size() == 0
     }
 
     def "Test getEntityOwnerId is 1"() {

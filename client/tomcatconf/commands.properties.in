@@ -667,7 +667,7 @@ listDedicatedHosts=1
 
 ### LDAP
 searchLdap=3
-listLdapConfigurations=3
+listLdapConfigurations=15
 addLdapConfiguration=3
 deleteLdapConfiguration=3
 listAllLdapUsers=3

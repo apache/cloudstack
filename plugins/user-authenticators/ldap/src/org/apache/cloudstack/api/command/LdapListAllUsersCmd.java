@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LdapUserResponse;
@@ -64,15 +63,17 @@ public class LdapListAllUsersCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException {
+	List<LdapUserResponse> ldapResponses = null;
+	final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
         try {
             final List<LdapUser> users = _ldapManager.getUsers();
-            final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
-            final List<LdapUserResponse> ldapResponses = createLdapUserResponse(users);
+	    ldapResponses = createLdapUserResponse(users);
+	} catch (final NoLdapUserMatchingQueryException ex) {
+	    ldapResponses = new ArrayList<LdapUserResponse>();
+	} finally {
             response.setResponses(ldapResponses);
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (final NoLdapUserMatchingQueryException ex) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
 

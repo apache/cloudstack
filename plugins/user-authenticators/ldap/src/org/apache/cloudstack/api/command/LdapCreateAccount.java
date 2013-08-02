@@ -39,6 +39,7 @@ import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.UserAccount;
 
 @APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0")
@@ -60,10 +61,10 @@ public class LdapCreateAccount extends BaseCmd {
     private Long domainId;
 
     @Parameter(name = ApiConstants.TIMEZONE, type = CommandType.STRING, description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
-    private String timeZone;
+    private String timezone;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Unique username.")
-    private String userName;
+    private String username;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for the account's networks")
     private String networkDomain;
@@ -81,18 +82,19 @@ public class LdapCreateAccount extends BaseCmd {
         super();
     }
 
-    public LdapCreateAccount(final LdapManager ldapManager) {
+    public LdapCreateAccount(final LdapManager ldapManager, final AccountService accountService) {
         super();
         _ldapManager = ldapManager;
+	_accountService = accountService;
     }
 
     @Override
     public void execute() throws ServerApiException {
-        CallContext.current().setEventDetails("Account Name: " + accountName + ", Domain Id:" + domainId);
+	updateCallContext();
         try {
-            LdapUser user = _ldapManager.getUser(userName);
+	    LdapUser user = _ldapManager.getUser(username);
             validateUser(user);
-            UserAccount userAccount = _accountService.createUserAccount(userName, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timeZone,
+	    UserAccount userAccount = _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone,
                     accountName, accountType, domainId, networkDomain, details, accountUUID, userUUID);
             if (userAccount != null) {
                 AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
@@ -102,8 +104,12 @@ public class LdapCreateAccount extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a user account");
             }
         } catch (NamingException e) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, "No LDAP user exists with the username of " + userName);
+	    throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, "No LDAP user exists with the username of " + username);
         }
+    }
+
+    private void updateCallContext() {
+	CallContext.current().setEventDetails("Account Name: " + accountName + ", Domain Id:" + domainId);
     }
 
     private String generatePassword() throws ServerApiException {
@@ -127,15 +133,16 @@ public class LdapCreateAccount extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    private void validateUser(LdapUser user) throws ServerApiException {
+    private boolean validateUser(LdapUser user) throws ServerApiException {
         if (user.getEmail() == null) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, userName + " has no email address set within LDAP");
+	    throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, username + " has no email address set within LDAP");
         }
         if (user.getFirstname() == null) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, userName + " has no firstname set within LDAP");
+	    throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, username + " has no firstname set within LDAP");
         }
         if (user.getLastname() == null) {
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, userName + " has no lastname set within LDAP");
+	    throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, username + " has no lastname set within LDAP");
         }
+	return true;
     }
 }
