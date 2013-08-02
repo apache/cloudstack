@@ -69,10 +69,10 @@ class Services:
                 "displaytext": "Test Network",
             },
             "ostype": 'CentOS 5.3 (64-bit)',
-            "gateway" : "10.1.1.1",
+            "gateway" : "172.1.1.1",
             "netmask" : "255.255.255.0",
-            "startip" : "10.1.1.10",
-            "endip" : "10.1.1.20",
+            "startip" : "172.1.1.10",
+            "endip" : "172.1.1.20",
             "regionid" : "1",
             "vlan" :"10",
             "isportable" : "true",
@@ -230,7 +230,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
                                     )
 
         ip_address = PublicIPAddress.create(self.api_client, self.account.name,
-                            self.zone.id, self.account.domainid, True)
+                            self.zone.id, self.account.domainid, isportable=True)
 
         ip_address.delete(self.api_client)
         self.portable_ip_range.delete(self.apiclient)
