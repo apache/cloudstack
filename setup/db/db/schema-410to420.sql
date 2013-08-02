@@ -2223,4 +2223,5 @@ CREATE VIEW `cloud`.`account_vmstats_view` AS
         vm_type = 'User'
     group by account_id , state;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'healthcheck.update.interval', '600', 'Time Interval to fetch the LB health check states (in sec)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'KVM.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');
