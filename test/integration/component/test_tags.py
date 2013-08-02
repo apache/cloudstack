@@ -697,6 +697,7 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Enable the VPN
         # 2. create Tag on VPN rule using CreateTag API
         # 3. Delete the VPN rule
+        self.skipTest("VPN resource tags are unsupported in 4.0")
 
         self.debug("Fetching the network details for account: %s" %
                                                 self.account.name)
