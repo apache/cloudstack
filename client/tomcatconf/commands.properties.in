@@ -242,6 +242,10 @@ deleteAlerts=1
 #### system capacity commands
 listCapacity=3
 
+#### swift commands
+addSwift=1
+listSwifts=1
+
 #### s3 commands
 addS3=1
 listS3s=1
