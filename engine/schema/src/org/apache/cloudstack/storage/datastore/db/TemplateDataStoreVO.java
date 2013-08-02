@@ -309,7 +309,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public String toString() {
-        return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(dataStoreId)
+        return new StringBuilder("TmplDataStore[").append(id).append("-").append(templateId).append("-").append(dataStoreId)
                 .append(installPath).append("]").toString();
     }
 
