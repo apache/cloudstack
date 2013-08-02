@@ -97,7 +97,6 @@ import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.service.dao.ServiceOfferingDetailsDaoImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
-import com.cloud.storage.dao.S3DaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
@@ -148,7 +147,6 @@ import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
         DcDetailsDaoImpl.class,
         NicSecondaryIpDaoImpl.class,
         UserIpv6AddressDaoImpl.class,
-        S3DaoImpl.class,
         UserDaoImpl.class,
         NicDaoImpl.class,
         NetworkDomainDaoImpl.class,

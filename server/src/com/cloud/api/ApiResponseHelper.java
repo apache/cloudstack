@@ -131,12 +131,10 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.ImageStore;
-import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Swift;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
@@ -235,7 +233,6 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.S3Response;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -249,7 +246,6 @@ import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
@@ -460,10 +456,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setDescription(vmSnapshot.getDescription());
         vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
-        if (vm != null)
+        if (vm != null) {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
-        if (vmSnapshot.getParent() != null)
+        }
+        if (vmSnapshot.getParent() != null) {
             vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
+        }
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
         vmSnapshotResponse.setObjectName("vmsnapshot");
@@ -514,35 +512,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return listHosts.get(0);
     }
 
-    @Override
-    public SwiftResponse createSwiftResponse(Swift swift) {
-        SwiftResponse swiftResponse = new SwiftResponse();
-        swiftResponse.setId(swift.getUuid());
-        swiftResponse.setUrl(swift.getUrl());
-        swiftResponse.setAccount(swift.getAccount());
-        swiftResponse.setUsername(swift.getUserName());
-        swiftResponse.setObjectName("swift");
-        return swiftResponse;
-    }
-
-    @Override
-    public S3Response createS3Response(final S3 result) {
-
-        final S3Response response = new S3Response();
-
-        response.setAccessKey(result.getAccessKey());
-        response.setConnectionTimeout(result.getConnectionTimeout());
-        response.setEndPoint(result.getEndPoint());
-        response.setHttpsFlag(result.getHttpsFlag());
-        response.setMaxErrorRetry(result.getMaxErrorRetry());
-        response.setObjectId(result.getUuid());
-        response.setSecretKey(result.getSecretKey());
-        response.setSocketTimeout(result.getSocketTimeout());
-        response.setTemplateBucketName(result.getBucketName());
-
-        return response;
-
-    }
 
     @Override
     public VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan) {
@@ -1896,10 +1865,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 // convert account to projectIds
                 Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
 
-                if (project.getUuid() != null && !project.getUuid().isEmpty())
+                if (project.getUuid() != null && !project.getUuid().isEmpty()) {
                     projectIds.add(project.getUuid());
-                else
+                } else {
                     projectIds.add(String.valueOf(project.getId()));
+                }
             }
         }
 
@@ -2010,8 +1980,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (so != null) {
             ServiceOffering soffering = ApiDBUtils.findServiceOfferingById(so);
-            if (soffering != null)
+            if (soffering != null) {
                 response.setServiceOfferingId(soffering.getUuid());
+            }
         }
 
         if (offering.getGuestType() != null) {
@@ -2197,7 +2168,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // populate network offering information
-        NetworkOffering networkOffering = (NetworkOffering) ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+        NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
         if (networkOffering != null) {
             response.setNetworkOfferingId(networkOffering.getUuid());
             response.setNetworkOfferingName(networkOffering.getName());
@@ -2723,8 +2694,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb) {
         LBStickinessResponse spResponse = new LBStickinessResponse();
 
-        if (lb == null)
+        if (lb == null) {
             return spResponse;
+        }
         spResponse.setlbRuleId(lb.getUuid());
         Account account = ApiDBUtils.findAccountById(lb.getAccountId());
         if (account != null) {
@@ -2751,8 +2723,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb) {
         LBHealthCheckResponse hcResponse = new LBHealthCheckResponse();
 
-        if (lb == null)
+        if (lb == null) {
             return hcResponse;
+        }
         hcResponse.setlbRuleId(lb.getUuid());
         Account account = ApiDBUtils.findAccountById(lb.getAccountId());
         if (account != null) {
@@ -3403,8 +3376,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 		    usageRecResponse.setVmName(vm.getInstanceName());
 		    usageRecResponse.setUsageId(vm.getUuid());
 	        usageRecResponse.setSize(usageRecord.getSize());
-	        if(usageRecord.getOfferingId() != null)
-	            usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+	        if(usageRecord.getOfferingId() != null) {
+                usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+            }
 		}
 
 		if (usageRecord.getRawUsage() != null) {
@@ -3423,8 +3397,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 	}
 
     public String getDateStringInternal(Date inputDate) {
-        if (inputDate == null)
+        if (inputDate == null) {
             return null;
+        }
 
         TimeZone tz = _usageSvc.getUsageTimezone();
         Calendar cal = Calendar.getInstance(tz);

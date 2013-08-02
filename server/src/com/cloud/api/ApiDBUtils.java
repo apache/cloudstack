@@ -233,7 +233,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
@@ -247,7 +246,6 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.TemplateManager;
@@ -330,7 +328,6 @@ public class ApiDBUtils {
     static PrimaryDataStoreDao _storagePoolDao;
     static VMTemplateDao _templateDao;
     static VMTemplateDetailsDao _templateDetailsDao;
-    static VMTemplateS3Dao _templateS3Dao;
     static UploadDao _uploadDao;
     static UserDao _userDao;
     static UserStatisticsDao _userStatsDao;
@@ -441,7 +438,6 @@ public class ApiDBUtils {
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMTemplateDao templateDao;
     @Inject private VMTemplateDetailsDao templateDetailsDao;
-    @Inject private VMTemplateS3Dao templateS3Dao;
     @Inject private UploadDao uploadDao;
     @Inject private UserDao userDao;
     @Inject private UserStatisticsDao userStatsDao;
@@ -551,7 +547,6 @@ public class ApiDBUtils {
         _storagePoolDao = storagePoolDao;
         _templateDao = templateDao;
         _templateDetailsDao = templateDetailsDao;
-        _templateS3Dao = templateS3Dao;
         _uploadDao = uploadDao;
         _userDao = userDao;
         _userStatsDao = userStatsDao;
@@ -891,15 +886,13 @@ public class ApiDBUtils {
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
         if(template != null) {
             Map details = _templateDetailsDao.findDetails(templateId);
-            if(details != null && !details.isEmpty())
+            if(details != null && !details.isEmpty()) {
                 template.setDetails(details);
+            }
         }
         return template;
     }
 
-    public static VMTemplateS3VO findTemplateS3Ref(long templateId) {
-        return _templateS3Dao.findOneByTemplateId(templateId);
-    }
 
     public static UploadVO findUploadById(Long id) {
         return _uploadDao.findById(id);
@@ -1187,10 +1180,11 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = _asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = _asPolicyDao.findById(vo.getPolicyId());
-            if(autoScalePolicy.getAction().equals("scaleup"))
+            if(autoScalePolicy.getAction().equals("scaleup")) {
                 scaleUpPolicyIds.add(autoScalePolicy.getId());
-            else
+            } else {
                 scaleDownPolicyIds.add(autoScalePolicy.getId());
+            }
         }
     }
     public static String getKeyPairName(String sshPublicKey) {
@@ -1211,10 +1205,11 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = _asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = _asPolicyDao.findById(vo.getPolicyId());
-            if(autoScalePolicy.getAction().equals("scaleup"))
+            if(autoScalePolicy.getAction().equals("scaleup")) {
                 scaleUpPolicies.add(autoScalePolicy);
-            else
+            } else {
                 scaleDownPolicies.add(autoScalePolicy);
+            }
         }
     }
 
@@ -1279,8 +1274,9 @@ public class ApiDBUtils {
     }
 
     public static String findJobInstanceUuid(AsyncJob job){
-        if ( job == null || job.getInstanceId() == null)
+        if ( job == null || job.getInstanceId() == null) {
             return null;
+        }
 
         String jobInstanceId = null;
 
