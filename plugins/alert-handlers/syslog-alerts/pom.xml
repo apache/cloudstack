@@ -33,7 +33,6 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>${cs.log4j.version}</version>
     </dependency>
   </dependencies>
 

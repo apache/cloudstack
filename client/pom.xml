@@ -289,7 +289,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
     <plugins>
       <plugin>
         <groupId>ru.concerteza.buildnumber</groupId>
@@ -560,7 +559,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.5.1</version>
         <executions>
           <execution>
             <id>copy</id>

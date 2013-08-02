@@ -28,9 +28,6 @@
   <artifactId>cloud-framework-rest</artifactId>
   <name>Apache CloudStack Framework - REST</name>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <dependencies>
     <dependency>

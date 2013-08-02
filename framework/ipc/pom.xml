@@ -23,12 +23,10 @@
     <dependency>
       <groupId>cglib</groupId>
       <artifactId>cglib-nodep</artifactId>
-      <version>${cs.cglib.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>${cs.gson.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>

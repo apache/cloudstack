@@ -45,7 +45,6 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>${cs.gson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
@@ -56,17 +55,14 @@
     <dependency>
       <groupId>org.apache.axis</groupId>
       <artifactId>axis</artifactId>
-      <version>${cs.axis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.axis</groupId>
       <artifactId>axis-jaxrpc</artifactId>
-      <version>${cs.axis.version}</version>
     </dependency>
     <dependency>
       <groupId>wsdl4j</groupId>
       <artifactId>wsdl4j</artifactId>
-      <version>1.4</version>
     </dependency>
   </dependencies>
 </project>

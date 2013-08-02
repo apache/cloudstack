@@ -33,12 +33,10 @@
     <dependency>
       <groupId>org.apache.servicemix.bundles</groupId>
       <artifactId>org.apache.servicemix.bundles.snmp4j</artifactId>
-      <version>2.1.0_1</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>${cs.log4j.version}</version>
     </dependency>
   </dependencies>
 
