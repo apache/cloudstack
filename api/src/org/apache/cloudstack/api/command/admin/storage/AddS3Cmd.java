@@ -91,8 +91,8 @@ public final class AddS3Cmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException,
-            ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+    ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+    NetworkRuleConflictException {
 
         AddImageStoreCmd cmd = new AddImageStoreCmd();
         cmd.setProviderName("S3");
@@ -101,19 +101,27 @@ public final class AddS3Cmd extends BaseCmd {
         details.put(ApiConstants.S3_SECRET_KEY, this.getSecretKey());
         details.put(ApiConstants.S3_END_POINT, this.getEndPoint());
         details.put(ApiConstants.S3_BUCKET_NAME, this.getBucketName());
-        details.put(ApiConstants.S3_HTTPS_FLAG, this.getHttpsFlag().toString());
-        details.put(ApiConstants.S3_CONNECTION_TIMEOUT, this.getConnectionTimeout().toString());
-        details.put(ApiConstants.S3_MAX_ERROR_RETRY, this.getMaxErrorRetry().toString());
-        details.put(ApiConstants.S3_SOCKET_TIMEOUT, this.getSocketTimeout().toString());
+        if (this.getHttpsFlag() != null) {
+            details.put(ApiConstants.S3_HTTPS_FLAG, this.getHttpsFlag().toString());
+        }
+        if (this.getConnectionTimeout() != null) {
+            details.put(ApiConstants.S3_CONNECTION_TIMEOUT, this.getConnectionTimeout().toString());
+        }
+        if (this.getMaxErrorRetry() != null) {
+            details.put(ApiConstants.S3_MAX_ERROR_RETRY, this.getMaxErrorRetry().toString());
+        }
+        if (this.getSocketTimeout() != null) {
+            details.put(ApiConstants.S3_SOCKET_TIMEOUT, this.getSocketTimeout().toString());
+        }
 
         try{
             ImageStore result = _storageService.discoverImageStore(cmd);
             ImageStoreResponse storeResponse = null;
             if (result != null ) {
-                    storeResponse = _responseGenerator.createImageStoreResponse(result);
-                    storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("secondarystorage");
-                    this.setResponseObject(storeResponse);
+                storeResponse = _responseGenerator.createImageStoreResponse(result);
+                storeResponse.setResponseName(getCommandName());
+                storeResponse.setObjectName("secondarystorage");
+                this.setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }
