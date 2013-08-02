@@ -21,8 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -31,59 +29,62 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "listAllLdapUsers", responseObject = LdapUserResponse.class, description = "Lists all LDAP Users", since = "4.2.0")
 public class LdapListAllUsersCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(LdapListAllUsersCmd.class.getName());
-    private static final String s_name = "ldapuserresponse";
-    @Inject
-    private LdapManager _ldapManager;
+	public static final Logger s_logger = Logger
+			.getLogger(LdapListAllUsersCmd.class.getName());
+	private static final String s_name = "ldapuserresponse";
+	@Inject
+	private LdapManager _ldapManager;
 
-    public LdapListAllUsersCmd() {
-        super();
-    }
+	public LdapListAllUsersCmd() {
+		super();
+	}
 
-    public LdapListAllUsersCmd(final LdapManager ldapManager) {
-        super();
-        _ldapManager = ldapManager;
-    }
+	public LdapListAllUsersCmd(final LdapManager ldapManager) {
+		super();
+		_ldapManager = ldapManager;
+	}
 
-    private List<LdapUserResponse> createLdapUserResponse(List<LdapUser> users) {
-        final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
-        for (final LdapUser user : users) {
-            final LdapUserResponse ldapResponse = _ldapManager.createLdapUserResponse(user);
-            ldapResponse.setObjectName("LdapUser");
-            ldapResponses.add(ldapResponse);
-        }
-        return ldapResponses;
-    }
+	private List<LdapUserResponse> createLdapUserResponse(List<LdapUser> users) {
+		final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
+		for (final LdapUser user : users) {
+			final LdapUserResponse ldapResponse = _ldapManager
+					.createLdapUserResponse(user);
+			ldapResponse.setObjectName("LdapUser");
+			ldapResponses.add(ldapResponse);
+		}
+		return ldapResponses;
+	}
 
-    @Override
-    public void execute() throws ServerApiException {
-	List<LdapUserResponse> ldapResponses = null;
-	final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
-        try {
-            final List<LdapUser> users = _ldapManager.getUsers();
-	    ldapResponses = createLdapUserResponse(users);
-	} catch (final NoLdapUserMatchingQueryException ex) {
-	    ldapResponses = new ArrayList<LdapUserResponse>();
-	} finally {
-            response.setResponses(ldapResponses);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        }
-    }
+	@Override
+	public void execute() throws ServerApiException {
+		List<LdapUserResponse> ldapResponses = null;
+		final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
+		try {
+			final List<LdapUser> users = _ldapManager.getUsers();
+			ldapResponses = createLdapUserResponse(users);
+		} catch (final NoLdapUserMatchingQueryException ex) {
+			ldapResponses = new ArrayList<LdapUserResponse>();
+		} finally {
+			response.setResponses(ldapResponses);
+			response.setResponseName(getCommandName());
+			setResponseObject(response);
+		}
+	}
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
+	@Override
+	public String getCommandName() {
+		return s_name;
+	}
 
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
+	@Override
+	public long getEntityOwnerId() {
+		return Account.ACCOUNT_ID_SYSTEM;
+	}
 }

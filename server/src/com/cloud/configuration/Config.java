@@ -434,6 +434,9 @@ public enum Config {
     LdapUsernameAttribute("Advanced", ManagementServer.class, String.class, "ldap.username.attribute", "uid", "Sets the username attribute used within LDAP", null),
     LdapUserObject("Advanced", ManagementServer.class, String.class, "ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP", null),
     LdapSearchGroupPrinciple("Advanced", ManagementServer.class, String.class, "ldap.search.group.principle", null, "Sets the principle of the group that users must be a member of", null),
+    LdapSSLEnabled("Advanced", ManagementServer.class, String.class, "ldap.ssl.enabled", "false", "Enables/Disables SSL support for LDAP", null),
+    LdapTrustStore("Advanced", ManagementServer.class, String.class, "ldap.truststore", null, "Sets the path to the truststore to use for SSL", null),
+    LdapTrustStorePassword("Advanced", ManagementServer.class, String.class, "ldap.truststore.password", null, "Sets the password for the truststore", null),
 
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
