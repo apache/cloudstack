@@ -75,8 +75,13 @@
                                         label: 'By event type',
                                         docID: 'helpEventsDeleteType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'By date (start date)',
+                                        docID: 'helpEventsDeleteDate',
+                                        isDatepicker: true
+                                    },
+                                    enddate: {
+                                        label: 'By date (end date)',
                                         docID: 'helpEventsDeleteDate',
                                         isDatepicker: true
                                     }
@@ -91,9 +96,14 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
@@ -132,11 +142,16 @@
                                         label: 'By event type',
                                         docID: 'helpEventsArchiveType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'By date (start date)',
                                         docID: 'helpEventsArchiveDate',
                                         isDatepicker: true
                                     },
+                                    enddate: {
+                                        label: 'By date (end date)',
+                                        docID: 'helpEventsArchiveDate',
+                                        isDatepicker: true
+                                    }
                                 }
                             },
                             action: function(args) {
@@ -147,9 +162,14 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
@@ -250,16 +270,16 @@
                             }
                         }
                         /*
-						,
-            startdate: {
-              label: 'Start Date',
-							isDatepicker: true
-            },
-            enddate: {
-              label: 'End Date',
-							isDatepicker: true
-            }
-            */
+						             ,
+                         startdate: {
+                         label: 'Start Date',
+							           isDatepicker: true
+                         },
+                         enddate: {
+                         label: 'End Date',
+							           isDatepicker: true
+                         }
+                         */
                     },
 
                     dataProvider: function(args) {
@@ -424,8 +444,13 @@
                                         label: 'By Alert type',
                                         docID: 'helpAlertsDeleteType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'By date (start date)',
+                                        docID: 'helpAlertsDeleteDate',
+                                        isDatepicker: true
+                                    },
+                                    enddate: {
+                                        label: 'By date (end than)',
                                         docID: 'helpAlertsDeleteDate',
                                         isDatepicker: true
                                     }
@@ -440,9 +465,14 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
@@ -481,11 +511,17 @@
                                         label: 'By Alert type',
                                         docID: 'helpAlertsArchiveType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'By date (start date)',
+                                        docID: 'helpAlertsArchiveDate',
+                                        isDatepicker: true
+                                    },
+                                    enddate: {
+                                        label: 'By date (end date)',
                                         docID: 'helpAlertsArchiveDate',
                                         isDatepicker: true
                                     }
+
                                 }
                             },
                             action: function(args) {
@@ -496,9 +532,14 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
