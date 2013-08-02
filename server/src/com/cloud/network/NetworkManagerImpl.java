@@ -2679,68 +2679,87 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @DB
     public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
         boolean result = false;
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        NetworkVO network = _networksDao.lockRow(networkId, true);
-        if (network == null) {
-            s_logger.debug("Unable to find network with id: " + networkId);
-            return false;
-        }
-        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
-            s_logger.debug("Network is not implemented: " + network);
-            return false;
-        }
+        NetworkVO network = null;
+        try {
+            //do global lock for the network
+            network = _networksDao.acquireInLockTable(networkId, getNetworkLockTimeout());
+            if (network == null) {
+                s_logger.warn("Unable to acquire lock for the network " + network + " as a part of network shutdown");
+                return false;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Lock is acquired for network " + network + " as a part of network shutdown");
+            }
+            
+            if (network.getState() == Network.State.Allocated) {
+                s_logger.debug("Network is already shutdown: " + network);
+                return true;
+            }
+            
+            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
+                s_logger.debug("Network is not implemented: " + network);
+                return false;
+            }
 
-        if (isSharedNetworkWithServices(network)) {
-            network.setState(Network.State.Shutdown);
-            _networksDao.update(network.getId(), network);
-        } else {
-            try {
-                stateTransitTo(network, Event.DestroyNetwork);
-            } catch (NoTransitionException e) {
+            if (isSharedNetworkWithServices(network)) {
                 network.setState(Network.State.Shutdown);
                 _networksDao.update(network.getId(), network);
-            }
-        }
-        txn.commit();
-
-        boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
-
-        txn.start();
-        if (success) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
-            }
-            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-            NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
-            guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
-
-            applyProfileToNetwork(network, profile);
-            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-            if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && (zone.getNetworkType() == NetworkType.Advanced)) {
-                network.setState(Network.State.Setup);
             } else {
                 try {
-                    stateTransitTo(network, Event.OperationSucceeded);
+                    stateTransitTo(network, Event.DestroyNetwork);
                 } catch (NoTransitionException e) {
-                    network.setState(Network.State.Allocated);
-                    network.setRestartRequired(false);
+                    network.setState(Network.State.Shutdown);
+                    _networksDao.update(network.getId(), network);
                 }
             }
-            _networksDao.update(network.getId(), network);
-            _networksDao.clearCheckForGc(networkId);
-            result = true;
-        } else {
-            try {
-                stateTransitTo(network, Event.OperationFailed);
-            } catch (NoTransitionException e) {
-                network.setState(Network.State.Implemented);
+
+            
+            boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
+
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            if (success) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
+                }
+                NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+                NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
+                guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+
+                applyProfileToNetwork(network, profile);
+                DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && (zone.getNetworkType() == NetworkType.Advanced)) {
+                    network.setState(Network.State.Setup);
+                } else {
+                    try {
+                        stateTransitTo(network, Event.OperationSucceeded);
+                    } catch (NoTransitionException e) {
+                        network.setState(Network.State.Allocated);
+                        network.setRestartRequired(false);
+                    }
+                }
                 _networksDao.update(network.getId(), network);
+                _networksDao.clearCheckForGc(networkId);
+                result = true;
+            } else {
+                try {
+                    stateTransitTo(network, Event.OperationFailed);
+                } catch (NoTransitionException e) {
+                    network.setState(Network.State.Implemented);
+                    _networksDao.update(network.getId(), network);
+                }
+                result = false;
             }
-            result = false;
-        }
-        txn.commit();
-        return result;
+            txn.commit();
+            return result;
+        } finally {
+            if (network != null) {
+                _networksDao.releaseFromLockTable(network.getId());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Lock is released for network " + network + " as a part of network shutdown");
+                }
+            }
+        } 
     }
 
     @Override

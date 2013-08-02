@@ -47,7 +47,6 @@ import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
@@ -255,6 +254,7 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
  */
