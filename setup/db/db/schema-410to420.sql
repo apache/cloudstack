@@ -2221,4 +2221,5 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
 
 ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'healthcheck.update.interval', '600', 'Time Interval to fetch the LB health check states (in sec)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'KVM.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');
