@@ -68,6 +68,11 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
         cls._cleanup = [
                         cls.account,
                         ]
+
+        phy_networks = PhysicalNetwork.list(
+                             cls.api_client
+                             )
+        cls.existed_vlan = phy_networks[0].vlan
         return
 
     @classmethod
@@ -80,7 +85,7 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
                 removeGuestVlanRangeResponse = \
                 physical_network.update(cls.api_client,
                         id=physical_network.id,
-                        removevlan=cls.services["vlan"])
+                        vlan=cls.existed_vlan)
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -128,7 +133,10 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
         physical_network_response = list_physical_network_response[0]
 
         self.debug("Adding guest vlan range")
-        addGuestVlanRangeResponse = physical_network_response.update(self.apiclient, id=physical_network_response.id, vlan=self.services["vlan"])
+
+        new_vlan = self.existed_vlan + "," + self.services["vlan"]
+        addGuestVlanRangeResponse = physical_network_response.update(self.apiclient,
+                id=physical_network_response.id, vlan=new_vlan)
 
         self.debug("Dedicating guest vlan range");
         dedicate_guest_vlan_range_response = PhysicalNetwork.dedicate(
