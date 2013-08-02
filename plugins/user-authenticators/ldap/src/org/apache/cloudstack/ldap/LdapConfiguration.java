@@ -113,4 +113,8 @@ public class LdapConfiguration {
         final String userObject = _configDao.getValue("ldap.user.object");
         return userObject == null ? "inetOrgPerson" : userObject;
     }
+
+    public String getSearchGroupPrinciple() {
+	return _configDao.getValue("ldap.search.group.principle");
+    }
 }

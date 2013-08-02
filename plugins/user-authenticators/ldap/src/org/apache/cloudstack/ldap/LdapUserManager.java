@@ -90,8 +90,15 @@ public class LdapUserManager {
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
-        final String filter = "(&(objectClass=" + _ldapConfiguration.getUserObject() + ")" + "("
-                + _ldapConfiguration.getUsernameAttribute() + "=" + (username == null ? "*" : username) + "))";
+	final String userObjectFilter = "(objectClass=" + _ldapConfiguration.getUserObject() + ")";
+	final String usernameFilter = "(" + _ldapConfiguration.getUsernameAttribute() + "=" + (username == null ? "*" : username) + ")";
+	String memberOfFilter = "";
+	if(_ldapConfiguration.getSearchGroupPrinciple() != null) {
+	    memberOfFilter = "(memberof=" + _ldapConfiguration.getSearchGroupPrinciple() + ")";
+	}
+
+
+	final String filter = "(&" + userObjectFilter + usernameFilter + memberOfFilter + ")";
 
         return context.search(_ldapConfiguration.getBaseDn(), filter, controls);
     }

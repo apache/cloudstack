@@ -2150,6 +2150,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.lastname.attribute', 'sn', 'Sets the lastname attribute used within LDAP');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.user.object', 'inetOrgPerson', 'Sets the object type of users within LDAP');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.basedn', NULL, 'Sets the basedn for LDAP');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.search.group.principle', NULL, 'Sets the principle of the group that users must be a member of');
+
 
 CREATE TABLE `cloud`.`ldap_configuration` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
