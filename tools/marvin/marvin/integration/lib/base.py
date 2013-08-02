@@ -1088,7 +1088,7 @@ class PublicIPAddress:
 
     @classmethod
     def create(cls, apiclient, accountid=None, zoneid=None, domainid=None, services=None,
-               networkid=None, projectid=None, vpcid=None, isportable=None):
+               networkid=None, projectid=None, vpcid=None, isportable=False):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
 
