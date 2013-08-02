@@ -58,11 +58,43 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Inject
     SnapshotDataFactory snapshotDataFactory;
 
+    protected boolean needFullBackup(SnapshotInfo snapshot) {
+        if (snapshot == null) {
+            return true;
+        }
+        boolean  fullBackup = false;
+        int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
+                SnapshotManager.DELTAMAX);
+        int deltaSnap = _deltaSnapshotMax;
+        SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        int i;
+        for (i = 1; (i < deltaSnap && (parentSnapshotOnBackupStore != null)); i++) {
+            Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
+
+            if (prevBackupId == 0 || prevBackupId == null) {
+                break;
+            }
+
+            parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
+        }
+        if (i >= deltaSnap) {
+            fullBackup = true;
+        }
+        return fullBackup;
+    }
+
+    protected boolean isEmptySnapshot(SnapshotInfo snapshotInfo, SnapshotInfo parentSnapshot) {
+        if (parentSnapshot != null && snapshotInfo.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
         SnapshotInfo parentSnapshot = snapshot.getParent();
-
-        if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
+        boolean fullBackup = needFullBackup(parentSnapshot);
+        if (!fullBackup && isEmptySnapshot(snapshot, parentSnapshot)) {
             s_logger.debug("backup an empty snapshot");
             // don't need to backup this snapshot
             SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(
@@ -93,33 +125,15 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             }
         }
 
-        // determine full snapshot backup or not
-
-        boolean fullBackup = false;
-
-        if (parentSnapshot != null) {
-            int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
-                    SnapshotManager.DELTAMAX);
-            int deltaSnap = _deltaSnapshotMax;
-
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
-                    DataStoreRole.Image);
-            int i;
-            for (i = 1; (i < deltaSnap && (parentSnapshotOnBackupStore != null)); i++) {
-                Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
-
-                if (prevBackupId == 0) {
-                    break;
-                }
-
-                parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
-            }
-            if (i >= deltaSnap) {
-                fullBackup = true;
+        //if fullbackup, delete the snapshot on primary storage in db, so that, snapshot.getparent will return empty, thus full snapshot on the backend
+        if (fullBackup && parentSnapshot != null) {
+            s_logger.debug("reach delta snapshots max, delete the snapshot on primary storage in db");
+            SnapshotDataStoreVO parentSnapshotOnPrimary = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Primary, parentSnapshot.getDataStore().getId(),
+                    parentSnapshot.getId());
+            if (parentSnapshotOnPrimary != null) {
+                snapshotStoreDao.remove(parentSnapshotOnPrimary.getId());
             }
         }
-
-        snapshot.addPayload(fullBackup);
         return this.snapshotSvr.backupSnapshot(snapshot);
     }
 
