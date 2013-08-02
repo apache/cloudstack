@@ -27,6 +27,8 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
 
+import time
+
 class Services:
     """Test VM life cycle in VPC network services
     """
@@ -426,7 +428,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
             self.debug("Checking if we can SSH into VM_1 through %s?" %
                     (self.public_ip_1.ipaddress.ipaddress))
             ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
@@ -452,7 +455,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                 (self.public_ip_2.ipaddress.ipaddress))
         try:
             ssh_2 = self.vm_1.get_ssh_client(
-                            ipaddress=self.public_ip_2.ipaddress.ipaddress)
+                            ipaddress=self.public_ip_2.ipaddress.ipaddress,
+                            reconnect=True)
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
@@ -563,6 +567,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
             self.vm_2.start(self.apiclient)
         except Exception as e:
             self.fail("Failed to start the virtual instances, %s" % e)
+        # Wait until vms are up
+        time.sleep(120)
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
         return
@@ -590,6 +596,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reboot the virtual instances, %s" % e)
 
+        # Wait until vms are up
+        time.sleep(120)
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
         return
@@ -666,6 +674,9 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start the instances, %s" % e)
 
+        # Wait until vms are up
+        time.sleep(120)
+
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
         return
@@ -736,7 +747,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
         try:
             ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
         except Exception as e:
             self.fail("Failed to SSH into instance")
@@ -790,7 +802,8 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
         try:
             ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
         except Exception as e:
             self.fail("Failed to SSH into instance")
@@ -1151,8 +1164,11 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         """Validating if the network rules (PF/LB) works properly or not?"""
 
         try:
+            self.debug("Checking if we can SSH into VM_1 through %s?" %
+                    (self.public_ip_1.ipaddress.ipaddress))
             ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
@@ -1515,7 +1531,8 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
         try:
             ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
         except Exception as e:
             self.fail("Failed to SSH into instance")
@@ -1569,7 +1586,8 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
         try:
             ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
         except Exception as e:
             self.fail("Failed to SSH into instance")
@@ -1860,8 +1878,11 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         """Validating if the network rules (PF/LB) works properly or not?"""
 
         try:
+            self.debug("Checking if we can SSH into VM_1 through %s?" %
+                    (self.public_ip_1.ipaddress.ipaddress))
             ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
@@ -2285,8 +2306,11 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
     def validate_network_rules(self):
         """Validates if the network rules work properly or not?"""
         try:
+            self.debug("Checking if we can SSH into VM_1 through %s?" %
+                    (self.public_ip_1.ipaddress.ipaddress))
             ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
@@ -2311,7 +2335,8 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.debug("Checking if we can SSH into VM_1?")
         try:
             ssh_2 = self.vm_1.get_ssh_client(
-                            ipaddress=self.public_ip_2.ipaddress.ipaddress)
+                            ipaddress=self.public_ip_2.ipaddress.ipaddress,
+                            reconnect=True)
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
@@ -2595,7 +2620,8 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
         try:
             ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
         except Exception as e:
             self.fail("Failed to SSH into instance")
@@ -2649,7 +2675,8 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
         try:
             ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress,
+                                reconnect=True)
             self.debug("SSH into VM is successfully")
         except Exception as e:
             self.fail("Failed to SSH into instance")
