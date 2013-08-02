@@ -52,13 +52,14 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
 
         self.network = phy_networks[0]
         self.networkid = phy_networks[0].id
-        vlan1 = self.vlan["part"][0]
+        self.existing_vlan = phy_networks[0].vlan
+        vlan1 = self.existing_vlan+","+self.vlan["part"][0]
         updatePhysicalNetworkResponse = self.network.update(self.apiClient, id = self.networkid, vlan = vlan1)
         self.assert_(updatePhysicalNetworkResponse is not None,
             msg="couldn't extend the physical network with vlan %s"%vlan1)
         self.assert_(isinstance(self.network, PhysicalNetwork))
 
-        vlan2 = self.vlan["part"][1]
+        vlan2 = vlan1+","+self.vlan["part"][1]
         updatePhysicalNetworkResponse2 = self.network.update(self.apiClient, id = self.networkid, vlan = vlan2)
         self.assert_(updatePhysicalNetworkResponse2 is not None,
             msg="couldn't extend the physical network with vlan %s"%vlan2)
@@ -80,7 +81,7 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
             msg="There are no physical networks in the zone")
         self.network = phy_networks[0]
         self.networkid = phy_networks[0].id
-        updateResponse = self.network.update(self.apiClient, id = self.networkid, removevlan = self.vlan["full"])
+        updateResponse = self.network.update(self.apiClient, id = self.networkid, vlan=self.existing_vlan)
         self.assert_(updateResponse.vlan.find(self.vlan["full"]) < 0,
             "VLAN was not removed successfully")
 
