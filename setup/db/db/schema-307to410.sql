@@ -1572,3 +1572,4 @@ ALTER TABLE `cloud_usage`.`usage_storage` CHANGE COLUMN `virtual_size` `virtual_
 ALTER TABLE `cloud_usage`.`cloud_usage` CHANGE COLUMN `virtual_size` `virtual_size1` bigint unsigned;
 
 ALTER TABLE `cloud`.`network_offerings` CHANGE COLUMN `concurrent_connections` `concurrent_connections1` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
+ALTER TABLE `cloud`.`volumes` DROP COLUMN `iso_id`;

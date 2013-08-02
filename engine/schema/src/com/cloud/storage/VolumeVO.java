@@ -152,6 +152,9 @@ public class VolumeVO implements Volume {
 
     @Column(name = "vm_snapshot_chain_size")
     private Long vmSnapshotChainSize;
+
+    @Column(name = "iso_id")
+    private long isoId;
     
     @Transient
     // @Column(name="reservation")
@@ -560,5 +563,13 @@ public class VolumeVO implements Volume {
 
     public Long getVmSnapshotChainSize(){
         return this.vmSnapshotChainSize;
+    }
+
+    public Long getIsoId() {
+        return this.isoId;
+    }
+
+    public void setIsoId(long isoId) {
+        this.isoId =isoId;
     }
 }
