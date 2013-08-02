@@ -94,25 +94,30 @@ public final class AddS3Cmd extends BaseCmd {
     ServerApiException, ConcurrentOperationException, ResourceAllocationException,
     NetworkRuleConflictException {
 
-        AddImageStoreCmd cmd = new AddImageStoreCmd();
+        AddImageStoreCmd cmd = new AddImageStoreCmd() {
+            @Override
+            public Map<String, String> getDetails() {
+                Map<String, String> dm = new HashMap<String, String>();
+                dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
+                dm.put(ApiConstants.S3_SECRET_KEY, getSecretKey());
+                dm.put(ApiConstants.S3_END_POINT, getEndPoint());
+                dm.put(ApiConstants.S3_BUCKET_NAME, getBucketName());
+                if (getHttpsFlag() != null) {
+                    dm.put(ApiConstants.S3_HTTPS_FLAG, getHttpsFlag().toString());
+                }
+                if (getConnectionTimeout() != null) {
+                    dm.put(ApiConstants.S3_CONNECTION_TIMEOUT, getConnectionTimeout().toString());
+                }
+                if (getMaxErrorRetry() != null) {
+                    dm.put(ApiConstants.S3_MAX_ERROR_RETRY, getMaxErrorRetry().toString());
+                }
+                if (getSocketTimeout() != null) {
+                    dm.put(ApiConstants.S3_SOCKET_TIMEOUT, getSocketTimeout().toString());
+                }
+                return dm;
+            }
+        };
         cmd.setProviderName("S3");
-        Map<String, String> details = new HashMap<String, String>();
-        details.put(ApiConstants.S3_ACCESS_KEY, this.getAccessKey());
-        details.put(ApiConstants.S3_SECRET_KEY, this.getSecretKey());
-        details.put(ApiConstants.S3_END_POINT, this.getEndPoint());
-        details.put(ApiConstants.S3_BUCKET_NAME, this.getBucketName());
-        if (this.getHttpsFlag() != null) {
-            details.put(ApiConstants.S3_HTTPS_FLAG, this.getHttpsFlag().toString());
-        }
-        if (this.getConnectionTimeout() != null) {
-            details.put(ApiConstants.S3_CONNECTION_TIMEOUT, this.getConnectionTimeout().toString());
-        }
-        if (this.getMaxErrorRetry() != null) {
-            details.put(ApiConstants.S3_MAX_ERROR_RETRY, this.getMaxErrorRetry().toString());
-        }
-        if (this.getSocketTimeout() != null) {
-            details.put(ApiConstants.S3_SOCKET_TIMEOUT, this.getSocketTimeout().toString());
-        }
 
         try{
             ImageStore result = _storageService.discoverImageStore(cmd);
@@ -123,7 +128,7 @@ public final class AddS3Cmd extends BaseCmd {
                 storeResponse.setObjectName("secondarystorage");
                 this.setResponseObject(storeResponse);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 secondary storage");
             }
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);
