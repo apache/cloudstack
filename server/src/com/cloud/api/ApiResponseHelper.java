@@ -32,7 +32,6 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -138,6 +137,8 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -170,7 +171,6 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -188,6 +188,8 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.Event;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
@@ -275,6 +277,7 @@ import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
@@ -295,16 +298,20 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@Component
 public class ApiResponseHelper implements ResponseGenerator {
 
-    public final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
+    private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
     @Inject
-    private final EntityManager _entityMgr = null;
+    private EntityManager _entityMgr;
     @Inject
-    private final UsageService _usageSvc = null;
+    private UsageService _usageSvc;
     @Inject NetworkModel _ntwkModel;
+
+    @Inject
+    protected AccountManager _accountMgr;
+    @Inject
+    protected AsyncJobManager _jobMgr;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1636,12 +1643,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
-        AsyncJobJoinVO vJob = ApiDBUtils.newAsyncJobView(job);
-        return ApiDBUtils.newAsyncJobResponse(vJob);
-    }
-
-    @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
         VolumeVO volume = null;
         if (snapshotId != null) {
@@ -1920,8 +1921,32 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) {
-        AsyncJob result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
-        return createAsyncJobResponse(result);
+        Account caller = CallContext.current().getCallingAccount();
+
+        AsyncJob job = _entityMgr.findById(AsyncJob.class, cmd.getId());
+        if (job == null) {
+            throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
+        }
+
+        User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
+        Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
+
+        //check permissions
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            //regular user can see only jobs he owns
+            if (caller.getId() != jobOwner.getId()) {
+                throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
+            }
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            _accountMgr.checkAccess(caller, null, true, jobOwner);
+        }
+
+        return createAsyncJobResponse(_jobMgr.queryJob(cmd.getId(), true));
+    }
+
+    public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
+        AsyncJobJoinVO vJob = ApiDBUtils.newAsyncJobView(job);
+        return ApiDBUtils.newAsyncJobResponse(vJob);
     }
 
     @Override

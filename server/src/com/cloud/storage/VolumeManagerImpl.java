@@ -68,6 +68,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -88,10 +92,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobExecutor;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -1869,21 +1869,20 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
 
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
+        AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+               
+        if (asyncExecutionContext != null) {
+            AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
                         + " to vm instance:" + vm.getId()
-                        + ", update async job-" + job.getId() + " = [ " + job.getUuid()
-                        + " ] progress status");
+                        + ", update async job-" + job.getId()
+                        + " progress status");
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(),
-                    BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
+            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, Long.toString(volumeId));
         }
 
         VolumeVO newVol = _volumeDao.findById(volumeOnPrimaryStorage.getId());
@@ -1969,28 +1968,19 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Please specify a VM that is either running or stopped.");
         }
 
-        // Check if the VM has VM snapshots
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        if(vmSnapshots.size() > 0){
-            throw new InvalidParameterValueException(
-                    "Unable to detach volume, the specified volume is attached to a VM that has VM snapshots.");
-        }
-
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
+        AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (asyncExecutionContext != null) {
+            AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
                         + "to vm instance:" + vm.getId()
-                        + ", update async job-" + job.getId() + " = [ " + job.getUuid()
-                        + " ] progress status");
+                        + ", update async job-" + job.getId()
+                        + " progress status");
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(),
-                    BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
+            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId.toString());
         }
 
         String errorMsg = "Failed to detach volume: " + volume.getName()

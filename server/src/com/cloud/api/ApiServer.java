@@ -109,15 +109,16 @@ import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.async.AsyncCommandQueued;
-import com.cloud.async.AsyncJob;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -162,7 +163,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Inject private AccountManager _accountMgr;
     @Inject private DomainManager _domainMgr;
-    @Inject private AsyncJobManager _asyncMgr;
+    @Inject
+    private AsyncJobManager _asyncMgr;
     @Inject private ConfigurationDao _configDao;
     @Inject
     private EntityManager _entityMgr;
@@ -170,8 +172,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject List<PluggableService> _pluggableServices;
     @Inject List<APIChecker> _apiAccessCheckers;
 
+    @Inject
+    protected ApiAsyncJobDispatcher _asyncDispatcher;
     private static int _workerCount = 0;
-    private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
@@ -182,17 +185,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @PostConstruct
     void initComponent() {
-        s_instance = this;
         CallContext.init(_entityMgr);
     }
 
-    public static ApiServer getInstance() {
-        return s_instance;
-    }
-
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         init();
         return true;
     }
@@ -428,10 +425,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, errorMsg, ex);
-        } catch (AsyncCommandQueued ex){
-            s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal server error, unable to execute request.");
-        } catch (ServerApiException ex){
+        } catch (ServerApiException ex) {
             s_logger.info(ex.getDescription());
             throw ex;
         } catch (Exception ex){
@@ -445,6 +439,24 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         return response;
+    }
+
+    private String getBaseAsyncResponse(long jobId, BaseAsyncCmd cmd) {
+        AsyncJobResponse response = new AsyncJobResponse();
+
+        AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
+        response.setJobId(job.getUuid());
+        response.setResponseName(cmd.getCommandName());
+        return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
+    }
+
+    private String getBaseAsyncCreateResponse(long jobId, BaseAsyncCreateCmd cmd, String objectUuid) {
+        CreateCmdResponse response = new CreateCmdResponse();
+        AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
+        response.setJobId(job.getUuid());
+        response.setId(objectUuid);
+        response.setResponseName(cmd.getCommandName());
+        return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
     }
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) throws Exception {
@@ -495,8 +507,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("cmdEventType", asyncCmd.getEventType().toString());
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
-            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
-                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
+            AsyncJobVO job = new AsyncJobVO(ctx.getContextId(), callerUserId, caller.getId(), cmdObj.getClass().getName(),
+                    ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
+                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
+            job.setDispatcher(_asyncDispatcher.getName());
 
             long jobId = _asyncMgr.submitAsyncJob(job);
 
@@ -508,13 +522,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             if (objectId != null) {
                 String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objUuid);
-            }
-
+                return getBaseAsyncCreateResponse(jobId, (BaseAsyncCreateCmd)asyncCmd, objUuid);
+            } else {
             SerializationContext.current().setUuidTranslation(true);
-            return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
+                return getBaseAsyncResponse(jobId, asyncCmd);
+            }
         } else {
-            _dispatcher.dispatch(cmdObj, params);
+            _dispatcher.dispatch(cmdObj, params, false);
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
@@ -552,9 +566,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // list all jobs for ROOT admin
             if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), null);
+                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), null);
             } else {
-                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), account.getId());
+                jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), account.getId());
             }
 
             if (jobs.size() == 0) {
@@ -567,16 +581,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     continue;
                 }
                 String instanceUuid = ApiDBUtils.findJobInstanceUuid(job);
-                if (instanceUuid != null) {
                     objectJobMap.put(instanceUuid, job);
                 }
-            }
 
             for (ResponseObject response : responses) {
                 if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
                     AsyncJob job = objectJobMap.get(response.getObjectId());
                     response.setJobId(job.getUuid());
-                    response.setJobStatus(job.getStatus());
+                    response.setJobStatus(job.getStatus().ordinal());
                 }
             }
         }

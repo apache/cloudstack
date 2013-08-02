@@ -32,15 +32,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -49,7 +51,6 @@ import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -180,7 +181,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 		Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 
-		DataStore secStore = this.storeMgr.getImageStore(dataCenterId);
+		DataStore secStore = storeMgr.getImageStore(dataCenterId);
 
 		UploadVO uploadTemplateObj = new UploadVO(secStore.getId(), template.getId(), new Date(),
 													Upload.Status.NOT_UPLOADED, type, url, Mode.FTP_UPLOAD);
@@ -212,7 +213,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 
             // find an endpoint to send command
-            DataStore store = this.storeMgr.getDataStore(vmTemplateHost.getDataStoreId(), DataStoreRole.Image);
+            DataStore store = storeMgr.getDataStore(vmTemplateHost.getDataStoreId(), DataStoreRole.Image);
             EndPoint ep = _epSelector.select(store);
 
 	    //Check if it already exists.
@@ -299,7 +300,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + "." + format.toString().toLowerCase() ;
-            DataStore secStore = this.storeMgr.getDataStore(ApiDBUtils.findUploadById(uploadId).getDataStoreId(), DataStoreRole.Image);
+            DataStore secStore = storeMgr.getDataStore(ApiDBUtils.findUploadById(uploadId).getDataStoreId(), DataStoreRole.Image);
             EndPoint ep = _epSelector.select(secStore);
             if( ep == null ) {
             	errorString = "There is no secondary storage VM for secondary storage host " + secStore.getName();
@@ -357,7 +358,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 	            	hostname = hostname + "." + _ssvmUrlDomain;
 	            }else{
 	            	hostname = hostname + ".realhostip.com";
-	            }	            
+	            }
 	        }
 	        return scheme + "://" + hostname + "/userdata/" + uuid;
 	    }
@@ -376,7 +377,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
 
-        _ssvmUrlDomain = configs.get("secstorage.ssl.cert.domain");      
+        _ssvmUrlDomain = configs.get("secstorage.ssl.cert.domain");
         
         _agentMgr.registerForHostEvents(new UploadListener(this), true, false, false);
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
@@ -484,7 +485,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
         for (UploadVO extractJob : extractJobs){
             if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){
                 String path = extractJob.getInstallPath();
-                DataStore secStore = this.storeMgr.getDataStore(extractJob.getDataStoreId(), DataStoreRole.Image);
+                DataStore secStore = storeMgr.getDataStore(extractJob.getDataStoreId(), DataStoreRole.Image);
 
 
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume

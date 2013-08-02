@@ -20,16 +20,10 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.async.AsyncInstanceCreateStatus;
-import com.google.gson.annotations.Expose;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group_rule"))
@@ -60,25 +54,20 @@ public class SecurityGroupRuleVO implements SecurityRule {
     @Column(name = "allowed_ip_cidr", nullable = true)
     private String allowedSourceIpCidr = null;
 
-    @Expose
-    @Column(name = "create_status", updatable = true, nullable = false)
-    @Enumerated(value = EnumType.STRING)
-    private AsyncInstanceCreateStatus createStatus;
-
     @Column(name = "uuid")
     private String uuid;
     
     public SecurityGroupRuleVO() {
-    	this.uuid = UUID.randomUUID().toString();
+    	uuid = UUID.randomUUID().toString();
     }
 
     public SecurityGroupRuleVO(SecurityRuleType type,long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId ) {
         this.securityGroupId = securityGroupId;
-        this.startPort = fromPort;
-        this.endPort = toPort;
+        startPort = fromPort;
+        endPort = toPort;
         this.protocol = protocol;
         this.allowedNetworkId = allowedNetworkId;
-    	this.uuid = UUID.randomUUID().toString();
+    	uuid = UUID.randomUUID().toString();
         if (type == SecurityRuleType.IngressRule) {
             this.type = SecurityRuleType.IngressRule.getType();
         } else {
@@ -88,11 +77,11 @@ public class SecurityGroupRuleVO implements SecurityRule {
 
     public SecurityGroupRuleVO(SecurityRuleType type,long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
         this.securityGroupId = securityGroupId;
-        this.startPort = fromPort;
-        this.endPort = toPort;
+        startPort = fromPort;
+        endPort = toPort;
         this.protocol = protocol;
-        this.allowedSourceIpCidr = allowedIpCidr;
-    	this.uuid = UUID.randomUUID().toString();
+        allowedSourceIpCidr = allowedIpCidr;
+    	uuid = UUID.randomUUID().toString();
         if (type == SecurityRuleType.IngressRule) {
             this.type = SecurityRuleType.IngressRule.getType();
         } else {
@@ -115,8 +104,9 @@ public class SecurityGroupRuleVO implements SecurityRule {
         return securityGroupId;
     }
     
+    @Override
     public SecurityRuleType getRuleType() {
-        if ("ingress".equalsIgnoreCase(this.type))
+        if ("ingress".equalsIgnoreCase(type))
             return SecurityRuleType.IngressRule;
         else
             return SecurityRuleType.EgressRule;
@@ -138,15 +128,6 @@ public class SecurityGroupRuleVO implements SecurityRule {
     }
 
     @Override
-    public AsyncInstanceCreateStatus getCreateStatus() {
-        return createStatus;
-    }
-
-    public void setCreateStatus(AsyncInstanceCreateStatus createStatus) {
-        this.createStatus = createStatus;
-    }
-
-    @Override
     public Long getAllowedNetworkId() {
         return allowedNetworkId;
     }
@@ -158,7 +139,7 @@ public class SecurityGroupRuleVO implements SecurityRule {
     
     @Override
     public String getUuid() {
-    	return this.uuid;
+    	return uuid;
     }
     
     public void setUuid(String uuid) {

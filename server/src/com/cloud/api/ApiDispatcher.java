@@ -34,7 +34,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
@@ -58,8 +57,9 @@ import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
-import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -69,7 +69,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
@@ -129,7 +128,7 @@ public class ApiDispatcher {
         }
     }
 
-    public void dispatch(BaseCmd cmd, Map<String, String> params) throws Exception {
+    public void dispatch(BaseCmd cmd, Map<String, String> params, boolean execute) throws Exception {
         processParameters(cmd, params);
         CallContext ctx = CallContext.current();
 
@@ -149,7 +148,11 @@ public class ApiDispatcher {
                 }
 
                 if (queueSizeLimit != null) {
-                    _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                    if (!execute) {
+                		// if we are not within async-execution context, enqueue the command
+                        _asyncMgr.syncAsyncJobExecution((AsyncJob)asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                		return;
+                	}
                 } else {
                     s_logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
@@ -193,8 +196,7 @@ public class ApiDispatcher {
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8)
-                            + " due to missing parameter "
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to missing parameter "
                             + parameterAnnotation.name());
                 }
                 continue;
