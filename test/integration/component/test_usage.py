@@ -336,10 +336,10 @@ class TestPublicIPUsage(cloudstackTestCase):
 
         cls.public_ip = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
@@ -962,10 +962,10 @@ class TestLBRuleUsage(cloudstackTestCase):
                                 )
         cls.public_ip_1 = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
@@ -1291,10 +1291,10 @@ class TestNatRuleUsage(cloudstackTestCase):
                                 )
         cls.public_ip_1 = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
@@ -1454,10 +1454,10 @@ class TestVpnUsage(cloudstackTestCase):
                                 )
         cls.public_ip = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
