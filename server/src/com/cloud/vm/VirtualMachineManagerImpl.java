@@ -872,7 +872,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _uservmDetailsDao.persist(vmDetail_cpu);
                     _uservmDetailsDao.persist(vmDetail_ram);
                 }
-                else if (((Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f))) {
+                else if (_uservmDetailsDao.findDetail(vm.getId(),"cpuOvercommitRatio") != null) {
                     UserVmDetailVO vmDetail_cpu = _uservmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
                     vmDetail_cpu.setValue(cluster_detail_cpu.getValue());
                     UserVmDetailVO vmDetail_ram = _uservmDetailsDao.findDetail(vm.getId(), "memoryOvercommitRatio");
