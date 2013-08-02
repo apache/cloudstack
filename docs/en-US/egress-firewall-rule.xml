@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="egress-firewall-rule">
-  <title>Egress Firewall Rules in an Advanced Zone</title>
+  <title>Egress Firewall Rules in Advanced Zone</title>
   <para>The egress traffic originates from a private network to a public network, such as the
     Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed from a
     guest network to the Internet. However, you can control the egress traffic in an Advanced zone
