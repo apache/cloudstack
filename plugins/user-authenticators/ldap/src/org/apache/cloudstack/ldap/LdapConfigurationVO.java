@@ -60,7 +60,7 @@ public class LdapConfigurationVO implements InternalIdentity {
 		return port;
 	}
 
-	public void setId(long id) {
+	public void setId(final long id) {
 		this.id = id;
 	}
 }

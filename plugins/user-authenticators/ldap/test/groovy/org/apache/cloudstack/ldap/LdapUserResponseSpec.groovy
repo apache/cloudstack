@@ -16,52 +16,51 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.api.response.LdapUserResponse
 
 
 class LdapUserResponseSpec extends spock.lang.Specification {
     def "Testing succcessful setting of LdapUserResponse email"() {
-        given:
+	given: "We have an LdapResponse"
         LdapUserResponse response = new LdapUserResponse();
-        when:
+	when: "An email address is set"
         response.setEmail("rmurphy@test.com");
-        then:
-        response.getEmail() == "rmurphy@test.com";
-    }
-
-    def "Testing successful setting of LdapUserResponse principal"() {
-        given:
-        LdapUserResponse response = new LdapUserResponse()
-        when:
-        response.setPrincipal("dc=cloudstack,dc=org")
-        then:
-        response.getPrincipal() == "dc=cloudstack,dc=org"
-    }
-
-    def "Testing successful setting of LdapUserResponse username"() {
-        given:
-        LdapUserResponse response = new LdapUserResponse()
-        when:
-        response.setUsername("rmurphy")
-        then:
-        response.getUsername() == "rmurphy"
+	then: "Get email should return that set email"
+	response.getEmail() == "rmurphy@test.com";
     }
 
     def "Testing successful setting of LdapUserResponse firstname"() {
-        given:
-        LdapUserResponse response = new LdapUserResponse()
-        when:
+	given: "We have an LdapUserResponse"
+	LdapUserResponse response = new LdapUserResponse()
+	when: "A firstname is set"
         response.setFirstname("Ryan")
-        then:
+	then: "gGet Firstname returns the set value"
         response.getFirstname() == "Ryan"
     }
 
     def "Testing successful setting of LdapUserResponse lastname"() {
-        given:
+	given: "We have an LdapUserResponse"
         LdapUserResponse response = new LdapUserResponse()
-        when:
+	when: "A lastname is set"
         response.setLastname("Murphy")
-        then:
-        response.getLastname() == "Murphy"
+	then: "Get lastname is returned"
+	response.getLastname() == "Murphy"
+    }
+
+    def "Testing successful setting of LdapUserResponse principal"() {
+	given: "We have an LdapResponse"
+	LdapUserResponse response = new LdapUserResponse()
+	when: "A principal is set"
+	response.setPrincipal("dc=cloudstack,dc=org")
+	then: "Get principled returns the set value"
+	response.getPrincipal() == "dc=cloudstack,dc=org"
+    }
+
+    def "Testing successful setting of LdapUserResponse username"() {
+	given: "We have an LdapUserResponse"
+	LdapUserResponse response = new LdapUserResponse()
+	when: "A username is set"
+	response.setUsername("rmurphy")
+	then: "Get username returns the set value."
+	response.getUsername() == "rmurphy"
     }
 }

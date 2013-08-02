@@ -58,6 +58,36 @@ public class LdapUserManager {
 		return new LdapUser(username, email, firstname, lastname, principal);
 	}
 
+	private String generateSearchFilter(final String username) {
+		final StringBuilder userObjectFilter = new StringBuilder();
+		userObjectFilter.append("(objectClass=");
+		userObjectFilter.append(_ldapConfiguration.getUserObject());
+		userObjectFilter.append(")");
+
+		final StringBuilder usernameFilter = new StringBuilder();
+		usernameFilter.append("(");
+		usernameFilter.append(_ldapConfiguration.getUsernameAttribute());
+		usernameFilter.append("=");
+		usernameFilter.append((username == null ? "*" : username));
+		usernameFilter.append(")");
+
+		final StringBuilder memberOfFilter = new StringBuilder();
+		if (_ldapConfiguration.getSearchGroupPrinciple() != null) {
+			memberOfFilter.append("(memberof=");
+			memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple());
+			memberOfFilter.append(")");
+		}
+
+		final StringBuilder result = new StringBuilder();
+		result.append("(&");
+		result.append(userObjectFilter);
+		result.append(usernameFilter);
+		result.append(memberOfFilter);
+		result.append(")");
+
+		return result.toString();
+	}
+
 	public LdapUser getUser(final String username, final DirContext context)
 			throws NamingException {
 		final NamingEnumeration<SearchResult> result = searchUsers(username,
@@ -104,20 +134,7 @@ public class LdapUserManager {
 		controls.setReturningAttributes(_ldapConfiguration
 				.getReturnAttributes());
 
-		final String userObjectFilter = "(objectClass="
-				+ _ldapConfiguration.getUserObject() + ")";
-		final String usernameFilter = "("
-				+ _ldapConfiguration.getUsernameAttribute() + "="
-				+ (username == null ? "*" : username) + ")";
-		String memberOfFilter = "";
-		if (_ldapConfiguration.getSearchGroupPrinciple() != null) {
-			memberOfFilter = "(memberof="
-					+ _ldapConfiguration.getSearchGroupPrinciple() + ")";
-		}
-
-		final String filter = "(&" + userObjectFilter + usernameFilter
-				+ memberOfFilter + ")";
-
-		return context.search(_ldapConfiguration.getBaseDn(), filter, controls);
+		return context.search(_ldapConfiguration.getBaseDn(),
+				generateSearchFilter(username), controls);
 	}
 }

@@ -59,7 +59,7 @@ public class LdapListConfigurationCmd extends BaseListCmd {
 	}
 
 	private List<LdapConfigurationResponse> createLdapConfigurationResponses(
-			List<? extends LdapConfigurationVO> configurations) {
+			final List<? extends LdapConfigurationVO> configurations) {
 		final List<LdapConfigurationResponse> responses = new ArrayList<LdapConfigurationResponse>();
 		for (final LdapConfigurationVO resource : configurations) {
 			final LdapConfigurationResponse configurationResponse = _ldapManager

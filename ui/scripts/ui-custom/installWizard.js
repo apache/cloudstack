@@ -767,9 +767,10 @@
                         label: 'label.provider',
                         select: function(args) {
                             args.response.success({
-                                data: [
-                                    { id: 'NFS', description: 'NFS' }
-                                ]
+				data: [{
+				    id: 'NFS',
+				    description: 'NFS'
+				}]
                             });
                         }
                     },

@@ -1750,7 +1750,7 @@
                 }
             },
             secondaryStorage: {
-                fields: {                    
+		fields: {
                     provider: {
                         label: 'Provider',
                         select: function(args) {
@@ -1761,9 +1761,12 @@
                                 },
                                 success: function(json) {
                                     var objs = json.liststorageprovidersresponse.dataStoreProvider;
-                                    var items = [{ id: '', description: ''}];
+				    var items = [{
+					id: '',
+					description: ''
+				    }];
                                     if (objs != null) {
-                                        for (var i = 0; i < objs.length; i++) {    
+					for (var i = 0; i < objs.length; i++) {
                                             items.push({
                                                 id: objs[i].name,
                                                 description: objs[i].name
@@ -1779,8 +1782,8 @@
                                         var $fields = $form.find('.field');
 
                                         if ($(this).val() == "") {
-                                        	$fields.filter('[rel=name]').hide();
-                                        	
+					    $fields.filter('[rel=name]').hide();
+
                                             //NFS
                                             $fields.filter('[rel=zoneid]').hide();
                                             $fields.filter('[rel=nfsServer]').hide();
@@ -1807,9 +1810,9 @@
                                             $fields.filter('[rel=username]').hide();
                                             $fields.filter('[rel=key]').hide();
                                         } else if ($(this).val() == "NFS") {
-                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
-                                        	
-                                        	//NFS
+					    $fields.filter('[rel=name]').css('display', 'inline-block');
+
+					    //NFS
                                             $fields.filter('[rel=zoneid]').css('display', 'inline-block');
                                             $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
                                             $fields.filter('[rel=path]').css('display', 'inline-block');
@@ -1835,9 +1838,9 @@
                                             $fields.filter('[rel=username]').hide();
                                             $fields.filter('[rel=key]').hide();
                                         } else if ($(this).val() == "S3") {
-                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
-                                        	
-                                        	//NFS
+					    $fields.filter('[rel=name]').css('display', 'inline-block');
+
+					    //NFS
                                             $fields.filter('[rel=zoneid]').hide();
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
@@ -1863,9 +1866,9 @@
                                             $fields.filter('[rel=username]').hide();
                                             $fields.filter('[rel=key]').hide();
                                         } else if ($(this).val() == "Swift") {
-                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
-                                        	
-                                        	//NFS
+					    $fields.filter('[rel=name]').css('display', 'inline-block');
+
+					    //NFS
                                             $fields.filter('[rel=zoneid]').hide();
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
@@ -1903,7 +1906,7 @@
                         label: 'label.name',
                         isHidden: true
                     },
-                    
+
                     //NFS (begin)
                     nfsServer: {
                         label: 'label.nfs.server',
@@ -1949,7 +1952,7 @@
                         isHidden: true
                     },
                     usehttps: {
-                        label: 'label.s3.use_https',                        
+			label: 'label.s3.use_https',
                         isBoolean: true,
                         isChecked: true,
                         isHidden: true
@@ -3848,7 +3851,7 @@
                         $.ajax({
                             url: createURL("addCluster" + array1.join("")),
                             dataType: "json",
-                            type: "POST",                            
+			    type: "POST",
                             success: function(json) {
                                 stepFns.addHost({
                                     data: $.extend(args.data, {
@@ -4032,7 +4035,7 @@
 
                     var dedicatedZone = (args.data.pluginFrom == null && args.data.zone.ispublic != null);
 
-                	if (args.data.secondaryStorage.provider == '') {
+		    if (args.data.secondaryStorage.provider == '') {
 
                         if (dedicatedZone) {
                             stepFns.dedicateZone({
@@ -4045,10 +4048,10 @@
                         }
 
                         return; //skip addSecondaryStorage if provider dropdown is blank
-                	}
-                	
-                	
-                	message(dictionary['message.creating.secondary.storage']);
+		    }
+
+
+		    message(dictionary['message.creating.secondary.storage']);
 
                     var data = {};
                     if (args.data.secondaryStorage.name != null && args.data.secondaryStorage.name.length > 0) {
@@ -4072,10 +4075,10 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                
+
                                 if (dedicatedZone) {
                                     stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
+					data: $.extend(args.data, {
                                             returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                         })
                                     })
@@ -4136,7 +4139,7 @@
                             success: function(json) {
                                 if (dedicatedZone) {
                                     stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
+					data: $.extend(args.data, {
                                             returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                         })
                                     })
@@ -4147,7 +4150,7 @@
                                         })
                                     });
                                 }
-                                
+
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4213,7 +4216,7 @@
                             success: function(json) {
                                 if (dedicatedZone) {
                                     stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
+					data: $.extend(args.data, {
                                             returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                         })
                                     })
@@ -4237,9 +4240,9 @@
                 },
                 dedicateZone: function(args) {
 
-                    if(args.data.pluginFrom == null && args.data.zone.ispublic != null) {
+		    if (args.data.pluginFrom == null && args.data.zone.ispublic != null) {
                         var dedicatedZoneId = args.data.returnedZone.id;
-                	    message(dictionary['message.dedicate.zone']);
+			message(dictionary['message.dedicate.zone']);
 
                         var array2 = [];
                         if (args.data.zone.domain != null)
@@ -4262,20 +4265,20 @@
                                                     return;
                                                 } else {
                                                     clearInterval(dedicatedZoneIntervalId);
-                                                    if(json.queryasyncjobresultresponse.jobstatus == 1) { // successed
+						    if (json.queryasyncjobresultresponse.jobstatus == 1) { // successed
                                                         complete({
                                                             data: $.extend(args.data, {
                                                                 returnedDedicateZone: json.queryasyncjobresultresponse.jobresult
                                                             })
                                                         });
-                                                    } else if(json.queryasyncjobresultresponse.jobstatus == 2) { // failed
+						    } else if (json.queryasyncjobresultresponse.jobstatus == 2) { // failed
                                                         error('addZone', json.queryasyncjobresultresponse.jobresult.errortext, {
                                                             fn: 'dedicateZone',
                                                             args: args
                                                         })
                                                     }
                                                 }
-                                                
+
                                             }
                                         });
                                     }, g_queryAsyncJobResultInterval);
@@ -4288,7 +4291,7 @@
                             data: args.data
                         });
                     }
-                    
+
                 }
             };
 

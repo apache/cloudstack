@@ -16,13 +16,7 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.ldap.LdapConfiguration
-import org.apache.cloudstack.ldap.LdapContextFactory
-import spock.lang.Shared
-
-import javax.naming.NamingException
-import javax.naming.directory.SearchControls
-import javax.naming.ldap.LdapContext
+import spock.lang.Shared;
 
 class LdapContextFactorySpec extends spock.lang.Specification {
     @Shared
@@ -53,82 +47,72 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 
         username = "rmurphy"
         principal = "cn=" + username + "," + ldapConfiguration.getBaseDn()
-        password = "password"
+	password = "password"
     }
 
-    def "Test successfully creating a system environment with anon bind"() {
-        given:
-        def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
+    def "Test succcessfully creating a initial context"() {
+	given: "We have a LdapContextFactory"
+	def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
+	when: "A context attempts to bind and no Ldap server is avaiable"
+	ldapContextFactory.createInitialDirContext(null, null, true)
+	then: "An expection is thrown"
+	thrown NamingException
+    }
 
-        when:
-        def result = ldapContextFactory.getEnvironment(principal, password, null, false)
+    def "Test successful failed connection"() {
+	given: "We have a LdapContextFactory"
+	def ldapContextFactory = Spy(LdapContextFactory, constructorArgs: [ldapConfiguration])
+	when: "Test connection is executed"
+	ldapContextFactory.testConnection(ldapConfiguration.getProviderUrl())
+	then: "An exception is thrown"
+	thrown NamingException
+    }
 
-        then:
-        result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl()
-        result['java.naming.factory.initial'] == ldapConfiguration.getFactory()
-        result['java.naming.security.principal'] == principal
-        result['java.naming.security.authentication'] == "simple"
-        result['java.naming.security.credentials'] == password
+    def "Test successfully binding as a user"() {
+	given: "We have a LdapContextFactory"
+	def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
+	when: "A user attempts to bind and no LDAP server is avaiable"
+	ldapContextFactory.createUserContext(principal, password)
+	then: "An exception is thrown"
+	thrown NamingException
     }
 
     def "Test successfully creating a environment with username and password"() {
-        given:
+	given: "We have an LdapContextFactory"
         def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
 
-        when:
+	when: "A request for an environment is made"
         def result = ldapContextFactory.getEnvironment(null, null, null, true)
 
-        then:
+	then: "The resulting values should be set"
         result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl()
         result['java.naming.factory.initial'] == ldapConfiguration.getFactory()
         result['java.naming.security.principal'] == null
         result['java.naming.security.authentication'] == ldapConfiguration.getAuthentication()
-        result['java.naming.security.credentials'] == null
+	result['java.naming.security.credentials'] == null
     }
 
-    def "Test successfully binding as a user"() {
-        given:
-        def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
-        when:
-        ldapContextFactory.createUserContext(principal, password)
-        then:
-        thrown NamingException
+    def "Test successfully creating a system environment with anon bind"() {
+	given: "We have an LdapContext Factory"
+	def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
+
+	when: "A request for an environment is made"
+	def result = ldapContextFactory.getEnvironment(principal, password, null, false)
+
+	then: "The resulting values should be set"
+	result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl()
+	result['java.naming.factory.initial'] == ldapConfiguration.getFactory()
+	result['java.naming.security.principal'] == principal
+	result['java.naming.security.authentication'] == "simple"
+	result['java.naming.security.credentials'] == password
     }
 
     def "Test successully binding as system"() {
-        given:
+	given: "We have a LdapContextFactory"
         def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
-        when:
+	when: "A bind context attempts to bind and no Ldap server is avaiable"
         ldapContextFactory.createBindContext()
-        then:
-        thrown NamingException
-    }
-
-    def "Test succcessfully creating a initial context"() {
-        given:
-        def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
-        when:
-        ldapContextFactory.createInitialDirContext(null, null, true)
-        then:
-        thrown NamingException
-    }
-
-    def "Test successful failed connection"() {
-        given:
-        def ldapContextFactory = Spy(LdapContextFactory, constructorArgs: [ldapConfiguration])
-        when:
-        ldapContextFactory.testConnection(ldapConfiguration.getProviderUrl())
-        then:
-        thrown NamingException
-    }
-
-    def "Test successful connection"() {
-        given:
-        def ldapContextFactory = Spy(LdapContextFactory, constructorArgs: [ldapConfiguration])
-        ldapContextFactory.createBindContext(_) >> Mock(LdapContext)
-        when:
-        ldapContextFactory.testConnection(ldapConfiguration.getProviderUrl())
-        then:
-        notThrown NamingException
+	then: "An exception is thrown"
+	thrown NamingException
     }
 }

@@ -6488,11 +6488,13 @@
                                                                 selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
                                                             }
                                                         },
-                                                        error: function(XMLHttpResponse) { //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});                                                      	
-                                                        	if(parseXMLHttpResponse(XMLHttpResponse) == 'The given command does not exist or it is not available for user')
-                                                        		return; //do nothing
-                                                        	else 
-                                                        		cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)}); //pop up error dialog box if the error is not 'The given command does not exist or it is not available for user'
+							error: function(XMLHttpResponse) { //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});
+							    if (parseXMLHttpResponse(XMLHttpResponse) == 'The given command does not exist or it is not available for user')
+								return; //do nothing
+							    else
+								cloudStack.dialog.notice({
+								    message: parseXMLHttpResponse(XMLHttpResponse)
+								}); //pop up error dialog box if the error is not 'The given command does not exist or it is not available for user'
                                                         }
                                                     });
 
@@ -7425,17 +7427,17 @@
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
                                             if (systemvmObjs != null) {
                                                 $.ajax({
-                                                    url: createURL("listHosts&listAll=true"),                                                    
+						    url: createURL("listHosts&listAll=true"),
                                                     success: function(json) {
                                                         var hostObjs = json.listhostsresponse.host;
                                                         for (var i = 0; i < systemvmObjs.length; i++) {
-                                                        	for (var k = 0; k < hostObjs.length; k++) {
-                                                        		if (hostObjs[k].name == systemvmObjs[i].name) {
-                                                        			systemvmObjs[i].agentstate = hostObjs[k].state;
-                                                        			break;
-                                                        		}
-                                                        	}
-                                                        }    
+							    for (var k = 0; k < hostObjs.length; k++) {
+								if (hostObjs[k].name == systemvmObjs[i].name) {
+								    systemvmObjs[i].agentstate = hostObjs[k].state;
+								    break;
+								}
+							    }
+							}
                                                         args.response.success({
                                                             data: systemvmObjs
                                                         });
@@ -10125,7 +10127,7 @@
                                                             notification: {
                                                                 poll: pollAsyncJobResult,
                                                                 interval: 4500,
-                                                                desc: "Dedicate Pod"    
+								desc: "Dedicate Pod"
                                                             },
 
                                                             data: item
@@ -11201,7 +11203,7 @@
                                 $.ajax({
                                     url: createURL("addCluster" + array1.join("")),
                                     dataType: "json",
-                                    type: "POST",                                    
+				    type: "POST",
                                     success: function(json) {
                                         var item = json.addclusterresponse.cluster[0];
                                         clusterId = json.addclusterresponse.cluster[0].id;
@@ -14116,14 +14118,14 @@
                             label: 'label.url'
                         }
                     },
-                    dataProvider: function(args) {                       
-			            $.ajax({
-			              url: createURL('listUcsManager'),
-			              data: {
-			                zoneid: args.context.physicalResources[0].id
-			              },
-			              success: function(json) {	
-			            	  /*	            	  
+		    dataProvider: function(args) {
+			$.ajax({
+			    url: createURL('listUcsManager'),
+			    data: {
+				zoneid: args.context.physicalResources[0].id
+			    },
+			    success: function(json) {
+				/*
 			            	  json = //override json (for testing only)
 			            	  {
 			            	      "listucsmanagerreponse": {
@@ -14138,11 +14140,13 @@
 			            		      ]
 			            	      }
 			            	  };
-			            	  */			            	  
-			            	  var items = json.listucsmanagerreponse.ucsmanager;
-			            	  args.response.success({ data: items });			            	  
-			              }
-			            });
+					  */
+				var items = json.listucsmanagerreponse.ucsmanager;
+				args.response.success({
+				    data: items
+				});
+			    }
+			});
                     },
                     actions: {
                         add: {
@@ -14363,8 +14367,8 @@
 														            "bladedn": "sys/chassis-1/blade-2"
 														        }
 														    }
-														}   
-														*/                                                     	
+														}
+														*/
                                                         args.response.success({
                                                             data: {
                                                                 associatedProfileDn: args.data.profiledn

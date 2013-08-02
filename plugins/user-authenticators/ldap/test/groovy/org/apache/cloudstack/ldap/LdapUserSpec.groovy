@@ -16,9 +16,42 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.ldap.LdapUser
 
 class LdapUserSpec extends spock.lang.Specification {
+
+    def "Testing LdapUsers hashCode generation"() {
+	given:
+	def userA = new LdapUser(usernameA, "", "", "", "")
+	expect:
+	userA.hashCode() == usernameA.hashCode()
+	where:
+	usernameA = "A"
+    }
+
+    def "Testing that LdapUser successfully gives the correct result for a compare to"() {
+	given: "You have created two LDAP user objects"
+	def userA = new LdapUser(usernameA, "", "", "", "")
+	def userB = new LdapUser(usernameB, "", "", "", "")
+	expect: "That when compared the result is less than or equal to 0"
+	userA.compareTo(userB) <= 0
+	where: "The following values are used"
+	usernameA | usernameB
+	"A"       | "B"
+	"A"       | "A"
+    }
+
+    def "Testing that LdapUsers equality"() {
+	given:
+	def userA = new LdapUser(usernameA, "", "", "", "")
+	def userB = new LdapUser(usernameB, "", "", "", "")
+	expect:
+	userA.equals(userA) == true
+	userA.equals(new Object()) == false
+	userA.equals(userB) == false
+	where:
+	usernameA | usernameB
+	"A"       | "B"
+    }
 
     def "Testing that the username is correctly set with the ldap object"() {
         given: "You have created a LDAP user object with a username"
@@ -63,39 +96,5 @@ class LdapUserSpec extends spock.lang.Specification {
         user.getPrincipal() == principal
         where: "The username is set to "
         principal << ["", null, "cn=rmurphy,dc=cloudstack,dc=org"]
-    }
-
-    def "Testing that LdapUser successfully gives the correct result for a compare to"() {
-        given: "You have created two LDAP user objects"
-        def userA = new LdapUser(usernameA, "", "", "", "")
-        def userB = new LdapUser(usernameB, "", "", "", "")
-        expect: "That when compared the result is less than or equal to 0"
-        userA.compareTo(userB) <= 0
-        where: "The following values are used"
-        usernameA | usernameB
-        "A"       | "B"
-        "A"       | "A"
-    }
-
-    def "Testing that LdapUsers equality"() {
-	given:
-	def userA = new LdapUser(usernameA, "", "", "", "")
-	def userB = new LdapUser(usernameB, "", "", "", "")
-	expect:
-	userA.equals(userA) == true
-	userA.equals(new Object()) == false
-	userA.equals(userB) == false
-	where:
-	usernameA | usernameB
-	"A"       | "B"
-    }
-
-    def "Testing LdapUsers hashCode generation"() {
-	given:
-	def userA = new LdapUser(usernameA, "", "", "", "")
-	expect:
-	userA.hashCode() == usernameA.hashCode()
-	where:
-	usernameA = "A"
     }
 }

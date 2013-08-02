@@ -185,7 +185,7 @@
                                     return false;
                                 });
 
-                                if(args.notification) notification = args.notification;
+				if (args.notification) notification = args.notification;
 
                                 notification._custom = args._custom;
 
@@ -259,7 +259,7 @@
                                                 $instanceRow.remove();
                                             } else {
                                                 // For standard actions
-                                                if(!args.notification) {
+						if (!args.notification) {
                                                     replaceItem(
                                                         $instanceRow,
                                                         $.extend($instanceRow.data('json-obj'), errorArgs.data),
@@ -534,10 +534,12 @@
                 showEditField();
             } else if ($editInput.val() != $label.html()) { //click Save button with changed value
                 if ($editInput.val().match(/<|>/)) {
-                    cloudStack.dialog.notice({ message: 'message.validate.invalid.characters' }); 
+		    cloudStack.dialog.notice({
+			message: 'message.validate.invalid.characters'
+		    });
                     return false;
                 }
-                
+
                 $edit.animate({
                     opacity: 0.5
                 });

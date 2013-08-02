@@ -38,11 +38,11 @@
         createForm: function(args) {
             var $formContainer = $('<div>').addClass('form-container');
             var $form = $('<form>').appendTo($formContainer)
-                    .submit(function() {
-                        $(this).closest('.ui-dialog').find('button.ok').click();
+		.submit(function() {
+		    $(this).closest('.ui-dialog').find('button.ok').click();
 
-                        return false;
-                    });
+		    return false;
+		});
             var createLabel = _l(args.form.createLabel);
 
             // Description text
@@ -130,10 +130,10 @@
                 var field = args.form.fields[key];
 
                 var $formItem = $('<div>')
-                        .addClass('form-item')
-                        .attr({
-                            rel: key
-                        });
+		    .addClass('form-item')
+		    .attr({
+			rel: key
+		    });
 
                 if (field.isHidden != null) {
                     if (typeof(field.isHidden) == 'boolean' && field.isHidden == true)
@@ -167,10 +167,10 @@
                 // Label field
 
                 var $name = $('<div>').addClass('name')
-                        .appendTo($formItem)
-                        .append(
-                            $('<label>').html(_l(field.label) + ':')
-                        );
+		    .appendTo($formItem)
+		    .append(
+			$('<label>').html(_l(field.label) + ':')
+		);
 
                 // red asterisk
                 var $astersikSpan = $('<span>').addClass('field-required').html('*');
@@ -189,7 +189,7 @@
 
                 // Input area
                 var $value = $('<div>').addClass('value')
-                        .appendTo($formItem);
+		    .appendTo($formItem);
                 var $input, $dependsOn, selectFn, selectArgs;
                 var dependsOn = field.dependsOn;
 
@@ -219,7 +219,7 @@
                                     }
                                 });
                             } else if (($target.is(':unchecked') && !isReverse) ||
-                                       ($target.is(':checked') && isReverse)) {
+				($target.is(':checked') && isReverse)) {
                                 $dependent.hide();
                             }
 
@@ -258,9 +258,9 @@
                                         description = this.description;
 
                                     var $option = $('<option>')
-                                            .appendTo($input)
-                                            .val(_s(id))
-                                            .html(_s(description));
+					.appendTo($input)
+					.val(_s(id))
+					.html(_s(description));
                                 });
 
                                 if (field.defaultValue) {
@@ -310,7 +310,9 @@
 
                                 // Make sure all data is loaded to pass to select fn
                                 dependsOnLoaded = $.inArray(
-                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').size() ? true : false; })
+				    true, $dependsOn.map(function(index, item) {
+					return $(item).find('option').size() ? true : false;
+				    })
                                 ) > -1;
 
                                 if (!dependsOnLoaded) {
@@ -347,17 +349,17 @@
                         $.each(field.multiArray, function(itemKey, itemValue) {
                             $input.append(
                                 $('<div>').addClass('item')
-                                    .append(
-                                        $.merge(
-                                            $('<div>').addClass('name').html(_l(itemValue.label)),
-                                            $('<div>').addClass('value').append(
-                                                $('<input>').attr({
-                                                    name: itemKey,
-                                                    type: 'checkbox'
-                                                }).appendTo($value)
-                                            )
+				.append(
+				    $.merge(
+					$('<div>').addClass('name').html(_l(itemValue.label)),
+					$('<div>').addClass('value').append(
+					    $('<input>').attr({
+						name: itemKey,
+						type: 'checkbox'
+					    }).appendTo($value)
                                         )
                                     )
+				)
                             );
                         });
 

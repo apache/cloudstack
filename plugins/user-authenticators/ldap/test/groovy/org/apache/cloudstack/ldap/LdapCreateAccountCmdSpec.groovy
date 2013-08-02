@@ -16,20 +16,6 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import com.cloud.exception.InvalidParameterValueException
-import org.apache.cloudstack.api.ServerApiException
-import org.apache.cloudstack.api.command.LdapAddConfigurationCmd
-import org.apache.cloudstack.api.response.LdapConfigurationResponse
-
-import org.apache.cloudstack.ldap.LdapUser;
-import org.apache.cloudstack.ldap.LdapManager;
-
-import org.apache.cloudstack.api.command.LdapCreateAccount
-
-import com.cloud.user.AccountService;
-import com.cloud.user.UserAccountVO;
-
-import javax.naming.NamingException
 
 class LdapCreateAccountCmdSpec extends spock.lang.Specification {
 /*
@@ -47,108 +33,96 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
 	thrown ServerApiException
     } */
 
-    def "Test validation of a user"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-
-	def ldapCreateAccount = Spy(LdapCreateAccount, constructorArgs: [ldapManager, accountService])
-
-	when:
-	def commandName = ldapCreateAccount.getCommandName()
-
-	then:
-	commandName == "createaccountresponse"
+    def "Test command name"() {
+		given: "We have an LdapManager, AccountService and LdapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+		def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
+		when: "Get command name is called"
+		def result = ldapCreateAccount.getCommandName()
+		then: "createaccountresponse is returned"
+		result == "createaccountresponse"
     }
 
     def "Test getEntityOwnerId is 1"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
+		given: "We have an LdapManager, AccountService andL dapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
 
-	def ldapCreateAccount = Spy(LdapCreateAccount, constructorArgs: [ldapManager, accountService])
-	when:
-	long ownerId = ldapCreateAccount.getEntityOwnerId()
-	then:
-	ownerId == 1
-    }
-
-    def "Test validate User"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService);
-	when:
-	def result = ldapCreateAccount.validateUser(new LdapUser("username","email","firstname","lastname","principal"))
-	then:
-	result == true
-   }
-
-    def "Test validate User empty email"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
-	when:
-	ldapCreateAccount.validateUser(new LdapUser("username",null,"firstname","lastname","principal"))
-	then:
-	thrown Exception
-   }
-
-    def "Test validate User empty firstname"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
-	when:
-	ldapCreateAccount.validateUser(new LdapUser("username","email",null,"lastname","principal"))
-	then:
-	thrown Exception
-   }
-
-    def "Test validate User empty lastname"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
-	when:
-	ldapCreateAccount.validateUser(new LdapUser("username","email","firstname",null,"principal"))
-	then:
-	thrown Exception
-   }
-
-    def "Test failed password generation"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
-	when:
-	def result = ldapCreateAccount.generatePassword()
-	then:
-	result != ""
-	result != null
+		def ldapCreateAccount = Spy(LdapCreateAccount, constructorArgs: [ldapManager, accountService])
+		when: "Get entity owner id is called"
+		long ownerId = ldapCreateAccount.getEntityOwnerId()
+		then: "1 is returned"
+		ownerId == 1
     }
 
     def "Test password generation"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
-	when:
-	def result = ldapCreateAccount.generatePassword()
-	then:
-	result != ""
-	result != null
-    }
+		given: "We have an LdapManager, AccountService and LdapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+		def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
+		when: "A password is generated"
+		def result = ldapCreateAccount.generatePassword()
+		then: "The result shouldn't be null or empty"
+		result != ""
+		result != null
+	}
 
-    def "Test command name"() {
-	given:
-	LdapManager ldapManager = Mock(LdapManager)
-	AccountService accountService = Mock(AccountService)
-	def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
-	when:
-	def result = ldapCreateAccount.getCommandName()
-	then:
-	result == "createaccountresponse"
+    def "Test validate User"() {
+		given: "We have an LdapManager, AccountService andL dapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+		def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService);
+		when: "a user with an username, email, firstname and lastname is validated"
+		def result = ldapCreateAccount.validateUser(new LdapUser("username","email","firstname","lastname","principal"))
+		then: "the result is true"
+		result == true
+   }
+
+    def "Test validate User empty email"() {
+		given: "We have an LdapManager, AccountService andL dapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+		def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
+		when: "A user with no email address attempts to validate"
+		ldapCreateAccount.validateUser(new LdapUser("username",null,"firstname","lastname","principal"))
+		then: "An exception is thrown"
+		thrown Exception
+   }
+
+    def "Test validate User empty firstname"() {
+		given: "We have an LdapManager, AccountService andL dapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+		def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
+		when: "A user with no firstname attempts to validate"
+		ldapCreateAccount.validateUser(new LdapUser("username","email",null,"lastname","principal"))
+		then: "An exception is thrown"
+		thrown Exception
+   }
+
+	def "Test validate User empty lastname"() {
+		given: "We have an LdapManager, AccountService and LdapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+		def ldapCreateAccount = new LdapCreateAccount(ldapManager, accountService)
+		when: "A user with no lastname attempts to validate"
+		ldapCreateAccount.validateUser(new LdapUser("username","email","firstname",null,"principal"))
+		then: "An exception is thown"
+		thrown Exception
+   }
+
+    def "Test validation of a user"() {
+		given: "We have an LdapManager, AccountService andL dapCreateAccount"
+		LdapManager ldapManager = Mock(LdapManager)
+		AccountService accountService = Mock(AccountService)
+
+		def ldapCreateAccount = Spy(LdapCreateAccount, constructorArgs: [ldapManager, accountService])
+
+		when: "Get command name is called"
+		def commandName = ldapCreateAccount.getCommandName()
+
+		then: "createaccountresponse is returned"
+		commandName == "createaccountresponse"
     }
 }

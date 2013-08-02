@@ -54,7 +54,8 @@ public class LdapUserSearchCmd extends BaseListCmd {
 		_ldapManager = ldapManager;
 	}
 
-	private List<LdapUserResponse> createLdapUserResponse(List<LdapUser> users) {
+	private List<LdapUserResponse> createLdapUserResponse(
+			final List<LdapUser> users) {
 		final List<LdapUserResponse> ldapUserResponses = new ArrayList<LdapUserResponse>();
 		if (users != null) {
 			for (final LdapUser user : users) {

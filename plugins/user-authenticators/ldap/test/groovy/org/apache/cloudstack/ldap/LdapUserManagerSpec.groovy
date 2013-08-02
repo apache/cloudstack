@@ -16,16 +16,10 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.ldap.LdapConfiguration
-import org.apache.cloudstack.ldap.LdapUserManager
-import spock.lang.Shared
+import javax.naming.directory.Attributes;
+import javax.naming.directory.SearchResult;
 
-import javax.naming.NamingException
-import javax.naming.directory.Attribute
-import javax.naming.directory.Attributes
-import javax.naming.directory.SearchControls
-import javax.naming.directory.SearchResult
-import javax.naming.ldap.LdapContext
+import spock.lang.Shared;
 
 class LdapUserManagerSpec extends spock.lang.Specification {
 
@@ -47,6 +41,55 @@ class LdapUserManagerSpec extends spock.lang.Specification {
     @Shared
     private def principal
 
+    private def createContext() {
+
+	Attributes attributes = createUserAttributes(username, email, firstname, lastname)
+	SearchResult searchResults = createSearchResult(attributes)
+	def searchUsersResults = new BasicNamingEnumerationImpl()
+	searchUsersResults.add(searchResults);
+
+	def context = Mock(LdapContext)
+	context.search(_, _, _) >> searchUsersResults;
+
+	return context
+    }
+
+    private SearchResult createSearchResult(attributes) {
+	def search = Mock(SearchResult)
+
+	search.getName() >> "cn=" + attributes.getAt("uid").get();
+
+	search.getAttributes() >> attributes
+
+	return search
+    }
+
+    private Attributes createUserAttributes(String username, String email, String firstname, String lastname) {
+	def attributes = Mock(Attributes)
+
+	def nameAttribute = Mock(Attribute)
+	nameAttribute.getId() >> "uid"
+	nameAttribute.get() >> username
+	attributes.get("uid") >> nameAttribute
+
+	def mailAttribute = Mock(Attribute)
+	mailAttribute.getId() >> "mail"
+	mailAttribute.get() >> email
+	attributes.get("mail") >> mailAttribute
+
+	def givennameAttribute = Mock(Attribute)
+	givennameAttribute.getId() >> "givenname"
+	givennameAttribute.get() >> firstname
+	attributes.get("givenname") >> givennameAttribute
+
+	def snAttribute = Mock(Attribute)
+	snAttribute.getId() >> "sn"
+	snAttribute.get() >> lastname
+	attributes.get("sn") >> snAttribute
+
+	return attributes
+    }
+
     def setupSpec() {
         ldapConfiguration = Mock(LdapConfiguration)
 
@@ -62,146 +105,97 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         email = "rmurphy@test.com"
         firstname = "Ryan"
         lastname = "Murphy"
-        principal = "cn=" + username + "," + ldapConfiguration.getBaseDn()
-    }
-
-    def "Test that a newly created Ldap User Manager is not null"() {
-        given: "You have created a new Ldap user manager object"
-        def result = new LdapUserManager();
-        expect: "The result is not null"
-        result != null
+	principal = "cn=" + username + "," + ldapConfiguration.getBaseDn()
     }
 
     def "Test successfully creating an Ldap User from Search result"() {
-        given:
-        def attributes = createUserAttributes(username, email, firstname, lastname)
+	given: "We have attributes, a search and a user manager"
+	def attributes = createUserAttributes(username, email, firstname, lastname)
         def search = createSearchResult(attributes)
         def userManager = new LdapUserManager(ldapConfiguration)
         def result = userManager.createUser(search)
 
-        expect:
+	expect: "The crated user the data supplied from LDAP"
 
         result.username == username
         result.email == email
         result.firstname == firstname
         result.lastname == lastname
-        result.principal == principal
-    }
-
-    def "Test successfully returning an Ldap user from a get user request"() {
-        given:
-
-        def userManager = new LdapUserManager(ldapConfiguration)
-
-        when:
-        def result = userManager.getUser(username, createContext())
-
-        then:
-        result.username == username
-        result.email == email
-        result.firstname == firstname
-        result.lastname == lastname
-        result.principal == principal
+	result.principal == principal
     }
 
     def "Test successfully returning a list from get users"() {
-        given:
+	given: "We have a LdapUserManager"
 
         def userManager = new LdapUserManager(ldapConfiguration)
 
-        when:
+	when: "A request for users is made"
         def result = userManager.getUsers(username, createContext())
 
-        then:
+	then: "A list of users is returned"
         result.size() == 1
     }
 
     def "Test successfully returning a list from get users when no username is given"() {
-        given:
+	given: "We have a LdapUserManager"
 
         def userManager = new LdapUserManager(ldapConfiguration)
 
-        when:
+	when: "Get users is called without a username"
         def result = userManager.getUsers(createContext())
 
-        then:
-        result.size() == 1
-    }
-
-    def "Test successfully throwing an exception when no users are found with getUser"() {
-        given:
-
-        def searchUsersResults = new BasicNamingEnumerationImpl()
-
-        def context = Mock(LdapContext)
-        context.search(_, _, _) >> searchUsersResults;
-
-        def userManager = new LdapUserManager(ldapConfiguration)
-
-        when:
-        def result = userManager.getUser(username, context)
-
-        then:
-        thrown NamingException
+	then: "All users are returned"
+	result.size() == 1
     }
 
     def "Test successfully returning a NamingEnumeration from searchUsers"() {
-        given:
-        def userManager = new LdapUserManager(ldapConfiguration)
+	given: "We have a LdapUserManager"
+	def userManager = new LdapUserManager(ldapConfiguration)
 
-        when:
+	when: "We search for users"
         def result = userManager.searchUsers(createContext())
 
-        then:
+	then: "A list of users are returned."
         result.next().getName() + "," + ldapConfiguration.getBaseDn() == principal
     }
 
-    private def createContext() {
+    def "Test successfully returning an Ldap user from a get user request"() {
+	given: "We have a LdapUserMaanger"
 
-        Attributes attributes = createUserAttributes(username, email, firstname, lastname)
-        SearchResult searchResults = createSearchResult(attributes)
-        def searchUsersResults = new BasicNamingEnumerationImpl()
-        searchUsersResults.add(searchResults);
+	def userManager = new LdapUserManager(ldapConfiguration)
 
-        def context = Mock(LdapContext)
-        context.search(_, _, _) >> searchUsersResults;
+	when: "A request for a user is made"
+	def result = userManager.getUser(username, createContext())
 
-        return context
+	then: "The user is returned"
+	result.username == username
+	result.email == email
+	result.firstname == firstname
+	result.lastname == lastname
+	result.principal == principal
     }
 
-    private SearchResult createSearchResult(attributes) {
-        def search = Mock(SearchResult)
+    def "Test successfully throwing an exception when no users are found with getUser"() {
+	given: "We have a seachResult of users and a User Manager"
 
-        search.getName() >> "cn=" + attributes.getAt("uid").get();
+	def searchUsersResults = new BasicNamingEnumerationImpl()
 
-        search.getAttributes() >> attributes
+	def context = Mock(LdapContext)
+	context.search(_, _, _) >> searchUsersResults;
 
-        return search
+	def userManager = new LdapUserManager(ldapConfiguration)
+
+	when: "a get user request is made and no user is found"
+	def result = userManager.getUser(username, context)
+
+	then: "An exception is thrown."
+	thrown NamingException
     }
 
-    private Attributes createUserAttributes(String username, String email, String firstname, String lastname) {
-        def attributes = Mock(Attributes)
-
-        def nameAttribute = Mock(Attribute)
-        nameAttribute.getId() >> "uid"
-        nameAttribute.get() >> username
-        attributes.get("uid") >> nameAttribute
-
-        def mailAttribute = Mock(Attribute)
-        mailAttribute.getId() >> "mail"
-        mailAttribute.get() >> email
-        attributes.get("mail") >> mailAttribute
-
-        def givennameAttribute = Mock(Attribute)
-        givennameAttribute.getId() >> "givenname"
-        givennameAttribute.get() >> firstname
-        attributes.get("givenname") >> givennameAttribute
-
-        def snAttribute = Mock(Attribute)
-        snAttribute.getId() >> "sn"
-        snAttribute.get() >> lastname
-        attributes.get("sn") >> snAttribute
-
-        return attributes
+    def "Test that a newly created Ldap User Manager is not null"() {
+	given: "You have created a new Ldap user manager object"
+	def result = new LdapUserManager();
+	expect: "The result is not null"
+	result != null
     }
 }

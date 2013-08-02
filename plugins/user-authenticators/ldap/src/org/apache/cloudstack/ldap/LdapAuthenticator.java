@@ -20,7 +20,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
@@ -58,7 +57,7 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
 			s_logger.debug("Unable to find user with " + username
 					+ " in domain " + domainId);
 			return false;
-		} else if (isLdapConfigurationPresent()) {
+		} else if (_ldapManager.isLdapEnabled()) {
 			return _ldapManager.canAuthenticate(username, password);
 		} else {
 			return false;
@@ -69,10 +68,4 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
 	public String encode(final String password) {
 		return password;
 	}
-
-	private boolean isLdapConfigurationPresent() {
-		return _ldapManager.listConfigurations(
-				new LdapListConfigurationCmd(_ldapManager)).second() > 0;
-	}
-
 }

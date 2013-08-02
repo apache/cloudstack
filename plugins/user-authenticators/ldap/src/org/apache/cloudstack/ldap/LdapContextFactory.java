@@ -71,14 +71,25 @@ public class LdapContextFactory {
 		return createInitialDirContext(principal, password, false);
 	}
 
+	private void enableSSL(final Hashtable<String, String> environment) {
+		final boolean sslStatus = _ldapConfiguration.getSSLStatus();
+
+		if (sslStatus) {
+			s_logger.info("LDAP SSL enabled.");
+			environment.put(Context.SECURITY_PROTOCOL, "ssl");
+			System.setProperty("javax.net.ssl.trustStore",
+					_ldapConfiguration.getTrustStore());
+			System.setProperty("javax.net.ssl.trustStorePassword",
+					_ldapConfiguration.getTrustStorePassword());
+		}
+	}
+
 	private Hashtable<String, String> getEnvironment(final String principal,
 			final String password, final String providerUrl,
 			final boolean isSystemContext) {
 		final String factory = _ldapConfiguration.getFactory();
 		final String url = providerUrl == null ? _ldapConfiguration
 				.getProviderUrl() : providerUrl;
-		final String authentication = _ldapConfiguration.getAuthentication();
-		final boolean sslStatus = _ldapConfiguration.getSSLStatus();
 
 		final Hashtable<String, String> environment = new Hashtable<String, String>();
 
@@ -87,19 +98,8 @@ public class LdapContextFactory {
 		environment.put("com.sun.jndi.ldap.read.timeout", "500");
 		environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
-		if (sslStatus) {
-			environment.put(Context.SECURITY_PROTOCOL, "ssl");
-			System.setProperty("javax.net.ssl.trustStore",
-					_ldapConfiguration.getTrustStore());
-			System.setProperty("javax.net.ssl.trustStorePassword",
-					_ldapConfiguration.getTrustStorePassword());
-		}
-
-		if ("none".equals(authentication) && !isSystemContext) {
-			environment.put(Context.SECURITY_AUTHENTICATION, "simple");
-		} else {
-			environment.put(Context.SECURITY_AUTHENTICATION, authentication);
-		}
+		enableSSL(environment);
+		setAuthentication(environment, isSystemContext);
 
 		if (principal != null) {
 			environment.put(Context.SECURITY_PRINCIPAL, principal);
@@ -110,6 +110,17 @@ public class LdapContextFactory {
 		}
 
 		return environment;
+	}
+
+	private void setAuthentication(final Hashtable<String, String> environment,
+			final boolean isSystemContext) {
+		final String authentication = _ldapConfiguration.getAuthentication();
+
+		if ("none".equals(authentication) && !isSystemContext) {
+			environment.put(Context.SECURITY_AUTHENTICATION, "simple");
+		} else {
+			environment.put(Context.SECURITY_AUTHENTICATION, authentication);
+		}
 	}
 
 	public void testConnection(final String providerUrl) throws NamingException {

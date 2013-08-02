@@ -1341,7 +1341,7 @@
                         array1.push("&interval=" + args.data.interval);
                         array1.push("&scaleuppolicyids=" + args.scaleUpPolicyResponse.id);
                         array1.push("&scaledownpolicyids=" + args.scaleDownPolicyResponse.id);
-                        
+
                         $.ajax({
                             url: createURL('createAutoScaleVmGroup' + array1.join("")),
                             dataType: 'json',

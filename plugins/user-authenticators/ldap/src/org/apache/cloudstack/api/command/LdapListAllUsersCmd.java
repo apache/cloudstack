@@ -51,7 +51,8 @@ public class LdapListAllUsersCmd extends BaseListCmd {
 		_ldapManager = ldapManager;
 	}
 
-	private List<LdapUserResponse> createLdapUserResponse(List<LdapUser> users) {
+	private List<LdapUserResponse> createLdapUserResponse(
+			final List<LdapUser> users) {
 		final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
 		for (final LdapUser user : users) {
 			final LdapUserResponse ldapResponse = _ldapManager

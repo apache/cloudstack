@@ -118,12 +118,8 @@ public class LdapConfiguration {
 
 	public boolean getSSLStatus() {
 		boolean sslStatus = false;
-		String dbValueForSSLStatus = _configDao.getValue("ldap.ssl.enabled");
-		if (dbValueForSSLStatus != null) {
-			sslStatus = dbValueForSSLStatus == "false" ? false : true;
-		}
-		if (getTrustStore() == null || getTrustStorePassword() == null) {
-			sslStatus = false;
+		if (getTrustStore() != null && getTrustStorePassword() != null) {
+			sslStatus = true;
 		}
 		return sslStatus;
 	}

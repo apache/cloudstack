@@ -97,7 +97,7 @@
                         dataType: "json",
                         async: false,
                         success: function(json) {
-			    if(json.ldapuserresponse.count > 0) {
+			    if (json.ldapuserresponse.count > 0) {
 				$(json.ldapuserresponse.LdapUser).each(function() {
 				    var result = $("<tr>");
 				    result.append("<td><input type=\"checkbox\" class=\"required\" name=\"username\" value=\"" + this.username + "\"></td>");

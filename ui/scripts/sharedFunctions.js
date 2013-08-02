@@ -715,7 +715,7 @@ var addGuestNetworkDialog = {
         return result;
     }
 
-// Role Functions
+    // Role Functions
 
     function isAdmin() {
         return (g_role == 1);

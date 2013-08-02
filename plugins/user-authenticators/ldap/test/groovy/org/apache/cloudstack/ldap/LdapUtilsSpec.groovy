@@ -16,22 +16,18 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.ldap.LdapUtils
-
-import javax.naming.directory.Attribute
-import javax.naming.directory.Attributes
 
 class LdapUtilsSpec extends spock.lang.Specification {
-    def "Testing that a Ldap Search Filter is correctly escaped"() {
-        given: "You have some input from a user"
+    def "Testing than an attribute is not successfully returned"() {
+	given: "You have an attributes object with some attribute"
+	def attributes = Mock(Attributes)
+	attributes.get("uid") >> null
 
-        expect: "That the input is escaped"
-        LdapUtils.escapeLDAPSearchFilter(input) == result
+	when: "You get the attribute"
+	String foundValue = LdapUtils.getAttributeValue(attributes, "uid")
 
-        where: "The following inputs are given "
-        input                                       | result
-        "Hi This is a test #çà"                     | "Hi This is a test #çà"
-        "Hi (This) = is * a \\ test # ç à ô \u0000" | "Hi \\28This\\29 = is \\2a a \\5c test # ç à ô \\00"
+	then: "Its value equals uid"
+	foundValue == null
     }
 
     def "Testing than an attribute is successfully returned"() {
@@ -54,15 +50,15 @@ class LdapUtilsSpec extends spock.lang.Specification {
         "email" | "rmurphy@test.com"
     }
 
-    def "Testing than an attribute is not successfully returned"() {
-        given: "You have an attributes object with some attribute"
-        def attributes = Mock(Attributes)
-        attributes.get("uid") >> null
+    def "Testing that a Ldap Search Filter is correctly escaped"() {
+	given: "You have some input from a user"
 
-        when: "You get the attribute"
-        String foundValue = LdapUtils.getAttributeValue(attributes, "uid")
+	expect: "That the input is escaped"
+	LdapUtils.escapeLDAPSearchFilter(input) == result
 
-        then: "Its value equals uid"
-        foundValue == null
+	where: "The following inputs are given "
+	input                                       | result
+	"Hi This is a test #çà"                     | "Hi This is a test #çà"
+	"Hi (This) = is * a \\ test # ç à ô \u0000" | "Hi \\28This\\29 = is \\2a a \\5c test # ç à ô \\00"
     }
 }

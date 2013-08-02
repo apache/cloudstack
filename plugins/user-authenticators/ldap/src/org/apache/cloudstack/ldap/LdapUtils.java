@@ -23,7 +23,7 @@ import javax.naming.directory.Attributes;
 public final class LdapUtils {
 	public static String escapeLDAPSearchFilter(final String filter) {
 		final StringBuilder sb = new StringBuilder();
-		for (char character : filter.toCharArray()) {
+		for (final char character : filter.toCharArray()) {
 			switch (character) {
 			case '\\':
 				sb.append("\\5c");

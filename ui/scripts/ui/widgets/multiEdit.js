@@ -944,8 +944,8 @@
                             name: fieldName,
                             type: field.isPassword ? 'password' : 'text'
                         })
-                            .addClass(!field.isOptional ? 'required' : null)
-                            .addClass('disallowSpecialCharacters')
+			.addClass(!field.isOptional ? 'required' : null)
+			.addClass('disallowSpecialCharacters')
                         .attr('disabled', field.isDisabled ? 'disabled' : false)
                         .appendTo($td);
 
