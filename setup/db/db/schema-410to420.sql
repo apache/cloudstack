@@ -27,6 +27,9 @@ ALTER TABLE `cloud`.`hypervisor_capabilities` ADD CONSTRAINT `uc_hypervisor` UNI
 
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_hosts_per_cluster` int unsigned DEFAULT NULL COMMENT 'Max. hosts in cluster supported by hypervisor';
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `storage_motion_supported` int(1) unsigned DEFAULT 0 COMMENT 'Is storage motion supported';
+ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
+ALTER TABLE volumes ADD COLUMN iso_id bigint(20)  unsigned;
+
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_hosts_per_cluster`=32 WHERE `hypervisor_type`='VMware';
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.1.0', 50, 1, 13, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.2.0', 50, 1, 13, 1);
@@ -2218,9 +2221,6 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
   `processed` datetime,
   INDEX `i_usage_vmsnapshot` (`account_id`,`id`,`vm_id`,`created`)
 ) ENGINE=InnoDB CHARSET=utf8;
-
-ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
-ALTER TABLE volumes ADD COLUMN iso_id bigint(20)  unsigned;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'healthcheck.update.interval', '600', 'Time Interval to fetch the LB health check states (in sec)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'KVM.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');
