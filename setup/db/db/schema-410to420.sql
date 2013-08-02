@@ -22,6 +22,10 @@
 -- Disable foreign key checking
 SET foreign_key_checks = 0;
 
+
+ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
+ALTER TABLE volumes ADD COLUMN iso_id bigint(20)  unsigned;
+
 -- All new inserts to the hypervisor_capabilities table should be after this
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD CONSTRAINT `uc_hypervisor` UNIQUE (`hypervisor_type`, `hypervisor_version`);
 
@@ -80,6 +84,7 @@ CREATE TABLE  `cloud`.`object_datastore_ref` (
   `updated` DATETIME,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 
 -- CREATE TABLE `cloud`.`data_store_provider` (
 --  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -2208,8 +2213,6 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
   INDEX `i_usage_vmsnapshot` (`account_id`,`id`,`vm_id`,`created`)
 ) ENGINE=InnoDB CHARSET=utf8;
 
-ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
-ALTER TABLE volumes ADD COLUMN iso_id bigint(20)  unsigned;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'kvm.ssh.to.agent', 'true', 'Specify whether or not the management server is allowed to SSH into KVM Agents');
 
