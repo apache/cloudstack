@@ -929,21 +929,34 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 	}
 
     private boolean supportedByHypervisor(VolumeInfo volume) {
-    	StoragePool storagePool = (StoragePool)volume.getDataStore();
-        ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
-        if (cluster != null && cluster.getHypervisorType() == HypervisorType.Ovm) {
+        HypervisorType hypervisorType;
+        StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
+        ScopeType scope = storagePool.getScope();
+        if (scope.equals(ScopeType.ZONE)) {
+            hypervisorType = storagePool.getHypervisor();
+        } else {
+            hypervisorType = volume.getHypervisorType();
+        }
+
+        if (hypervisorType.equals(HypervisorType.Ovm)) {
             throw new InvalidParameterValueException("Ovm won't support taking snapshot");
         }
 
-		if (volume.getHypervisorType().equals(HypervisorType.KVM)) {
-			List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
-			if (hosts != null && !hosts.isEmpty()) {
-				HostVO host = hosts.get(0);
-				if (!hostSupportSnapsthot(host)) {
-					throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
-				}
-			}
-		}
+        if (hypervisorType.equals(HypervisorType.KVM)) {
+            List<HostVO> hosts = null;
+            if(scope.equals(ScopeType.CLUSTER)){
+                ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
+                hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
+            } else if (scope.equals(ScopeType.ZONE)){
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, volume.getDataCenterId());
+            }
+            if (hosts != null && !hosts.isEmpty()) {
+                HostVO host = hosts.get(0);
+                if (!hostSupportSnapsthot(host)) {
+                    throw new CloudRuntimeException("KVM Snapshot is not supported: " + host.getId());
+                }
+            }
+        }
 
 		// if volume is attached to a vm in destroyed or expunging state; disallow
 		if (volume.getInstanceId() != null) {
