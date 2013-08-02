@@ -29,8 +29,10 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
@@ -70,7 +72,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     // need to account for zone-wide primary storage where storage_pool has
     // null-value pod and cluster, where hypervisor information is stored in
     // storage_pool
-    protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT s.hypervisor, c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
+    protected static final String SELECT_HYPERTYPE_FROM_CLUSTER_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
+    protected static final String SELECT_HYPERTYPE_FROM_ZONE_VOLUME = "SELECT s.hypervisor from volumes v, storage_pool s where v.pool_id = s.id and v.id = ?";
+    protected static final String SELECT_POOLSCOPE = "SELECT s.scope from storage_pool s, volumes v where s.id = v.pool_id and v.id = ?";
 
     private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
             + " AND pool.pod_id = ? AND pool.cluster_id = ? " + " GROUP BY pool.id ORDER BY 2 ASC ";
@@ -234,25 +238,29 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         /* lookup from cluster of pool */
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
-
+        String sql = null;
         try {
-            String sql = SELECT_HYPERTYPE_FROM_VOLUME;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, volumeId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                String hypervisor;
-                if (rs.getString(1) != null)
-                    hypervisor = rs.getString(1);
-                else
-                    hypervisor = rs.getString(2);
-                return HypervisorType.getType(hypervisor);
+            ScopeType scope = getVolumeStoragePoolScope(volumeId);
+            if (scope != null ) {
+                if (scope == ScopeType.CLUSTER)
+                    sql = SELECT_HYPERTYPE_FROM_CLUSTER_VOLUME;
+                else if (scope == ScopeType.ZONE)
+                    sql = SELECT_HYPERTYPE_FROM_ZONE_VOLUME;
+
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                pstmt.setLong(1, volumeId);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    if (rs.getString(1) != null) {
+                        return HypervisorType.getType(rs.getString(1));
+                    }
+                }
             }
             return HypervisorType.None;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + SELECT_HYPERTYPE_FROM_VOLUME, e);
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
         } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + SELECT_HYPERTYPE_FROM_VOLUME, e);
+            throw new CloudRuntimeException("Caught: " + sql, e);
         }
     }
 
@@ -493,5 +501,34 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+
+    @Override
+    public ScopeType getVolumeStoragePoolScope(long volumeId) {
+        // finding the storage scope where the volume is present
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+
+        try {
+            String sql = SELECT_POOLSCOPE;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, volumeId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                String scope = rs.getString(1);
+                if (scope != null) {
+                    try {
+                        return Enum.valueOf(ScopeType.class, scope.toUpperCase());
+                    } catch (Exception e) {
+                        throw new InvalidParameterValueException("invalid scope for pool " + scope);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + SELECT_POOLSCOPE, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + SELECT_POOLSCOPE, e);
+        }
+        return null;
     }
 }
