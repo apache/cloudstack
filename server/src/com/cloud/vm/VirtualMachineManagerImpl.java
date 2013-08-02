@@ -372,7 +372,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (template.getFormat() == ImageFormat.ISO) {
-            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
+            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, template, owner);
         } else if (template.getFormat() == ImageFormat.BAREMETAL) {
             // Do nothing
         } else {
@@ -380,7 +380,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
+            volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, template, owner);
         }
 
         txn.commit();

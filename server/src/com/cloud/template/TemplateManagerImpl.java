@@ -1376,6 +1376,22 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 this._tmpltZoneDao.persist(templateZone);
 
                 privateTemplate = this._tmpltDao.findById(templateId);
+                if (snapshotId != null) {
+                    //getting the prent volume
+                    long parentVolumeId=_snapshotDao.findById(snapshotId).getVolumeId();
+                    VolumeVO parentVolume = _volumeDao.findById(parentVolumeId);
+                    if (parentVolume.getIsoId() != null) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    }
+                }
+                else if (volumeId != null) {
+                    VolumeVO parentVolume = _volumeDao.findById(volumeId);
+                    if (parentVolume.getIsoId() != null) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    }
+                }
                 TemplateDataStoreVO srcTmpltStore = this._tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId,
                         privateTemplate.getId(), privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), privateTemplate.getSize());

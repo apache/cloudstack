@@ -31,6 +31,13 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.EnumUtils;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -1380,7 +1387,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @Override
     public DiskProfile allocateRawVolume(Type type,
-            String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, Account owner) {
+            String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, VMTemplateVO template, Account owner) {
+        Long isoId=null;
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -1397,6 +1405,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vol.setDeviceId(0l);
         } else {
             vol.setDeviceId(1l);
+        }
+        if (template.getFormat() == ImageFormat.ISO) {
+            vol.setIsoId(template.getId());
         }
 
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));

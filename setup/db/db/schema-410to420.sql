@@ -1788,7 +1788,7 @@ CREATE VIEW `cloud`.`volume_view` AS
             left join
         `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
             left join
-        `cloud`.`vm_template` ON volumes.template_id = vm_template.id
+        `cloud`.`vm_template` ON volumes.template_id = vm_template.id OR volumes.iso_id = vm_template.id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = volumes.id
             and resource_tags.resource_type = 'Volume'
@@ -2220,6 +2220,7 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 ALTER TABLE volumes ADD COLUMN vm_snapshot_chain_size bigint(20) unsigned;
+ALTER TABLE volumes ADD COLUMN iso_id bigint(20)  unsigned;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'healthcheck.update.interval', '600', 'Time Interval to fetch the LB health check states (in sec)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'KVM.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');

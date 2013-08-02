@@ -77,7 +77,7 @@ public interface VolumeManager extends VolumeApiService {
 
     void destroyVolume(VolumeVO volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, VMTemplateVO template, Account owner);
     @Override
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
