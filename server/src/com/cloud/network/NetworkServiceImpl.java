@@ -548,7 +548,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         long callerUserId = CallContext.current().getCallingUserId();
         DataCenter zone = _configMgr.getZone(zoneId);
 
-        if ((networkId == null && vpcId == null) && (networkId != null && vpcId != null)) {
+        if ((networkId == null && vpcId == null) || (networkId != null && vpcId != null)) {
             throw new InvalidParameterValueException("One of Network id or VPC is should be passed");
         }
 
@@ -652,7 +652,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("The nic is not belongs to user vm");
         }
 
-        Nic nic = _nicDao.findById(nicId);
         VirtualMachine vm = _userVmDao.findById(nicVO.getInstanceId());
         if (vm == null) {
             throw new InvalidParameterValueException("There is no vm with the nic");
@@ -672,7 +671,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        Long id = nicVO.getInstanceId();
 
         DataCenter zone = _configMgr.getZone(zoneId);
         if (zone == null) {
@@ -3336,12 +3334,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean update = false;
 
         if (state != null) {
-            if (state == PhysicalNetworkServiceProvider.State.Shutdown) {
-                throw new InvalidParameterValueException("Updating the provider state to 'Shutdown' is not supported");
-            }
-
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("updating state of the service provider id=" + id + " on physical network: " + provider.getPhysicalNetworkId() + " to state: " + stateStr);
+                s_logger.debug("trying to update the state of the service provider id=" + id + " on physical network: " + provider.getPhysicalNetworkId() + " to state: " + stateStr);
             }
             switch (state) {
             case Enabled:
@@ -3357,6 +3351,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 provider.setState(PhysicalNetworkServiceProvider.State.Disabled);
                 update = true;
                 break;
+            case Shutdown:
+                throw new  InvalidParameterValueException("Updating the provider state to 'Shutdown' is not supported");
             }
         }
 
@@ -3563,6 +3559,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             break;
         case Control:
             xenLabel = "cloud_link_local_network";
+            break;
+        case Vpn:
+        case None:
             break;
         }
         return xenLabel;
