@@ -2411,7 +2411,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
         }
         if (hostId != null) {
-            sc.addAnd(sc.getEntity().getId(), Op.EQ, hostId);
+            // exclude the given host, since we want to check what hypervisor is already handled
+            // in adding this new host
+            sc.addAnd(sc.getEntity().getId(), Op.NEQ, hostId);
         }
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
