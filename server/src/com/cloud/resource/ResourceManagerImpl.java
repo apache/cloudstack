@@ -367,8 +367,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Check if the zone exists in the system
         DataCenterVO zone = _dcDao.findById(dcId);
         if (zone == null) {
-			InvalidParameterValueException ex = new InvalidParameterValueException(
-					"Can't find zone by the id specified");
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Can't find zone by the id specified");
             ex.addProxyObject(String.valueOf(dcId), "dcId");
             throw ex;
         }
@@ -392,8 +392,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         // check if pod belongs to the zone
         if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-			InvalidParameterValueException ex = new InvalidParameterValueException(
-					"Pod with specified id doesn't belong to the zone " + dcId);
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Pod with specified id doesn't belong to the zone " + dcId);
             ex.addProxyObject(pod.getUuid(), "podId");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
@@ -564,8 +564,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (clusterId != null) {
             ClusterVO cluster = _clusterDao.findById(clusterId);
             if (cluster == null) {
-				InvalidParameterValueException ex = new InvalidParameterValueException(
-						"can not find cluster for specified clusterId");
+                InvalidParameterValueException ex = new InvalidParameterValueException(
+                        "can not find cluster for specified clusterId");
                 ex.addProxyObject(clusterId.toString(), "clusterId");
                 throw ex;
             } else {
@@ -587,7 +587,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
+    InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
         return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false);
@@ -620,11 +620,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
             // check if pod belongs to the zone
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-				InvalidParameterValueException ex = new InvalidParameterValueException(
-						"Pod with specified podId"
-								+ podId
-								+ " doesn't belong to the zone with specified zoneId"
-								+ dcId);
+                InvalidParameterValueException ex = new InvalidParameterValueException(
+                        "Pod with specified podId"
+                                + podId
+                                + " doesn't belong to the zone with specified zoneId"
+                                + dcId);
                 ex.addProxyObject(pod.getUuid(), "podId");
                 ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
@@ -683,11 +683,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } catch (Exception e) {
                 cluster = _clusterDao.findBy(clusterName, podId);
                 if (cluster == null) {
-					CloudRuntimeException ex = new CloudRuntimeException(
-							"Unable to create cluster "
-									+ clusterName
-									+ " in pod with specified podId and data center with specified dcID",
-							e);
+                    CloudRuntimeException ex = new CloudRuntimeException(
+                            "Unable to create cluster "
+                                    + clusterName
+                                    + " in pod with specified podId and data center with specified dcID",
+                                    e);
                     ex.addProxyObject(pod.getUuid(), "podId");
                     ex.addProxyObject(zone.getUuid(), "dcId");
                     throw ex;
@@ -959,11 +959,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
                     _clusterVSMMapDao.removeByClusterId(cmd.getId());
                 }
-				// remove from dedicated resources
-				DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
-				if (dr != null) {
-				    _dedicatedDao.remove(dr.getId());
-				}
+                // remove from dedicated resources
+                DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
+                if (dr != null) {
+                    _dedicatedDao.remove(dr.getId());
+                }
             }
 
             txn.commit();
@@ -1427,8 +1427,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             Iterator<Map.Entry<String, ResourceStateAdapter>> it = _resourceStateAdapters.entrySet().iterator();
             Object result = null;
             while (it.hasNext()) {
-				Map.Entry<String, ResourceStateAdapter> item = it
-						.next();
+                Map.Entry<String, ResourceStateAdapter> item = it
+                        .next();
                 ResourceStateAdapter adapter = item.getValue();
 
                 String msg = new String("Dispatching resource state event " + event + " to " + item.getKey());
@@ -1671,7 +1671,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private void markHostAsDisconnected(HostVO host, StartupCommand[] cmds) {
         if (host == null) { // in case host is null due to some errors, try
-                            // reloading the host from db
+            // reloading the host from db
             if (cmds != null) {
                 StartupCommand firstCmd = cmds[0];
                 host = findHostByGuid(firstCmd.getGuid());
@@ -1721,13 +1721,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     host = findHostByGuid(firstCmd.getGuidWithoutResource());
                 }
                 if (host != null && host.getRemoved() == null) { // host already
-                                                                 // added, no
-                                                                 // need to add
-                                                                 // again
+                    // added, no
+                    // need to add
+                    // again
                     s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
                     hostExists = true; // ensures that host status is left
-                                       // unchanged in case of adding same one
-                                       // again
+                    // unchanged in case of adding same one
+                    // again
                     return null;
                 }
             }
@@ -1793,13 +1793,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     host = findHostByGuid(firstCmd.getGuidWithoutResource());
                 }
                 if (host != null && host.getRemoved() == null) { // host already
-                                                                 // added, no
-                                                                 // need to add
-                                                                 // again
+                    // added, no
+                    // need to add
+                    // again
                     s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
                     hostExists = true; // ensures that host status is left
-                                       // unchanged in case of adding same one
-                                       // again
+                    // unchanged in case of adding same one
+                    // again
                     return null;
                 }
             }
@@ -1808,29 +1808,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             GlobalLock addHostLock = GlobalLock.getInternLock("AddHostLock");
             try {
                 if (addHostLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) { // to
-                                                                                     // safely
-                                                                                     // determine
-                                                                                     // first
-                                                                                     // host
-                                                                                     // in
-                                                                                     // cluster
-                                                                                     // in
-                                                                                     // multi-MS
-                                                                                     // scenario
+                    // safely
+                    // determine
+                    // first
+                    // host
+                    // in
+                    // cluster
+                    // in
+                    // multi-MS
+                    // scenario
                     try {
                         host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
                         if (host != null) {
                             deferAgentCreation = !isFirstHostInCluster(host); // if
-                                                                              // first
-                                                                              // host
-                                                                              // in
-                                                                              // cluster
-                                                                              // no
-                                                                              // need
-                                                                              // to
-                                                                              // defer
-                                                                              // agent
-                                                                              // creation
+                            // first
+                            // host
+                            // in
+                            // cluster
+                            // no
+                            // need
+                            // to
+                            // defer
+                            // agent
+                            // creation
                         }
                     } finally {
                         addHostLock.unlock();
@@ -1842,8 +1842,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             if (host != null) {
                 if (!deferAgentCreation) { // if first host in cluster then
-                                           // create agent otherwise defer it to
-                                           // scan task
+                    // create agent otherwise defer it to
+                    // scan task
                     attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
                     host = _hostDao.findById(host.getId()); // reload
                 } else {
@@ -2380,7 +2380,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
         }
         if (hostId != null) {
-            sc.addAnd(sc.getEntity().getId(), Op.EQ, hostId);
+            // exclude the given host, since we want to check what hypervisor is already handled
+            // in adding this new host
+            sc.addAnd(sc.getEntity().getId(), Op.NEQ, hostId);
         }
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
@@ -2499,7 +2501,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
         sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
-	}
+    }
 
     @Override
     @DB
