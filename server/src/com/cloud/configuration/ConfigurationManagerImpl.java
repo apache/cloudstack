@@ -176,7 +176,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.S3Dao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailVO;
@@ -227,8 +226,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     DataCenterDao _zoneDao;
     @Inject
     DomainDao _domainDao;
-    @Inject
-    S3Dao _s3Dao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
@@ -81,7 +82,6 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.S3Response;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
@@ -94,7 +94,6 @@ import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
@@ -175,10 +174,8 @@ import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.ImageStore;
-import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Swift;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
@@ -330,7 +327,7 @@ public interface ResponseGenerator {
 
     List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
 
-   // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
     //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
@@ -346,10 +343,6 @@ public interface ResponseGenerator {
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
-
-    SwiftResponse createSwiftResponse(Swift swift);
-
-    S3Response createS3Response(S3 result);
 
     PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
 

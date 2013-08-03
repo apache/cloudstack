@@ -36,8 +36,6 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.db.SearchCriteria;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -143,7 +141,6 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -238,8 +235,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
-    @Inject
-    protected VMTemplateS3Dao _vmTemplateS3Dao;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject

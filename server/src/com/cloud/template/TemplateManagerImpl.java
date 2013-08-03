@@ -151,7 +151,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -230,8 +229,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     VolumeDao _volumeDao;
     @Inject
     SnapshotDao _snapshotDao;
-    @Inject
-    VMTemplateS3Dao _vmS3TemplateDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
