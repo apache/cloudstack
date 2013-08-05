@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -103,7 +102,7 @@ public class LDAPConfigCmd extends BaseCmd  {
     }
 
     public void setQueryFilter(String queryFilter) {
-        this.queryFilter=StringEscapeUtils.unescapeHtml(queryFilter);
+        this.queryFilter=queryFilter;
     }
     public String getSearchBase() {
         return searchBase;
