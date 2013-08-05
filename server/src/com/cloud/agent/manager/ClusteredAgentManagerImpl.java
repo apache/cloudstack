@@ -83,7 +83,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
-import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
@@ -508,13 +507,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     throw new CloudRuntimeException("Unable to resolve " + ip);
                 }
                 try {
-                    ch = SocketChannel.open(new InetSocketAddress(addr, _port));
+                    ch = SocketChannel.open(new InetSocketAddress(addr, _port.value()));
                     ch.configureBlocking(true); // make sure we are working at blocking mode
                     ch.socket().setKeepAlive(true);
                     ch.socket().setSoTimeout(60 * 1000);
                     try {
                         SSLContext sslContext = Link.initSSLContext(true);
-                        sslEngine = sslContext.createSSLEngine(ip, _port);
+                        sslEngine = sslContext.createSSLEngine(ip, _port.value());
                         sslEngine.setUseClientMode(true);
 
                         Link.doHandshake(ch, sslEngine, true);
@@ -1241,10 +1240,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
 
-    public boolean executeResourceUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
-        return _resourceMgr.executeUserRequest(hostId, event);
-    }
-
     protected class ClusterDispatcher implements ClusterManager.Dispatcher {
         @Override
         public String getName() {
@@ -1317,7 +1312,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 boolean result = false;
                 try {
-                    result = executeResourceUserRequest(cmd.getHostId(), cmd.getEvent());
+                    result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent());
                     s_logger.debug("Result is " + result);
                 } catch (AgentUnavailableException ex) {
                     s_logger.warn("Agent is unavailable", ex);

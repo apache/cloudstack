@@ -97,7 +97,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -148,7 +147,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConfigurationDao _configDao = null;
     @Inject
     protected ClusterDao _clusterDao = null;
-    protected int _port;
 
     @Inject
     protected HighAvailabilityManager _haMgr = null;
@@ -194,12 +192,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advance", AgentManager.class, "500",
             "Default size for DirectAgentPool", false, null);
 
+    protected ConfigValue<Integer> _port;
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
-        final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
-        _port = NumbersUtil.parseInt(configs.get("port"), 8250);
-        final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
+        _port = _configDepot.get(Port);
+        ConfigValue<Integer> workers = _configDepot.get(Workers);
 
         _pingInterval = _configDepot.get(PingInterval);
 
@@ -225,8 +224,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         //allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", _port, workers + 10, this);
-        s_logger.info("Listening on " + _port + " with " + workers + " workers");
+        _connection = new NioServer("AgentManager", _port.value(), workers.value() + 10, this);
+        s_logger.info("Listening on " + _port.value() + " with " + workers.value() + " workers");
 
         
         ConfigValue<Integer> size = _configDepot.get(DirectAgentPoolSize);
