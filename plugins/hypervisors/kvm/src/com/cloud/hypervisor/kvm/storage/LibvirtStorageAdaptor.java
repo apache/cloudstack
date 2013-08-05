@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
+    private String _lockfile = "KVMFILELOCK" + File.separator + ".lock";
 
     public LibvirtStorageAdaptor(StorageLayer storage) {
         _storageLayer = storage;
@@ -104,7 +106,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     public void storagePoolRefresh(StoragePool pool) {
         try {
             synchronized (getStoragePool(pool.getUUIDString())) {
-                pool.refresh(0);
+                refreshPool(pool);
             }
         } catch (LibvirtException e) {
 
@@ -389,8 +391,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             LibvirtStoragePoolDef spd = getStoragePoolDef(conn, storage);
             StoragePoolType type = null;
-            if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.NETFS
-                    || spd.getPoolType() == LibvirtStoragePoolDef.poolType.DIR) {
+            if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.NETFS) {
+                type = StoragePoolType.NetworkFilesystem;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.DIR) {
                 type = StoragePoolType.Filesystem;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.RBD) {
                 type = StoragePoolType.RBD;
@@ -666,7 +669,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         try {
             StorageVol vol = this.getVolume(libvirtPool.getPool(), uuid);
-            vol.delete(0);
+            deleteVol(libvirtPool, vol);
             vol.free();
             return true;
         } catch (LibvirtException e) {
@@ -840,7 +843,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         StoragePool virtPool = libvirtPool.getPool();
         try {
-            virtPool.refresh(0);
+            refreshPool(virtPool);
         } catch (LibvirtException e) {
             return false;
         }
@@ -868,4 +871,70 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
+    // refreshPool and deleteVol are used to fix CLOUDSTACK-2729/CLOUDSTACK-2780
+    // They are caused by a libvirt bug (https://bugzilla.redhat.com/show_bug.cgi?id=977706)
+    // However, we also need to fix the issues in CloudStack source code.
+    // A file lock is used to prevent deleting a volume from a KVM storage pool when refresh it.
+    private void refreshPool(StoragePool pool) throws LibvirtException {
+        Connect conn = LibvirtConnection.getConnection();
+        LibvirtStoragePoolDef spd = getStoragePoolDef(conn, pool);
+        if ((! spd.getPoolType().equals(LibvirtStoragePoolDef.poolType.NETFS))
+                && (! spd.getPoolType().equals(LibvirtStoragePoolDef.poolType.DIR))) {
+            pool.refresh(0);
+            return;
+        }
+        String lockFile = _mountPoint + File.separator + pool.getUUIDString() + File.separator + _lockfile;
+        if (lock(lockFile, 30)) {
+            try {
+                pool.refresh(0);
+            } finally {
+                unlock(lockFile);
+            }
+        } else {
+            throw new CloudRuntimeException("Can not get file lock to refresh the pool " + pool.getUUIDString());
+        }
+    }
+
+    private void deleteVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
+        if ((! pool.getType().equals(StoragePoolType.NetworkFilesystem))
+                && (! pool.getType().equals(StoragePoolType.Filesystem))) {
+            vol.delete(0);
+            return;
+        }
+        String lockFile = pool.getLocalPath() + File.separator + _lockfile;
+        if (lock(lockFile, 30)) {
+            try {
+                vol.delete(0);
+            } finally {
+                unlock(lockFile);
+            }
+        } else {
+            throw new CloudRuntimeException("Can not get file lock to delete the volume " + vol.getPath());
+        }
+    }
+
+    private boolean lock(String path, int wait) {
+        File lockFile = new File(path);
+        lockFile.getParentFile().mkdir();
+        boolean havelock = false;
+        try {
+            while (wait > 0) {
+                if (lockFile.createNewFile()) {
+                    havelock = true;
+                    break;
+                }
+                s_logger.debug("lockFile " + _lockfile + " already exists, waiting 1000 ms");
+                Thread.sleep(1000);
+                wait--;
+            }
+        } catch (IOException e) {
+        } catch (InterruptedException e) {
+        }
+        return havelock;
+    }
+
+    private void unlock(String path) {
+        File lockFile = new File(path);
+        lockFile.delete();
+    }
 }
