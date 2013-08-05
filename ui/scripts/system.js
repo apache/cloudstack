@@ -14010,6 +14010,7 @@
                                     },
                                     password: {
                                         label: 'label.password',
+                                        isPassword: true,
                                         validation: {
                                             required: true
                                         }
