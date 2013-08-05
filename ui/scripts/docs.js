@@ -62,7 +62,7 @@ cloudStack.docs = {
     //Delete/archive Alerts
     helpAlertsDeleteType: {
 
-        desc: 'Delete all the alerts by specifying its TYPE eg . USER.LOGIN',
+        desc: 'Delete all the alerts by specifying its TYPE (integer number)',
         externalLink: ''
 
     },
