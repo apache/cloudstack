@@ -36,6 +36,8 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_hosts_per_cluster) VALUES (UUID(), 'VMware', '5.1', 128, 0, 32);
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE `hypervisor_type`='VMware' AND `hypervisor_version`='5.1';
 UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE `hypervisor_type`='VMware' AND `hypervisor_version`='5.0';
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE `hypervisor_type`='XenServer' AND `hypervisor_version`='6.1.0';
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE `hypervisor_type`='XenServer' AND `hypervisor_version`='6.2.0';
 DELETE FROM `cloud`.`configuration` where name='vmware.percluster.host.max';
 DELETE FROM `cloud`.`configuration` where name='router.template.id';
 DELETE FROM `cloud`.`configuration` where name='swift.enable';
