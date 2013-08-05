@@ -98,6 +98,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -396,9 +397,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
-        TemplateAdapter adapter = getAdapter(template.getHypervisorType());
-        TemplateProfile profile = adapter.prepareExtractTemplate(cmd);
-
+        
         return extract(caller, templateId, url, zoneId, mode, eventId, false);
     }
 
@@ -711,7 +710,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
         }
         if (srcSecStore.getScope().getScopeType() == ScopeType.REGION) {
-            s_logger.debug("Template " + templateId + " is in region-wide secondary storage " + dstSecStore.getName() + " , don't need to copy");
+            s_logger.debug("Template " + templateId + " is in region-wide secondary storage " + srcSecStore.getName() + " , don't need to copy");
             return template;
         }
 
@@ -809,9 +808,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
-        final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
-
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
 
@@ -1237,8 +1233,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        Long accountId = template.getAccountId();
-        if (accountId == null) {
+        Long ownerId = template.getAccountId();
+        if (ownerId == null) {
             // if there is no owner of the template then it's probably already a
             // public template (or domain private template) so
             // publishing to individual users is irrelevant
@@ -1270,12 +1266,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         _tmpltDao.update(template.getId(), updatedTemplate);
+        
+        //when operation is add/remove, accountNames can not be null
+        if (("add".equalsIgnoreCase(operation) || "remove".equalsIgnoreCase(operation)) && accountNames == null) {
+            throw new InvalidParameterValueException("Operation " + operation + " requires accounts or projectIds to be passed in");
+        }
 
-        Long domainId = caller.getDomainId();
+        //Derive the domain id from the template owner as updateTemplatePermissions is not cross domain operation
+        Account owner = _accountMgr.getAccount(ownerId);
+        Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
             txn.start();
             for (String accountName : accountNames) {
-                Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
                 if (permittedAccount != null) {
                     if (permittedAccount.getId() == caller.getId()) {
                         continue; // don't grant permission to the template
@@ -1288,7 +1291,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 } else {
                     txn.rollback();
-                    throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName
+                    throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + " in domain id=" + domain.getUuid()
                             + ", account not found.  " + "No permissions updated, please verify the account names and retry.");
                 }
             }
@@ -1296,7 +1299,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else if ("remove".equalsIgnoreCase(operation)) {
             List<Long> accountIds = new ArrayList<Long>();
             for (String accountName : accountNames) {
-                Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
                 if (permittedAccount != null) {
                     accountIds.add(permittedAccount.getId());
                 }
@@ -1312,10 +1315,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _launchPermissionDao.removeAllPermissions(id);
         }
         return true;
-    }
-
-    private String getRandomPrivateTemplateName() {
-        return UUID.randomUUID().toString();
     }
 
     @Override
@@ -1525,8 +1524,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
 
-            volume = _volumeDao.findById(snapshot.getVolumeId());
-            VolumeVO snapshotVolume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+            volume = this._volumeDao.findById(snapshot.getVolumeId());
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
