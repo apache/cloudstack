@@ -349,11 +349,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (storeUuid != null) {
             imageStore = this._dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            List<DataStore> stores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
-            if (stores.size() > 1) {
-                throw new CloudRuntimeException("multiple image stores, don't know which one to use");
+            imageStore = this._dataStoreMgr.getImageStore(zoneId);
+            if (imageStore == null) {
+                throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
-            imageStore = stores.get(0);
         }
 
         return imageStore;

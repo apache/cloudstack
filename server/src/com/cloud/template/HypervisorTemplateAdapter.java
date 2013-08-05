@@ -18,6 +18,7 @@ package com.cloud.template;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -180,6 +181,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if ( imageStores == null || imageStores.size() == 0 ){
             throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
         }
+
+        Collections.shuffle(imageStores);// For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             TemplateInfo tmpl = this.imageFactory.getTemplate(template.getId(), imageStore);
             CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
@@ -187,6 +190,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
             this.imageService.createTemplateAsync(tmpl, imageStore, caller);
+            if( !(profile.getIsPublic() || profile.getFeatured()) ){  // If private template then break
+                break;
+            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 
