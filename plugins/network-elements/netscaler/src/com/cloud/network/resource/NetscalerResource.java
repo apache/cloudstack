@@ -1134,10 +1134,9 @@ public class NetscalerResource implements ServerResource {
                 vserver.set_cookietimeout(null);
                 vserver.set_domainname(null);
                 if (isUpdateSite) {
-                    if ("roundrobin".equalsIgnoreCase(lbMethod)) {
-                        vserver.set_netmask(null);
-                        vserver.set_v6netmasklen(null);
-                    }
+                    // both netmask and LB method can not be specified while update so set to null
+                    vserver.set_netmask(null);
+                    vserver.set_v6netmasklen(null);
                     gslbvserver.update(client, vserver);
                 } else {
                     gslbvserver.add(client, vserver);
