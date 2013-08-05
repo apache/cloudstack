@@ -31,11 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.NetworkACL;
@@ -680,13 +677,13 @@ public class Upgrade410to420 implements DbUpgrade {
                 String ip = rs.getString(3);
                 String uuid = UUID.randomUUID().toString();
                 //Insert placeholder nic for each Domain router nic in Shared network
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
                 pstmt.setString(1, uuid);
                 pstmt.setString(2, ip);
                 pstmt.setString(3, gateway);
                 pstmt.setLong(4, networkId);
                 pstmt.executeUpdate();
-                s_logger.debug("Created placeholder nic for the ipAddress " + ip);
+                s_logger.debug("Created placeholder nic for the ipAddress " + ip + " and network " + networkId);
 
             }
         } catch (SQLException e) {
