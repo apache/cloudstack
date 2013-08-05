@@ -113,19 +113,19 @@
           ports. Configure the switch port connected to the router in PVLAN promiscuous trunk mode,
           which would translate an isolated VLAN to primary VLAN for the PVLAN-unaware router. </para>
         <para>Note that only Cisco Catalyst 4500 has the PVLAN promiscuous trunk mode to connect
-          both normal VLAN and PVLAN to a PVLAN-unaware switch. For other Catalyst PVLAN support
-          switch, connect the switch to upper switch by using cables. The number of cables should be
-          greater than the number of PVLANs used.</para>
+          both normal VLAN and PVLAN to a PVLAN-unaware switch. For the other Catalyst PVLAN support
+          switch, connect the switch to upper switch by using cables, one each for a PVLAN
+          pair.</para>
       </listitem>
       <listitem>
         <para>Configure private VLAN on your physical switches out-of-band.</para>
       </listitem>
       <listitem>
-        <para>Before you use PVLAN on XenServer and KVM, enable Open vSwitch (OVS) .</para>
+        <para>Before you use PVLAN on XenServer and KVM, enable Open vSwitch (OVS).</para>
         <note>
-          <para>OVS on XenServer and KVM does not support PVLAN. Therefore, simulate PVLAN on OVS
-            for XenServer and KVM by modifying the flow table and tagging every traffic leaving
-            guest VMs with the secondary VLAN ID.</para>
+          <para>OVS on XenServer and KVM does not support PVLAN natively. Therefore, &PRODUCT;
+            managed to simulate PVLAN on OVS for XenServer and KVM by modifying the flow
+            table.</para>
         </note>
       </listitem>
     </itemizedlist>
@@ -176,8 +176,8 @@
             <para><emphasis role="bold">VLAN ID</emphasis>: The unique ID of the VLAN.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Isolated VLAN ID</emphasis>: The unique ID of the Secondary
-              Isolated VLAN. </para>
+            <para><emphasis role="bold">Secondary Isolated VLAN ID</emphasis>: The unique ID of the
+              Secondary Isolated VLAN. </para>
             <para>For the description on Secondary Isolated VLAN, see <xref linkend="about-pvlan"
               />.</para>
           </listitem>
