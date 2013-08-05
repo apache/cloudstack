@@ -16,8 +16,18 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.net.URI;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -25,25 +35,27 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.net.URI;
-import java.util.List;
 
 @Component
 @Local(value=NicDao.class)
 public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
-    private final SearchBuilder<NicVO> AllFieldsSearch;
-    private final GenericSearchBuilder<NicVO, String> IpSearch;
-    private final SearchBuilder<NicVO> NonReleasedSearch;
-    final GenericSearchBuilder<NicVO, Integer> CountBy;
+    private  SearchBuilder<NicVO> AllFieldsSearch;
+    private GenericSearchBuilder<NicVO, String> IpSearch;
+    private SearchBuilder<NicVO> NonReleasedSearch;
+    private GenericSearchBuilder<NicVO, Integer> CountBy;
+    private GenericSearchBuilder<NicVO, Integer> CountByForStartingVms;
 
+    @Inject
+    VMInstanceDao _vmDao;
     
-    public NicDaoImpl() {
-        super();
+    public NicDaoImpl() {  
         
+    }
+    
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("instance", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
@@ -73,6 +85,15 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         CountBy.and("vmId", CountBy.entity().getInstanceId(), Op.EQ);
         CountBy.and("removed", CountBy.entity().getRemoved(), Op.NULL);
         CountBy.done();
+        
+        CountByForStartingVms = createSearchBuilder(Integer.class);
+        CountByForStartingVms.select(null, Func.COUNT, CountByForStartingVms.entity().getId());
+        CountByForStartingVms.and("networkId", CountByForStartingVms.entity().getNetworkId(), Op.EQ);
+        CountByForStartingVms.and("removed", CountByForStartingVms.entity().getRemoved(), Op.NULL);
+        SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
+        join1.and("state", join1.entity().getState(), Op.EQ);
+        CountByForStartingVms.join("vm", join1, CountByForStartingVms.entity().getInstanceId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
+        CountByForStartingVms.done();
     }
     
     @Override
@@ -254,6 +275,15 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("strategy", Nic.ReservationStrategy.PlaceHolder.toString());
         sc.setParameters("vmType", vmType);
         return listBy(sc);
+    }
+
+    @Override
+    public int countNicsForStartingVms(long networkId) {
+        SearchCriteria<Integer> sc = CountByForStartingVms.create();
+        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("vm", "state", VirtualMachine.State.Starting);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
     }
 
 }
