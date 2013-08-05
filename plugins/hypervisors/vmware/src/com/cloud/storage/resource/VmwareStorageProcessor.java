@@ -943,7 +943,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
-            newTemplate.setSize(result.second());
+            newTemplate.setSize(result.third());
             newTemplate.setFormat(ImageFormat.OVA);
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
@@ -1651,12 +1651,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            Long size = restoreVolumeFromSecStorage(hyperHost, primaryDsMo,
+            restoreVolumeFromSecStorage(hyperHost, primaryDsMo,
                     newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(newVolumeName);
-            newVol.setSize(size);
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
