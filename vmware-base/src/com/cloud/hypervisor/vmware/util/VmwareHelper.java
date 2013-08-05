@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -60,8 +61,6 @@ import com.vmware.vim25.VirtualPCNet32;
 import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
-import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -611,17 +610,6 @@ public class VmwareHelper {
 		return ipAddress.equals(destName);
 	}
 
-	public static void deleteVolumeVmdkFiles(DatastoreMO dsMo, String volumeName, DatacenterMO dcMo) throws Exception {
-        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeName);
-        dsMo.deleteFile(volumeDatastorePath, dcMo.getMor(), true);
-
-        volumeDatastorePath = String.format("[%s] %s-flat.vmdk", dsMo.getName(), volumeName);
-        dsMo.deleteFile(volumeDatastorePath, dcMo.getMor(), true);
-
-        volumeDatastorePath = String.format("[%s] %s-delta.vmdk", dsMo.getName(), volumeName);
-        dsMo.deleteFile(volumeDatastorePath, dcMo.getMor(), true);
-	}
-
 	public static String getExceptionMessage(Throwable e) {
 		return getExceptionMessage(e, false);
 	}
@@ -693,5 +681,10 @@ public class VmwareHelper {
         }
 
         return hotplugSupportedByLicense;
+    }
+    
+    public static String getVCenterSafeUuid() {
+    	// Object name that is greater than 32 is not safe in vCenter
+    	return UUID.randomUUID().toString().replaceAll("-", "");
     }
 }

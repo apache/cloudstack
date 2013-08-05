@@ -1530,35 +1530,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-
-    private VirtualMachineMO createWorkingVM(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
-        String uniqueName = UUID.randomUUID().toString();
-        VirtualMachineMO workingVM = null;
-        VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
-        vmConfig.setName(uniqueName);
-        vmConfig.setMemoryMB((long) 4);
-        vmConfig.setNumCPUs(1);
-        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.toString());
-        VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
-        fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
-        vmConfig.setFiles(fileInfo);
-
-        VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
-        scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
-        scsiController.setBusNumber(0);
-        scsiController.setKey(1);
-        VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
-        scsiControllerSpec.setDevice(scsiController);
-        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-        vmConfig.getDeviceChange().add(scsiControllerSpec);
-        hyperHost.createVm(vmConfig);
-        workingVM = hyperHost.findVmOnHyperHost(uniqueName);
-        return workingVM;
-    }
-
-
-
     private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl) throws Exception {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);

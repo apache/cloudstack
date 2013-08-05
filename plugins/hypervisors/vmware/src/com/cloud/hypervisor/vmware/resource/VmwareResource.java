@@ -310,6 +310,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.VmwareStorageLayoutHelper;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
@@ -5364,7 +5365,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName);
                         synchronized (this) {
                             s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                            VmwareHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
+                            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
                             vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, -1);
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
@@ -5422,7 +5423,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     synchronized (this) {
                         // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                        VmwareHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
+                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
 
                         vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, vmMo.getScsiDeviceControllerKey());
                         vmMo.detachDisk(volumeDatastorePath, false);

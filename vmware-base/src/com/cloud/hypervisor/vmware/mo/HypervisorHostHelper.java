@@ -58,6 +58,7 @@ import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
@@ -1188,8 +1189,40 @@ public class HypervisorHostHelper {
         return false;
     }
 
-    public static String resolveHostNameInUrl(DatacenterMO dcMo, String url) {
+    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, 
+    	DatastoreMO dsMo, String vmName) throws Exception {
+    	
+    	// Allow worker VM to float within cluster so that we will have better chance to
+    	// create it successfully
+    	ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+    	if(morCluster != null)
+    		hyperHost = new ClusterMO(hyperHost.getContext(), morCluster);
+    	
+        VirtualMachineMO workingVM = null;
+        VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+        vmConfig.setName(vmName);
+        vmConfig.setMemoryMB((long) 4);
+        vmConfig.setNumCPUs(1);
+        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
+        VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
+        fileInfo.setVmPathName(dsMo.getDatastoreRootPath());
+        vmConfig.setFiles(fileInfo);
 
+        VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
+        scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
+        scsiController.setBusNumber(0);
+        scsiController.setKey(1);
+        VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
+        scsiControllerSpec.setDevice(scsiController);
+        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+        vmConfig.getDeviceChange().add(scsiControllerSpec);
+        hyperHost.createVm(vmConfig);
+        workingVM = hyperHost.findVmOnHyperHost(vmName);
+        return workingVM;
+    }
+    
+    public static String resolveHostNameInUrl(DatacenterMO dcMo, String url) {
         s_logger.info("Resolving host name in url through vCenter, url: " + url);
 
         URI uri;

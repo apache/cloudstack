@@ -959,14 +959,12 @@ public class VirtualMachineMO extends BaseMO {
 	    newDisk.setCapacityInKB(sizeInMb*1024);
 
 	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-	    //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
 	    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
 	    deviceConfigSpec.setDevice(newDisk);
 	    deviceConfigSpec.setFileOperation(VirtualDeviceConfigSpecFileOperation.CREATE);
 	    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-	    //deviceConfigSpecArray[0] = deviceConfigSpec;
 	    reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
 	    ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
