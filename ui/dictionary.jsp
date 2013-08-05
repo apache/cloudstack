@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.switch.type': '<fmt:message key="label.switch.type" />',
 'label.service.state': '<fmt:message key="label.service.state" />',
 'label.egress.default.policy': '<fmt:message key="label.egress.default.policy" />',
 'label.routing': '<fmt:message key="label.routing" />',
