@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -233,6 +234,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     DataStoreManager _dataStoreMgr;
     @Inject
     ImageStoreDao _imageStoreDao;
+    @Inject
+    TemplateDataStoreDao _tmplStoreDao;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -563,12 +566,18 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             return new HashMap<String, Object>();
         }
 
-        HypervisorType hypeType = _resourceMgr.getAvailableHypervisor(dataCenterId);
-
-        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId, hypeType);
-        if (template == null) {
-            s_logger.debug("Can't find a template to start");
-            throw new CloudRuntimeException("Insufficient capacity exception");
+        VMTemplateVO template = null;
+        HypervisorType defaultHypervisor = _resourceMgr.getDefaultHypervisor(dataCenterId);
+        if (defaultHypervisor != HypervisorType.None) {
+            template = _templateDao.findSystemVMReadyTemplate(dataCenterId, defaultHypervisor);
+            if (template == null) {
+                throw new CloudRuntimeException("Not able to find the System template or not downloaded in zone " + dataCenterId + " corresponding to default System vm hypervisor " + defaultHypervisor);
+            }
+        } else {
+            template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
+            if (template == null) {
+                throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            }
         }
 
         SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,

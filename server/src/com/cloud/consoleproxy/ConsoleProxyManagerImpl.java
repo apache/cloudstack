@@ -656,9 +656,22 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             s_logger.warn("The number of launched console proxy on zone " + dataCenterId + " has reached to limit");
             return null;
         }
-        HypervisorType defaultHype = _resourceMgr.getAvailableHypervisor(dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId, defaultHype);
+        VMTemplateVO template = null;
+        HypervisorType defaultHypervisor = _resourceMgr.getDefaultHypervisor(dataCenterId);
+        if (defaultHypervisor != HypervisorType.None) {
+            template = _templateDao.findSystemVMReadyTemplate(dataCenterId, defaultHypervisor);
+            if (template == null) {
+                throw new CloudRuntimeException("Not able to find the System template or not downloaded in zone " + dataCenterId + " corresponding to default System vm hypervisor " + defaultHypervisor);
+            }
+        } else {
+            template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
+            if (template == null) {
+                throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            }
+        }
+
+        Map<String, Object> context = createProxyInstance(dataCenterId, template);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -684,7 +697,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return null;
     }
 
-    protected Map<String, Object> createProxyInstance(long dataCenterId, HypervisorType desiredHyp) throws ConcurrentOperationException {
+    protected Map<String, Object> createProxyInstance(long dataCenterId, VMTemplateVO template) throws ConcurrentOperationException {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
@@ -725,12 +738,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         for (NetworkOffering offering : offerings) {
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
-        }
-
-        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId, desiredHyp);
-        if (template == null) {
-            s_logger.debug("Can't find a template to start");
-            throw new CloudRuntimeException("Insufficient capacity exception");
         }
 
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(),
