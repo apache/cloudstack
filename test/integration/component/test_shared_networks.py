@@ -1821,7 +1821,7 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         
         physical_network = list_physical_networks_response[0]
-        
+
         self.debug("Physical Network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
@@ -1980,7 +1980,11 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         
         physical_network = list_physical_networks_response[0]
-        
+        start_vlan, end_vlan = physical_network.vlan.split('-')
+        self.assert_(int(start_vlan) < int(end_vlan), "VLAN range  %s was improperly split" % physical_network.vlan)
+        shared_ntwk_vlan = int(end_vlan) + 1
+        self.assert_(shared_ntwk_vlan < 4095, "VLAN chosen %s is invalid > 4095" % shared_ntwk_vlan)
+
         self.debug("Physical Network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
@@ -2050,7 +2054,8 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
-        self.services["network"]["vlan"] = "567"
+        self.services["network"]["vlan"] = shared_ntwk_vlan
+        self.debug("Creating a shared network in non-cloudstack VLAN %s" % shared_ntwk_vlan)
         self.network = Network.create(
                          self.api_client,
                          self.services["network"],
