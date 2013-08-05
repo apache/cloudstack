@@ -17,16 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.storage.Upload;
-import com.cloud.storage.UploadVO;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.log4j.Logger;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.Date;
@@ -35,13 +25,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.log4j.Logger;
+
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -756,13 +754,13 @@ public class Upgrade410to420 implements DbUpgrade {
                     String ip = rs.getString(3);
                     String uuid = UUID.randomUUID().toString();
                     //Insert placeholder nic for each Domain router nic in Shared network
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter')");
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
                     pstmt.setString(1, uuid);
                     pstmt.setString(2, ip);
                     pstmt.setString(3, gateway);
                     pstmt.setLong(4, networkId);
                     pstmt.executeUpdate();
-                    s_logger.debug("Created placeholder nic for the ipAddress " + ip);
+                    s_logger.debug("Created placeholder nic for the ipAddress " + ip + " and network " + networkId);
 
             }
         } catch (SQLException e) {
