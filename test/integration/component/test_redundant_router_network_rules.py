@@ -1244,7 +1244,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         try:
             Router.stop(self.apiclient, id=master_router.id)
         except Exception as e:
-            self.fail("Failed to stop master router..")
+            self.fail("Failed to stop master router becaues of %s" % e)
 
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
