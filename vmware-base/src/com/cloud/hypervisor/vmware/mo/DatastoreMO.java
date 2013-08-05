@@ -125,6 +125,23 @@ public class DatastoreMO extends BaseMO {
 
 		_context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
 	}
+	
+	public String getDatastoreRootPath() throws Exception {
+		return String.format("[%s]", getName());
+	}
+	
+	public String getDatastorePath(String relativePathWithoutDatastoreName) throws Exception {
+		return getDatastorePath(relativePathWithoutDatastoreName, false);
+	}
+	
+	public String getDatastorePath(String relativePathWithoutDatastoreName, boolean endWithPathDelimiter) throws Exception {
+		String path = String.format("[%s] %s", getName(), relativePathWithoutDatastoreName);
+		if(endWithPathDelimiter) {
+			if(!path.endsWith("/"))
+				return path + "/";
+		}
+		return path;
+	}
 
 	public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence) throws Exception {
 		String datastoreName = getName();
@@ -299,18 +316,6 @@ public class DatastoreMO extends BaseMO {
 
 		s_logger.info("File " + fileFullPath + " does not exist on datastore");
 		return false;
-
-/*
-		String[] fileNames = listDirContent(dirFile.getPath());
-
-		String fileName = file.getFileName();
-		for(String name : fileNames) {
-			if(name.equalsIgnoreCase(fileName))
-				return true;
-		}
-
-		return false;
-*/
 	}
 
 	public boolean folderExists(String folderParentDatastorePath, String folderName) throws Exception {
