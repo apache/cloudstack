@@ -163,11 +163,6 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        ]
         return
 
     @classmethod
