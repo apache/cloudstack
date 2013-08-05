@@ -140,7 +140,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isExternalSnapshot() {
-        if (this.type == StoragePoolType.Filesystem || this.type == StoragePoolType.RBD) {
+        if (this.type == StoragePoolType.Filesystem) {
             return false;
         }
 
