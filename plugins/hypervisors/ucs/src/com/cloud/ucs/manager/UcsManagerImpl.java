@@ -209,35 +209,40 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     @DB
     public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
-    	SearchCriteriaService<UcsManagerVO, UcsManagerVO> q = SearchCriteria2.create(UcsManagerVO.class);
-    	q.addAnd(q.getEntity().getUrl(), Op.EQ, cmd.getUrl());
-    	UcsManagerVO mgrvo = q.find();
-    	if (mgrvo != null) {
-    	    throw new IllegalArgumentException(String.format("duplicate UCS manager. url[%s] is used by another UCS manager already", cmd.getUrl()));
-    	}
-    	 
-        UcsManagerVO vo = new UcsManagerVO();
-        vo.setUuid(UUID.randomUUID().toString());
-        vo.setPassword(cmd.getPassword());
-        vo.setUrl(cmd.getUrl());
-        vo.setUsername(cmd.getUsername());
-        vo.setZoneId(cmd.getZoneId());
-        vo.setName(cmd.getName());
+        SearchCriteriaService<UcsManagerVO, UcsManagerVO> q = SearchCriteria2.create(UcsManagerVO.class);
+        q.addAnd(q.getEntity().getUrl(), Op.EQ, cmd.getUrl());
+        UcsManagerVO mgrvo = q.find();
+        if (mgrvo != null) {
+            throw new IllegalArgumentException(String.format("duplicate UCS manager. url[%s] is used by another UCS manager already", cmd.getUrl()));
+        }
 
+        try {
+            UcsManagerVO vo = new UcsManagerVO();
+            vo.setUuid(UUID.randomUUID().toString());
+            vo.setPassword(cmd.getPassword());
+            vo.setUrl(cmd.getUrl());
+            vo.setUsername(cmd.getUsername());
+            vo.setZoneId(cmd.getZoneId());
+            vo.setName(cmd.getName());
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        ucsDao.persist(vo);
-        txn.commit();
-        UcsManagerResponse rsp = new UcsManagerResponse();
-        rsp.setId(String.valueOf(vo.getId()));
-        rsp.setName(vo.getName());
-        rsp.setUrl(vo.getUrl());
-        rsp.setZoneId(String.valueOf(vo.getZoneId()));
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            mgrvo = ucsDao.persist(vo);
+            txn.commit();
+            UcsManagerResponse rsp = new UcsManagerResponse();
+            rsp.setId(String.valueOf(vo.getId()));
+            rsp.setName(vo.getName());
+            rsp.setUrl(vo.getUrl());
+            rsp.setZoneId(String.valueOf(vo.getZoneId()));
 
-        discoverBlades(vo);
-
-        return rsp;
+            discoverBlades(vo);
+            return rsp;
+        } catch (CloudRuntimeException e) {
+            if (mgrvo != null) {
+                ucsDao.remove(mgrvo.getId());
+            }
+            throw e;
+        }
     }
 
     private String getCookie(Long ucsMgrId) {
