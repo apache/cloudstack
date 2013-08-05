@@ -3672,6 +3672,11 @@
                                                                 $(lbInstances).each(function() {
                                                                     if (this.displayname.indexOf('AutoScale-LB-') > -1) //autoscale VM is not allowed to be deleted manually. So, hide destroy button
                                                                         this._hideActions = ['destroy'];
+
+                                                                    if (this.servicestate) {
+                                                                        this._itemStateLabel = 'label.service.state';
+                                                                        this._itemState = this.servicestate;
+                                                                    }
                                                                 });
                                                             },
                                                             error: function(data) {

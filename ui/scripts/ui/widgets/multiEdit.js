@@ -708,9 +708,14 @@
                     });
                 });
 
-                var itemState = multiRule._itemState ? item[multiRule._itemState] : item.state;
-                var $itemState = $('<span>').html(_s(itemState));
-                $tr.append($('<td>').addClass('state').appendTo($tr).append("Application State - ").append($itemState));
+                var itemState = item._itemState ? item._itemState : item.state;
+
+                $tr.append($('<td>').addClass('state').appendTo($tr).append(
+                    $('<span>').text(
+                        item._itemStateLabel ? _l(item._itemStateLabel) + ' - ' + itemState :
+                            _l('label.state') + ' - ' + itemState
+                    )
+                ));
 
 
                 if (itemActions) {
