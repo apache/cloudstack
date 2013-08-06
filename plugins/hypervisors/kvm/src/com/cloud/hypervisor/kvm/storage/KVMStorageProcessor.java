@@ -502,7 +502,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                     s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapFile.getAbsolutePath() + ". Bytes written: " + offset);
                     bos.close();
-                    
+
                     s_logger.debug("Attempting to remove snapshot RBD " + snapshotName + " from image " + snapshotDisk.getName());
                     image.snapRemove(snapshotName);
 
@@ -813,7 +813,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
-
+            newVol.setSize(volume.getSize());
             return new CreateObjectAnswer(newVol);
         } catch (Exception e) {
             s_logger.debug("Failed to create volume: " + e.toString());
