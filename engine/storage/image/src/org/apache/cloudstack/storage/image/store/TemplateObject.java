@@ -167,7 +167,7 @@ public class TemplateObject implements TemplateInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -218,7 +218,7 @@ public class TemplateObject implements TemplateInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }

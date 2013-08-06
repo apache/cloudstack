@@ -160,7 +160,7 @@ public class SnapshotObject implements SnapshotInfo {
             throw new CloudRuntimeException("Failed to update state: " + e.toString());
         } finally {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -267,13 +267,14 @@ public class SnapshotObject implements SnapshotInfo {
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }
         this.processEvent(event);
     }
 
+    @Override
     public void incRefCount() {
         if (this.store == null) {
             return;
