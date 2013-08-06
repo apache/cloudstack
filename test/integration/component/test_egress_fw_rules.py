@@ -43,15 +43,14 @@ from marvin.remoteSSHClient import remoteSSHClient
 import time
 
 def log_test_exceptions(func):
-    """
-    """
-    def _log_test_exceptions(self, *args, **kwargs):
+    def test_wrap_exception_log(self, *args, **kwargs):
         try:
             func(self, *args, **kwargs)
         except Exception as e:
             self.debug('Test %s Failed due to Exception=%s' % (func, e))
             raise e
-    return _log_test_exceptions
+    test_wrap_exception_log.__doc__ = func.__doc__
+    return test_wrap_exception_log
 
 class Services:
     """Test service data: Egress Firewall rules Tests for Advance Zone.
@@ -75,7 +74,7 @@ class Services:
                                                "username" : "User",
                                                # Random characters are appended for unique
                                                # username
-                                               "password" : "fr3sca",},
+                                               "password" : "password",},
                          "project"          : {"name"        : "Project",
                                                "displaytext" : "Test project",},
                          "volume"           : {"diskname" : "TestDiskServ",
@@ -130,7 +129,7 @@ class Services:
                                          },
                          "sleep" :  30,
                          "ostype":  'CentOS 5.3 (64-bit)',
-                         "host_password": 'fr3sca',
+                         "host_password": 'password',
                         }
 
 class TestEgressFWRules(cloudstackTestCase):
@@ -203,7 +202,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.network_offering.update(self.apiclient, state='Enabled')
 
 
-    def create_vm(self, networkid = None, pfrule=False, egress_policy=True, RR=False):
+    def create_vm(self, pfrule=False, egress_policy=True, RR=False):
         self.create_network_offering(egress_policy, RR)
          # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -295,7 +294,7 @@ class TestEgressFWRules(cloudstackTestCase):
 
             exec_success = False
             if str(result).strip() == expected_result:
-                self.debug('script executed succesfully exec_success=True')
+                self.debug('script executed successfully exec_success=True')
                 exec_success = True
 
             ssh.execute('rm -rf %s' % script_file)
@@ -372,7 +371,7 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("Sleep for VM cleanup to complete.")
             time.sleep(self.services['sleep'])
             self.network.delete(self.apiclient)
-            wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
+            wait_for_cleanup(self.apiclient, ["network.gc.wait", "network.gc.interval"])
             self.debug("Sleep for Network cleanup to complete.")
             time.sleep(self.services['sleep'])
             cleanup_resources(self.apiclient, reversed(self.cleanup))
@@ -380,7 +379,6 @@ class TestEgressFWRules(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    #@unittest.skip("Skip")
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_01_egress_fr1(self):
@@ -397,7 +395,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_01_1_egress_fr1(self):
@@ -414,7 +412,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_02_egress_fr2(self):
@@ -452,7 +450,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
 
-    ##@unittest.skip("Skip")
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_03_egress_fr3(self):
@@ -497,7 +494,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['failed:']",
                                     negative_test=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_04_egress_fr4(self):
@@ -574,7 +571,7 @@ class TestEgressFWRules(cloudstackTestCase):
                          "DB results not matching")
 
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_05_egress_fr5(self):
@@ -593,7 +590,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.createEgressRule()
         #TODO: Query VR for expected route rules.
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_05_1_egress_fr5(self):
@@ -612,7 +609,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.createEgressRule()
         #TODO: Query VR for expected route rules.
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_06_egress_fr6(self):
@@ -648,7 +645,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_07_egress_fr7(self):
@@ -683,7 +680,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['failed:']",
                                     negative_test=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_08_egress_fr8(self):
@@ -708,7 +705,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.create_vm(pfrule=True, egress_policy=False)
         self.createEgressRule()
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_09_egress_fr9(self):
@@ -759,7 +756,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_10_egress_fr10(self):
@@ -784,7 +781,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.create_vm(egress_policy=False)
         self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_11_egress_fr11(self):
@@ -807,7 +804,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         self.create_vm(pfrule=True, egress_policy=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_12_egress_fr12(self):
@@ -844,7 +841,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    #@unittest.skip("Skip")
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_13_egress_fr13(self):
