@@ -159,4 +159,14 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_UPDATE;
     }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return id;
+    }
 }
