@@ -179,17 +179,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConfigDepot _configDepot;
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>(Integer.class, "workers", "Advance", "5",
-            "Number of worker threads handling remote agent connections.", false, "5-Max Thread Limit");
-    protected final ConfigKey<Integer> Port = new ConfigKey<Integer>(Integer.class, "port", "Advance", "8250", "Port to listen on for remote agent connections.", false,
-            "Usable port range");
+            "Number of worker threads handling remote agent connections.", false);
+    protected final ConfigKey<Integer> Port = new ConfigKey<Integer>(Integer.class, "port", "Advance", "8250", "Port to listen on for remote agent connections.", false);
     protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>(Integer.class, "ping.interval", "Advance", "60",
-            "Interval to send application level pings to make sure the connection is still working", false, "Seconds");
+            "Interval to send application level pings to make sure the connection is still working", false);
     protected final ConfigKey<Float> PingTimeout = new ConfigKey<Float>(Float.class, "ping.timeout", "Advance", "2.5",
-            "Multiplier to ping.interval before announcing an agent has timed out", true, null);
+            "Multiplier to ping.interval before announcing an agent has timed out", true);
     protected final ConfigKey<Integer> Wait = new ConfigKey<Integer>(Integer.class, "wait", "Advance", "1800",
-            "Time in seconds to wait for control commands to return", true, "Seconds");
+            "Time in seconds to wait for control commands to return", true);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>(Integer.class, "alert.wait", "Advance", "1800",
-            "Seconds to wait before alerting on a disconnected agent", true, "Seconds");
+            "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advance", "16",
             "The number of direct agents to load each time", false, null);
     protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advance", "500",

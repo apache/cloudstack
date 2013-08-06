@@ -46,6 +46,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigurationVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -142,6 +143,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
+    @Inject
+    protected ConfigDepotAdmin _configDepotAdmin;
 
     public ConfigurationServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
@@ -153,6 +156,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
 		try {
 			persistDefaultValues();
+            _configDepotAdmin.populateConfigurations();
 		} catch (InternalErrorException e) {
 			throw new RuntimeException("Unhandled configuration exception", e);
 		}

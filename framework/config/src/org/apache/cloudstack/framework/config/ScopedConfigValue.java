@@ -16,21 +16,28 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
-import java.util.List;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
+import com.cloud.utils.db.EntityManager;
 
-/**
- * Administrative interface to ConfigDepot
- *
- */
-public interface ConfigDepotAdmin {
-    /**
-     * Create configurations if there are new config parameters.
-     * Update configurations if the parameter settings have been changed.
-     * All configurations that have been updated/created will have the same timestamp in the updated field.
-     * All previous configurations that should be obsolete will have a null updated field.
-     * @see Configuration
-     */
-    void populateConfigurations();
+public class ScopedConfigValue<T> extends ConfigValue<T> {
+    public T getValueForScope(long scopeId) {
+        // TODO: In order to complete this the details for zone, pod, cluster
+        // needs to have interfaces.  Then you can use the EntityManager to
+        // retrieve those information.
+        Class<? extends Grouping> scope = _config.scope();
+        if (scope == DataCenter.class) {
+        } else if (scope == Pod.class) {
 
-    List<String> getComponentsInDepot();
+        } else if (scope == Cluster.class) {
+
+        }
+        return null;
+    }
+    
+    protected ScopedConfigValue(EntityManager entityMgr, ConfigKey<T> key) {
+        super(entityMgr, key);
+    }
 }

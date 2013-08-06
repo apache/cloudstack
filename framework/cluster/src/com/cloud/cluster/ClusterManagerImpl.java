@@ -1028,9 +1028,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
     }
 
     protected final ConfigKey<Integer> HeartBeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server",
-            "1500", "Interval to check for the heart beat between management server nodes", false, "Seconds");
+            "1500", "Interval to check for the heart beat between management server nodes", false);
     protected final ConfigKey<Integer> HeartBeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server",
-            "150000", "Threshold before self-fence the management server", true, "Seconds");
+            "150000", "Threshold before self-fence the management server", true);
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

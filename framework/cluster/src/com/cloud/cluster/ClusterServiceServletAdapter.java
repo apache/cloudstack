@@ -126,7 +126,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     }
     
     private final ConfigKey<Integer> ClusterMessageTimeOut = new ConfigKey<Integer>(Integer.class, "cluster.message.timeout.seconds", "Advance", "300",
-            "Time (in seconds) to wait before a inter-management server message post times out.", true, "Seconds");
+            "Time (in seconds) to wait before a inter-management server message post times out.", true);
 
     private void init() throws ConfigurationException {
     	if(_mshostDao != null)

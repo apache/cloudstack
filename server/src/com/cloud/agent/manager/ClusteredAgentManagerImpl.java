@@ -134,13 +134,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     protected final ConfigKey<Boolean> EnableLB = new ConfigKey<Boolean>(Boolean.class, "agent.lb.enabled", "Advanced", "false",
-            "Enable agent load balancing between management server nodes", true, "True/False");
+            "Enable agent load balancing between management server nodes", true);
     protected final ConfigKey<Double> ConnectedAgentThreshold = new ConfigKey<Double>(Double.class, "agent.load.threshold", "Advanced", "0.7",
-            "What percentage of the agents can be held by one management server before load balancing happens", true, "0-1");
+            "What percentage of the agents can be held by one management server before load balancing happens", true);
     protected final ConfigKey<Integer> LoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", "16",
-            "How many agents to connect to in each round", true, "");
+            "How many agents to connect to in each round", true);
     protected final ConfigKey<Integer> ScanInterval = new ConfigKey<Integer>(Integer.class, "direct.agent.scan.interval", "Advanced", "90",
-            "Interval between scans to load agents", false, "Seconds");
+            "Interval between scans to load agents", false);
     
 
     protected ConfigValue<Boolean> _agentLBEnabled;

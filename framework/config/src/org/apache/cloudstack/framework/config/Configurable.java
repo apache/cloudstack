@@ -16,6 +16,14 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
+/**
+ * Configurable can be implemented by components to insert their own
+ * configuration keys.
+ * 
+ * CloudStack will gather all of these configurations at startup and insert
+ * them into the configuration table.
+ *
+ */
 public interface Configurable {
 
     String getConfigComponentName();

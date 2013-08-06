@@ -27,7 +27,25 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.utils.db.EntityManager;
 
 /**
- * DepotImpl implements the ConfigDepot interface
+ * ConfigDepotImpl implements the ConfigDepot and ConfigDepotAdmin interface.
+ * Its functionalities include:
+ *   - Control how dynamic config values are cached and refreshed.
+ *   - Control how scoped config values are stored.
+ *   - Gather all of the Configurable interfaces and insert their config
+ *     variables into the config table.
+ *   - Hide the data source where configs are stored and retrieved.
+ * 
+ * When dealing with this class, we must be very careful on cluster situations.
+ *
+ * TODO:
+ *   - Move the rest of the changes to the config table to here.
+ *   - Implement ScopedConfigValue
+ *   - Move the code to set scoped configuration values to here.
+ *   - Add the code to mark the rows in configuration table without
+ *     the corresponding keys to be null.
+ *   - Move all of the configurations to using ConfigDepot
+ *   - Completely eliminate Config.java
+ *   - Figure out the correct categories.
  *
  */
 class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
@@ -48,6 +66,13 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return new ConfigValue<T>(_entityMgr, config);
     }
     
+    @Override
+    public <T> ScopedConfigValue<T> getScopedValue(ConfigKey<T> config) {
+        assert (config.scope() != null) : "Did you notice the configuration you're trying to retrieve is not scoped?";
+        return new ScopedConfigValue<T>(_entityMgr, config);
+    }
+
+
     @Override
     public void populateConfigurations() {
         Date date = new Date();
@@ -70,8 +95,6 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                     }
                 }
             }
-
-            // TODO: Missing code to remove the updated field if the a configurationVO's name cannot be found any more.
         }
     }
 

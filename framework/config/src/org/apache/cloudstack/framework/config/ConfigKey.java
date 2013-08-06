@@ -16,14 +16,12 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
+import com.cloud.org.Grouping;
+
 /**
  * ConfigKey supplants the original Config.java.  It is just a class
  * declaration where others can declare their config variables.
  * 
- * TODO: This class should be moved to a framework project where the gathering
- *       of these configuration keys should be done by a config server.  I
- *       don't have time yet to do this.  Ask me about it if you want to work
- *       in this area.  Right now, we'll just work with the actual names.
  */
 public class ConfigKey<T> {
     
@@ -49,7 +47,7 @@ public class ConfigKey<T> {
         return _description;
     }
 
-    public String scope() {
+    public Class<? extends Grouping> scope() {
         return _scope;
     }
 
@@ -66,11 +64,11 @@ public class ConfigKey<T> {
     private final String _name;
     private final String _defaultValue;
     private final String _description;
-    private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+    private final Class<? extends Grouping> _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final boolean _isDynamic;
 
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic,
-            String scope) {
+            Class<? extends Grouping> scope) {
         _category = category;
         _type = type;
         _name = name;

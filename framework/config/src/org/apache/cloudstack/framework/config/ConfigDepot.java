@@ -22,4 +22,6 @@ package org.apache.cloudstack.framework.config;
  */
 public interface ConfigDepot {
     <T> ConfigValue<T> get(ConfigKey<T> key);
+    
+    <T> ScopedConfigValue<T> getScopedValue(ConfigKey<T> key);
 }
