@@ -17,6 +17,7 @@
 package org.apache.cloudstack.framework.config;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,7 +29,6 @@ import javax.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -94,12 +94,12 @@ public class ConfigDepotAdminTest {
         _depotAdmin.populateConfigurations();
 
         // This is once because DynamicIntCK is returned.
-        verify(_configDao, times(1)).persist(Mockito.any(ConfigurationVO.class));
+        verify(_configDao, times(1)).persist(any(ConfigurationVO.class));
 
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
         _depotAdmin.populateConfigurations();
         // This is two because DynamicIntCK also returns null.
-        verify(_configDao, times(2)).persist(Mockito.any(ConfigurationVO.class));
+        verify(_configDao, times(2)).persist(any(ConfigurationVO.class));
     }
     
     @Configuration
@@ -107,17 +107,17 @@ public class ConfigDepotAdminTest {
     static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
         @Bean
         public Configurable configurable() {
-            return Mockito.mock(Configurable.class);
+            return mock(Configurable.class);
         }
 
         @Bean
         public EntityManager entityMgr() {
-            return Mockito.mock(EntityManager.class);
+            return mock(EntityManager.class);
         }
 
         @Bean
         public ConfigurationDao configurationDao() {
-            return Mockito.mock(ConfigurationDao.class);
+            return mock(ConfigurationDao.class);
         }
 
         public static class Library implements TypeFilter {

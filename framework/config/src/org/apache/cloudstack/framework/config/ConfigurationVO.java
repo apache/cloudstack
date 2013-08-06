@@ -79,6 +79,8 @@ public class ConfigurationVO implements Configuration {
     public ConfigurationVO(String component, ConfigKey<?> key) {
         this(key.category(), "DEFAULT", component, key.key(), key.defaultValue(), key.description());
         defaultValue = key.defaultValue();
+        dynamic = key.isDynamic();
+        scope = key.scope();
     }
 
     @Override
