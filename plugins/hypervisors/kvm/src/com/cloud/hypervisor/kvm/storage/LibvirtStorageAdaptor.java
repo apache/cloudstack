@@ -1175,10 +1175,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
         String lockFile = _mountPoint + File.separator + pool.getUUIDString() + File.separator + _lockfile;
         if (lock(lockFile, 30)) {
-            pool.refresh(0);
-            unlock(lockFile);
+            try {
+                pool.refresh(0);
+            } finally {
+                unlock(lockFile);
+            }
         } else {
-            throw new CloudRuntimeException("Can not get file lock to refresh the pool" + pool.getUUIDString());
+            throw new CloudRuntimeException("Can not get file lock to refresh the pool " + pool.getUUIDString());
         }
     }
 
@@ -1190,10 +1193,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
         String lockFile = pool.getLocalPath() + File.separator + _lockfile;
         if (lock(lockFile, 30)) {
-            vol.delete(0);
-            unlock(lockFile);
+            try {
+                vol.delete(0);
+            } finally {
+                unlock(lockFile);
+            }
         } else {
-            throw new CloudRuntimeException("Can not get file lock to delete the volume" + vol.getPath());
+            throw new CloudRuntimeException("Can not get file lock to delete the volume " + vol.getPath());
         }
     }
 
