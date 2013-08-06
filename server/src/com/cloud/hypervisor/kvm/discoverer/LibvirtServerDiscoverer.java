@@ -28,6 +28,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -38,7 +40,6 @@ import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;

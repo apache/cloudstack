@@ -42,22 +42,22 @@ import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.ConfigurationVO;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -120,9 +120,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 
-@Component
 public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
-    public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class);
 
     @Inject private ConfigurationDao _configDao;
     @Inject private DataCenterDao _zoneDao;
@@ -143,7 +142,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
-
 
     public ConfigurationServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);

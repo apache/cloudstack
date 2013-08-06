@@ -23,12 +23,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

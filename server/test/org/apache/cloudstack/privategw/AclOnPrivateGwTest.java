@@ -17,7 +17,6 @@
 package org.apache.cloudstack.privategw;
 
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.*;
@@ -36,10 +35,14 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
+
 import junit.framework.Assert;
+
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,6 +60,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import javax.naming.ConfigurationException;
+
 import java.io.IOException;
 
 @RunWith(SpringJUnit4ClassRunner.class)

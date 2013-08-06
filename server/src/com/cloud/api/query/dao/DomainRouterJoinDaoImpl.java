@@ -24,12 +24,13 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;

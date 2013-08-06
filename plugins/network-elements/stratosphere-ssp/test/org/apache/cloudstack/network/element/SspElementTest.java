@@ -19,15 +19,16 @@ package org.apache.cloudstack.network.element;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.dao.SspCredentialDao;
 import org.apache.cloudstack.network.dao.SspCredentialVO;
 import org.apache.cloudstack.network.dao.SspTenantDao;
 import org.apache.cloudstack.network.dao.SspUuidDao;
 import org.apache.cloudstack.network.element.SspElement;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;

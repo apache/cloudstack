@@ -18,7 +18,8 @@ package com.cloud.server;
 
 import java.util.List;
 
-import com.cloud.configuration.ConfigurationVO;
+import org.apache.cloudstack.framework.config.ConfigurationVO;
+
 import com.cloud.exception.InternalErrorException;
 
 /**

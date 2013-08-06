@@ -45,9 +45,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.config.ConfigDepot;
-import org.apache.cloudstack.config.ConfigKey;
-import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -1027,9 +1027,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
         return true;
     }
 
-    protected final ConfigKey<Integer> HeartBeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server", ClusterManager.class,
+    protected final ConfigKey<Integer> HeartBeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server",
             "1500", "Interval to check for the heart beat between management server nodes", false, "Seconds");
-    protected final ConfigKey<Integer> HeartBeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server", ClusterManager.class,
+    protected final ConfigKey<Integer> HeartBeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server",
             "150000", "Threshold before self-fence the management server", true, "Seconds");
     
     @Override

@@ -35,11 +35,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.UsageTypes;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -76,7 +78,6 @@ import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
-
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;

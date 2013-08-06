@@ -19,7 +19,9 @@ package com.cloud.network.security;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,7 +35,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;

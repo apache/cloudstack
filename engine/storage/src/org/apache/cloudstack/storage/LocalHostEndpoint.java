@@ -22,11 +22,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.utils.component.ComponentContext;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.resource.LocalNfsSecondaryStorageResource;

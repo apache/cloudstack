@@ -51,11 +51,11 @@ import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;

@@ -14,12 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.configuration.dao;
+package org.apache.cloudstack.framework.config.dao;
 
 import java.util.Map;
 import java.util.List;
 
-import com.cloud.configuration.ConfigurationVO;
+import org.apache.cloudstack.framework.config.ConfigurationVO;
+
 import com.cloud.utils.db.GenericDao;
 
 public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {

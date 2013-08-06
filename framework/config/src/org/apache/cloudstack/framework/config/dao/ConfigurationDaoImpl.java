@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.configuration.dao;
+package org.apache.cloudstack.framework.config.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +29,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.ConfigurationVO;
+import org.apache.cloudstack.framework.config.ConfigurationVO;
+
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;

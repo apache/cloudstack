@@ -21,14 +21,15 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;

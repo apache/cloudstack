@@ -18,8 +18,10 @@ package org.apache.cloudstack.internallbvmmgr;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -31,7 +33,6 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.network.NetworkManager;

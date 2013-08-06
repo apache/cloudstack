@@ -48,6 +48,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
@@ -57,6 +58,7 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -67,7 +69,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;

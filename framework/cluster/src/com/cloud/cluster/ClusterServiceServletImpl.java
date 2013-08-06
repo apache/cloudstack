@@ -27,7 +27,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.framework.config.ConfigValue;
 
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;

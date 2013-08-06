@@ -24,9 +24,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.storage.StorageManager;

@@ -29,9 +29,10 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;

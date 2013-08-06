@@ -39,11 +39,11 @@ import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBal
 import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;

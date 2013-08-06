@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.config;
+package org.apache.cloudstack.framework.config;
 
 /**
  * ConfigKey supplants the original Config.java.  It is just a class
@@ -33,10 +33,6 @@ public class ConfigKey<T> {
         return _category;
     }
 
-    public Class<?> component() {
-        return _componentClass;
-    }
-
     public Class<T> type() {
         return _type;
     }
@@ -53,10 +49,6 @@ public class ConfigKey<T> {
         return _description;
     }
 
-    public String range() {
-        return _range;
-    }
-
     public String scope() {
         return _scope;
     }
@@ -70,29 +62,25 @@ public class ConfigKey<T> {
         return _name;
     }
 
-    private final Class<?> _componentClass;
     private final Class<T> _type;
     private final String _name;
     private final String _defaultValue;
     private final String _description;
-    private final String _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final boolean _isDynamic;
 
-    public ConfigKey(Class<T> type, String name, String category, Class<?> componentClass, String defaultValue, String description, boolean isDynamic, String range,
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic,
             String scope) {
         _category = category;
-        _componentClass = componentClass;
         _type = type;
         _name = name;
         _defaultValue = defaultValue;
         _description = description;
-        _range = range;
         _scope = scope;
         _isDynamic = isDynamic;
     }
 
-    public ConfigKey(Class<T> type, String name, String category, Class<?> componentClass, String defaultValue, String description, boolean isDynamic, String range) {
-        this(type, name, category, componentClass, defaultValue, description, isDynamic, range, null);
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic) {
+        this(type, name, category, defaultValue, description, isDynamic, null);
     }
 }

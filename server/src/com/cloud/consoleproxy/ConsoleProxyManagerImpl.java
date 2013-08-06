@@ -34,6 +34,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -54,7 +55,6 @@ import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;

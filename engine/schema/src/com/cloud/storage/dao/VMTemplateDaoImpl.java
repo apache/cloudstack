@@ -30,12 +30,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;

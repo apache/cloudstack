@@ -14,7 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.config;
+package org.apache.cloudstack.framework.config;
+
+import org.apache.cloudstack.config.Configuration;
 
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;

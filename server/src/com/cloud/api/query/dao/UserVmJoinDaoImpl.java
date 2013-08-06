@@ -31,13 +31,14 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;

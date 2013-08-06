@@ -32,8 +32,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;

@@ -39,12 +39,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -57,7 +59,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;

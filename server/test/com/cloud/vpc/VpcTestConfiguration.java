@@ -19,7 +19,9 @@ package com.cloud.vpc;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,7 +34,6 @@ import org.springframework.core.type.filter.TypeFilter;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
 import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.dao.EntityManagerImpl;

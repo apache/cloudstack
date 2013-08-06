@@ -18,20 +18,23 @@
  */
 package org.apache.cloudstack.storage.cache.manager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.util.Calendar;
 import java.util.Date;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 

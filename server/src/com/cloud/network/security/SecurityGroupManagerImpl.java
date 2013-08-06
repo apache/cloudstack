@@ -58,7 +58,6 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -102,6 +101,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 
 import org.apache.cloudstack.api.command.user.securitygroup.*;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import java.util.*;

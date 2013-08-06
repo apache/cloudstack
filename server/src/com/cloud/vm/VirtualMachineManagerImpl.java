@@ -83,7 +83,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
@@ -184,11 +183,14 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import org.apache.log4j.Logger;
 
 @Local(value = VirtualMachineManager.class)

@@ -22,7 +22,6 @@ package com.cloud.network.element;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -54,6 +53,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+
 import com.midokura.midonet.client.MidonetApi;
 import com.midokura.midonet.client.dto.DtoRule;
 import com.midokura.midonet.client.resource.Bridge;
@@ -68,6 +68,9 @@ import com.midokura.midonet.client.resource.RouterPort;
 import com.midokura.midonet.client.resource.Rule;
 import com.midokura.midonet.client.resource.RuleChain;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -75,6 +78,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.ws.rs.core.MultivaluedMap;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

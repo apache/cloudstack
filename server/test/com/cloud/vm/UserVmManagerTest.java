@@ -48,10 +48,10 @@ import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;

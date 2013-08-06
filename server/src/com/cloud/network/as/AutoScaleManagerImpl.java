@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCm
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -52,7 +53,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;

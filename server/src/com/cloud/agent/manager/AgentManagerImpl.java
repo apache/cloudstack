@@ -40,11 +40,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.config.ConfigDepot;
-import org.apache.cloudstack.config.ConfigKey;
-import org.apache.cloudstack.config.ConfigValue;
-import org.apache.cloudstack.config.Configurable;
 import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -72,7 +73,6 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -178,18 +178,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Inject
     protected ConfigDepot _configDepot;
 
-    protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>(Integer.class, "workers", "Advance", AgentManager.class, "5",
+    protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>(Integer.class, "workers", "Advance", "5",
             "Number of worker threads handling remote agent connections.", false, "5-Max Thread Limit");
-    protected final ConfigKey<Integer> Port = new ConfigKey<Integer>(Integer.class, "port", "Advance", AgentManager.class, "8250", "Port to listen on for remote agent connections.", false, "Usable port range");
-    protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>(Integer.class, "ping.interval", "Advance", AgentManager.class, "60", "Interval to send application level pings to make sure the connection is still working", false, "Seconds");
-    protected final ConfigKey<Float> PingTimeout = new ConfigKey<Float>(Float.class, "ping.timeout", "Advance", AgentManager.class, "2.5", "Multiplier to ping.interval before announcing an agent has timed out", true, null);
-    protected final ConfigKey<Integer> Wait = new ConfigKey<Integer>(Integer.class, "wait", "Advance", AgentManager.class, "1800",
+    protected final ConfigKey<Integer> Port = new ConfigKey<Integer>(Integer.class, "port", "Advance", "8250", "Port to listen on for remote agent connections.", false,
+            "Usable port range");
+    protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>(Integer.class, "ping.interval", "Advance", "60",
+            "Interval to send application level pings to make sure the connection is still working", false, "Seconds");
+    protected final ConfigKey<Float> PingTimeout = new ConfigKey<Float>(Float.class, "ping.timeout", "Advance", "2.5",
+            "Multiplier to ping.interval before announcing an agent has timed out", true, null);
+    protected final ConfigKey<Integer> Wait = new ConfigKey<Integer>(Integer.class, "wait", "Advance", "1800",
             "Time in seconds to wait for control commands to return", true, "Seconds");
-    protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>(Integer.class, "alert.wait", "Advance", AgentManager.class, "1800",
+    protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>(Integer.class, "alert.wait", "Advance", "1800",
             "Seconds to wait before alerting on a disconnected agent", true, "Seconds");
-    protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advance", AgentManager.class, "16",
+    protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advance", "16",
             "The number of direct agents to load each time", false, null);
-    protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advance", AgentManager.class, "500",
+    protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advance", "500",
             "Default size for DirectAgentPool", false, null);
 
     protected ConfigValue<Integer> _port;
@@ -1573,6 +1576,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return -1;
         }
 
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return AgentManager.class.getName();
     }
 
     @Override

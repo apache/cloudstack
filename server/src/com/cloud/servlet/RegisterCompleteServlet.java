@@ -31,8 +31,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;

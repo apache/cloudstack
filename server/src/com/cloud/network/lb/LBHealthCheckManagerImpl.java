@@ -30,8 +30,9 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.NumbersUtil;

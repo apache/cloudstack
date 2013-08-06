@@ -32,11 +32,12 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;

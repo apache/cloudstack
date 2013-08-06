@@ -27,7 +27,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -43,7 +45,6 @@ import com.cloud.api.commands.ListF5LoadBalancersCmd;
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -90,6 +91,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
 import com.google.gson.Gson;
 
 @Local(value = {NetworkElement.class, LoadBalancingServiceProvider.class, IpDeployer.class})

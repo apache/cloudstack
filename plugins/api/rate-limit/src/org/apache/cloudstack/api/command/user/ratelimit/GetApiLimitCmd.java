@@ -37,10 +37,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;

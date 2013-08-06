@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -46,7 +47,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -95,7 +95,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
