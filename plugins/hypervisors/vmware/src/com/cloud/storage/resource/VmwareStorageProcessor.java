@@ -95,10 +95,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
     protected Integer _shutdown_waitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
+    private final PremiumSecondaryStorageResource storageResource;
+ 
     public VmwareStorageProcessor(VmwareHostService hostService, boolean fullCloneFlag, VmwareStorageMount mountService,
                                   Integer timeout,
                                   VmwareResource resource,
-                                  Integer shutdownWaitMs) {
+                                  Integer shutdownWaitMs,
+                                  PremiumSecondaryStorageResource storageResource) {
         this.hostService = hostService;
         this._fullCloneFlag = fullCloneFlag;
         this.mountService = mountService;
@@ -106,6 +109,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         this.resource = resource;
         this._shutdown_waitMs = shutdownWaitMs;
         _gson = GsonHelper.getGsonLogger();
+        this.storageResource = storageResource;
     }
 
     private String getOVFFilePath(String srcOVAFileName) {

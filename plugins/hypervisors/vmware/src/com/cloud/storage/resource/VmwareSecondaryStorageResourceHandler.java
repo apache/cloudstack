@@ -68,8 +68,12 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         _gson = GsonHelper.getGsonLogger();
 
         VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor(this, true, this, resource.getTimeout(),
-                null, null);
-        storageSubsystemHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+                null, null, _resource);
+        VmwareStorageSubsystemCommandHandler vmwareStorageSubsystemCommandHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
+        vmwareStorageSubsystemCommandHandler.setStorageResource(_resource);
+        vmwareStorageSubsystemCommandHandler.setStorageManager(_storageMgr);
+        storageSubsystemHandler = vmwareStorageSubsystemCommandHandler;
+
     }
 
     @Override

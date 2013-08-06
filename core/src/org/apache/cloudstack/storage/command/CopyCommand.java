@@ -38,6 +38,14 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         return this.destTO;
     }
 
+    public void setSrcTO(DataTO srcTO) {
+        this.srcTO = srcTO;
+    }
+
+    public void setDestTO(DataTO destTO) {
+        this.destTO = destTO;
+    }
+
     public DataTO getSrcTO() {
         return this.srcTO;
     }

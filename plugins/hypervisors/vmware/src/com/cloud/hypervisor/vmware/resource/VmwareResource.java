@@ -45,6 +45,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.to.DhcpTO;
+import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -6308,9 +6309,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
         VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr,
-                timeout, this, _shutdown_waitMs
+                timeout, this, _shutdown_waitMs, null
                 );
-        storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+        storageHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
 
         return true;
     }

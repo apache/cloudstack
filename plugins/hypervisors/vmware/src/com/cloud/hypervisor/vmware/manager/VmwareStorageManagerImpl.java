@@ -110,6 +110,21 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return true;
     }
 
+    @Override
+    public void createOva(String path, String name) {
+        Script commandSync = new Script(true, "sync", 0, s_logger);
+        commandSync.execute();
+
+        Script command = new Script(false, "tar", 0, s_logger);
+        command.setWorkDir(path);
+        command.add("-cf", name + ".ova");
+        command.add(name + ".ovf");		// OVF file should be the first file in OVA archive
+        command.add(name + "-disk0.vmdk");
+
+        s_logger.info("Package OVA with commmand: " + command.toString());
+        command.execute();
+    }
+
     private static final Logger s_logger = Logger.getLogger(VmwareStorageManagerImpl.class);
 
     private final VmwareStorageMount _mountService;
