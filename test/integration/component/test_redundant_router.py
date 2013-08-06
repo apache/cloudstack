@@ -1523,7 +1523,7 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to stop BACKUP router: %s" % e)
 
         # wait for VR to update state
-        time.sleep(self.update_waiting_time)
+        time.sleep(self.services["sleep"])
 
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(
