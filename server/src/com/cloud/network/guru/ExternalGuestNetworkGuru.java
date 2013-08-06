@@ -23,6 +23,8 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
 
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
@@ -72,6 +74,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     DataCenterDao _zoneDao;
     @Inject
     PortForwardingRulesDao _pfRulesDao;
+    @Inject
+    IPAddressDao _ipAddressDao;
+
 
     public ExternalGuestNetworkGuru() {
         super();
@@ -192,6 +197,17 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         		pfRule.setDestinationIpAddress(new Ip(maskedDestinationIpAddress));
         		_pfRulesDao.update(pfRule.getId(), pfRule);
         	}
+        }
+        // Mask the destination address of all static nat rules in this network with the new guest VLAN offset
+        // Here the private ip of the nic get updated. When secondary ip are present the gc will not triggered
+        List <IPAddressVO> ipAddrsOfNw = _ipAddressDao.listStaticNatPublicIps(config.getId());
+        for (IPAddressVO ip: ipAddrsOfNw) {
+            if (ip.getVmIp() != null) {
+                long ipMask = getIpMask(ip.getVmIp(), cidrSize);
+                String maskedVmIp =  NetUtils.long2Ip(newCidrAddress | ipMask);
+                ip.setVmIp(maskedVmIp);
+                _ipAddressDao.update(ip.getId(), ip);
+            }
         }
 
         return implemented;
