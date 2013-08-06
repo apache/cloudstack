@@ -21,9 +21,9 @@
 <section id="ip-vlan-tenant">
   <title>Reserving Public IP Addresses and VLANs for Account</title>
   <para>&PRODUCT; provides you the ability to reserve a set of public IP addresses and VLANs
-    exclusively for an account and domain. During zone creation, you can continue defining a set of
-    VLANs and multiple public IP ranges. This feature extends the functionality to enable you to
-    dedicate a fixed set of VLANs and guest IP addresses for a tenant.</para>
+    exclusively for an account. During zone creation, you can continue defining a set of VLANs and
+    multiple public IP ranges. This feature extends the functionality to enable you to dedicate a
+    fixed set of VLANs and guest IP addresses for a tenant.</para>
   <para>Note that if an account has consumed all the VLANs and IPs dedicated to it, the account can
     acquire two more resources from the system. &PRODUCT; provides the root admin with two
     configuration parameter to modify this default behavior&mdash;use.system.public.ips and
@@ -35,10 +35,10 @@
   <itemizedlist>
     <listitem>
       <para>Reserve a VLAN range and public IP address range from an Advanced zone and assign it to
-        an account or domain</para>
+        an account</para>
     </listitem>
     <listitem>
-      <para>Disassociate a VLAN and public IP address range from an account or domain</para>
+      <para>Disassociate a VLAN and public IP address range from an account</para>
     </listitem>
     <listitem>
       <para>View the number of public IP addresses allocated to an account</para>
