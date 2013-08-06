@@ -66,6 +66,10 @@ public class SnapshotObjectTO implements DataTO {
         return this.dataStore;
     }
 
+    public void setDataStore(DataStoreTO store) {
+        this.dataStore = store;
+    }
+
     @Override
     public String getPath() {
         return this.path;
