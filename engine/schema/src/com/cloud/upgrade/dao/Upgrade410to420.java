@@ -42,36 +42,36 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
-	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
+    final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
 
 
-	@Override
-	public String[] getUpgradableVersionRange() {
-		return new String[] { "4.1.0", "4.2.0" };
-	}
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[] { "4.1.0", "4.2.0" };
+    }
 
-	@Override
-	public String getUpgradedVersion() {
-		return "4.2.0";
-	}
+    @Override
+    public String getUpgradedVersion() {
+        return "4.2.0";
+    }
 
-	@Override
-	public boolean supportsRollingUpgrade() {
-		return false;
-	}
+    @Override
+    public boolean supportsRollingUpgrade() {
+        return false;
+    }
 
-	@Override
-	public File[] getPrepareScripts() {
-		String script = Script.findScript("", "db/schema-410to420.sql");
+    @Override
+    public File[] getPrepareScripts() {
+        String script = Script.findScript("", "db/schema-410to420.sql");
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-410to420.sql");
         }
 
         return new File[] { new File(script) };
-	}
+    }
 
-	@Override
-	public void performDataMigration(Connection conn) {
+    @Override
+    public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
         persistLegacyZones(conn);
         createPlaceHolderNics(conn);
@@ -90,7 +90,7 @@ public class Upgrade410to420 implements DbUpgrade {
         correctExternalNetworkDevicesSetup(conn);
         removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
         fix22xKVMSnapshots(conn);
-	setKVMSnapshotFlag(conn);
+        setKVMSnapshotFlag(conn);
         addIndexForAlert(conn);
         fixBaremetalForeignKeys(conn);
         // storage refactor related migration
@@ -111,12 +111,12 @@ public class Upgrade410to420 implements DbUpgrade {
         keys.add("fk_external_dhcp_devices_pod_id");
         keys.add("fk_external_dhcp_devices_physical_network_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "baremetal_dhcp_devices", keys, true);
-        
+
         keys.add("fk_external_pxe_devices_nsp_id");
         keys.add("fk_external_pxe_devices_host_id");
         keys.add("fk_external_pxe_devices_physical_network_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "baremetal_pxe_devices", keys, true);
-        
+
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
@@ -253,8 +253,8 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
 
-	private void updateSystemVmTemplates(Connection conn) {
-	    // TODO: system vm template migration after storage refactoring
+    private void updateSystemVmTemplates(Connection conn) {
+        // TODO: system vm template migration after storage refactoring
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         s_logger.debug("Updating System Vm template IDs");
@@ -266,16 +266,16 @@ public class Upgrade410to420 implements DbUpgrade {
                 rs = pstmt.executeQuery();
                 while(rs.next()){
                     switch (HypervisorType.getType(rs.getString(1))) {
-                        case XenServer: hypervisorsListInUse.add(HypervisorType.XenServer);
-                                        break;
-                        case KVM:       hypervisorsListInUse.add(HypervisorType.KVM);
-                                        break;
-                        case VMware:    hypervisorsListInUse.add(HypervisorType.VMware);
-                                        break;
-                        case Hyperv:    hypervisorsListInUse.add(HypervisorType.Hyperv);
-                                        break;
-                        case LXC:       hypervisorsListInUse.add(HypervisorType.LXC);
-                                        break;
+                    case XenServer: hypervisorsListInUse.add(HypervisorType.XenServer);
+                    break;
+                    case KVM:       hypervisorsListInUse.add(HypervisorType.KVM);
+                    break;
+                    case VMware:    hypervisorsListInUse.add(HypervisorType.VMware);
+                    break;
+                    case Hyperv:    hypervisorsListInUse.add(HypervisorType.Hyperv);
+                    break;
+                    case LXC:       hypervisorsListInUse.add(HypervisorType.LXC);
+                    break;
                     }
                 }
             } catch (SQLException e) {
@@ -284,19 +284,19 @@ public class Upgrade410to420 implements DbUpgrade {
 
             Map<HypervisorType, String> NewTemplateNameList = new HashMap<HypervisorType, String>(){
                 {   put(HypervisorType.XenServer, "systemvm-xenserver-4.2");
-                    put(HypervisorType.VMware, "systemvm-vmware-4.2");
-                    put(HypervisorType.KVM, "systemvm-kvm-4.2");
-                    put(HypervisorType.LXC, "systemvm-lxc-4.2");
-                    put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
+                put(HypervisorType.VMware, "systemvm-vmware-4.2");
+                put(HypervisorType.KVM, "systemvm-kvm-4.2");
+                put(HypervisorType.LXC, "systemvm-lxc-4.2");
+                put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
                 }
             };
 
             Map<HypervisorType, String> routerTemplateConfigurationNames = new HashMap<HypervisorType, String>(){
                 {   put(HypervisorType.XenServer, "router.template.xen");
-                    put(HypervisorType.VMware, "router.template.vmware");
-                    put(HypervisorType.KVM, "router.template.kvm");
-                    put(HypervisorType.LXC, "router.template.lxc");
-                    put(HypervisorType.Hyperv, "router.template.hyperv");
+                put(HypervisorType.VMware, "router.template.vmware");
+                put(HypervisorType.KVM, "router.template.kvm");
+                put(HypervisorType.LXC, "router.template.lxc");
+                put(HypervisorType.Hyperv, "router.template.hyperv");
                 }
             };
 
@@ -376,17 +376,17 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
-        */
-	}
+         */
+    }
 
-        //KVM snapshot flag: only turn on if Customers is using snapshot;
+    //KVM snapshot flag: only turn on if Customers is using snapshot;
     private void setKVMSnapshotFlag(Connection conn) {
         s_logger.debug("Verify and set the KVM snapshot flag if snapshot was used. ");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-                int numRows = 0;
-                pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
+            int numRows = 0;
+            pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
             rs = pstmt.executeQuery();
             if(rs.next()){
                 numRows = rs.getInt(1);
@@ -394,7 +394,7 @@ public class Upgrade410to420 implements DbUpgrade {
             rs.close();
             pstmt.close();
             if (numRows > 0){
-              //Add the configuration flag
+                //Add the configuration flag
                 pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'kvm.snapshot.enabled'");
                 pstmt.setString(1, "true");
                 pstmt.executeUpdate();
@@ -416,9 +416,9 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Done set KVM snapshot flag. ");
     }
 
-	private void updatePrimaryStore(Connection conn) {
-	    PreparedStatement sql = null;
-	    PreparedStatement sql2 = null;
+    private void updatePrimaryStore(Connection conn) {
+        PreparedStatement sql = null;
+        PreparedStatement sql2 = null;
         try {
             sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
             sql.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
@@ -446,7 +446,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
-	}
+    }
 
     //update the cluster_details table with default overcommit ratios.
     private void updateCluster_details(Connection conn) {
@@ -484,8 +484,8 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
 
-	@Override
-	public File[] getCleanupScripts() {
+    @Override
+    public File[] getCleanupScripts() {
         String script = Script.findScript("", "db/schema-410to420-cleanup.sql");
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-410to420-cleanup.sql");
@@ -749,18 +749,18 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt = conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
-                    Long networkId = rs.getLong(1);
-                    String gateway = rs.getString(2);
-                    String ip = rs.getString(3);
-                    String uuid = UUID.randomUUID().toString();
-                    //Insert placeholder nic for each Domain router nic in Shared network
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
-                    pstmt.setString(1, uuid);
-                    pstmt.setString(2, ip);
-                    pstmt.setString(3, gateway);
-                    pstmt.setLong(4, networkId);
-                    pstmt.executeUpdate();
-                    s_logger.debug("Created placeholder nic for the ipAddress " + ip + " and network " + networkId);
+                Long networkId = rs.getLong(1);
+                String gateway = rs.getString(2);
+                String ip = rs.getString(3);
+                String uuid = UUID.randomUUID().toString();
+                //Insert placeholder nic for each Domain router nic in Shared network
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
+                pstmt.setString(1, uuid);
+                pstmt.setString(2, ip);
+                pstmt.setString(3, gateway);
+                pstmt.setLong(4, networkId);
+                pstmt.executeUpdate();
+                s_logger.debug("Created placeholder nic for the ipAddress " + ip + " and network " + networkId);
 
             }
         } catch (SQLException e) {
@@ -788,14 +788,14 @@ public class Upgrade410to420 implements DbUpgrade {
             rs = pstmt.executeQuery();
             long id=1;
             while (rs.next()) {
-                    String uuid = UUID.randomUUID().toString();
-                    Long ipId = rs.getLong(1);
-                    pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
-                    pstmt.setString(1, uuid);
-                    pstmt.setLong(2, id);
-                    pstmt.setLong(3, ipId);
-                    pstmt.executeUpdate();
-                    id++;
+                String uuid = UUID.randomUUID().toString();
+                Long ipId = rs.getLong(1);
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
+                pstmt.setString(1, uuid);
+                pstmt.setLong(2, id);
+                pstmt.setLong(3, ipId);
+                pstmt.executeUpdate();
+                id++;
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
@@ -1152,15 +1152,15 @@ public class Upgrade410to420 implements DbUpgrade {
                 String uuid = UUID.randomUUID().toString();
                 //Add internal LB VM to the list of physical network service providers
                 pstmt = conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` " +
-                		"(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
-                		" VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
+                        "(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
+                        " VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
                 pstmt.setString(1, uuid);
                 pstmt.setLong(2, pNtwkId);
                 pstmt.executeUpdate();
 
                 //Add internal lb vm to the list of physical network elements
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
-                		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                        " WHERE physical_network_id=? AND provider_name='InternalLbVm'");
                 pstmt1.setLong(1, pNtwkId);
                 ResultSet rs1 = pstmt1.executeQuery();
                 while (rs1.next()) {
@@ -1950,7 +1950,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
         try {
             snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, path, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and sechost_id is not null and removed is null");
+                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', path), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and sechost_id is not null and removed is null");
             snapshotStoreInsert.executeUpdate();
         }
         catch (SQLException e) {
@@ -1966,7 +1966,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void fixNiciraKeys(Connection conn) {
         //First drop the key if it exists.
         List<String> keys = new ArrayList<String>();
@@ -1991,7 +1991,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void fixRouterKeys(Connection conn) {
         //First drop the key if it exists.
         List<String> keys = new ArrayList<String>();
@@ -2027,8 +2027,8 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt = conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
-                   pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
-                   pstmt.executeUpdate();
+                    pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
+                    pstmt.executeUpdate();
                 }
             }catch (SQLException e) {
                 throw new CloudRuntimeException("migration of concurrent connections from network_detais failed");
