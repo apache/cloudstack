@@ -74,6 +74,12 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return listBy(sc);
     }
 
+    @Override
+    public  int  countAllocatedVnets(long physicalNetworkId){
+        SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return listBy(sc).size();
+    }
     public List<DataCenterVnetVO> listAllocatedVnetsInRange(long dcId, long physicalNetworkId, Integer start, Integer end) {
         SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocatedInRange.create();
         sc.setParameters("dc",dcId);

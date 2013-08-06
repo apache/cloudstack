@@ -48,4 +48,6 @@ public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
     public int countVnetsDedicatedToAccount(long dcId, long accountId);
 
     List<String> listVnetsByPhysicalNetworkAndDataCenter(long dcId, long physicalNetworkId);
+
+    int  countAllocatedVnets(long physicalNetworkId);
 }
