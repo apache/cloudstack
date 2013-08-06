@@ -3684,6 +3684,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setGateway(ipRange.getGateway());
         response.setNetmask(ipRange.getNetmask());
         response.setRegionId(ipRange.getRegionId());
+        response.setObjectName("portableiprange");
         return response;
     }
 
@@ -3730,7 +3731,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setState(portableIp.getState().name());
-
+        response.setObjectName("portableip");
         return response;
     }
 
