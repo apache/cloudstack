@@ -93,6 +93,10 @@ public class GlobalLoadBalancerConfigCommand extends Command {
         return revoked;
     }
 
+    public void setForRevoke(boolean revoke) {
+        this.revoked = revoke;
+    }
+
     @Override
     public boolean executeInSequence() {
         return false;
