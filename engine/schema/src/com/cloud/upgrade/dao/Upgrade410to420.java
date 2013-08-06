@@ -318,7 +318,7 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt.close();
             if (numRows > 0){
               //Add the configuration flag
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'KVM.snapshot.enabled'");
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'kvm.snapshot.enabled'");
                 pstmt.setString(1, "true");
                 pstmt.executeUpdate();
             }

@@ -910,7 +910,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 		}
 
         //Turn off snapshot by default for KVM, unless it is set in the global flag
-        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
         if (!snapshotEnabled) {
              return false;
         }
