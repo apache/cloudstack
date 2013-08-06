@@ -1089,7 +1089,8 @@ class TestResourceTags(cloudstackTestCase):
                         key='OS',
                         value='CentOS',
                         account=self.account.name,
-                        domainid=self.account.domainid
+                        domainid=self.account.domainid,
+                        isofilter='all'
                     )
 
         self.assertEqual(
