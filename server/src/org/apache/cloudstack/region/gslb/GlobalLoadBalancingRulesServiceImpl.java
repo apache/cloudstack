@@ -661,7 +661,6 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         for (Pair<Long,Long> zoneId: gslbSiteIds) {
 
             List<SiteLoadBalancerConfig> slbs = new ArrayList<SiteLoadBalancerConfig>();
-
             // set site as 'local' for the site in that zone
             for (Pair<Long,Long> innerLoopZoneId: gslbSiteIds) {
                 SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(innerLoopZoneId.first());
@@ -670,6 +669,14 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             gslbConfigCmd.setSiteLoadBalancers(slbs);
+            gslbConfigCmd.setForRevoke(revoke);
+
+            // revoke GSLB configuration completely on the site GSLB provider for the sites that no longer
+            // are participants of a GSLB rule
+            SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(zoneId.first());
+            if (siteLb.forRevoke()) {
+                gslbConfigCmd.setForRevoke(true);
+            }
 
             try {
                 _gslbProvider.applyGlobalLoadBalancerRule(zoneId.first(), zoneId.second(), gslbConfigCmd);
