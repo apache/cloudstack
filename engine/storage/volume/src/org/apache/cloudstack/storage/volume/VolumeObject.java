@@ -474,6 +474,9 @@ public class VolumeObject implements VolumeInfo {
                     if (newVol.getSize() != null) {
                         vol.setSize(newVol.getSize());
                     }
+                    if (newVol.getFormat() != null) {
+                        vol.setFormat(newVol.getFormat());
+                    }
                     vol.setPoolId(this.getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 } else if (answer instanceof CreateObjectAnswer) {
@@ -485,6 +488,9 @@ public class VolumeObject implements VolumeInfo {
                         vol.setSize(newVol.getSize());
                     }
                     vol.setPoolId(this.getDataStore().getId());
+                    if (newVol.getFormat() != null) {
+                        vol.setFormat(newVol.getFormat());
+                    }
                     volumeDao.update(vol.getId(), vol);
                 }
             } else {

@@ -104,6 +104,7 @@ public class Upgrade412to420 implements DbUpgrade {
         fixRouterKeys(conn);
         updateConcurrentConnectionsInNetworkOfferings(conn);
         migrateDatafromIsoIdInVolumesTable(conn);
+        setRAWformatForRBDVolumes(conn);
     }
 
     private void movePrivateZoneToDedicatedResource(Connection conn) {
@@ -2261,6 +2262,16 @@ public class Upgrade412to420 implements DbUpgrade {
         }catch (SQLException e) {
             //implies iso_id1 is not present, so do nothing.
         }
+    }
 
+    protected void setRAWformatForRBDVolumes(Connection conn) {
+        PreparedStatement pstmt = null;
+        try {
+            s_logger.debug("Setting format to RAW for all volumes on RBD primary storage pools");
+            pstmt = conn.prepareStatement("UPDATE volumes SET format = 'RAW' WHERE pool_id IN(SELECT id FROM storage_pool WHERE pool_type = 'RBD')");
+            pstmt.executeQuery();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to update volume format to RAW for volumes on RBD pools");
+        }
     }
 }
