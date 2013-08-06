@@ -293,7 +293,7 @@ public class VolumeObject implements VolumeInfo {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed
                     && (this.volumeVO.getState() != Volume.State.Copying && this.volumeVO.getState() != Volume.State.Uploaded)) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
 
@@ -309,7 +309,7 @@ public class VolumeObject implements VolumeInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -504,7 +504,7 @@ public class VolumeObject implements VolumeInfo {
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }
@@ -593,7 +593,7 @@ public class VolumeObject implements VolumeInfo {
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }
