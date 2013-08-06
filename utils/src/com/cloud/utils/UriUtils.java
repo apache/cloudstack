@@ -108,17 +108,22 @@ public class UriUtils {
         HttpsURLConnection httpsConn = null;
         try {
             URI uri = new URI(url);
-            if(uri.getScheme().equalsIgnoreCase("http")) {
+            if (uri.getScheme().equalsIgnoreCase("http")) {
                 httpConn = (HttpURLConnection) uri.toURL().openConnection();
                 if (httpConn != null) {
-                    remoteSize = Long.parseLong(httpConn.getHeaderField("content-length"));
+                    String contentLength = httpConn.getHeaderField("content-length");
+                    if (contentLength != null) {
+                        remoteSize = Long.parseLong(contentLength);
+                    }
                     httpConn.disconnect();
                 }
-            }
-            else if(uri.getScheme().equalsIgnoreCase("https")) {
+            } else if (uri.getScheme().equalsIgnoreCase("https")) {
                 httpsConn = (HttpsURLConnection) uri.toURL().openConnection();
                 if (httpsConn != null) {
-                    remoteSize = Long.parseLong(httpsConn.getHeaderField("content-length"));
+                    String contentLength = httpsConn.getHeaderField("content-length");
+                    if (contentLength != null) {
+                        remoteSize = Long.parseLong(contentLength);
+                    }
                     httpsConn.disconnect();
                 }
             }
