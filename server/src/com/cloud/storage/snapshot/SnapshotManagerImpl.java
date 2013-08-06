@@ -1036,7 +1036,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
         _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
-        backup = Boolean.parseBoolean(_configDao.getValue(Config.BackupSnapshotAferTakingSnapshot.toString()));
+        backup = Boolean.parseBoolean(_configDao.getValue(Config.BackupSnapshotAfterTakingSnapshot.toString()));
 
         Type.HOURLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         Type.DAILY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.daily"), DAILYMAX));
