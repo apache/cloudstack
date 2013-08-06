@@ -1337,6 +1337,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             Volume.class.getName(), volume.getUuid());
                 }
             }
+            // Mark volume as removed if volume has not been created on primary or secondary
+            if (volume.getState() == Volume.State.Allocated) {
+                _volsDao.remove(volumeId);
+                stateTransitTo(volume, Volume.Event.DestroyRequested);
+                return true;
+            }
             // expunge volume from primary if volume is on primary
             VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
             if (volOnPrimary != null) {
