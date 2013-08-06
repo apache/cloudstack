@@ -4362,6 +4362,10 @@ ServerResource {
                 }
             }
         } catch (LibvirtException e) {
+            if (e.getMessage().contains("Domain not found")) {
+                s_logger.debug("VM " + vmName + " doesn't exist, no need to stop it");
+                return null;
+            }
             s_logger.debug("Failed to stop VM :" + vmName + " :", e);
             return e.getMessage();
         } catch (InterruptedException ie) {
