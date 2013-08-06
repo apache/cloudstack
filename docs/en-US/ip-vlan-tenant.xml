@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="ip-vlan-tenant">
-  <title>Reserving Public IP Addresses and VLANs for Account</title>
+  <title>Reserving Public IP Addresses and VLANs for Accounts</title>
   <para>&PRODUCT; provides you the ability to reserve a set of public IP addresses and VLANs
     exclusively for an account. During zone creation, you can continue defining a set of VLANs and
     multiple public IP ranges. This feature extends the functionality to enable you to dedicate a
