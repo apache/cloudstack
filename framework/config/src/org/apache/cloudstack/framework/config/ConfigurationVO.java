@@ -55,7 +55,7 @@ public class ConfigurationVO implements Configuration {
     private String category;
 
     @Column(name = "is_dynamic")
-    private boolean isDynamic;
+    private boolean dynamic;
 
     @Column(name = "scope")
     private String scope;
@@ -135,16 +135,28 @@ public class ConfigurationVO implements Configuration {
         this.description = description;
     }
 
-    public String getScope(String scope) {
+    public String getScope() {
         return scope;
     }
 
     public boolean isDynamic() {
-        return isDynamic;
+        return dynamic;
+    }
+
+    public void setDynamic(boolean dynamic) {
+        this.dynamic = dynamic;
     }
 
     public String getDefaultValue() {
         return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     public Date getUpdated() {

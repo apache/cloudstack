@@ -17,6 +17,7 @@
 package org.apache.cloudstack.framework.config;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -49,14 +50,28 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     
     @Override
     public void populateConfigurations() {
+        Date date = new Date();
         for (Configurable configurable : _configurables) {
             for (ConfigKey<?> key : configurable.getConfigKeys()) {
                 ConfigurationVO vo = _configDao.findById(key.key());
                 if (vo == null) {
                     vo = new ConfigurationVO(configurable.getConfigComponentName(), key);
+                    vo.setUpdated(date);
                     _configDao.persist(vo);
+                } else {
+                    if (vo.isDynamic() != key.isDynamic() ||
+                            !vo.getDescription().equals(key.description()) ||
+                            !vo.getDefaultValue().equals(key.defaultValue())) {
+                        vo.setDynamic(key.isDynamic());
+                        vo.setDescription(key.description());
+                        vo.setDefaultValue(key.defaultValue());
+                        vo.setUpdated(date);
+                        _configDao.persist(vo);
+                    }
                 }
             }
+
+            // TODO: Missing code to remove the updated field if the a configurationVO's name cannot be found any more.
         }
     }
 
