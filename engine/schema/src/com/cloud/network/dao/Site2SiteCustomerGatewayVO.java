@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -50,6 +51,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Column(name="guest_cidr_list")
     private String guestCidrList;
 
+    @Encrypt
     @Column(name="ipsec_psk")
     private String ipsecPsk;
 
