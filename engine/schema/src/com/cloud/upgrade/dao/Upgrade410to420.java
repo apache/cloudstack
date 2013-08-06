@@ -32,12 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import com.cloud.utils.crypt.DBEncryptionUtil;
+
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -89,7 +92,7 @@ public class Upgrade410to420 implements DbUpgrade {
         correctExternalNetworkDevicesSetup(conn);
         removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
         fix22xKVMSnapshots(conn);
-	setKVMSnapshotFlag(conn);
+        setKVMSnapshotFlag(conn);
         addIndexForAlert(conn);
         fixBaremetalForeignKeys(conn);
         // storage refactor related migration
@@ -172,6 +175,79 @@ public class Upgrade410to420 implements DbUpgrade {
             try {
                 if (pstmt != null) {
                     pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+    }
+
+
+    private void dropUploadTable(Connection conn) {
+
+        PreparedStatement pstmt0 = null;
+        PreparedStatement pstmt1 = null;
+        PreparedStatement pstmt2 = null;
+        PreparedStatement pstmt3 = null;
+
+        ResultSet rs0 = null;
+        ResultSet rs2 = null;
+
+        try {
+            // Read upload table - Templates
+            s_logger.debug("Populating template_store_ref table");
+            pstmt0 = conn.prepareStatement("SELECT url, created, type_id, host_id from upload where type=?");
+            pstmt0.setString(1, "TEMPLATE");
+            rs0 = pstmt0.executeQuery();
+            pstmt1 = conn.prepareStatement("UPDATE template_store_ref SET download_url=?, download_url_created=? where template_id=? and store_id=?");
+
+            //Update template_store_ref
+            while(rs0.next()){
+                pstmt1.setString(1, rs0.getString("url"));
+                pstmt1.setDate(2, rs0.getDate("created"));
+                pstmt1.setLong(3, rs0.getLong("type_id"));
+                pstmt1.setLong(4, rs0.getLong("host_id"));
+                pstmt1.executeUpdate();
+            }
+
+
+
+            // Read upload table - Volumes
+            s_logger.debug("Populating volume store ref table");
+            pstmt2 = conn.prepareStatement("SELECT url, created, type_id, host_id, install_path from upload where type=?");
+            pstmt2.setString(1, "VOLUME");
+            rs2 = pstmt2.executeQuery();
+
+            pstmt3 = conn.prepareStatement("INSERT IGNORE INTO volume_store_ref (volume_id, store_id, zone_id, created, state, download_url, download_url_created, install_path) VALUES (?,?,?,?,?,?,?,?)");
+            //insert into template_store_ref
+            while(rs2.next()){
+                pstmt3.setLong(1, rs2.getLong("type_id"));
+                pstmt3.setLong(2, rs2.getLong("host_id"));
+                pstmt3.setLong(3, 1l);// ???
+                pstmt3.setDate(4, rs2.getDate("created"));
+                pstmt3.setString(5, "Ready");
+                pstmt3.setString(6, rs2.getString("url"));
+                pstmt3.setDate(7, rs2.getDate("created"));
+                pstmt3.setString(8, rs2.getString("install_path"));
+                pstmt3.executeUpdate();
+            }
+
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
+        } finally {
+            try {
+                if (pstmt0 != null) {
+                    pstmt0.close();
+                }
+                if (pstmt1 != null) {
+                    pstmt1.close();
+                }
+                if (pstmt2 != null) {
+                    pstmt2.close();
+                }
+                if (pstmt3 != null) {
+                    pstmt3.close();
                 }
             } catch (SQLException e) {
             }
@@ -305,14 +381,14 @@ public class Upgrade410to420 implements DbUpgrade {
          */
     }
 
-        //KVM snapshot flag: only turn on if Customers is using snapshot;
+    //KVM snapshot flag: only turn on if Customers is using snapshot;
     private void setKVMSnapshotFlag(Connection conn) {
         s_logger.debug("Verify and set the KVM snapshot flag if snapshot was used. ");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-                int numRows = 0;
-                pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
+            int numRows = 0;
+            pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
             rs = pstmt.executeQuery();
             if(rs.next()){
                 numRows = rs.getInt(1);
@@ -320,7 +396,7 @@ public class Upgrade410to420 implements DbUpgrade {
             rs.close();
             pstmt.close();
             if (numRows > 0){
-              //Add the configuration flag
+                //Add the configuration flag
                 pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'kvm.snapshot.enabled'");
                 pstmt.setString(1, "true");
                 pstmt.executeUpdate();
@@ -342,9 +418,9 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Done set KVM snapshot flag. ");
     }
 
-	private void updatePrimaryStore(Connection conn) {
-	    PreparedStatement sql = null;
-	    PreparedStatement sql2 = null;
+    private void updatePrimaryStore(Connection conn) {
+        PreparedStatement sql = null;
+        PreparedStatement sql2 = null;
         try {
             sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
             sql.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
@@ -1876,7 +1952,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
         try {
             snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, path, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and sechost_id is not null and removed is null");
+                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', path), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and sechost_id is not null and removed is null");
             snapshotStoreInsert.executeUpdate();
         }
         catch (SQLException e) {
@@ -1892,7 +1968,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void fixNiciraKeys(Connection conn) {
         //First drop the key if it exists.
         List<String> keys = new ArrayList<String>();
@@ -1917,7 +1993,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void fixRouterKeys(Connection conn) {
         //First drop the key if it exists.
         List<String> keys = new ArrayList<String>();
@@ -1941,7 +2017,9 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
-    }    private void encryptSite2SitePSK(Connection conn) {
+    }
+
+    private void encryptSite2SitePSK(Connection conn) {
         s_logger.debug("Encrypting Site2Site Customer Gateway pre-shared key");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1977,5 +2055,64 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
         s_logger.debug("Done encrypting Site2Site Customer Gateway pre-shared key");
+    }
+
+    protected void updateConcurrentConnectionsInNetworkOfferings(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        ResultSet rs1 = null;
+        ResultSet rs2 = null;
+        try {
+            try {
+                pstmt = conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");
+                rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
+                    pstmt.executeUpdate();
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("migration of concurrent connections from network_detais failed");
+            }
+
+
+
+            pstmt = conn.prepareStatement("select network_id, value from `cloud`.`network_details` where name='maxconnections'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long networkId = rs.getLong(1);
+                int maxconnections = Integer.parseInt(rs.getString(2));
+                pstmt = conn.prepareStatement("select network_offering_id from `cloud`.`networks` where id= ?");
+                pstmt.setLong(1, networkId);
+                rs1 = pstmt.executeQuery();
+                if (rs1.next()) {
+                    long network_offering_id = rs1.getLong(1);
+                    pstmt = conn.prepareStatement("select concurrent_connections from `cloud`.`network_offerings` where id= ?");
+                    pstmt.setLong(1,network_offering_id);
+                    rs2 = pstmt.executeQuery();
+                    if ((!rs2.next()) || (rs2.getInt(1) < maxconnections)) {
+                        pstmt = conn.prepareStatement("update network_offerings set concurrent_connections=? where id=?");
+                        pstmt.setInt(1, maxconnections);
+                        pstmt.setLong(2, network_offering_id);
+                        pstmt.executeUpdate();
+                    }
+                }
+            }
+        } catch (SQLException e) {
+        }
+        finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (rs1 != null) {
+                    rs1.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
     }
 }
