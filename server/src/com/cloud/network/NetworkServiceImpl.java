@@ -2713,6 +2713,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (vnetRanges.size() == 0) {
             //this implies remove all vlans.
             removeVnets.addAll(vnetsInDb);
+            int allocated_vnets = _datacneter_vnet.countAllocatedVnets(network.getId());
+            if (allocated_vnets > 0) {
+                throw new InvalidParameterValueException("physicalnetwork "+ network.getId() + " has "+ allocated_vnets + " vnets in use");
+            }
             return removeVnets;
         }
         for (Pair<Integer, Integer>vlan : vnetRanges) {
@@ -2735,7 +2739,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             _datacneter_vnet.lockRange(network.getDataCenterId(), network.getId(), start, end);
             List<DataCenterVnetVO> result = _datacneter_vnet.listAllocatedVnetsInRange(network.getDataCenterId(), network.getId(), start, end);
             if (!result.isEmpty()){
-                throw new InvalidParameterValueException("Some of the vnets from this range are allocated, can only remove a range which has no allocated vnets");
+                throw new InvalidParameterValueException("physicalnetwork "+ network.getId() + " has allocated vnets in the range "+ start+"-"+end);
+
             }
             // If the range is partially dedicated to an account fail the request
             List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(network.getId());
