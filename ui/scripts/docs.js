@@ -660,6 +660,43 @@ cloudStack.docs = {
         desc: 'The exported path from the server',
         externalLink: ''
     },
+    // S3
+    helpS3AccessKey: {
+        desc: 'This identifies the S3 user account',
+        externalLink: ''
+    },
+    helpS3SecretKey: {
+        desc: 'The password matching the S3 Access Key',
+        externalLink: ''
+    },
+    helpS3Bucket: {
+        desc: 'The S3 bucket to store CloudStack data in. The bucket must be created and owned by the same user identified by the S3 Access Key',
+        externalLink: ''
+    },
+    helpS3Endpoint: {
+        desc: 'The S3 server to use. Non-standard ports can be appended to the hostname as per s3.amazonaws.com:8080',
+        externalLink: ''
+    },
+    helpS3ConnectionTimeout: {
+        desc: 'The number of milliseconds to wait when establishing an S3 connection. This is optional',
+        externalLink: ''
+    },
+    helpS3MaxErrorRetry: {
+        desc: 'The number of times to retry S3 requests before failing. This is optional',
+        externalLink: ''
+    },
+    helpS3SocketTimeout: {
+        desc: 'The number of milliseconds to wait while reading an S3 response. This is optional',
+        externalLink: ''
+    },
+    helpNFSStagingServer: {
+        desc: 'The name or IP address of the NFS secondary staging server',
+        externalLink: ''
+    },
+    helpNFSStagingPath: {
+        desc: 'The exported path to use on the NFS staging server',
+        externalLink: ''
+    },
     // Add SRX
     helpSRXIPAddress: {
         desc: 'The IP address of the device',
