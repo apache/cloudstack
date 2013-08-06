@@ -14525,24 +14525,28 @@
                                             //S3 (begin)
                                             accesskey: {
                                                 label: 'label.s3.access_key',
+                                                docID: 'helpS3AccessKey',
                                                 validation: {
                                                     required: true
                                                 }
                                             },
                                             secretkey: {
                                                 label: 'label.s3.secret_key',
+                                                docID: 'helpS3SecretKey',
                                                 validation: {
                                                     required: true
                                                 }
                                             },
                                             bucket: {
                                                 label: 'label.s3.bucket',
+                                                docID: 'helpS3Bucket',
                                                 validation: {
                                                     required: true
                                                 }
                                             },
                                             endpoint: {
-                                                label: 'label.s3.endpoint'
+                                                label: 'label.s3.endpoint',
+                                                docID: 'helpS3Endpoint'
                                             },
                                             usehttps: {
                                                 label: 'label.s3.use_https',
@@ -14552,13 +14556,16 @@
                                                 converter: cloudStack.converters.toBooleanText
                                             },
                                             connectiontimeout: {
-                                                label: 'label.s3.connection_timeout'
+                                                label: 'label.s3.connection_timeout',
+                                                docID: 'helpS3ConnectionTimeout'
                                             },
                                             maxerrorretry: {
-                                                label: 'label.s3.max_error_retry'
+                                                label: 'label.s3.max_error_retry',
+                                                docID: 'helpS3MaxErrorRetry'
                                             },
                                             sockettimeout: {
-                                                label: 'label.s3.socket_timeout'
+                                                label: 'label.s3.socket_timeout',
+                                                docID: 'helpS3SocketTimeout'
                                             },
 
                                             createNfsCache: {
@@ -14602,6 +14609,7 @@
                                             nfsCacheNfsServer: {
                                                 dependsOn: 'createNfsCache',
                                                 label: 'label.nfs.server',
+                                                docID: 'helpNFSStagingServer',
                                                 validation: {
                                                     required: true
                                                 }
@@ -14609,6 +14617,7 @@
                                             nfsCachePath: {
                                                 dependsOn: 'createNfsCache',
                                                 label: 'label.path',
+                                                docID: 'helpNFSStagingPath',
                                                 validation: {
                                                     required: true
                                                 }
