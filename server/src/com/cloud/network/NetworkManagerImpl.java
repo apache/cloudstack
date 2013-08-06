@@ -831,11 +831,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             Network network =_networkModel.getSystemNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
             String range = allocatedPortableIp.getAddress() + "-" + allocatedPortableIp.getAddress();
             VlanVO vlan = new VlanVO(VlanType.VirtualNetwork, allocatedPortableIp.getVlan(), allocatedPortableIp.getGateway(),
-                    allocatedPortableIp.getNetmask(), dcId, range, network.getId(), network.getId(), null, null, null);
+                    allocatedPortableIp.getNetmask(), dcId, range, network.getId(), physicalNetworkId, null, null, null);
             vlan = _vlanDao.persist(vlan);
 
             // provision the portable IP in to user_ip_address table
-            ipaddr = new IPAddressVO(new Ip(allocatedPortableIp.getAddress()), dcId, networkId, vpcID, network.getId(),
+            ipaddr = new IPAddressVO(new Ip(allocatedPortableIp.getAddress()), dcId, networkId, vpcID, physicalNetworkId,
                     network.getId(), vlan.getId(), true);
             ipaddr.setState(State.Allocated);
             ipaddr.setAllocatedTime(new Date());
@@ -1151,20 +1151,23 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // in user_ip_address and vlan tables so as to emulate portable IP as provisioned in destination data center
         if (srcNetwork.getDataCenterId() != dstNetwork.getDataCenterId()) {
             txn.start();
-            ip.setDataCenterId(dstNetwork.getDataCenterId());
-            ip.setPhysicalNetworkId(dstNetwork.getPhysicalNetworkId());
-            _ipAddressDao.update(ipAddrId, ip);
 
             long physicalNetworkId = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(
                     dstNetwork.getDataCenterId(), TrafficType.Public).getId();
             long publicNetworkId =_networkModel.getSystemNetworkByZoneAndTrafficType(
                     dstNetwork.getDataCenterId(), TrafficType.Public).getId();
 
+            ip.setDataCenterId(dstNetwork.getDataCenterId());
+            ip.setPhysicalNetworkId(physicalNetworkId);
+            ip.setSourceNetworkId(publicNetworkId);
+            _ipAddressDao.update(ipAddrId, ip);
+
             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
             vlan.setPhysicalNetworkId(physicalNetworkId);
             vlan.setNetworkId(publicNetworkId);
             vlan.setDataCenterId(dstNetwork.getDataCenterId());
             _vlanDao.update(ip.getVlanId(), vlan);
+
             txn.commit();
         }
 
