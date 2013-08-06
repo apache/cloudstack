@@ -423,6 +423,8 @@ CREATE TABLE nic_secondary_ips (
 
 ALTER TABLE `cloud`.`nics` ADD COLUMN secondary_ip SMALLINT DEFAULT '0' COMMENT 'secondary ips configured for the nic';
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN dnat_vmip VARCHAR(40);
+UPDATE `cloud`.`user_ip_address`,`cloud`.`nics` SET `user_ip_address`.`dnat_vmip` = `nics`.`ip4_address`
+      WHERE `user_ip_address`.`vm_id` = `nics`.`instance_id` AND `user_ip_address`.`network_id` = `nics`.`network_id` AND `user_ip_address`.`one_to_one_nat` = 1;
 
 ALTER TABLE `cloud`.`alert` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`event` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
