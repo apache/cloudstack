@@ -555,8 +555,8 @@ class VirtualMachine:
             response = apiclient.resetPasswordForVirtualMachine(cmd)
         except Exception as e:
             raise Exception("Reset Password failed! - %s" % e)
-        if isinstance(response, list):
-            return response[0].password
+        if response is not None:
+            return response.password
 
     def assign_virtual_machine(self, apiclient, account, domainid):
         """Move a user VM to another user under same domain."""
@@ -1258,6 +1258,45 @@ class StaticNATRule:
         cmd.ipaddressid = ipaddressid
         apiclient.disableStaticNat(cmd)
         return
+
+
+class EgressFireWallRule:
+    """Manage Egress Firewall rule"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, networkid, protocol, cidrlist=None,
+               startport=None, endport=None):
+        """Create Egress Firewall Rule"""
+        cmd = createEgressFirewallRule.createEgressFirewallRuleCmd()
+        cmd.networkid = networkid
+        cmd.protocol = protocol
+        if cidrlist:
+            cmd.cidrlist = cidrlist
+        if startport:
+            cmd.startport = startport
+        if endport:
+            cmd.endport = endport
+
+        return EgressFireWallRule(apiclient.createEgressFirewallRule(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Egress Firewall rule"""
+        cmd = deleteEgressFirewallRule.deleteEgressFirewallRuleCmd()
+        cmd.id = self.id
+        apiclient.deleteEgressFirewallRule(cmd)
+        return
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all Egress Firewall Rules matching criteria"""
+
+        cmd = listEgressFirewallRules.listEgressFirewallRulesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listEgressFirewallRules(cmd))
+
 
 
 class FireWallRule:
