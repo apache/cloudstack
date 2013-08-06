@@ -787,6 +787,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     qemu.convert(sourceFile, destFile);
                 }
             } else {
+                format = PhysicalDiskFormat.RAW;
                 disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
                 disk.setFormat(format);
                 disk.setSize(template.getVirtualSize());

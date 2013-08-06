@@ -199,7 +199,16 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(primaryVol.getName());
-            newTemplate.setFormat(ImageFormat.QCOW2);
+
+            /**
+             * Force the ImageFormat for RBD templates to RAW
+             *
+             */
+            if (primaryPool.getType() == StoragePoolType.RBD) {
+                newTemplate.setFormat(ImageFormat.RAW);
+            } else {
+                newTemplate.setFormat(ImageFormat.QCOW2);
+            }
             return new CopyCmdAnswer(newTemplate);
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());
@@ -290,6 +299,12 @@ public class KVMStorageProcessor implements StorageProcessor {
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
             newVol.setSize(volume.getSize());
+
+            if (vol.getFormat() == PhysicalDiskFormat.RAW) {
+                newVol.setFormat(ImageFormat.RAW);
+            } else if (vol.getFormat() == PhysicalDiskFormat.QCOW2) {
+                newVol.setFormat(ImageFormat.QCOW2);
+            }
 
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
@@ -985,6 +1000,15 @@ public class KVMStorageProcessor implements StorageProcessor {
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vol.getName());
             newVol.setSize(volume.getSize());
+
+            /**
+             * Volumes on RBD are always in RAW format
+             * Hardcode this to RAW since there is no other way right now
+             */
+            if (primaryPool.getType() == StoragePoolType.RBD) {
+                newVol.setFormat(ImageFormat.RAW);
+            }
+
             return new CreateObjectAnswer(newVol);
         } catch (Exception e) {
             s_logger.debug("Failed to create volume: " + e.toString());
@@ -1120,6 +1144,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             DataTO destData = cmd.getDestTO();
             PrimaryDataStoreTO pool = (PrimaryDataStoreTO) destData.getDataStore();
             DataStoreTO imageStore = srcData.getDataStore();
+            VolumeObjectTO volume = snapshot.getVolume();
 
             if (!(imageStore instanceof NfsTO)) {
                 return new CopyCmdAnswer("unsupported protocol");
@@ -1135,6 +1160,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                     + snapshotPath);
             KVMPhysicalDisk snapshotDisk = secondaryPool.getPhysicalDisk(snapshotName);
 
+            if (volume.getFormat() == ImageFormat.RAW) {
+                snapshotDisk.setFormat(PhysicalDiskFormat.RAW);
+            } else if (volume.getFormat() == ImageFormat.QCOW2) {
+                snapshotDisk.setFormat(PhysicalDiskFormat.QCOW2);
+            }
+
             String primaryUuid = pool.getUuid();
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getPoolType(), primaryUuid);
             String volUuid = UUID.randomUUID().toString();
@@ -1142,6 +1173,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(disk.getName());
             newVol.setSize(disk.getVirtualSize());
+
+            /**
+             * We have to force the format of RBD volumes to RAW
+             */
+            if (primaryPool.getType() == StoragePoolType.RBD) {
+                newVol.setFormat(ImageFormat.RAW);
+            }
+
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());
