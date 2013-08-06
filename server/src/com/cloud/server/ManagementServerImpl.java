@@ -23,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -148,13 +149,13 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
@@ -1094,6 +1095,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
+        boolean zoneWideStoragePool = false;
         if (canMigrateWithStorage) {
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null,
                     null, null, null, null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
@@ -1107,7 +1109,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (volumePools.isEmpty()) {
                     iterator.remove();
                 } else {
-                    if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
+                    if (srcHost.getHypervisorType() == HypervisorType.VMware || srcHost.getHypervisorType() == HypervisorType.KVM) {
+                        zoneWideStoragePool = checkForZoneWideStoragePool(volumePools);
+                    }
+                    if ((!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) && !zoneWideStoragePool) {
                         requiresStorageMotion.put(host, true);
                     }
                 }
@@ -1167,6 +1172,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> (otherHosts,
                 suitableHosts, requiresStorageMotion);
+    }
+
+    private boolean checkForZoneWideStoragePool(Map<Volume, List<StoragePool>> volumePools) {
+        boolean zoneWideStoragePool = false;
+        Collection<List<StoragePool>> pools = volumePools.values();
+        List<StoragePool> aggregatePoolList = new ArrayList<StoragePool>();
+        for (Iterator<List<StoragePool>> volumePoolsIter = pools.iterator(); volumePoolsIter.hasNext();) {
+            aggregatePoolList.addAll(volumePoolsIter.next());
+        }
+        for (StoragePool pool : aggregatePoolList) {
+            if (null == pool.getClusterId()) {
+                zoneWideStoragePool = true;
+                break;
+            }
+        }
+        return zoneWideStoragePool;
     }
 
     private Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile,
