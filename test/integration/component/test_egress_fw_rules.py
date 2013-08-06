@@ -96,7 +96,6 @@ class Services:
                                                "cpuspeed"    : 100,# in MHz
                                                "storagetype" : "local",
                                                "memory"      : 128},
-                                               #"storagetype" : "local"},
                          "network_offering":  {
                                                "name": 'Network offering-VR services',
                                                "displaytext": 'Network offering-VR services',
@@ -119,7 +118,6 @@ class Services:
                                                "serviceCapabilityList": {
                                                                             "SourceNat": {
                                                                             "SupportedSourceNatTypes": "peraccount",
-                                                                            "RedundantRouter": "false",
                                                                             }
                                                                         },
                                              },
