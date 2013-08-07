@@ -64,6 +64,10 @@ alter table storage_pool change available_bytes used_bytes bigint unsigned;
 -- alter table volume_host_ref add update_count bigint unsigned;
 -- alter table volume_host_ref add updated datetime;
 alter table template_spool_ref add updated datetime;
+UPDATE `cloud`.`template_spool_ref` set state='Ready' WHERE download_state = 'DOWNLOADED';
+UPDATE `cloud`.`template_spool_ref` set update_count=0;
+
+
 CREATE TABLE  `cloud`.`object_datastore_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `datastore_uuid`  varchar(255) NOT NULL,
