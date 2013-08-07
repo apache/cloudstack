@@ -645,30 +645,6 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         aff_1.delete(self.api_client)
 
     @attr(tags=["simulator", "basic", "advanced", "multihost"])
-    def test_04_delete_aff_grp_with_vms(self):
-        """
-            Delete Affinity Group which has vms after updating affinity group for vms in it
-        """
-
-        aff_0 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
-
-        vm1, hostid1 = self.create_vm_in_aff_grps([aff_0.name])
-        vm2, hostid2 = self.create_vm_in_aff_grps([aff_0.name])
-        self.cleanup.extend([vm1, vm2])
-
-        with self.assertRaises(Exception):
-            aff_0.delete(self.api_client)
-
-        vm1.update_affinity_group(self.api_client, affinitygroupnames=[])
-
-        with self.assertRaises(Exception):
-            aff_0.delete(self.api_client)
-
-        vm2.update_affinity_group(self.api_client, affinitygroupnames=[])
-
-        aff_0.delete(self.api_client)
-
-    @attr(tags=["simulator", "basic", "advanced", "multihost"])
     def test_05_delete_aff_grp_id(self):
         """
             Delete Affinity Group with id which does not belong to this user
