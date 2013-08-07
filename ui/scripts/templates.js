@@ -208,6 +208,8 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                 }
                                             });
+
+                                            args.$select.trigger('change');
                                         }
                                     },
 
