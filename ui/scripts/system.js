@@ -14112,7 +14112,7 @@
                                     $.ajax({
                                     	url: createURL('listUcsManagers'),
                                     	data: {
-                			                zoneid: args.context.physicalResources[0].id //to change???
+                                    		id: args.context.physicalResources[0].id 
                 			            },                                      
                                         success: function(json) {
                                             //for testing only (begin)
