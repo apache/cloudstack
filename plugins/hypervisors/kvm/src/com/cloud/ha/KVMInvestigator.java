@@ -31,9 +31,11 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 import org.apache.log4j.Logger;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.List;
 
+@Local(value=Investigator.class)
 public class KVMInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
