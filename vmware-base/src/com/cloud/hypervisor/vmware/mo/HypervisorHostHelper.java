@@ -1172,18 +1172,6 @@ public class HypervisorHostHelper {
                 Thread.sleep(1000);
             }
 
-            if(snapshotDirToParent) {
-                String snapshotDir = String.format("/vmfs/volumes/%s/", dsMo.getName());
-
-                s_logger.info("Switch snapshot working directory to " + snapshotDir + " for " + vmName);
-                vmMo.setSnapshotDirectory(snapshotDir);
-
-                // Don't have a good way to test if the VM is really ready for use through normal API after configuration file manipulation,
-                // delay 3 seconds
-                Thread.sleep(3000);
-            }
-
-            s_logger.info("Blank VM: " + vmName + " is ready for use");
             return true;
         }
         return false;
