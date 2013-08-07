@@ -1298,7 +1298,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setPath(volumeUuid);
-                newVol.setSize(volume.getSize() / (1024L * 1024L));
+                newVol.setSize(volume.getSize());
                 return new CreateObjectAnswer(newVol);
             } finally {
                 s_logger.info("Destroy dummy VM after volume creation");
