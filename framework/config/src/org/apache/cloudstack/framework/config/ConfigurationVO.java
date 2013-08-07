@@ -80,7 +80,7 @@ public class ConfigurationVO implements Configuration {
         this(key.category(), "DEFAULT", component, key.key(), key.defaultValue(), key.description());
         defaultValue = key.defaultValue();
         dynamic = key.isDynamic();
-        scope = key.scope().getName();
+        scope = key.scope() != null ? key.scope().getName() : null;
     }
 
     @Override
@@ -137,10 +137,12 @@ public class ConfigurationVO implements Configuration {
         this.description = description;
     }
 
+    @Override
     public String getScope() {
         return scope;
     }
 
+    @Override
     public boolean isDynamic() {
         return dynamic;
     }
@@ -149,6 +151,7 @@ public class ConfigurationVO implements Configuration {
         this.dynamic = dynamic;
     }
 
+    @Override
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -161,6 +164,7 @@ public class ConfigurationVO implements Configuration {
         this.scope = scope;
     }
 
+    @Override
     public Date getUpdated() {
         return updated;
     }

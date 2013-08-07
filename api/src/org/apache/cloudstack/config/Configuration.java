@@ -57,7 +57,7 @@ public interface Configuration {
     String getDescription();
 
     /**
-     * @return Default value for this parameter.  Cannot be null.
+     * @return Default value for this parameter.  Null indicates this parameter is optional.
      */
     String getDefaultValue();
 

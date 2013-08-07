@@ -87,3 +87,10 @@ CREATE TABLE `cloud`.`async_job_join_map` (
   INDEX `i_async_job_join_map__next_wakeup`(`next_wakeup`),
   INDEX `i_async_job_join_map__expiration`(`expiration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`configuration` ADD COLUMN `default_value` VARCHAR(4095) COMMENT 'Default value for a configuration parameter';
+ALTER TABLE `cloud`.`configuration` ADD COLUMN `updated` datetime COMMENT 'Time this was updated by the server. null means this row is obsolete.';
+ALTER TABLE `cloud`.`configuration` ADD COLUMN `scope` VARCHAR(255) DEFAULT NULL COMMENT 'Can this parameter be scoped';
+ALTER TABLE `cloud`.`configuration` ADD COLUMN `is_dynamic` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Can the parameter be change dynamically without restarting the server';
+
+UPDATE `cloud`.`configuration` SET `default_value` = `value`;

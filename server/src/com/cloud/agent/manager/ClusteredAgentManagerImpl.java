@@ -45,6 +45,8 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -1403,5 +1405,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
         profilerAgentLB.stop();
+    }
+    
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        ConfigKey<?>[] keys = super.getConfigKeys();
+        @SuppressWarnings("unchecked")
+        List<ConfigKey<?>> keysLst = Arrays.asList(keys);
+        keysLst.add(EnableLB);
+        keysLst.add(ConnectedAgentThreshold);
+        keysLst.add(LoadSize);
+        keysLst.add(ScanInterval);
+        return keysLst.toArray(new ConfigKey<?>[keysLst.size()]);
     }
 }

@@ -50,11 +50,11 @@ import com.cloud.utils.db.EntityManager;
  */
 class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Inject
-    EntityManager _entityMgr;
-    
+    EntityManager      _entityMgr;
+
     @Inject
-    ConfigurationDao _configDao;
-    
+    ConfigurationDao   _configDao;
+
     @Inject
     List<Configurable> _configurables;
 
@@ -65,13 +65,12 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     public <T> ConfigValue<T> get(ConfigKey<T> config) {
         return new ConfigValue<T>(_entityMgr, config);
     }
-    
+
     @Override
     public <T> ScopedConfigValue<T> getScopedValue(ConfigKey<T> config) {
         assert (config.scope() != null) : "Did you notice the configuration you're trying to retrieve is not scoped?";
         return new ScopedConfigValue<T>(_entityMgr, config);
     }
-
 
     @Override
     public void populateConfigurations() {
@@ -85,8 +84,10 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                     _configDao.persist(vo);
                 } else {
                     if (vo.isDynamic() != key.isDynamic() ||
-                            !vo.getDescription().equals(key.description()) ||
-                            !vo.getDefaultValue().equals(key.defaultValue())) {
+                        !vo.getDescription().equals(key.description()) ||
+                        ((vo.getDefaultValue() != null && key.defaultValue() == null) ||
+                         (vo.getDefaultValue() == null && key.defaultValue() != null) ||
+                        !vo.getDefaultValue().equals(key.defaultValue()))) {
                         vo.setDynamic(key.isDynamic());
                         vo.setDescription(key.description());
                         vo.setDefaultValue(key.defaultValue());
