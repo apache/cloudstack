@@ -408,11 +408,25 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public ListResponse<UcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd) {
+        List<UcsManagerResponse> rsps = new ArrayList<UcsManagerResponse>();
+        ListResponse<UcsManagerResponse> response = new ListResponse<UcsManagerResponse>();
+    	if (cmd.getId() != null) {
+    		UcsManagerVO vo = ucsDao.findById(cmd.getId());
+            UcsManagerResponse rsp = new UcsManagerResponse();
+            rsp.setObjectName("ucsmanager");
+            rsp.setId(vo.getUuid());
+            rsp.setName(vo.getName());
+            rsp.setUrl(vo.getUrl());
+            rsp.setZoneId(zoneIdToUuid(vo.getZoneId()));
+            rsps.add(rsp);
+            response.setResponses(rsps);
+            return response;
+    	}
+    	
         SearchCriteriaService<UcsManagerVO, UcsManagerVO> serv = SearchCriteria2.create(UcsManagerVO.class);
         serv.addAnd(serv.getEntity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
 
-        List<UcsManagerResponse> rsps = new ArrayList<UcsManagerResponse>(vos.size());
         for (UcsManagerVO vo : vos) {
             UcsManagerResponse rsp = new UcsManagerResponse();
             rsp.setObjectName("ucsmanager");
@@ -422,7 +436,6 @@ public class UcsManagerImpl implements UcsManager {
             rsp.setZoneId(zoneIdToUuid(vo.getZoneId()));
             rsps.add(rsp);
         }
-        ListResponse<UcsManagerResponse> response = new ListResponse<UcsManagerResponse>();
         response.setResponses(rsps);
         return response;
     }
