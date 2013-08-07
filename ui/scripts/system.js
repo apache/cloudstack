@@ -13954,7 +13954,7 @@
 			              },
 			              success: function(json) {	
 			            	  //for testing only (begin)
-			            	  /*	            	  
+			            	  /*            	  
 			            	  json = 
 			            	  {
 			            	      "listucsmanagerreponse": {
@@ -14164,38 +14164,38 @@
                                             data: {
                                                 ucsmanagerid: args.context.ucsManagers[0].id
                                             },
-                                            success: function(json) {
+                                            error: function(json) {
                                                 //for testing only (begin)
                                             	/*
                                             	json = {
-                                                	    "listucsbladeresponse": {
-                                                	        "count": 4,
-                                                	        "ucsblade": [
-                                                	            {
-                                                	                "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
-                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	                "bladedn": "sys/chassis-1/blade-1",
-                                                	                "profiledn": "org-root/ls-profile-for-blade-1"
-                                                	            },
-                                                	            {
-                                                	                "id": "524a3e55-5b61-4561-9464-1b19e3543189",
-                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	                "bladedn": "sys/chassis-1/blade-2",
-                                                	                "profiledn": "org-root/ls-profile-for-blade-2"
-                                                	            },
-                                                	            {
-                                                	                "id": "4828f560-6191-46e6-8a4c-23d1d7d017f0",
-                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	                "bladedn": "sys/chassis-1/blade-3"
-                                                	            },
-                                                	            {
-                                                	                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
-                                                	                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	                "bladedn": "sys/chassis-1/blade-4"
-                                                	            }
-                                                	        ]
-                                                	    }
-                                                	};
+                                                	"listucsbladeresponse": {
+                                                	    "count": 4,
+                                                	    "ucsblade": [
+                                                	        {
+                                                	            "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
+                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	            "bladedn": "sys/chassis-1/blade-1",
+                                                	            "profiledn": "org-root/ls-profile-for-blade-1"
+                                                	        },
+                                                	        {
+                                                	            "id": "524a3e55-5b61-4561-9464-1b19e3543189",
+                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	            "bladedn": "sys/chassis-1/blade-2",
+                                                	            "profiledn": "org-root/ls-profile-for-blade-2"
+                                                	        },
+                                                	        {
+                                                	            "id": "4828f560-6191-46e6-8a4c-23d1d7d017f0",
+                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	            "bladedn": "sys/chassis-1/blade-3"
+                                                	        },
+                                                	        {
+                                                	            "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
+                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                	            "bladedn": "sys/chassis-1/blade-4"
+                                                	        }
+                                                	    ]
+                                                	}
+                                                };  
                                             	*/
                                             	//for testing only (end)
                                             	
@@ -14206,6 +14206,7 @@
                                                     data[i].bladeid = array1[2];
                                                 }
                                                 args.response.success({
+                                                	actionFilter: bladeActionfilter,
                                                     data: data
                                                 });
                                             }
@@ -16418,6 +16419,16 @@
         }
         return allowedActions;
     }
+    
+    var bladeActionfilter = function(args) {    	
+        var jsonObj = args.context.item;
+        var allowedActions = [];
+        if(jsonObj.profiledn == null) {
+        	allowedActions.push("associateProfileToBlade");
+        }        
+        return allowedActions;
+    }
+
     //action filters (end)
 
     var networkProviderActionFilter = function(id) {
