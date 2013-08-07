@@ -60,7 +60,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.StoragePoolDiscoverer;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -408,12 +407,20 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
         List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
+        s_logger.debug("In createPool. Attaching the pool to each of the hosts.");
+        List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
                 this.storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                poolHosts.add(host);
             } catch (Exception e) {
                 s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
+        }
+        if (poolHosts.isEmpty()) {
+            s_logger.warn("No host can access storage pool " + dataStore + " in this zone.");
+            primaryDataStoreDao.expunge(dataStore.getId());
+            throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
         }
         this.dataStoreHelper.attachZone(dataStore, hypervisorType);
         return true;
