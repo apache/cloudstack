@@ -32,7 +32,9 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
@@ -53,6 +55,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -63,6 +66,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
@@ -132,7 +136,8 @@ public class AffinityApiUnitTest {
         when(_processor.getType()).thenReturn("mock");
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
 
-        AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L);
+        AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L,
+                ControlledEntity.ACLType.Account);
         Mockito.when(_affinityGroupDao.persist(Mockito.any(AffinityGroupVO.class))).thenReturn(group);
         Mockito.when(_affinityGroupDao.findById(Mockito.anyLong())).thenReturn(group);
         Mockito.when(_affinityGroupDao.findByAccountAndName(Mockito.anyLong(), Mockito.anyString())).thenReturn(group);
@@ -235,6 +240,11 @@ public class AffinityApiUnitTest {
         }
 
         @Bean
+        public DomainManager domainManager() {
+            return Mockito.mock(DomainManager.class);
+        }
+
+        @Bean
         public EventDao eventDao() {
             return Mockito.mock(EventDao.class);
         }
@@ -247,6 +257,16 @@ public class AffinityApiUnitTest {
         @Bean
         public UserDao userDao() {
             return Mockito.mock(UserDao.class);
+        }
+
+        @Bean
+        public AffinityGroupDomainMapDao affinityGroupDomainMapDao() {
+            return Mockito.mock(AffinityGroupDomainMapDao.class);
+        }
+
+        @Bean
+        public DomainDao domainDao() {
+            return Mockito.mock(DomainDao.class);
         }
 
         public static class Library implements TypeFilter {

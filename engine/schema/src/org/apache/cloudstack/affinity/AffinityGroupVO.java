@@ -20,11 +20,14 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 
 @Entity
 @Table(name = ("affinity_group"))
@@ -52,17 +55,22 @@ public class AffinityGroupVO implements AffinityGroup {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "acl_type")
+    @Enumerated(value = EnumType.STRING)
+    ControlledEntity.ACLType aclType;
+
     public AffinityGroupVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public AffinityGroupVO(String name, String type, String description, long domainId, long accountId) {
+    public AffinityGroupVO(String name, String type, String description, long domainId, long accountId, ACLType aclType) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
     	this.uuid = UUID.randomUUID().toString();
         this.type = type;
+        this.aclType = aclType;
     }
 
     @Override
@@ -102,6 +110,11 @@ public class AffinityGroupVO implements AffinityGroup {
     @Override
     public String getType() {
         return type;
+    }
+
+    @Override
+    public ControlledEntity.ACLType getAclType() {
+        return aclType;
     }
 
     @Override

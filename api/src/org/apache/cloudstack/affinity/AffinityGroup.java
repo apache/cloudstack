@@ -28,4 +28,6 @@ public interface AffinityGroup extends ControlledEntity, InternalIdentity, Ident
 
     String getType();
 
+    ACLType getAclType();
+
 }

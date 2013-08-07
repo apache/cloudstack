@@ -75,4 +75,8 @@ public interface AffinityGroupService {
 
     boolean isAffinityGroupProcessorAvailable(String affinityGroupType);
 
+    boolean isAdminControlledGroup(AffinityGroup group);
+
+    boolean isAffinityGroupAvailableInDomain(long affinityGroupId, long domainId);
+
 }

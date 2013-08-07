@@ -65,7 +65,7 @@ public class AccountVO implements Account {
 
     @Column(name="default_zone_id")
     private Long defaultZoneId = null;
-    
+
     @Column(name = "default")
     boolean isDefault;
 
@@ -77,7 +77,7 @@ public class AccountVO implements Account {
         this.id = id;
     	this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid) {
         this.accountName = accountName;
         this.domainId = domainId;
@@ -161,7 +161,7 @@ public class AccountVO implements Account {
 
     @Override
     public String toString() {
-        return new StringBuilder("Acct[").append(id).append("-").append(accountName).append("]").toString();
+        return new StringBuilder("Acct[").append(uuid).append("-").append(accountName).append("]").toString();
     }
 
     @Override

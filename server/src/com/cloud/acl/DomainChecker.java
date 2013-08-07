@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.api.BaseCmd;
 import org.springframework.stereotype.Component;
 
@@ -121,6 +122,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return true;
         } else if (entity instanceof Network && accessType != null && accessType == AccessType.UseNetwork) {
             _networkMgr.checkNetworkPermissions(caller, (Network) entity);
+        } else if (entity instanceof AffinityGroup) {
+            return false;
         } else {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 Account account = _accountDao.findById(entity.getAccountId());
