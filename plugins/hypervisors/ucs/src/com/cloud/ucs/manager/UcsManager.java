@@ -40,4 +40,6 @@ public interface UcsManager extends Manager, PluggableService {
     UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd);
 
     ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd);
+    
+    void deleteUcsManager(Long id);
 }
