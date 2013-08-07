@@ -186,7 +186,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpClusterName: {
-        desc: 'Any desired cluster name. Used for display only.',
+        desc: 'Cluster name. Used for display only. For VMware hypervisor, this must be a predefined name in VCenter.',
         externalLink: ''
     },
     helpClustervCenterHost: {
