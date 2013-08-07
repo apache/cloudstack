@@ -102,7 +102,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sbuilder.append(scope.getScopeId());
         } else if (scope.getScopeType() == ScopeType.ZONE) {
             sbuilder.append(" and data_center_id = ");
-            sbuilder.append(scope.getScopeId());
+            sbuilder.append(scope.getScopeId());	
         }
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by rand() limit 1");

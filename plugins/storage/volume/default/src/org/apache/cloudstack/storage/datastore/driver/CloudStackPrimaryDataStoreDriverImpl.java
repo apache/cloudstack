@@ -36,6 +36,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.utils.db.DB;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -154,7 +155,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CreateCmdResult result = null;
         try {
             DataTO snapshotTO = snapshot.getTO();
-
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = this.epSelector.select(snapshot);

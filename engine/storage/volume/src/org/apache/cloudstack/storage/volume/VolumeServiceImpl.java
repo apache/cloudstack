@@ -1246,6 +1246,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @Override
+    @DB
     public SnapshotInfo takeSnapshot(VolumeInfo volume) {
         VolumeObject vol = (VolumeObject) volume;
         vol.stateTransit(Volume.Event.SnapshotRequested);

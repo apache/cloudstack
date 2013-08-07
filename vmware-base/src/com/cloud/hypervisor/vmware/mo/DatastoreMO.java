@@ -348,8 +348,15 @@ public class DatastoreMO extends BaseMO {
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
         ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.searchDatastoreSubFolders("[" + getName() + "]", fileName, caseInsensitive);
         if (results.size() > 1) {
-            s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
+        	String errorMessage = "Multiple files with name " + fileName + " exists in datastore " + datastorePath;
+            s_logger.error(errorMessage);
+      
+            // CloudStack specific logic
+            // files in datastore are supposed to be unique across folders, for security reason, we won't make
+            // any choice (pick up one from multiple candidates) but to throw the exception
+            throw new Exception(errorMessage);
         }
+        
         for (HostDatastoreBrowserSearchResults result : results) {
             List<FileInfo> info = result.getFile();
             if (info != null && info.size() > 0) {
