@@ -302,6 +302,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // Update the cloud identifier
         updateCloudIdentifier();
 
+        _configDepotAdmin.populateConfigurations();
+
         // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
         //updateUuids();
         // Set init to true

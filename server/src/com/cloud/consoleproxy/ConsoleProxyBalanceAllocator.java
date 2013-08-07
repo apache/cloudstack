@@ -17,6 +17,7 @@
 package com.cloud.consoleproxy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +28,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.ConsoleProxy;
-
-import edu.emory.mathcs.backport.java.util.Collections;
 
 @Local(value={ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator extends AdapterBase implements ConsoleProxyAllocator {

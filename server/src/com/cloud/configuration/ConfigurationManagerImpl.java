@@ -202,7 +202,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {

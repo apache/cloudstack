@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -76,8 +77,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
     private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", "1440",
@@ -116,7 +115,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public String getConfigComponentName() {
-        return AsyncJobManager.class.getName();
+        return AsyncJobManager.class.getSimpleName();
     }
 
     @Override

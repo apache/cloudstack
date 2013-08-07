@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,8 +45,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 import com.google.gson.Gson;
 
@@ -1410,8 +1409,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         ConfigKey<?>[] keys = super.getConfigKeys();
-        @SuppressWarnings("unchecked")
-        List<ConfigKey<?>> keysLst = Arrays.asList(keys);
+        
+        List<ConfigKey<?>> keysLst = new ArrayList<ConfigKey<?>>();
+        keysLst.addAll(Arrays.asList(keys));
         keysLst.add(EnableLB);
         keysLst.add(ConnectedAgentThreshold);
         keysLst.add(LoadSize);

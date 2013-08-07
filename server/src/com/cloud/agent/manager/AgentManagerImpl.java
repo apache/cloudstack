@@ -1579,7 +1579,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public String getConfigComponentName() {
-        return AgentManager.class.getName();
+        return AgentManager.class.getSimpleName();
     }
 
     @Override
