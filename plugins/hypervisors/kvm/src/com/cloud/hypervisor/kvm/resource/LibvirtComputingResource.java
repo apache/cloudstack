@@ -57,6 +57,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CheckOnHostCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -1281,6 +1282,8 @@ ServerResource {
                 return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand) cmd);
+            } else if (cmd instanceof CheckOnHostCommand) {
+                return execute((CheckOnHostCommand)cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1410,6 +1413,26 @@ ServerResource {
         } catch (ExecutionException e) {
             s_logger.warn("Unable to fence", e);
             return new FenceAnswer(cmd, false, e.getMessage());
+        }
+
+    }
+
+    protected Answer execute(CheckOnHostCommand cmd) {
+        ExecutorService executors = Executors.newSingleThreadExecutor();
+        List<NfsStoragePool> pools = _monitor.getStoragePools();
+        KVMHAChecker ha = new KVMHAChecker(pools, cmd.getHost().getPrivateNetwork().getIp());
+        Future<Boolean> future = executors.submit(ha);
+        try {
+            Boolean result = future.get();
+            if (result) {
+                return new Answer(cmd, false, "Heart is still beating...");
+            } else {
+                return new Answer(cmd);
+            }
+        } catch (InterruptedException e) {
+            return new Answer(cmd, false, "can't get status of host:");
+        } catch (ExecutionException e) {
+            return new Answer(cmd, false, "can't get status of host:");
         }
 
     }

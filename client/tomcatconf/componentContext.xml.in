@@ -173,6 +173,7 @@
           <ref bean="XenServerInvestigator"/>
           <ref bean="UserVmDomRInvestigator"/>
           <ref bean="ManagementIPSystemVMInvestigator"/>
+          <ref bean="KVMInvestigator"/>
       </list>
     </property>
   </bean>
