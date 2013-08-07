@@ -388,4 +388,6 @@ public interface NetworkManager  {
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
 
     void prepareAllNicsForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest);
+
+    void removeDhcpServiceInSubnet(NicVO nic);
 }
