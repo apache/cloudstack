@@ -4017,8 +4017,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             srcDsName = volMgr.getStoragePoolOfVolume(cmd.getVolumeId());
             tgtDsName = poolTo.getUuid().replace("-", "");
 
-            // find VM through datacenter (VM is not at the target host yet)
-            vmMo = srcHyperHost.findVmOnPeerHyperHost(vmName);
+            // find VM in this datacenter not just in this cluster.
+            DatacenterMO dcMo = new DatacenterMO(getServiceContext(), morDc);
+            vmMo = dcMo.findVm(vmName);
+
             if (vmMo == null) {
                 String msg = "VM " + vmName + " does not exist in VMware datacenter " + morDc.getValue();
                 s_logger.error(msg);
