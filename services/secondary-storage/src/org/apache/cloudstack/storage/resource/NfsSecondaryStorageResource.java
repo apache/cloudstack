@@ -1366,7 +1366,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM) {
-            return new Answer(cmd, true, null);
+           return new ListTemplateAnswer(null, null);
         }
 
         DataStoreTO store = cmd.getDataStore();
@@ -1391,7 +1391,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private Answer execute(ListVolumeCommand cmd) {
         if (!_inSystemVM) {
-            return new Answer(cmd, true, null);
+            return new ListVolumeAnswer(cmd.getSecUrl(), null);
         }
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {
