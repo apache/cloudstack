@@ -740,6 +740,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
                 vmMo = hyperHost.findVmOnPeerHyperHost(volume.getVmName());
 
+                if (vmMo == null) {
+                    // This means either the volume is on a zone wide storage pool or VM is deleted by external entity.
+                    // Look for the VM in the datacenter.
+                    ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                    DatacenterMO dcMo = new DatacenterMO(context, dcMor);
+                    vmMo = dcMo.findVm(volume.getVmName());
+                }
+
                 if(vmMo == null) {
                     String msg = "Unable to find the owner VM for volume operation. vm: " + volume.getVmName();
                     s_logger.error(msg);
