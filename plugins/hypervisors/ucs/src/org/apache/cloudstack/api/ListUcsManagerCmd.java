@@ -34,8 +34,10 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -53,6 +55,10 @@ public class ListUcsManagerCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, description="the zone id", entityType=ZoneResponse.class, required=true)
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UcsManagerResponse.class,
+            description="the ID of the ucs manager")
+    private Long id;
 
     @Inject
     private UcsManager mgr;
@@ -88,4 +94,12 @@ public class ListUcsManagerCmd extends BaseListCmd {
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
     }
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 }
