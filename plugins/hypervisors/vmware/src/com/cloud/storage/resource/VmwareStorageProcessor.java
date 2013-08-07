@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.storage.resource;
@@ -27,6 +27,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualSCSISharing;
+
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -39,8 +54,6 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -97,11 +110,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                   Integer shutdownWaitMs,
                                   PremiumSecondaryStorageResource storageResource) {
         this.hostService = hostService;
-        this._fullCloneFlag = fullCloneFlag;
+        _fullCloneFlag = fullCloneFlag;
         this.mountService = mountService;
-        this._timeout = timeout;
+        _timeout = timeout;
         this.resource = resource;
-        this._shutdown_waitMs = shutdownWaitMs;
+        _shutdown_waitMs = shutdownWaitMs;
         _gson = GsonHelper.getGsonLogger();
         this.storageResource = storageResource;
     }
@@ -311,8 +324,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         PrimaryDataStoreTO srcStore = (PrimaryDataStoreTO)template.getDataStore();
 
         try {
-            VmwareContext context = this.hostService.getServiceContext(null);
-            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             VirtualMachineMO vmMo = null;
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
@@ -389,7 +402,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                this.hostService.invalidateServiceContext(null);
+                hostService.invalidateServiceContext(null);
             }
 
             String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
@@ -1027,6 +1040,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         workerVMName = hostService.getWorkerName(context, cmd, 0);
                         
                         vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+
                         if (vmMo == null) {
                             throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
                         }
@@ -1046,7 +1060,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         hostService.getWorkerName(context, cmd, 1));
 
                 success = (snapshotBackupUuid != null);
-
                 if (!success) {
                     details = "Failed to backUp the snapshot with uuid: " + snapshotUuid + " to secondary storage.";
                     return new CopyCmdAnswer(details);
@@ -1109,7 +1122,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
         try {
-            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(hostService.getServiceContext(null), null);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
                 String msg = "Unable to find the VM to execute AttachVolumeCommand, vmName: " + vmName;
@@ -1120,7 +1133,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             ManagedObjectReference morDs = null;
 
             if (isAttach && isManaged) {
-                morDs = this.hostService.handleDatastoreAndVmdkAttach(cmd, iScsiName, storageHost, storagePort,
+                morDs = hostService.handleDatastoreAndVmdkAttach(cmd, iScsiName, storageHost, storagePort,
                         initiatorUsername, initiatorPassword, targetUsername, targetPassword);
             }
             else {
@@ -1146,7 +1159,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.detachDisk(datastoreVolumePath, false);
 
                 if (isManaged) {
-                    this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
+                    hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
                 }
             }
 
@@ -1154,7 +1167,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                this.hostService.invalidateServiceContext(null);
+                hostService.invalidateServiceContext(null);
             }
 
             String msg = "AttachVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
@@ -1171,7 +1184,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String storeName = getSecondaryDatastoreUUID(storeUrl);
         URI uri = new URI(storeUrl);
 
-        VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
+        VmwareHypervisorHost hyperHost = hostService.getHyperHost(hostService.getServiceContext(null), null);
         ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
 
         if (morDatastore == null)
@@ -1182,7 +1195,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     
     private Answer attachIso(DiskTO disk, boolean isAttach, String vmName) {
         try {
-            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(this.hostService.getServiceContext(null), null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(hostService.getServiceContext(null), null);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
                 String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + vmName;
@@ -1229,7 +1242,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             // TODO, check if iso is already attached, or if there is a previous
             // attachment
-            DatastoreMO secondaryDsMo = new DatastoreMO(this.hostService.getServiceContext(null), morSecondaryDs);
+            DatastoreMO secondaryDsMo = new DatastoreMO(hostService.getServiceContext(null), morSecondaryDs);
             String storeName = secondaryDsMo.getName();
             String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
 
@@ -1243,7 +1256,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                this.hostService.invalidateServiceContext(null);
+                hostService.invalidateServiceContext(null);
             }
 
             if(isAttach) {
@@ -1274,8 +1287,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
 
         try {
-            VmwareContext context = this.hostService.getServiceContext(null);
-            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
 
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
@@ -1286,8 +1299,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             // create data volume
             VirtualMachineMO vmMo = null;
             String volumeUuid = UUID.randomUUID().toString().replace("-", "");
-            String volumeDatastorePath = dsMo.getDatastorePath(volumeUuid + ".vmdk");
 
+            String volumeDatastorePath = dsMo.getDatastorePath(volumeUuid + ".vmdk");
             String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
             try {
             	s_logger.info("Create worker VM " + dummyVmName);
@@ -1318,7 +1331,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                this.hostService.invalidateServiceContext(null);
+                hostService.invalidateServiceContext(null);
             }
 
             String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
@@ -1356,8 +1369,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 		 */
 
         try {
-            VmwareContext context = this.hostService.getServiceContext(null);
-            VmwareHypervisorHost hyperHost = this.hostService.getHyperHost(context, null);
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
             PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
 
@@ -1387,7 +1400,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
-                        if (this.resource.getVmState(vmMo) != State.Stopped)
+                        if (resource.getVmState(vmMo) != State.Stopped)
                             vmMo.safePowerOff(_shutdown_waitMs);
                         vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                         vmMo.destroy();
@@ -1395,7 +1408,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
                                 if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
-                                    this.resource.cleanupNetwork(hostMo, netDetails);
+                                    resource.cleanupNetwork(hostMo, netDetails);
                                 }
                             }
                         }
@@ -1474,7 +1487,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                this.hostService.invalidateServiceContext(null);
+                hostService.invalidateServiceContext(null);
             }
 
             String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);

@@ -944,7 +944,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), _mgmtServer.getExecuteInSequence()));
+                    StartCommand strtcmd = new StartCommand(vmTO, dest.getHost(), _mgmtServer.getExecuteInSequence());
+
+                    cmds.addCommand(strtcmd);
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -953,6 +955,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);
                     }
+
                     _workDao.updateStep(work, Step.Starting);
 
                     _agentMgr.send(destHostId, cmds);
