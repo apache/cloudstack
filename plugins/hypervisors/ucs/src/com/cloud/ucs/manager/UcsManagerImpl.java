@@ -491,4 +491,15 @@ public class UcsManagerImpl implements UcsManager {
         cmds.add(AssociateUcsProfileToBladeCmd.class);
         return cmds;
     }
+
+	@Override
+	public void deleteUcsManager(Long id) {
+        SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
+        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, id);
+        List<UcsBladeVO> vos = serv.list();
+        for (UcsBladeVO vo : vos) {
+        	bladeDao.remove(vo.getId());
+        }
+		ucsDao.remove(id);
+	}
 }
