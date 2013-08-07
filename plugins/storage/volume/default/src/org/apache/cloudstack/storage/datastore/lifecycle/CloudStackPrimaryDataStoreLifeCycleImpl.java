@@ -27,6 +27,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -38,7 +40,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -50,6 +51,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
@@ -120,6 +122,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     PrimaryDataStoreHelper dataStoreHelper;
     @Inject
     StoragePoolAutomation storagePoolAutmation;
+    @Inject
+    protected HostDao _hostDao;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -386,7 +390,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
             try {
-                this.storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
+                storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
                 poolHosts.add(h);
             } catch (Exception e) {
                 s_logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
@@ -400,7 +404,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             throw new CloudRuntimeException("Failed to access storage pool");
         }
 
-        this.dataStoreHelper.attachCluster(store);
+        dataStoreHelper.attachCluster(store);
         return true;
     }
 
@@ -443,9 +447,14 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     @DB
     @Override
     public boolean deleteDataStore(DataStore store) {
-        List<StoragePoolHostVO> hostPoolRecords = this._storagePoolHostDao.listByPoolId(store.getId());
+        List<StoragePoolHostVO> hostPoolRecords = _storagePoolHostDao.listByPoolId(store.getId());
         StoragePool pool = (StoragePool) store;
         boolean deleteFlag = false;
+        // find the hypervisor where the storage is attached to.
+        HypervisorType hType = null;
+        if(hostPoolRecords.size() > 0 ){
+            hType = getHypervisorType(hostPoolRecords.get(0).getHostId());
+        }
 
         // Remove the SR associated with the Xenserver
         for (StoragePoolHostVO host : hostPoolRecords) {
@@ -454,7 +463,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
             if (answer != null && answer.getResult()) {
                 deleteFlag = true;
-                break;
+                // if host is KVM hypervisor then send deleteStoragepoolcmd to all the kvm hosts.
+                if (HypervisorType.KVM != hType) {
+                    break;
+                }
             } else {
                 if (answer != null) {
                     s_logger.debug("Failed to delete storage pool: " + answer.getResult());
@@ -466,12 +478,19 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             throw new CloudRuntimeException("Failed to delete storage pool on host");
         }
 
-        return this.dataStoreHelper.deletePrimaryDataStore(store);
+        return dataStoreHelper.deletePrimaryDataStore(store);
+    }
+
+    private HypervisorType getHypervisorType(long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host != null)
+            return host.getHypervisorType();
+        return HypervisorType.None;
     }
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        this.dataStoreHelper.attachHost(store, scope, existingInfo);
+        dataStoreHelper.attachHost(store, scope, existingInfo);
         return true;
     }
 }
