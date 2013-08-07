@@ -14058,7 +14058,91 @@
                     detailView: {
                         isMaximized: true,
                         noCompact: true,
-                        tabs: {
+                        actions: {
+                        	remove: {
+                                label: 'Delete UCS Manager',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to delete UCS Manager';
+                                    },
+                                    notification: function(args) {
+                                        return 'Delete UCS Manager';
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                    	ucsmanagerid: args.context.ucsManagers[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL('deleteUcsManager'),
+                                        data: data,                                        
+                                        success: function(json) {
+                                            args.response.success();
+                                        },
+                                        error: function(data) {
+                                            args.response.error(parseXMLHttpResponse(data));
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
+                            }
+                        },                        
+                        tabs: {   
+                            details: {
+                                title: 'label.details',
+
+                                fields: [{
+                                    name: {
+                                        label: 'label.name',                                       
+                                    }
+                                }, {
+                                    id: {
+                                        label: 'label.id'
+                                    },   
+                                    url: {
+                                        label: 'label.url'
+                                    },
+                                }],
+
+                                dataProvider: function(args) {                                    
+                                    $.ajax({
+                                    	url: createURL('listUcsManagers'),
+                                    	data: {
+                			                zoneid: args.context.physicalResources[0].id //to change???
+                			            },                                      
+                                        success: function(json) {
+                                            //for testing only (begin)
+              			            	    /*	            	  
+              			            	    json = 
+              			            	    {
+              			            	        "listucsmanagerreponse": {
+              			            		        "count": 1,
+              			            		        "ucsmanager": [
+              			            		            {
+              			            		                "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+              			            		                "name": "ucsmanager",
+              			            		                "url": "10.223.184.2",
+              			            		                "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
+              			            		            }
+              			            		        ]
+              			            	        }
+              			            	    };
+              			            	    */
+              			            	    //for testing only (end)
+                                        	                                        	
+                                            var item = json.listucsmanagerreponse.ucsmanager[0];
+                                            args.response.success({                                                
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            },                            
+                            
                             blades: {
                                 title: 'Blades',
                                 listView: {
@@ -14276,7 +14360,7 @@
                                         }
                                     }                                 
                                 }
-                            }
+                            }                         
                         }
                     }
                 }
