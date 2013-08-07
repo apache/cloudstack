@@ -270,7 +270,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                 ssh_client.execute(c)
         except Exception as e:
             self.fail("SSH failed for management server: %s - %s" %
-                      (self.services["mgmt_server"]["ipaddress"], e))
+                      (self.config.mgtSvr[0].mgtSvrIp, e))
         res = str(snapshots)
         return res.count(snapshot_id) == 1
 
