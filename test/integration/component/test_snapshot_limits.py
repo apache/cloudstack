@@ -218,12 +218,12 @@ class TestSnapshotLimit(cloudstackTestCase):
         self.assertEqual(
             isinstance(qresultset, list),
             True,
-            "Invalid db query response for snapshot %s" % self.snapshot.id
+            "Invalid db query response for snapshot %s" % snapshot_id
         )
         self.assertNotEqual(
             len(qresultset),
             0,
-            "No such snapshot %s found in the cloudstack db" % self.snapshot.id
+            "No such snapshot %s found in the cloudstack db" % snapshot_id
         )
         snapshotPath = qresultset[0][0]
         nfsurl = secondaryStore.url
@@ -373,12 +373,12 @@ class TestSnapshotLimit(cloudstackTestCase):
         self.assertEqual(
                             isinstance(qresultset, list),
                             True,
-                            "Invalid db query response for snapshot %s" % self.snapshot.id
+                            "Invalid db query response for snapshot %s" % snapshot.id
                         )
         self.assertNotEqual(
                             len(qresultset),
                             0,
-                            "No such snapshot %s found in the cloudstack db" % self.snapshot.id
+                            "No such snapshot %s found in the cloudstack db" % snapshot.id
                             )
 
         qresult = qresultset[0]
