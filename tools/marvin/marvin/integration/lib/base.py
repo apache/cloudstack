@@ -2344,28 +2344,74 @@ class PortablePublicIpRange:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listPortableIpRanges(cmd))
 
-class SecondaryStorage:
-    """Manage Secondary storage"""
+class SecondaryStagingStore:
+    """Manage Staging Store"""
 
     def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services):
-        """Create Secondary Storage"""
-        cmd = addSecondaryStorage.addSecondaryStorageCmd()
+    def create(cls, apiclient, url, provider, services=None):
+        """Create Staging Storage"""
+        cmd = createSecondaryStagingStore.createSecondaryStagingStoreCmd()
+        cmd.url = url
+        cmd.provider = provider
+        if services:
+            if "zoneid" in services:
+                cmd.zoneid = services["zoneid"]
+            if "details" in services:
+                cmd.details = services["details"]
+            if "scope" in services:
+                cmd.scope = services["scope"]
 
-        cmd.url = services["url"]
-        if "zoneid" in services:
-            cmd.zoneid = services["zoneid"]
-        return SecondaryStorage(apiclient.addSecondaryStorage(cmd).__dict__)
+        return SecondaryStagingStore(apiclient.createSecondaryStagingStore(cmd).__dict__)
 
     def delete(self, apiclient):
-        """Delete Secondary Storage"""
-
-        cmd = deleteHost.deleteHostCmd()
+        """Delete Staging Storage"""
+        cmd = deleteSecondaryStagingStore.deleteSecondaryStagingStoreCmd()
         cmd.id = self.id
-        apiclient.deleteHost(cmd)
+        apiclient.deleteSecondaryStagingStore(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listSecondaryStagingStores.listSecondaryStagingStoresCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listSecondaryStagingStores(cmd))
+
+
+class ImageStore:
+    """Manage image stores"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, url, provider, services=None):
+        """Add Image Store"""
+        cmd = addImageStore.addImageStoreCmd()
+        cmd.url = url
+        cmd.provider = provider
+        if services:
+            if "zoneid" in services:
+                cmd.zoneid = services["zoneid"]
+            if "details" in services:
+                cmd.details = services["details"]
+            if "scope" in services:
+                cmd.scope = services["scope"]
+
+        return ImageStore(apiclient.addImageStore(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Image Store"""
+        cmd = deleteImageStore.deleteImageStoreCmd()
+        cmd.id = self.id
+        apiclient.deleteImageStore(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listImageStores.listImageStoresCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listImageStores(cmd))
 
 
 class PhysicalNetwork:
