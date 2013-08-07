@@ -314,6 +314,42 @@ INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALU
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (182, UUID(), 1, 'CentOS 6.4 (64-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (183, UUID(), 2, 'Debian GNU/Linux 7(32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (184, UUID(), 2, 'Debian GNU/Linux 7(64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (185, UUID(), 5, 'SUSE Linux Enterprise Server 11 SP2 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (186, UUID(), 5, 'SUSE Linux Enterprise Server 11 SP2 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (187, UUID(), 5, 'SUSE Linux Enterprise Server 11 SP3 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (188, UUID(), 5, 'SUSE Linux Enterprise Server 11 SP3 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (189, UUID(), 4, 'Red Hat Enterprise Linux 5.7 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (190, UUID(), 4, 'Red Hat Enterprise Linux 5.7 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (191, UUID(), 4, 'Red Hat Enterprise Linux 5.8 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (192, UUID(), 4, 'Red Hat Enterprise Linux 5.8 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (193, UUID(), 4, 'Red Hat Enterprise Linux 5.9 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (194, UUID(), 4, 'Red Hat Enterprise Linux 5.9 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (195, UUID(), 4, 'Red Hat Enterprise Linux 6.1 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (196, UUID(), 4, 'Red Hat Enterprise Linux 6.1 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (197, UUID(), 4, 'Red Hat Enterprise Linux 6.2 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (198, UUID(), 4, 'Red Hat Enterprise Linux 6.2 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (199, UUID(), 4, 'Red Hat Enterprise Linux 6.3 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (204, UUID(), 4, 'Red Hat Enterprise Linux 6.3 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (205, UUID(), 4, 'Red Hat Enterprise Linux 6.4 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (206, UUID(), 4, 'Red Hat Enterprise Linux 6.4 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (207, UUID(), 3, 'Oracle Enterprise Linux 5.7 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (208, UUID(), 3, 'Oracle Enterprise Linux 5.7 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (209, UUID(), 3, 'Oracle Enterprise Linux 5.8 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (210, UUID(), 3, 'Oracle Enterprise Linux 5.8 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (211, UUID(), 3, 'Oracle Enterprise Linux 5.9 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (212, UUID(), 3, 'Oracle Enterprise Linux 5.9 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (213, UUID(), 3, 'Oracle Enterprise Linux 6.1 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (214, UUID(), 3, 'Oracle Enterprise Linux 6.1 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (215, UUID(), 3, 'Oracle Enterprise Linux 6.2 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (216, UUID(), 3, 'Oracle Enterprise Linux 6.2 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (217, UUID(), 3, 'Oracle Enterprise Linux 6.3 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (218, UUID(), 3, 'Oracle Enterprise Linux 6.3 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (219, UUID(), 3, 'Oracle Enterprise Linux 6.4 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (220, UUID(), 3, 'Oracle Enterprise Linux 6.4 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (221, UUID(), 7, 'Apple Mac OS X 10.6 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (222, UUID(), 7, 'Apple Mac OS X 10.6 (64-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (223, UUID(), 7, 'Apple Mac OS X 10.7 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (224, UUID(), 7, 'Apple Mac OS X 10.7 (64-bit)');
 
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Windows 8 (32-bit)', 165);
@@ -347,14 +383,10 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Debian GNU/Linux 7(32-bit)', 183);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("XenServer", 'Debian GNU/Linux 7(64-bit)', 184);
 
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (211, UUID(), 7, 'Apple Mac OS X 10.6 (32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (212, UUID(), 7, 'Apple Mac OS X 10.6 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (213, UUID(), 7, 'Apple Mac OS X 10.7 (32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (214, UUID(), 7, 'Apple Mac OS X 10.7 (64-bit)');
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.6 (32-bit)', 211);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.6 (64-bit)', 212);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.7 (32-bit)', 213);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.7 (64-bit)', 214);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.6 (32-bit)', 221);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.6 (64-bit)', 222);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.7 (32-bit)', 223);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Apple Mac OS X 10.7 (64-bit)', 224);
 
 CREATE TABLE `cloud`.`user_vm_clone_setting` (
   `vm_id` bigint unsigned NOT NULL COMMENT 'guest VM id',
