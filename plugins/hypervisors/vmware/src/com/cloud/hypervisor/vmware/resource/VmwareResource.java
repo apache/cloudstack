@@ -2610,6 +2610,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
+            
+            DatastoreMO dsRootVolumeIsOn = getDatastoreThatRootDiskIsOn(dataStoresDetails, disks);
+            if(dsRootVolumeIsOn == null) {
+                String msg = "Unable to locate datastore details of root volume";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            
+            DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             if (vmMo != null) {
@@ -2657,7 +2666,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-
+            
             int totalChangeDevices = disks.length + nics.length;
             DiskTO volIso = null;
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -2823,9 +2832,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
                     assert (volumeDsDetails != null);
                     VirtualDevice device;
+                    
+                    datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmName, volumeDsDetails.second(), 
+                    	volumeTO.getPath());
+                    device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(),
+                        (controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
+                    
+/*                    
                     datastoreDiskPath = String.format("[%s] %s.vmdk", volumeDsDetails.second().getName(), volumeTO.getPath());
+                    
                     String chainInfo = volumeTO.getChainInfo();
 
+					// chainInfo is no longer in use
                     if (chainInfo != null && !chainInfo.isEmpty()) {
                         String[] diskChain = _gson.fromJson(chainInfo, String[].class);
                         if (diskChain == null || diskChain.length < 1) {
@@ -2845,6 +2863,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(),
                                 (controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
                     }
+*/
+                    
                     deviceConfigSpecArray[i].setDevice(device);
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
@@ -3110,8 +3130,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return validatedDetails;
     }
 
-
-
     private NicTO[] sortNicsByDeviceId(NicTO[] nics) {
 
         List<NicTO> listForSort = new ArrayList<NicTO>();
@@ -3181,6 +3199,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return poolMors;
     }
 
+    private DatastoreMO getDatastoreThatRootDiskIsOn(HashMap<String ,Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails,
+    	DiskTO disks[]) {
+
+    	Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
+        for (DiskTO vol : disks) {
+            if (vol.getType() == Volume.Type.ROOT) {
+                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getData().getDataStore();
+                rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
+            }
+        }
+        
+    	if(rootDiskDataStoreDetails != null)
+    		return rootDiskDataStoreDetails.second();
+    	return null;
+    }
 
     private String getPvlanInfo(NicTO nicTo) {
         if (nicTo.getBroadcastType() == BroadcastDomainType.Pvlan) {
@@ -4277,6 +4310,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
+            VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), cmd.getVmName(), 
+            	dsMo, cmd.getVolumePath());
+            
             String datastoreVolumePath = dsMo.searchFileInSubFolders(cmd.getVolumePath() + ".vmdk", true);
             assert (datastoreVolumePath != null) : "Virtual disk file must exist in specified datastore for attach/detach operations.";
             if (datastoreVolumePath == null) {
@@ -4292,6 +4328,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 if (cmd.isManaged()) {
                     handleDatastoreAndVmdkDetach(cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort());
+                } else {
+                	VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, cmd.getVolumePath());
                 }
             }
 

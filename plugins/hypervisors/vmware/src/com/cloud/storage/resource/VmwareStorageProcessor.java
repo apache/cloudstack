@@ -1148,7 +1148,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
-            }
+           }
 
             if (morDs == null) {
                 String msg = "Unable to find the mounted datastore to execute AttachVolumeCommand, vmName: " + vmName;
@@ -1157,19 +1157,33 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             DatastoreMO dsMo = new DatastoreMO(this.hostService.getServiceContext(null), morDs);
-            String datastoreVolumePath = dsMo.getDatastorePath((isManaged ? dsMo.getName() : volumeTO.getPath()) + ".vmdk");
+            String datastoreVolumePath;
 
+            if(isAttach) {
+            	if(!isManaged)
+	            	datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, 
+		                dsMo, volumeTO.getPath());
+            	else 
+            		datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+            } else {
+            	datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+            	if(!dsMo.fileExists(datastoreVolumePath))
+            		datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+            }
+            
             disk.setVdiUuid(datastoreVolumePath);
 
             AttachAnswer answer = new AttachAnswer(disk);
             if (isAttach) {
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
-            } else {
+            } else {	
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);
 
                 if (isManaged) {
-                    hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
+                    this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
+                } else {
+                	VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath());
                 }
             }
 
@@ -1428,23 +1442,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         }
                     }
 
-                    if (s_logger.isInfoEnabled()) {
+                    if (s_logger.isInfoEnabled())
                         s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
-                    }
-                    dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
-
-                    // root volume may be created via linked-clone, delete the delta disk as well
-                    if (_fullCloneFlag) {
-                        if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
-                        }
-                        dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
-                    } else {
-                        if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-delta.vmdk");
-                        }
-                        dsMo.deleteFile(vol.getPath() + "-delta.vmdk", morDc, true);
-                    }
+                    
+                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));                   
                     return new Answer(cmd, true, "Success");
                 }
 
@@ -1464,41 +1465,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            String chainInfo = vol.getChainInfo();
-            if (chainInfo != null && !chainInfo.isEmpty()) {
-                s_logger.info("Destroy volume by chain info: " + chainInfo);
-                String[] diskChain = _gson.fromJson(chainInfo, String[].class);
-
-                if (diskChain != null && diskChain.length > 0) {
-                    for (String backingName : diskChain) {
-                        if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Delete volume backing file: " + backingName);
-                        }
-                        dsMo.deleteFile(backingName, morDc, true);
-                    }
-                } else {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Empty disk chain info, fall back to try to delete by original backing file name");
-                    }
-                    dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
-
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
-                    }
-                    dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
-                }
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
-                }
-                dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
-
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
-                }
-                dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
-            }
-
+            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));                   
+            
             return new Answer(cmd, true, "Success");
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
