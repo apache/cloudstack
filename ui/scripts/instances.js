@@ -1859,8 +1859,7 @@
             allowedActions.push("stop");
             allowedActions.push("restart");
             allowedActions.push("snapshot");
-            allowedActions.push("destroy");
-            allowedActions.push("changeService");
+            allowedActions.push("destroy");            
             allowedActions.push("reset");
             allowedActions.push("scaleUp");
 
@@ -1896,8 +1895,7 @@
             } else {
                 allowedActions.push("detachISO");
             }
-            allowedActions.push("resetPassword");
-            allowedActions.push("changeService");
+            allowedActions.push("resetPassword");            
             if (jsonObj.hypervisor == "BareMetal") {
                 allowedActions.push("createTemplate");
             }
