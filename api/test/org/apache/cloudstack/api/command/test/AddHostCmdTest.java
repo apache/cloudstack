@@ -127,9 +127,8 @@ public class AddHostCmdTest extends TestCase {
 
         HostResponse responseHost = new HostResponse();
         responseHost.setName("Test");
-        Mockito.doReturn(Arrays.asList(mockArray)).when(resourceService.discoverHosts(addHostCmd));
-        Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(
-                responseHost);
+        Mockito.doReturn(Arrays.asList(mockArray)).when(resourceService).discoverHosts(addHostCmd);
+        Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(responseHost);
         addHostCmd.execute();
         Mockito.verify(responseGenerator).createHostResponse(host);
         @SuppressWarnings("unchecked")

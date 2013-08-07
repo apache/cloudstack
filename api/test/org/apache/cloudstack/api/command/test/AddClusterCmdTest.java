@@ -112,7 +112,7 @@ public class AddClusterCmdTest extends TestCase {
         Cluster cluster = Mockito.mock(Cluster.class);
         Cluster[] clusterArray = new Cluster[] { cluster };
 
-        Mockito.doReturn(Arrays.asList(clusterArray)).when(resourceService.discoverCluster(addClusterCmd));
+        Mockito.doReturn(Arrays.asList(clusterArray)).when(resourceService).discoverCluster(addClusterCmd);
 
         addClusterCmd.execute();
 
