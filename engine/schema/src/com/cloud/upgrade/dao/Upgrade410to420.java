@@ -104,6 +104,7 @@ public class Upgrade410to420 implements DbUpgrade {
         fixNiciraKeys(conn);
         fixRouterKeys(conn);
         encryptSite2SitePSK(conn);
+        migrateDatafromIsoIdInVolumesTable(conn);
     }
 
     private void fixBaremetalForeignKeys(Connection conn) {
@@ -2114,5 +2115,24 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+    }
+
+    private void migrateDatafromIsoIdInVolumesTable(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT iso_id1 From `cloud`.`volumes`");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`volumes` DROP COLUMN `iso_id`");
+                pstmt.executeUpdate();
+                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");
+                pstmt.executeUpdate();
+            }
+        }catch (SQLException e) {
+            //implies iso_id1 is not present, so do nothing.
+        }
+
     }
 }
