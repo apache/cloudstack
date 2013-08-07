@@ -35,9 +35,49 @@
         return elemData;
     };
 
-    var instanceSecondaryIPSubselect = function(args) {
+    var instanceSecondaryIPSubselect = function(args) {        
         var instance = args.context.instances[0];
         var network = args.context.networks[0];
+
+        if (args.context.ipAddresses[0].isportable) {
+            $.ajax({
+                url: createURL('listNics'),
+                data: {
+                    virtualmachineid: instance.id
+                },
+                success: function(json) {
+                    var nics = json.listnicsresponse.nic;
+                    var ipSelection = [];
+
+                    $(nics).map(function(index, nic) {
+                        var ips = nic.secondaryip ? nic.secondaryip : [];
+                        var prefix = '[NIC ' + (index + 1) + '] ';
+
+                        // Add primary IP as default
+                        ipSelection.push({
+                            id: nic.networkid + ',-1',
+                            description: prefix + nic.ipaddress + ' (Primary)'
+                        });
+                        
+                        // Add secondary IPs
+                        $(ips).map(function(index, ip) {
+                            ipSelection.push({
+                                id: nic.networkid + ',' + ip.ipaddress,
+                                description: prefix + ip.ipaddress
+                            });
+                        });
+                    });                  
+
+
+                    args.response.success({
+                        data: ipSelection
+                    });
+                }
+            });
+            
+            return;
+        }
+        
         var nic = $.grep(instance.nic, function(nic) {
             return nic.networkid == network.id;
         })[0];
@@ -2338,7 +2378,7 @@
                                                             networkid: $tierSelect.val(),
                                                             vpcid: args.context.vpc[0].id
                                                         });
-                                                    } else if ('networks' in args.context) {
+                                                    } else if ('networks' in args.context && !args.context.ipAddresses[0].isportable) {
                                                         $.extend(data, {
                                                             networkid: args.context.networks[0].id
                                                         });
@@ -2382,7 +2422,17 @@
                                                 virtualmachineid: args.context.instances[0].id
                                             };
 
-                                            if (args._subselect && args._subselect != -1) {
+                                            if (args.context.ipAddresses[0].isportable) {
+                                                var subselect = args._subselect.split(',');
+                                                var networkid = subselect[0];
+                                                var vmguestip = subselect[1];
+
+                                                data.networkid = subselect[0];
+
+                                                if (parseInt(vmguestip) !== -1) {
+                                                    data.vmguestip = vmguestip;
+                                                }
+                                            } else if (args._subselect && args._subselect != -1) {
                                                 data.vmguestip = args._subselect;
                                             }
 
