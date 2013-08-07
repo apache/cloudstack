@@ -86,12 +86,6 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "mgmt_server": {
-                                    "ipaddress": '192.168.100.21',
-                                    "username": "root",
-                                    "password": "password",
-                                    "port": 22,
-                                },
                         "recurring_snapshot": {
                                     "intervaltype": 'HOURLY',
                                     # Frequency of snapshots
@@ -157,7 +151,8 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             cls.services["account"] = cls.account.name
             cls._cleanup.append(cls.account)
 
-            cls.services["service_offering"]["storagetype"] = "local"
+            if cls.zone.localstorageenabled:
+                cls.services["service_offering"]["storagetype"] = "local"
             cls.service_offering = ServiceOffering.create(
                                                 cls.api_client,
                                                 cls.services["service_offering"]
@@ -302,9 +297,9 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         #    State of this VM should be "Running"
         # 3. a)listSnapshots should list the snapshot that was created.
         #    b)verify that secondary storage NFS share contains the reqd volume
-        #      under /secondary/snapshots/$accountid/$volumeid/$snapshot_uuid
+        #      under /secondary/snapshots/$accountid/$volumeid/$snapshot_id
         # 4. a)listAccounts should not list account that is deleted
-        #    b) snapshot image($snapshot_uuid) should be deleted from the
+        #    b) snapshot image($snapshot_id) should be deleted from the
         #       /secondary/snapshots/$accountid/$volumeid/
 
         accounts = list_accounts(
@@ -385,9 +380,9 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                             )
 
         qresult = qresultset[0]
-        snapshot_uuid = qresult[0]
+        snapshot_id = qresult[0]
 
-        self.assertTrue(self.is_snapshot_on_nfs(snapshot_uuid), "Snapshot was not found no NFS")
+        self.assertTrue(self.is_snapshot_on_nfs(snapshot_id), "Snapshot was not found no NFS")
 
         self.debug("Deleting account: %s" % self.account.name)
         # Delete account
@@ -405,5 +400,5 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             "List accounts should return empty list after account deletion"
             )
 
-        self.assertFalse(self.is_snapshot_on_nfs(snapshot_uuid), "Snapshot was still found no NFS after account gc")
+        self.assertFalse(self.is_snapshot_on_nfs(snapshot_id), "Snapshot was still found no NFS after account gc")
         return
