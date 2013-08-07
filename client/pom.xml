@@ -336,8 +336,8 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
+          <webXml>${project.build.directory}/generated-webapp/WEB-INF/web.xml</webXml>
+          <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
             <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
@@ -389,10 +389,7 @@
                   <fileset dir="${basedir}/../scripts" />
                 </copy>
                 <!-- CLOUDSTACK-1304 -->
-                <chmod perm="755">
-                  <fileset
-                    dir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
-                </chmod>
+                <chmod perm="755" file="${basedir}/target/generated-webapp/WEB-INF/classes/scripts/**" type="both" />
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
                     <include name="web.xml" />
