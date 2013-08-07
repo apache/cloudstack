@@ -1948,6 +1948,7 @@ class TestResourceTags(cloudstackTestCase):
         
         return
 
+    @unittest.skip("skipped - Need to enable this test after fixing TC issues")
     @attr(tags=["advanced", "basic"])
     def test_18_invalid_list_parameters(self):
         """ Test listAPI with invalid tags parameter
