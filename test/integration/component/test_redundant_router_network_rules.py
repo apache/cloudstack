@@ -23,6 +23,7 @@ from marvin.integration.lib.common import *
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import *
+import time
 
 class Services:
     """Test Services for customer defects
@@ -1197,6 +1198,10 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
+
+        #Waiting for VM to come up before shutdown the router
+        time.sleep(120)
+
         self.debug("Deployed VM in network: %s" % network.id)
 
         vms = VirtualMachine.list(
