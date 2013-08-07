@@ -1,7 +1,7 @@
 Veewee::Definition.declare({
   :cpu_count => '1',
   :memory_size=> '2048',
-  :disk_size => '32000', :disk_format => 'VDI', :hostiocache => 'off',
+  :disk_size => '8000', :disk_format => 'VDI', :hostiocache => 'off',
   :os_type_id => 'RedHat6_64',
   :iso_file => "CentOS-6.4-x86_64-minimal.iso",
   :iso_src => "http://centos.mirror.net.in/centos/6.4/isos/x86_64/CentOS-6.4-x86_64-minimal.iso",
