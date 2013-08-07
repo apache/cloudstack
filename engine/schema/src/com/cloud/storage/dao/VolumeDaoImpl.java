@@ -242,10 +242,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         try {
             ScopeType scope = getVolumeStoragePoolScope(volumeId);
             if (scope != null ) {
-                if (scope == ScopeType.CLUSTER)
+                if (scope == ScopeType.CLUSTER || scope == ScopeType.HOST)
                     sql = SELECT_HYPERTYPE_FROM_CLUSTER_VOLUME;
                 else if (scope == ScopeType.ZONE)
                     sql = SELECT_HYPERTYPE_FROM_ZONE_VOLUME;
+                else
+                    s_logger.error("Unhandled scope type '" + scope + "' when running getHypervisorType on volume id " + volumeId);
 
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setLong(1, volumeId);
