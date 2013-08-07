@@ -481,6 +481,10 @@
     <property name="name" value="XenServerInvestigator"/>
   </bean>
   
+  <bean id="KVMInvestigator" class="com.cloud.ha.KVMInvestigator">
+    <property name="name" value="KVMInvestigator"/>
+  </bean>
+
   <bean id="UserVmDomRInvestigator" class="com.cloud.ha.UserVmDomRInvestigator">
     <property name="name" value="PingInvestigator"/>
   </bean>
