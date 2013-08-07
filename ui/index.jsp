@@ -420,6 +420,20 @@ under the License.
                       <a href="4"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
+
+                  <!-- Affinity -->
+                  <div class="select">
+                      <div class="name">
+                          <span><fmt:message key="label.affinity.groups"/></span>
+                      </div>
+                      <div class="value">
+                          <span wizard-field="affinity-groups"></span>
+                      </div>
+                      <div class="edit">
+                          <a href="5"><fmt:message key="label.edit"/></a>
+                      </div>
+                  </div>
+                  
                   <!-- Primary network -->
                   <div class="select odd">
                     <div class="name">
@@ -429,7 +443,7 @@ under the License.
                       <span wizard-field="default-network" conditional-field="select-network"></span>
                     </div>
                     <div class="edit">
-                      <a href="5"><fmt:message key="label.edit"/></a>
+                      <a href="6"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
                   
@@ -442,7 +456,7 @@ under the License.
                       <span wizard-field="security-groups" conditional-field="select-security-group"></span>
                     </div>
                     <div class="edit">
-                      <a href="5"><fmt:message key="label.edit"/></a>
+                      <a href="6"><fmt:message key="label.edit"/></a>
                     </div>
                   </div>
                 </div>
