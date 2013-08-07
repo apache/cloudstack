@@ -884,6 +884,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);
                     }
+
                     _workDao.updateStep(work, Step.Starting);
 
                     _agentMgr.send(destHostId, cmds);

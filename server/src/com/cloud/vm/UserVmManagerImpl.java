@@ -1538,14 +1538,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 new UserVmStateListener(_usageEventDao, _networkDao, _nicDao));
 
         value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
-
-        if(value == null) {
-            _instanceNameFlag = false;
-        }
-        else
-        {
-            _instanceNameFlag = Boolean.parseBoolean(value);
-        }
+        _instanceNameFlag = (value == null)?false:Boolean.parseBoolean(value);
 
        _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
 
@@ -2716,58 +2709,59 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
-        String instanceName;
-        if (_instanceNameFlag && displayName != null) {
-            // Check if the displayName conforms to RFC standards.
-            checkNameForRFCCompliance(displayName);
-            instanceName = VirtualMachineName.getVmName(id, owner.getId(), displayName);
-            if (instanceName.length() > MAX_VM_NAME_LEN) {
-                throw new InvalidParameterValueException("Specified display name " + displayName + " causes VM name to exceed 80 characters in length");
-            }
-            // Search whether there is already an instance with the same instance name
-            // that is not in the destroyed or expunging state.
-            VMInstanceVO vm = _vmInstanceDao.findVMByInstanceName(instanceName);
-            if (vm != null && vm.getState() != VirtualMachine.State.Expunging) {
-                throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
-            }
-        } else {
-            instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        if (hostName != null) {
+            // Check is hostName is RFC compliant
+            checkNameForRFCCompliance(hostName);
         }
 
+        String instanceName = null;
         String uuidName = UUID.randomUUID().toString();
-
-        // verify hostname information
-        if (hostName == null) {
-            hostName = uuidName;
-        } else {
-            //1) check is hostName is RFC compliant
-            checkNameForRFCCompliance(hostName);
-            // 2) hostName has to be unique in the network domain
-            Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
-            for (NetworkVO network : networkList) {
-                String ntwkDomain = network.getNetworkDomain();
-                if (!ntwkDomains.containsKey(ntwkDomain)) {
-                    List<Long> ntwkIds = new ArrayList<Long>();
-                    ntwkIds.add(network.getId());
-                    ntwkDomains.put(ntwkDomain, ntwkIds);
+        if (_instanceNameFlag && hypervisor.equals(HypervisorType.VMware)) {
+            if (hostName == null) {
+                if (displayName != null) {
+                    hostName = displayName;
                 } else {
-                    List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
-                    ntwkIds.add(network.getId());
-                    ntwkDomains.put(ntwkDomain, ntwkIds);
+                    hostName = uuidName;
                 }
             }
+        } else {
+            if (hostName == null) {
+                hostName = uuidName;
+            }
+        }
 
-            for (String ntwkDomain : ntwkDomains.keySet()) {
-                for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
-                    // * get all vms hostNames in the network
-                    List<String> hostNames = _vmInstanceDao
-                            .listDistinctHostNames(ntwkId);
-                    // * verify that there are no duplicates
-                    if (hostNames.contains(hostName)) {
-                        throw new InvalidParameterValueException("The vm with hostName " + hostName
-                                + " already exists in the network domain: " + ntwkDomain + "; network="
-                                + _networkModel.getNetwork(ntwkId));
-                    }
+        instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+
+        // Check if VM with instanceName already exists.
+        VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
+        if (vmObj != null && vmObj.getState() != VirtualMachine.State.Expunging) {
+            throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
+        }
+
+        // Check that hostName is unique in the network domain
+        Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
+        for (NetworkVO network : networkList) {
+            String ntwkDomain = network.getNetworkDomain();
+            if (!ntwkDomains.containsKey(ntwkDomain)) {
+                List<Long> ntwkIds = new ArrayList<Long>();
+                ntwkIds.add(network.getId());
+                ntwkDomains.put(ntwkDomain, ntwkIds);
+            } else {
+                List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
+                ntwkIds.add(network.getId());
+                ntwkDomains.put(ntwkDomain, ntwkIds);
+            }
+        }
+
+        for (String ntwkDomain : ntwkDomains.keySet()) {
+            for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
+                // * get all vms hostNames in the network
+                List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
+                // * verify that there are no duplicates
+                if (hostNames.contains(hostName)) {
+                    throw new InvalidParameterValueException("The vm with hostName " + hostName
+                        + " already exists in the network domain: " + ntwkDomain + "; network="
+                        + _networkModel.getNetwork(ntwkId));
                 }
             }
         }

@@ -299,11 +299,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return;
         }
 
-        if(vm.getHypervisorType() == HypervisorType.VMware) {
-            s_logger.info("Skip HA for VMware VM " + vm.getInstanceName());
-            return;
-        }
-
         if (!investigate) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM does not require investigation so I'm marking it as Stopped: " + vm.toString());
@@ -340,6 +335,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             }
+        }
+
+        if(vm.getHypervisorType() == HypervisorType.VMware) {
+            s_logger.info("Skip HA for VMware VM " + vm.getInstanceName());
+            return;
         }
 
         List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());

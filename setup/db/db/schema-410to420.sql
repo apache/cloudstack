@@ -285,7 +285,7 @@ CREATE TABLE `cloud`.`load_balancer_healthcheck_policies` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'Append guest VM display Name (if set) to the internal name of the VM');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'If set to true, will set guest VM\'s name as it appears on the hypervisor, to its hostname');
 
 UPDATE `cloud`.`guest_os` SET category_id=10 where id=59;
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (165, UUID(), 6, 'Windows 8 (32-bit)');

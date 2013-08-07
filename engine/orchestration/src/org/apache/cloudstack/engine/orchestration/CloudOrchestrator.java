@@ -237,7 +237,6 @@ public class CloudOrchestrator implements OrchestrationService {
     	//load vm instance and offerings and call virtualMachineManagerImpl
     	VMInstanceVO vm = _vmDao.findByUuid(id);
 
-
 		Pair<DiskOffering, Long> rootDiskOffering = new Pair<DiskOffering, Long>(null, null);
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);

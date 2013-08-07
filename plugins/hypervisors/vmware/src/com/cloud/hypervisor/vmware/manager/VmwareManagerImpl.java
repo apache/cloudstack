@@ -161,6 +161,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     int _portsPerDvPortGroup = 256;
     boolean _nexusVSwitchActive;
     boolean _fullCloneFlag;
+    boolean _instanceNameFlag;
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
@@ -231,6 +232,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         } else {
             _fullCloneFlag = Boolean.parseBoolean(value);
         }
+
+        value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
+        if (value == null) {
+            _instanceNameFlag = false;
+        } else {
+            _instanceNameFlag = Boolean.parseBoolean(value);
+        }
+
         _portsPerDvPortGroup = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePortsPerDVPortGroup.key()), _portsPerDvPortGroup);
 
         _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
@@ -505,6 +514,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public void setupResourceStartupParams(Map<String, Object> params) {
         params.put("vmware.create.full.clone", _fullCloneFlag);
+        params.put("vm.instancename.flag", _instanceNameFlag);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
         params.put("vmware.reserve.cpu", _reserveCpu);

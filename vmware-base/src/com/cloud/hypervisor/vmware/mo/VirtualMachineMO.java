@@ -1566,7 +1566,7 @@ public class VirtualMachineMO extends BaseMO {
 		HostMO hostMo = getRunningHost();
 		VirtualMachineConfigInfo vmConfigInfo = getConfigInfo();
 
-		if(!hostMo.createBlankVm(clonedVmName, 1, cpuSpeedMHz, 0, false, memoryMb, 0, vmConfigInfo.getGuestId(), morDs, false))
+		if(!hostMo.createBlankVm(clonedVmName, null, 1, cpuSpeedMHz, 0, false, memoryMb, 0, vmConfigInfo.getGuestId(), morDs, false))
 		    throw new Exception("Unable to create a blank VM");
 
 		VirtualMachineMO clonedVmMo = hostMo.findVmOnHyperHost(clonedVmName);

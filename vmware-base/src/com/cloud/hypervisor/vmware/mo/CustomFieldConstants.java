@@ -22,4 +22,5 @@ public interface CustomFieldConstants {
 	public final static String CLOUD_GC_DVP = "cloud.gc.dvp";	
 	public final static String CLOUD_NIC_MASK = "cloud.nic.mask";
     public final static String CLOUD_ZONE = "cloud.zone";
+    public final static String CLOUD_VM_INTERNAL_NAME = "cloud.vm.internal.name";
 }

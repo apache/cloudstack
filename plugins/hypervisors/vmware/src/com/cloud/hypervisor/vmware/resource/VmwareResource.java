@@ -365,6 +365,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected VmwareTrafficLabel _publicTrafficInfo = new VmwareTrafficLabel(TrafficType.Public);
     protected int _portsPerDvPortGroup;
     protected boolean _fullCloneFlag = false;
+    protected boolean _instanceNameFlag = false;
 
     protected boolean _reserveCpu = false;
 
@@ -2572,8 +2573,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-        String vmName = vmSpec.getName();
-
+        String vmInternalCSName = null;
+        String vmNameOnVcenter = null;
+        if (vmSpec.getHostName() != null) {
+            vmInternalCSName = vmSpec.getName();
+            if (_instanceNameFlag == true)
+                vmNameOnVcenter = vmSpec.getHostName();
+            else
+                vmNameOnVcenter = vmSpec.getName();
+        } else {
+            vmNameOnVcenter = vmInternalCSName = vmSpec.getName();
+        }
+        // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
         State state = State.Stopped;
         VmwareContext context = getServiceContext();
         try {
@@ -2581,12 +2592,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // mark VM as starting state so that sync() can know not to report stopped too early
             synchronized (_vms) {
-                _vms.put(vmName, State.Starting);
+                _vms.put(vmInternalCSName, State.Starting);
             }
 
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
             if(s_logger.isDebugEnabled())
-                s_logger.debug("VM " + vmName + " will be started with NIC device type: " + nicDeviceType);
+                s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
 
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
@@ -2600,9 +2611,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             if (vmMo != null) {
-                s_logger.info("VM " + vmName + " already exists, tear down devices for reconfiguration");
+                s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
                 if (getVmState(vmMo) != State.Stopped)
                     vmMo.safePowerOff(_shutdown_waitMs);
                 vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
@@ -2611,13 +2622,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
                 assert (morDc != null);
 
-                vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                vmMo = hyperHost.findVmOnPeerHyperHost(vmInternalCSName);
                 if (vmMo != null) {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Found vm " + vmName + " at other host, relocate to " + hyperHost.getHyperHostName());
+                        s_logger.info("Found vm " + vmInternalCSName + " at other host, relocate to " + hyperHost.getHyperHostName());
                     }
 
-                    takeVmFromOtherHyperHost(hyperHost, vmName);
+                    takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
 
                     if (getVmState(vmMo) != State.Stopped)
                         vmMo.safePowerOff(_shutdown_waitMs);
@@ -2634,16 +2645,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
-                    if (!hyperHost.createBlankVm(vmName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
+                    if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
                             vmSpec.getMinSpeed(), vmSpec.getLimitCpuUse(),(int)(vmSpec.getMaxRam()/(1024*1024)), ramMb,
                             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), rootDiskDataStoreDetails.first(), false)) {
-                        throw new Exception("Failed to create VM. vmName: " + vmName);
+                        throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                     }
                 }
 
-                vmMo = hyperHost.findVmOnHyperHost(vmName);
+                vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
                 if (vmMo == null) {
-                    throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmName);
+                    throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
 
@@ -2931,10 +2942,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
                 keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
-            vmConfigSpec.getExtraConfig().addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout)));
+            vmConfigSpec.getExtraConfig().addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmInternalCSName, vmSpec.getVncPassword(), keyboardLayout)));
 
             if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure VM before start. vmName: " + vmName);
+                throw new Exception("Failed to configure VM before start. vmName: " + vmInternalCSName);
             }
 
             vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMask));
@@ -3049,7 +3060,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             if (!vmMo.powerOn()) {
-                throw new Exception("Failed to start VM. vmName: " + vmName);
+                throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
             }
 
             state = State.Running;
@@ -3066,9 +3077,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } finally {
             synchronized (_vms) {
                 if (state != State.Stopped) {
-                    _vms.put(vmName, state);
+                    _vms.put(vmInternalCSName, state);
                 } else {
-                    _vms.remove(vmName);
+                    _vms.remove(vmInternalCSName);
                 }
             }
         }
@@ -3497,6 +3508,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             HashMap<String, State> newStates = getVmStates();
 
+            // getVmNames should return all i-x-y values.
             List<String> requestedVmNames = cmd.getVmNames();
             List<String> vmNames = new ArrayList<String>();
 
@@ -3558,6 +3570,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource StopCommand: " + _gson.toJson(cmd));
         }
 
+        // In the stop command, we're passed in the name of the VM as seen by cloudstack,
+        // i.e., i-x-y. This is the internal VM name.
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
@@ -5387,7 +5401,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                     ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-                    //createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
                     if (!_fullCloneFlag) {
                         createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
                     } else {
@@ -5516,14 +5529,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         for(ObjectContent oc : ocs) {
                             List<DynamicProperty> props = oc.getPropSet();
                             if(props != null) {
-                                String name = null;
+                                String vmName = null;
+                                String internalName = null;
                                 boolean template = false;
                                 VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
                                 GregorianCalendar bootTime = null;
 
                                 for(DynamicProperty prop : props) {
-                                    if(prop.getName().equals("name"))
-                                        name = prop.getVal().toString();
+                                    if (prop.getName().equals("name"))
+                                        vmName = prop.getVal().toString();
                                     else if(prop.getName().equals("config.template"))
                                         template = (Boolean)prop.getVal();
                                     else if(prop.getName().equals("runtime.powerState"))
@@ -5532,6 +5546,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                         bootTime = (GregorianCalendar)prop.getVal();
                                 }
 
+                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                                // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+                                internalName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+
+                                String name = null;
+                                if (internalName != null) {
+                                    name = internalName;
+                                } else {
+                                    name = vmName;
+                                }
                                 if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
                                     boolean recycle = false;
 
@@ -5544,7 +5568,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     if(recycle) {
                                         s_logger.info("Recycle pending worker VM: " + name);
 
-                                        VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
                                         vmMo.powerOff();
                                         vmMo.destroy();
                                     }
@@ -5963,6 +5986,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private HashMap<String, State> getVmStates() throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        // CLOUD_VM_INTERNAL_NAME stores the internal CS generated vm name. This was earlier stored in name. Now, name can be either the hostname or
+        // the internal CS name, but the custom field CLOUD_VM_INTERNAL_NAME always stores the internal CS name.
         ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] { "name", "runtime.powerState", "config.template" });
 
         HashMap<String, State> newStates = new HashMap<String, State>();
@@ -5973,20 +5998,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     boolean isTemplate = false;
                     String name = null;
+                    String VMInternalCSName = null;
                     VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
                     for (DynamicProperty objProp : objProps) {
                         if (objProp.getName().equals("config.template")) {
                             if (objProp.getVal().toString().equalsIgnoreCase("true")) {
                                 isTemplate = true;
                             }
-                        } else if (objProp.getName().equals("name")) {
-                            name = (String) objProp.getVal();
                         } else if (objProp.getName().equals("runtime.powerState")) {
                             powerState = (VirtualMachinePowerState) objProp.getVal();
+                        } else if (objProp.getName().equals("name")) {
+                            name = (String) objProp.getVal();
                         } else {
                             assert (false);
                         }
                     }
+                    VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+                    VMInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+                    if (VMInternalCSName != null)
+                        name = VMInternalCSName;
 
                     if (!isTemplate) {
                         newStates.put(name, convertState(powerState));
@@ -6025,15 +6056,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String name = null;
                     String numberCPUs = null;
                     String maxCpuUsage = null;
-
+                    String vmNameOnVcenter = null;
+                    String vmInternalCSName = null;
                     for (DynamicProperty objProp : objProps) {
                         if (objProp.getName().equals("name")) {
-                            name = objProp.getVal().toString();
+                            vmNameOnVcenter = objProp.getVal().toString();
                         } else if (objProp.getName().equals("summary.config.numCpu")) {
                             numberCPUs = objProp.getVal().toString();
                         } else if (objProp.getName().equals("summary.quickStats.overallCpuUsage")) {
                             maxCpuUsage =  objProp.getVal().toString();
                         }
+                    }
+                    VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+
+                    if (vmInternalCSName != null) {
+                        name = vmInternalCSName;
+                    } else {
+                        name = vmNameOnVcenter;
                     }
 
                     if (!vmNames.contains(name)) {
@@ -6343,6 +6384,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             _fullCloneFlag = false;
         }
+
+        value = params.get("vm.instancename.flag").toString();
+        if (value != null && value.equalsIgnoreCase("true")) {
+            _instanceNameFlag = true;
+        } else {
+            _instanceNameFlag = false;
+        }
+
         value = (String)params.get("scripts.timeout");
         int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
         VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);

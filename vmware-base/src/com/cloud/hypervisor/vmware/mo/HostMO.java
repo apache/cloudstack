@@ -17,15 +17,19 @@
 package com.cloud.hypervisor.vmware.mo;
 
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.apache.xerces.impl.xs.identity.Selector.Matcher;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
@@ -57,6 +61,7 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
 import com.vmware.vim25.NasDatastoreInfo;
 
@@ -65,6 +70,7 @@ import java.util.Arrays;
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
     Map<String, VirtualMachineMO> _vmCache = new HashMap<String, VirtualMachineMO>();
+    //Map<String, String> _vmInternalNameMapCache = new HashMap<String, String>();
 
 	public HostMO (VmwareContext context, ManagedObjectReference morHost) {
 		super(context, morHost);
@@ -465,19 +471,34 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 
     @Override
-    public synchronized VirtualMachineMO findVmOnHyperHost(String name) throws Exception {
+    public synchronized VirtualMachineMO findVmOnHyperHost(String vmName) throws Exception {
     	if(s_logger.isDebugEnabled())
-    		s_logger.debug("find VM " + name + " on host");
+            s_logger.debug("find VM " + vmName + " on host");
 
-        VirtualMachineMO vmMo = _vmCache.get(name);
+        VirtualMachineMO vmMo = _vmCache.get(vmName);
         if(vmMo != null) {
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("VM " + name + " found in host cache");
+                s_logger.debug("VM " + vmName + " found in host cache");
             return vmMo;
         }
 
+        s_logger.info("VM " + vmName + " not found in host cache");
         loadVmCache();
-        return _vmCache.get(name);
+
+        return _vmCache.get(vmName);
+    }
+
+    private boolean isUserVMInternalCSName(String vmInternalCSName) {
+        // CS generated internal names for user VMs are always of the format i-x-y.
+
+        String internalCSUserVMNamingPattern = "^[i][-][0-9]+[-][0-9]+[-]";
+        Pattern p = Pattern.compile(internalCSUserVMNamingPattern);
+        java.util.regex.Matcher m = p.matcher(vmInternalCSName);
+        if (m.find()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void loadVmCache() throws Exception {
@@ -486,15 +507,35 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         _vmCache.clear();
 
+        // name is the name of the VM as it appears in vCenter. The CLOUD_VM_INTERNAL_NAME custom
+        // field value contains the name of the VM as it is maintained internally by cloudstack (i-x-y).
         ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name" });
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
-                String vmName = oc.getPropSet().get(0).getVal().toString();
+                List<DynamicProperty> props = oc.getPropSet();
+                if (props != null) {
+                    String vmVcenterName = null;
+                    String vmInternalCSName = null;
+                    for (DynamicProperty prop : props) {
+                        if (prop.getName().equals("name")) {
+                            vmVcenterName = prop.getVal().toString();
+                        }
+                    }
+                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, oc.getObj());
+                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+                    String vmName = null;
+                    if (vmInternalCSName != null && isUserVMInternalCSName(vmInternalCSName)) {
+                        vmName = vmInternalCSName;
+                    } else {
+                        vmName = vmVcenterName;
+                    }
 
-                if(s_logger.isTraceEnabled())
-                	s_logger.trace("put " + vmName + " into host cache");
+                    if(s_logger.isTraceEnabled())
+                        s_logger.trace("put " + vmName + " into host cache");
 
-                _vmCache.put(vmName, new VirtualMachineMO(_context, oc.getObj()));
+                    _vmCache.put(vmName, new VirtualMachineMO(_context, oc.getObj()));
+                }
             }
         }
     }
@@ -530,33 +571,38 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		} else {
         	s_logger.error("VMware createVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
 		}
-
 		return false;
 	}
 
 	public HashMap<String, Integer> getVmVncPortsOnHost() throws Exception {
     	ObjectContent[] ocs = getVmPropertiesOnHyperHost(
-        		new String[] { "name", "config.extraConfig[\"RemoteDisplay.vnc.port\"]" }
-        	);
+            new String[] { "name", "config.extraConfig[\"RemoteDisplay.vnc.port\"]" }
+            );
 
         HashMap<String, Integer> portInfo = new HashMap<String, Integer>();
     	if(ocs != null && ocs.length > 0) {
     		for(ObjectContent oc : ocs) {
 		        List<DynamicProperty> objProps = oc.getPropSet();
 		        if(objProps != null) {
-		        	String name = null;
+		            String vmName = null;
 		        	String value = null;
+		            String vmInternalCSName = null;
 		        	for(DynamicProperty objProp : objProps) {
 		        		if(objProp.getName().equals("name")) {
-		        			name = (String)objProp.getVal();
-		        		} else {
-		        			OptionValue optValue = (OptionValue)objProp.getVal();
-		        			value = (String)optValue.getValue();
-		        		}
-		        	}
+		                    vmName = (String)objProp.getVal();
+		                } else {
+		                    OptionValue optValue = (OptionValue)objProp.getVal();
+		                    value = (String)optValue.getValue();
+		                }
+		            }
+		            VirtualMachineMO vmMo = new VirtualMachineMO(_context, oc.getObj());
+                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+	                if (vmInternalCSName != null && isUserVMInternalCSName(vmInternalCSName))
+	                    vmName = vmInternalCSName;
 
-		        	if(name != null && value != null) {
-		        		portInfo.put(name, Integer.parseInt(value));
+                    if(vmName != null && value != null) {
+		                portInfo.put(vmName, Integer.parseInt(value));
 		        	}
 		        }
     		}
@@ -689,7 +735,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 
 	@Override
-	public boolean createBlankVm(String vmName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB,
+	public boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB,
 		String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 
 		if(s_logger.isTraceEnabled())
@@ -697,7 +743,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 				+ ", cpuSpeedMhz: " + cpuSpeedMHz + ", cpuReservedMHz: " + cpuReservedMHz + ", limitCpu: " + limitCpuUse + ", memoryMB: " + memoryMB
 				+ ", guestOS: " + guestOsIdentifier + ", datastore: " + morDs.getValue() + ", snapshotDirToParent: " + snapshotDirToParent);
 
-		boolean result = HypervisorHostHelper.createBlankVm(this, vmName, cpuCount, cpuSpeedMHz, cpuReservedMHz, limitCpuUse,
+		boolean result = HypervisorHostHelper.createBlankVm(this, vmName, vmInternalCSName, cpuCount, cpuSpeedMHz, cpuReservedMHz, limitCpuUse,
 			memoryMB, memoryReserveMB, guestOsIdentifier, morDs, snapshotDirToParent);
 
 		if(s_logger.isTraceEnabled())

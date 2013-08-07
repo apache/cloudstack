@@ -46,6 +46,7 @@ import com.vmware.vim25.HttpNfcLeaseState;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
@@ -94,10 +95,27 @@ public class HypervisorHostHelper {
 
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
-                DynamicProperty prop = oc.getPropSet().get(0);
-                assert(prop != null);
-                if(prop.getVal().toString().equals(name))
-                    return new VirtualMachineMO(context, oc.getObj());
+                String vmNameInvCenter = null;
+                String vmInternalCSName = null;
+                List<DynamicProperty> objProps = oc.getPropSet();
+		        if(objProps != null) {
+		            for(DynamicProperty objProp : objProps) {
+		                if(objProp.getName().equals("name")) {
+		                    vmNameInvCenter = (String)objProp.getVal();
+		                }
+		                VirtualMachineMO vmMo = new VirtualMachineMO(context, oc.getObj());
+	                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+		                try {
+		                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		                } catch (Exception e) {
+		                    s_logger.error("Unable to retrieve custom field value for internal VM name");
+		                }
+                        if ( (vmNameInvCenter != null && name.equalsIgnoreCase(vmNameInvCenter))
+                                || (vmInternalCSName != null && name.equalsIgnoreCase(vmInternalCSName)) ) {
+                            return vmMo;
+                        }
+                    }
+                }
             }
         }
         return null;
@@ -1122,7 +1140,7 @@ public class HypervisorHostHelper {
         return morNetwork;
     }
 
-    public static boolean createBlankVm(VmwareHypervisorHost host, String vmName,
+    public static boolean createBlankVm(VmwareHypervisorHost host, String vmName, String vmInternalCSName,
             int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier,
             ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 
@@ -1132,6 +1150,9 @@ public class HypervisorHostHelper {
         // VM config basics
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
+        if (vmInternalCSName == null)
+            vmInternalCSName = vmName;
+
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse);
 
         // Scsi controller
@@ -1159,8 +1180,17 @@ public class HypervisorHostHelper {
         vmConfig.getDeviceChange().add(scsiControllerSpec);
         vmConfig.getDeviceChange().add(videoDeviceSpec);
         if(host.createVm(vmConfig)) {
+            // Here, when attempting to find the VM, we need to use the name
+            // with which we created it. This is the only such place where
+            // we need to do this. At all other places, we always use the
+            // VM's internal cloudstack generated name. Here, we cannot use
+            // the internal name because we can set the internal name into the
+            // VM's custom field CLOUD_VM_INTERNAL_NAME only after we create
+            // the VM.
             VirtualMachineMO vmMo = host.findVmOnHyperHost(vmName);
             assert(vmMo != null);
+
+            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME, vmInternalCSName);
 
             int ideControllerKey = -1;
             while(ideControllerKey < 0) {
@@ -1168,7 +1198,7 @@ public class HypervisorHostHelper {
                 if(ideControllerKey >= 0)
                     break;
 
-                s_logger.info("Waiting for IDE controller be ready in VM: " + vmName);
+                s_logger.info("Waiting for IDE controller be ready in VM: " + vmInternalCSName);
                 Thread.sleep(1000);
             }
 

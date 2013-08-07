@@ -271,6 +271,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
+        to.setHostName(vm.getHostName());
         return to;
     }
 
