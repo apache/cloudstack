@@ -2077,6 +2077,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+            if (implemented.first() == null) {
+                s_logger.warn("Failed to implement network id=" + nic.getNetworkId() + " as a part of preparing nic id=" + nic.getId());
+                throw new CloudRuntimeException("Failed to implement network id=" + nic.getNetworkId() + " as a part preparing nic id=" +nic.getId());
+            }
 
             NetworkVO network = implemented.second();
             NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
