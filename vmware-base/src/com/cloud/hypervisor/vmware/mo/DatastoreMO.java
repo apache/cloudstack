@@ -351,17 +351,15 @@ public class DatastoreMO extends BaseMO {
             s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
         }
         for (HostDatastoreBrowserSearchResults result : results) {
-            if (result != null) {
-                List<FileInfo> info = result.getFile();
-                if (info != null && info.size() > 0) {
-                    for (FileInfo fi : info) {
-                        absoluteFileName = parentFolderPath = result.getFolderPath();
-                        s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
-                        if(parentFolderPath.endsWith("]"))
-                            absoluteFileName += " ";
-                        absoluteFileName += fi.getPath();
-                        break;
-                    }
+            List<FileInfo> info = result.getFile();
+            if (info != null && info.size() > 0) {
+                for (FileInfo fi : info) {
+                    absoluteFileName = parentFolderPath = result.getFolderPath();
+                    s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
+                    if(parentFolderPath.endsWith("]"))
+                        absoluteFileName += " ";
+                    absoluteFileName += fi.getPath();
+                    break;
                 }
             }
         }
