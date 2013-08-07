@@ -21,29 +21,39 @@
 <section id="egress-firewall-rule">
   <title>Egress Firewall Rules in an Advanced Zone</title>
   <para>The egress traffic originates from a private network to a public network, such as the
-    Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed from a
-    guest network to the Internet. However, you can control the egress traffic in an Advanced zone
-    by creating egress firewall rules. When an egress firewall rule is applied, the traffic specific
-    to the rule is allowed and the remaining traffic is blocked. When all the firewall rules are
-    removed the default policy, Block, is applied.</para>
-  <para>Egress firewall rules are supported on Juniper SRX and virtual router.</para>
-  <note>
-    <para>The egress firewall rules are not supported on shared networks.</para>
-  </note>
-  <para>Consider the following scenarios to apply egress firewall rules:</para>
-  <itemizedlist>
-    <listitem>
-      <para>Allow the egress traffic from specified source CIDR. The Source CIDR is part of guest
-        network CIDR.</para>
-    </listitem>
-    <listitem>
-      <para>Allow the egress traffic with destination protocol TCP,UDP,ICMP, or ALL.</para>
-    </listitem>
-    <listitem>
-      <para>Allow the egress traffic with destination protocol and port range. The port range is
-        specified for TCP, UDP or for ICMP type and code.</para>
-    </listitem>
-  </itemizedlist>
+    Internet. By default, the egress traffic is blocked in default network offerings, so no outgoing
+    traffic is allowed from a guest network to the Internet. However, you can control the egress
+    traffic in an Advanced zone by creating egress firewall rules. When an egress firewall rule is
+    applied, the traffic specific to the rule is allowed and the remaining traffic is blocked. When
+    all the firewall rules are removed the default policy, Block, is applied.</para>
+  <section id="prereq-egress">
+    <title>Prerequisites and Guidelines</title>
+    <para>Consider the following scenarios to apply egress firewall rules:</para>
+    <itemizedlist>
+      <listitem>
+        <para>Egress firewall rules are supported on Juniper SRX and virtual router.</para>
+      </listitem>
+      <listitem>
+        <para>The egress firewall rules are not supported on shared networks.</para>
+      </listitem>
+      <listitem>
+        <para>Allow the egress traffic from specified source CIDR. The Source CIDR is part of guest
+          network CIDR.</para>
+      </listitem>
+      <listitem>
+        <para>Allow the egress traffic with protocol TCP,UDP,ICMP, or ALL.</para>
+      </listitem>
+      <listitem>
+        <para>Allow the egress traffic with protocol and destination port range. The port range is
+          specified for TCP, UDP or for ICMP type and code.</para>
+      </listitem>
+      <listitem>
+        <para>The default policy is Allow for the new network offerings, whereas on upgrade existing
+          network offerings with firewall service providers will have the default egress policy
+          Deny.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
   <section>
     <title>Configuring an Egress Firewall Rule</title>
     <orderedlist>
@@ -154,7 +164,5 @@
           allowed.</para>
       </listitem>
     </orderedlist>
-    <para>On upgrade existing network offerings with firewall service providers will have the
-      default egress policy DENY.</para>
   </section>
 </section>
