@@ -26,17 +26,48 @@
 # Modify this line to specify the user (default is root)
 user=root
 
-SSHKEY_SERVER_IP=$(nslookup data-server | grep Server | awk '{print $2}')
-logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
+# Add your DHCP lease folders here
+DHCP_FOLDERS="/var/lib/dhclient/* /var/lib/dhcp3/*"
+keys_received=0
+file_count=0
 
-publickey=$(wget -t 3 -T 20 -O - http://data-server/latest/public-keys 2>/dev/null)
+for DHCP_FILE in $DHCP_FOLDERS
+do
+    if [ -f $DHCP_FILE ]
+    then
+        file_count=$((file_count+1))
+        SSHKEY_SERVER_IP=$(grep dhcp-server-identifier $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
 
-if [ $? -eq 0 ]
+        if [ -n "$SSHKEY_SERVER_IP" ]
+        then
+            logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
+
+            publickey=$(wget -t 3 -T 20 -O - http://$SSHKEY_SERVER_IP/latest/public-keys 2>/dev/null)
+
+            if [ $? -eq 0 ]
+            then
+                logger -t "cloud" "Got response from server at $SSHKEY_SERVER_IP"
+                keys_received=1
+                break
+            fi
+        else
+            logger -t "cloud" "Could not find ssh key server IP in $DHCP_FILE trying with the name data-server "
+        fi
+    fi
+done
+
+if [ "$keys_received" == "0" ]
 then
-     logger -t "cloud" "Got response from server at $SSHKEY_SERVER_IP"
-     keys_received=1
-else
-     logger -t "cloud" "Could not find ssh key server IP in $DHCP_FILE"
+    SSHKEY_SERVER_IP=$(nslookup data-server | grep Address |tr '\n' ' '|  awk '{print $4}')
+    logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
+     publickey=$(wget -t 3 -T 20 -O - http://data-server/latest/public-keys 2>/dev/null)
+     if [ $? -eq 0 ]
+     then
+        logger -t "cloud" "Got response from server at $SSHKEY_SERVER_IP"
+        keys_received=1
+     else
+        logger -t "cloud" "Could not resolve the name data-server"
+     fi
 fi
 
 # did we find the keys anywhere?
