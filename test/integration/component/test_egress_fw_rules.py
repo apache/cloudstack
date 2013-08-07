@@ -94,7 +94,6 @@ class Services:
                                                "displaytext" : "Tiny Instance",
                                                "cpunumber"   : 1,
                                                "cpuspeed"    : 100,# in MHz
-                                               "storagetype" : "local",
                                                "memory"      : 128},
                          "network_offering":  {
                                                "name": 'Network offering-VR services',
