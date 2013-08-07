@@ -115,8 +115,8 @@ class Services:
                 "traffictype": 'GUEST',
                 "availability": 'Optional',
                 "useVpc": 'on',
-                "specifyIpRanges": True,
-                "specifyVlan": True
+                "specifyIpRanges": False,
+                "specifyVlan": False
             },
             "vpc_offering": {
                 "name": 'VPC off',
