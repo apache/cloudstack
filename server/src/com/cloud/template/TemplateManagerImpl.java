@@ -1386,7 +1386,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     //getting the prent volume
                     long parentVolumeId=_snapshotDao.findById(snapshotId).getVolumeId();
                     VolumeVO parentVolume = _volumeDao.findById(parentVolumeId);
-                    if (parentVolume.getIsoId() != null) {
+                    if (parentVolume != null && parentVolume.getIsoId() != null) {
                         privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
                         _tmpltDao.update(privateTemplate.getId(), privateTemplate);
                     }

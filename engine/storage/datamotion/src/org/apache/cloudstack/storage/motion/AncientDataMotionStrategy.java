@@ -437,19 +437,18 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 EndPoint ep = selector.select(srcData, destData);
                 answer = ep.sendMessage(cmd);
             }
-            // clean up cache entry in case of failure
-            if (answer == null || !answer.getResult()) {
-                if (cacheData != null) {
-                    cacheMgr.deleteCacheObject(cacheData);
-                }
-            }
-            return answer;
-        } catch (Exception e) {
-            s_logger.debug("copy snasphot failed: " + e.toString());
+
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
-            throw new CloudRuntimeException(e.toString());
+
+            return answer;
+        } catch (Exception e) {
+            s_logger.debug("copy snasphot failed: ", e);
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
+            }
+            throw new CloudRuntimeException(e);
         }
 
     }

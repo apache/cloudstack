@@ -1040,13 +1040,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
 
             try {
-                vmMo = hyperHost.findVmOnHyperHost(vmName);
+                if (vmName != null) {
+                    vmMo = hyperHost.findVmOnHyperHost(vmName);
+                }
                 if (vmMo == null) {
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
                     }
-
-                    vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                    if (vmName != null) {
+                        vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                    }
                     if(vmMo == null) {
                         dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 
@@ -1489,17 +1492,21 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
         String srcOVAFileName = null;
         String srcOVFFileName = null;
-
-        srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+        if (backupName.endsWith(".ova")) {
+            srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+                    + backupName;
+            srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+                    + backupName.replace(".ova", ".ovf");
+        } else {
+            srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
                 + backupName + "." + ImageFormat.OVA.getFileExtension();
-        srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+            srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
                 + backupName + ".ovf";
-
+        }
         String snapshotDir = "";
         if (backupName.contains("/")){
             snapshotDir = backupName.split("/")[0];
         }
-
         File ovafile = new File(srcOVAFileName);
 
         File ovfFile = new File(srcOVFFileName);
