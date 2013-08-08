@@ -39,6 +39,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.server.auth.SHA256SaltedUserAuthenticator;
 import com.cloud.user.UserAccount;
+import com.cloud.user.dao.UserAccountDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AuthenticatorTest {
