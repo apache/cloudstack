@@ -55,14 +55,6 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         return findOneBy(sc);
     }
 
-    @Override
-    public VpcGatewayVO getVpnGatewayForVpc(long vpcId) {
-        SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
-        sc.setParameters("vpcId", vpcId);
-        sc.setParameters("type", VpcGateway.Type.Vpn);
-
-        return findOneBy(sc);
-    }
 
     @Override
     public Long getNetworkAclIdForPrivateIp (long vpcId, long networkId, String ipaddr) {
