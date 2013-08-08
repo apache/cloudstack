@@ -629,10 +629,10 @@ public class Upgrade410to420 implements DbUpgrade {
                             tokens = url.split("/"); // url format - http://vcenter/dc/cluster
                             vc = tokens[2];
                             dcName = tokens[3];
+                            dcOfPreviousCluster = dcOfCurrentCluster;
+                            dcOfCurrentCluster = dcName + "@" + vc;
                             if (count > 0) {
-                                dcOfPreviousCluster = dcOfCurrentCluster;
-                                dcOfCurrentCluster = dcName + "@" + vc;
-                                if (!dcOfPreviousCluster.equals(dcOfCurrentCluster)) {
+                                if (!dcOfPreviousCluster.equalsIgnoreCase(dcOfCurrentCluster)) {
                                     legacyZone = true;
                                     s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
                                 }
