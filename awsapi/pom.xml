@@ -75,6 +75,16 @@
       <version>${cs.log4j.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-syslog-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-snmp-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.neethi</groupId>
       <artifactId>neethi</artifactId>
       <version>${cs.neethi.version}</version>
