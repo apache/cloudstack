@@ -109,7 +109,7 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (55,
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (56, UUID(), 6, 'Windows Vista (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (57, UUID(), 6, 'Windows XP SP2 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (58, UUID(), 6, 'Windows XP SP3 (32-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (59, UUID(), 10, 'Other Ubuntu (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (59, UUID(), 7, 'Other Ubuntu (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (60, UUID(), 7, 'Other (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (61, UUID(), 6, 'Windows 2000 Server');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (62, UUID(), 6, 'Windows 98');
