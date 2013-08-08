@@ -806,9 +806,17 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private Ternary<String, Long, Long> createTemplateFromSnapshot(String installPath, String templateUniqueName,
                                                                    String secStorageUrl, String snapshotPath, Long templateId) throws Exception {
         //Snapshot path is decoded in this form: /snapshots/account/volumeId/uuid/uuid
-        String[] tokens = snapshotPath.split(File.separator);
-        String backupSSUuid = tokens[tokens.length - 1];
-        String snapshotFolder = StringUtils.join(tokens, File.separator, 0, tokens.length -1);
+        String backupSSUuid;
+        String snapshotFolder;
+        if (snapshotPath.endsWith(".ova")) {
+            int index = snapshotPath.lastIndexOf(File.separator);
+            backupSSUuid = snapshotPath.substring(index + 1).replace(".ova", "");
+            snapshotFolder = snapshotPath.substring(0, index);
+        } else {
+            String[] tokens = snapshotPath.split(File.separator);
+            backupSSUuid = tokens[tokens.length - 1];
+            snapshotFolder = StringUtils.join(tokens, File.separator, 0, tokens.length -1);
+        }
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
         String installFullPath = secondaryMountPoint + "/" + installPath;
