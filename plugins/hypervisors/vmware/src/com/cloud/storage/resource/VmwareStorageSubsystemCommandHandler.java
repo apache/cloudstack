@@ -30,6 +30,7 @@ import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import java.io.File;
@@ -87,6 +88,19 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 String name = path.substring(index + 1);
                 storageManager.createOva(parentPath + File.separator + path, name);
                 vol.setPath(path + File.separator + name + ".ova");
+            } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
+                //create template from snapshot on src at first, then copy it to s3
+                TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;
+                cacheTemplate.setDataStore(srcDataStore);
+                CopyCmdAnswer answer = (CopyCmdAnswer)processor.createTemplateFromSnapshot(cmd);
+                if (!answer.getResult()) {
+                    return answer;
+                }
+                cacheTemplate.setDataStore(destDataStore);
+                TemplateObjectTO template = (TemplateObjectTO)answer.getNewData();
+                template.setDataStore(srcDataStore);
+                CopyCommand newCmd = new CopyCommand(template, destData, cmd.getWait(), cmd.executeInSequence());
+                return storageResource.defaultAction(newCmd);
             }
             needDelegation = true;
         }
