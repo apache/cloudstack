@@ -156,7 +156,8 @@ known_categories = {
     'Baremetal' : 'Baremetal',
     'UCS' : 'UCS',
     'Ucs' : 'UCS',
-    'CacheStores' : 'Cache Stores'
+    'CacheStores' : 'Cache Stores',
+    'CacheStore' : 'Cache Store'
     }
 
 
