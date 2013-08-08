@@ -1964,34 +1964,35 @@
 
                                 if (zoneObj.networktype == 'Basic') {
                                     var havingEIP = false,
-                                        havingELB = false;
-                                    $.ajax({
-                                        url: createURL('listNetworkOfferings'),
-                                        data: {
-                                            id: args.context.networks[0].networkofferingid
-                                        },
-                                        async: false,
-                                        success: function(json) {
-                                            $(json.listnetworkofferingsresponse.networkoffering[0].service).each(function() {
-                                                var thisService = this;
-                                                if (thisService.name == "StaticNat") {
-                                                    $(thisService.capability).each(function() {
-                                                        if (this.name == "ElasticIp" && this.value == "true") {
+                                        havingELB = false;     
+                                    
+                                    var services = args.context.networks[0].service;
+                                    if(services != null) {
+                                    	for(var i = 0; i < services.length; i++) {                                    		
+                                    		var thisService = services[i];
+                                    		var capabilities = thisService.capability;
+                                            if (thisService.name == "StaticNat") {                                            	
+                                            	if(capabilities != null) {
+                                            		for(var k = 0; k < capabilities.length; k++) {                                            			
+                                            			if (capabilities[k].name == "ElasticIp" && capabilities[k].value == "true") {                                            				
                                                             havingEIP = true;
-                                                            return false; //break $.each() loop
+                                                            break; 
                                                         }
-                                                    });
-                                                } else if (thisService.name == "Lb") {
-                                                    $(thisService.capability).each(function() {
-                                                        if (this.name == "ElasticLb" && this.value == "true") {
-                                                            havingELB = true;
-                                                            return false; //break $.each() loop
+                                            		}
+                                            	}                                     	
+                                            } else if (thisService.name == "Lb") {
+                                            	if(capabilities != null) {
+                                            		for(var k = 0; k < capabilities.length; k++) {                                            			
+                                            			if (capabilities[k].name == "ElasticLb" && capabilities[k].value == "true") {                                            				
+                                            				havingELB = true;
+                                                            break; 
                                                         }
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    });
+                                            		}
+                                            	}     
+                                            }                                    		
+                                    	}
+                                    }
+                                    
                                     if (havingEIP != true || havingELB != true) { //not EIP-ELB
                                         return false; //acquire new IP is not allowed in non-EIP-ELB basic zone
                                     }
