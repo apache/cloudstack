@@ -1948,7 +1948,7 @@ class TestResourceTags(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic", "simulator"])
     def test_18_invalid_list_parameters(self):
         """ Test listAPI with invalid tags parameter
         """
@@ -1975,9 +1975,10 @@ class TestResourceTags(cloudstackTestCase):
         self.debug("Passing invalid key parameter to the listAPI for vms")
 
         vms = VirtualMachine.list(self.apiclient,
-                  listall=True,
-                  tags={'region111': 'India'}
-                 )
+            **{'tags[0].key': 'region111',
+             'tags[0].value': 'India',
+             'listall' : 'True'}
+        )
         self.assertEqual(
                          vms,
                          None,
