@@ -33,10 +33,6 @@
       <para>Ensure that the VLAN range does not already exist.</para>
     </listitem>
     <listitem>
-      <para>Check whether the new VLAN range overlaps with any existing ones. </para>
-      <para>If overlaps, extend the existing range. If does not overlap, add the new range.</para>
-    </listitem>
-    <listitem>
       <para>In the left navigation, choose Infrastructure. </para>
     </listitem>
     <listitem>
@@ -54,13 +50,15 @@
             <imagedata fileref="./images/edit-icon.png"/>
           </imageobject>
           <textobject>
-            <phrase>edit-icon.png: button to add a VLAN range.</phrase>
+            <phrase>edit-icon.png: button to edit the VLAN range.</phrase>
           </textobject>
         </inlinemediaobject></para>
-      <para>The VLAN Ranges field now be editable.</para>
+      <para>The VLAN Ranges field now is editable.</para>
     </listitem>
     <listitem>
       <para>Specify the start and end of the VLAN range in comma-separated list.</para>
+      <para>Specify all the VLANs you want to use, VLANs not specified will be removed if you are
+        adding new ranges to the existing list. </para>
     </listitem>
     <listitem>
       <para>Click Apply.</para>
