@@ -53,7 +53,7 @@ import com.cloud.user.Account;
 public class ListUcsManagerCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, description="the zone id", entityType=ZoneResponse.class, required=true)
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, description="the zone id", entityType=ZoneResponse.class)
     private Long zoneId;
     
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UcsManagerResponse.class,
