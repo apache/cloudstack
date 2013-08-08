@@ -1688,7 +1688,7 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet storeInfo = null;
         Long storeId = null;
 
-
+        s_logger.debug("Migrating secondary storage to image store");
         try {
             storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
             storeDetailInsert = conn
@@ -1805,7 +1805,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
                 swift_store_id_map.put(swift_id, storeId);
             }
-             */
+            */
 
             // migrate NFS secondary storage, for nfs, keep previous host_id as the store_id
             storeInsert = conn
@@ -1883,6 +1883,7 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+        s_logger.debug("Completed migrating secondary storage to image store");
     }
 
     // migrate volume_host_ref to volume_store_ref
@@ -1890,14 +1891,16 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement volStoreInsert = null;
         PreparedStatement volStoreUpdate = null;
 
+        s_logger.debug("Updating volume_store_ref table from volume_host_ref table");
         try {
-
             volStoreInsert = conn
                     .prepareStatement("INSERT INTO `cloud`.`volume_store_ref` (store_id,  volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, update_count, ref_cnt, state) select host_id, volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, 0, 0, 'Allocated' from `cloud`.`volume_host_ref`");
-            volStoreInsert.executeUpdate();
+            int rowCount = volStoreInsert.executeUpdate();
+            s_logger.debug("Insert modified " + rowCount + " rows");
 
             volStoreUpdate = conn.prepareStatement("update `cloud`.`volume_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");
-            volStoreUpdate.executeUpdate();
+            rowCount = volStoreUpdate.executeUpdate();
+            s_logger.debug("Update modified " + rowCount + " rows");
         }
         catch (SQLException e) {
             String msg = "Unable to migrate volume_host_ref." + e.getMessage();
@@ -1914,6 +1917,7 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+        s_logger.debug("Completed updating volume_store_ref table from volume_host_ref table");
     }
 
     // migrate template_host_ref to template_store_ref
@@ -1921,14 +1925,16 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement tmplStoreInsert = null;
         PreparedStatement tmplStoreUpdate = null;
 
+        s_logger.debug("Updating template_store_ref table from template_host_ref table");
         try {
-
             tmplStoreInsert = conn
                     .prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, update_count, ref_cnt, store_role, state) select host_id, template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, 0, 0, 'Image', 'Allocated' from `cloud`.`template_host_ref`");
-            tmplStoreInsert.executeUpdate();
+            int rowCount = tmplStoreInsert.executeUpdate();
+            s_logger.debug("Insert modified " + rowCount + " rows");
 
             tmplStoreUpdate = conn.prepareStatement("update `cloud`.`template_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");
-            tmplStoreUpdate.executeUpdate();
+            rowCount = tmplStoreUpdate.executeUpdate();
+            s_logger.debug("Update modified " + rowCount + " rows");
         }
         catch (SQLException e) {
             String msg = "Unable to migrate template_host_ref." + e.getMessage();
@@ -1945,16 +1951,19 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+        s_logger.debug("Completed updating template_store_ref table from template_host_ref table");
     }
 
     // migrate some entry contents of snapshots to snapshot_store_ref
     private void migrateSnapshotStoreRef(Connection conn) {
         PreparedStatement snapshotStoreInsert = null;
 
+        s_logger.debug("Updating snapshot_store_ref table from snapshots table");
         try {
             snapshotStoreInsert = conn
                     .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and sechost_id is not null and removed is null");
-            snapshotStoreInsert.executeUpdate();
+            int rowCount = snapshotStoreInsert.executeUpdate();
+            s_logger.debug("Insert modified " + rowCount + " rows");
         }
         catch (SQLException e) {
             String msg = "Unable to migrate snapshot_store_ref." + e.getMessage();
@@ -1968,6 +1977,7 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+        s_logger.debug("Completed updating snapshot_store_ref table from snapshots table");
     }
 
     private void fixNiciraKeys(Connection conn) {
