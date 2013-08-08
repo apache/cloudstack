@@ -28,10 +28,14 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.*;
 import com.cloud.offerings.NetworkOfferingVO;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+
 import com.cloud.utils.Pair;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -50,7 +54,6 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;

@@ -17,9 +17,11 @@
 package com.cloud.vm;
 
 import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -32,7 +34,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.ClusterDetailsDao;
@@ -51,14 +52,17 @@ import com.cloud.deploy.DeploymentPlanningManagerImpl;
 import com.cloud.deploy.FirstFitPlanner;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
+
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

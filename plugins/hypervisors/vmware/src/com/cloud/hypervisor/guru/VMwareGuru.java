@@ -28,11 +28,13 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.host.Host;
 import com.cloud.storage.Storage;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -53,7 +55,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;

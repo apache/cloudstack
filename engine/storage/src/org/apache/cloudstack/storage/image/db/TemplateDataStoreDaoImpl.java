@@ -17,12 +17,16 @@
 package org.apache.cloudstack.storage.image.db;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -32,19 +36,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
-
-import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component
 public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
@@ -250,11 +250,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     @Override
     public List<TemplateDataStoreVO> listByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
         // get all elgible image stores
-        List<DataStore> imgStores = this._storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (imgStores != null) {
             List<TemplateDataStoreVO> result = new ArrayList<TemplateDataStoreVO>();
             for (DataStore store : imgStores) {
-                List<TemplateDataStoreVO> sRes = this.listByTemplateStoreDownloadStatus(templateId, store.getId(),
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(),
                         status);
                 if (sRes != null && sRes.size() > 0) {
                     result.addAll(sRes);
@@ -268,10 +268,10 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     @Override
     public TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
         // get all elgible image stores
-        List<DataStore> imgStores = this._storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (imgStores != null) {
             for (DataStore store : imgStores) {
-                List<TemplateDataStoreVO> sRes = this.listByTemplateStoreDownloadStatus(templateId, store.getId(),
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(),
                         status);
                 if (sRes != null && sRes.size() > 0) {
                     Collections.shuffle(sRes);
@@ -326,13 +326,13 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         // get all elgible image stores
         List<DataStore> imgStores = null;
         if (role == DataStoreRole.Image) {
-            imgStores = this._storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+            imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         } else if (role == DataStoreRole.ImageCache) {
-            imgStores = this._storeMgr.getImageCacheStores(new ZoneScope(zoneId));
+            imgStores = _storeMgr.getImageCacheStores(new ZoneScope(zoneId));
         }
         if (imgStores != null) {
             for (DataStore store : imgStores) {
-                List<TemplateDataStoreVO> sRes = this.listByTemplateStore(templateId, store.getId());
+                List<TemplateDataStoreVO> sRes = listByTemplateStore(templateId, store.getId());
                 if (sRes != null && sRes.size() > 0) {
                     return sRes.get(0);
                 }

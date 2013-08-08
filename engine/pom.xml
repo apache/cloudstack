@@ -32,7 +32,6 @@
   </build>
   <modules>
     <module>api</module>
-    <module>compute</module>
     <module>orchestration</module>
     <module>storage</module>
     <module>storage/volume</module>

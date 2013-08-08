@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +38,10 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.config.ConfigDepot;
-import org.apache.cloudstack.config.ConfigKey;
-import org.apache.cloudstack.config.ConfigValue;
-import org.apache.cloudstack.config.Configurable;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
@@ -76,13 +77,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
-    private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", AsyncJobManager.class, "1440",
+    private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", "1440",
             "Time (in minutes) for async-jobs to be kept in system", true, null);
-    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced", AsyncJobManager.class,
+    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced",
             "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, null);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
@@ -113,6 +112,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
     private ExecutorService _executor;
+
+    @Override
+    public String getConfigComponentName() {
+        return AsyncJobManager.class.getSimpleName();
+    }
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {

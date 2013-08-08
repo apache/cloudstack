@@ -21,14 +21,16 @@ import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;

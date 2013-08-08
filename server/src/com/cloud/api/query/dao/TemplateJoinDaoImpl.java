@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -37,7 +38,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateHostVO;

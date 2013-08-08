@@ -31,9 +31,9 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.config.ConfigDepot;
-import org.apache.cloudstack.config.ConfigKey;
-import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.NumbersUtil;
@@ -125,8 +125,8 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     	return true;
     }
     
-    private final ConfigKey<Integer> ClusterMessageTimeOut = new ConfigKey<Integer>(Integer.class, "cluster.message.timeout.seconds", "Advance", ClusterManager.class, "300",
-            "Time (in seconds) to wait before a inter-management server message post times out.", true, "Seconds");
+    private final ConfigKey<Integer> ClusterMessageTimeOut = new ConfigKey<Integer>(Integer.class, "cluster.message.timeout.seconds", "Advance", "300",
+            "Time (in seconds) to wait before a inter-management server message post times out.", true);
 
     private void init() throws ConfigurationException {
     	if(_mshostDao != null)

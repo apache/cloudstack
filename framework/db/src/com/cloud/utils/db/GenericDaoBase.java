@@ -32,8 +32,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -76,9 +78,6 @@ import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  *  GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
@@ -1266,6 +1265,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return update(ub, sc, rows);
     }
 
+    @Override
     @DB(txn=false)
     public int update(final T entity, final SearchCriteria<T> sc) {
         final UpdateBuilder ub = getUpdateBuilder(entity);

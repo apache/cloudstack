@@ -32,15 +32,16 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.commands.AddSspCmd;
 import org.apache.cloudstack.api.commands.DeleteSspCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.dao.SspCredentialDao;
 import org.apache.cloudstack.network.dao.SspCredentialVO;
 import org.apache.cloudstack.network.dao.SspTenantDao;
 import org.apache.cloudstack.network.dao.SspTenantVO;
 import org.apache.cloudstack.network.dao.SspUuidDao;
 import org.apache.cloudstack.network.dao.SspUuidVO;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;

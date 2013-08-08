@@ -14,20 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.config;
+package org.apache.cloudstack.framework.config;
 
-public interface Configuration {
+/**
+ * Configurable can be implemented by components to insert their own
+ * configuration keys.
+ * 
+ * CloudStack will gather all of these configurations at startup and insert
+ * them into the configuration table.
+ *
+ */
+public interface Configurable {
 
-    public String getCategory();
+    String getConfigComponentName();
 
-    public String getInstance();
-
-    public String getComponent();
-
-    public String getName();
-
-    public String getValue();
-
-    public String getDescription();
-
+    ConfigKey<?>[] getConfigKeys();
 }

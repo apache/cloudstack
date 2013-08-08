@@ -21,8 +21,9 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.ConfigurationVO;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value={ConfigurationDao.class})

@@ -51,7 +51,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 //
 // interface. This has changed as ClusterMO no longer works as a special host anymore. Need to refactor accordingly

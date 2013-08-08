@@ -21,20 +21,22 @@ package org.apache.cloudstack.storage.datastore.driver;
 import java.net.URL;
 import java.util.Date;
 import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;

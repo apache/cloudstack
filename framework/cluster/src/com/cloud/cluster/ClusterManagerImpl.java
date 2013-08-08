@@ -45,9 +45,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.config.ConfigDepot;
-import org.apache.cloudstack.config.ConfigKey;
-import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -68,7 +69,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = { ClusterManager.class })
-public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
+public class ClusterManagerImpl extends ManagerBase implements ClusterManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
@@ -1027,10 +1028,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
         return true;
     }
 
-    protected final ConfigKey<Integer> HeartBeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server", ClusterManager.class,
-            "1500", "Interval to check for the heart beat between management server nodes", false, "Seconds");
-    protected final ConfigKey<Integer> HeartBeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server", ClusterManager.class,
-            "150000", "Threshold before self-fence the management server", true, "Seconds");
+    protected final ConfigKey<Integer> HeartBeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server",
+            "1500", "Interval to check for the heart beat between management server nodes", false);
+    protected final ConfigKey<Integer> HeartBeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server",
+            "150000", "Threshold before self-fence the management server", true);
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -1109,6 +1110,16 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
         }
 
         return pingManagementNode(mshost);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ClusterManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {HeartBeatInterval, HeartBeatThreshold};
     }
 
     private boolean pingManagementNode(ManagementServerHostVO mshost) {

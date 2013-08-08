@@ -33,7 +33,6 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -47,8 +46,11 @@ import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 /**
  * Utility class to manage interactions with agent-based console access

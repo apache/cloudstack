@@ -81,6 +81,7 @@
   </bean>
 
   <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
+  <bean id="configDepot" class = "org.apache.cloudstack.framework.config.ConfigDepotImpl" />
 
   <!--
     DAO with customized configuration

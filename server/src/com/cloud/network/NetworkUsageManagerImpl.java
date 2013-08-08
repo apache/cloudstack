@@ -45,7 +45,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
@@ -74,6 +73,7 @@ import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
