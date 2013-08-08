@@ -448,7 +448,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     public boolean applyACLItemsToPrivateGw(PrivateGateway gateway,List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
-        VpcGatewayVO vpcGatewayVo = _vpcGatewayDao.findById(gateway.getId());
         Network config = _networkDao.findById(gateway.getNetworkId());
         boolean isPrivateGateway = true;
 
