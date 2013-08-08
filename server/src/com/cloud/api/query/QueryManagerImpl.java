@@ -1970,6 +1970,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
+        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
 
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
 
