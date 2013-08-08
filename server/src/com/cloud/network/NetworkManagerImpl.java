@@ -37,6 +37,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.NicIpAlias;
+import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicIpAliasVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
@@ -267,6 +270,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     DataCenterVnetDao _datacenterVnetDao;
     @Inject
     NetworkAccountDao _networkAccountDao;
+    @Inject
+    protected NicIpAliasDao _nicIpAliasDao;
+    @Inject
+    protected IPAddressDao _publicIpAddressDao;
 
     List<NetworkGuru> _networkGurus;
     public List<NetworkGuru> getNetworkGurus() {
@@ -2352,6 +2359,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
         }
 
+        // remove the dhcpservice ip if this is the last nic in subnet.
+        if (vm.getType() == Type.User && isDhcpAccrossMultipleSubnetsSupported(network) && isLastNicInSubnet(nic) &&
+                   network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestType.Shared) {
+            removeDhcpServiceInSubnet(nic);
+        }
         NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
@@ -2361,6 +2373,52 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             s_logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");
         }
     }
+
+    public boolean isDhcpAccrossMultipleSubnetsSupported(Network network) {
+        DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+        Map <Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
+        String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
+        if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isLastNicInSubnet(NicVO nic) {
+        if (_nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getGateway(), nic.getBroadcastUri()).size() > 1) {
+              return false;
+        }
+        return true;
+    }
+
+    @DB
+    @Override
+    public void removeDhcpServiceInSubnet(NicVO nic) {
+        Network network = _networksDao.findById(nic.getNetworkId());
+        DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+        try {
+            NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getGateway(), network.getId(), NicIpAlias.state.active);
+            if (ipAlias != null) {
+                ipAlias.setState(NicIpAlias.state.revoked);
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                _nicIpAliasDao.update(ipAlias.getId(),ipAlias);
+                IPAddressVO aliasIpaddressVo = _publicIpAddressDao.findByIpAndSourceNetworkId(ipAlias.getNetworkId(), ipAlias.getIp4Address());
+                _publicIpAddressDao.unassignIpAddress(aliasIpaddressVo.getId());
+                txn.commit();
+                if (!dhcpServiceProvider.removeDhcpSupportForSubnet(network)) {
+                    s_logger.warn("Failed to remove the ip alias on the router, marking it as removed in db and freed the allocated ip " + ipAlias.getIp4Address());
+                }
+            }
+        }
+        catch (ResourceUnavailableException e) {
+            //failed to remove the dhcpconfig on the router.
+            s_logger.info ("Unable to delete the ip alias due to unable to contact the virtualrouter.");
+        }
+
+    }
+
+
 
     @Override
     public void expungeNics(VirtualMachineProfile vm) {

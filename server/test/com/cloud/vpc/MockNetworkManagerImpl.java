@@ -1413,11 +1413,13 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public void removeDhcpServiceInSubnet(NicVO nic) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 
 
-
-
-	@Override
+    @Override
 	public void prepareNicForMigration(
             VirtualMachineProfile vm,
 			DeployDestination dest) {
