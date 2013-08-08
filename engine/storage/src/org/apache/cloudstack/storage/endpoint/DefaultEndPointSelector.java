@@ -102,7 +102,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sbuilder.append(scope.getScopeId());
         } else if (scope.getScopeType() == ScopeType.ZONE) {
             sbuilder.append(" and data_center_id = ");
-            sbuilder.append(scope.getScopeId());	
+            sbuilder.append(scope.getScopeId());
         }
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by rand() limit 1");
@@ -221,7 +221,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     public EndPoint select(DataStore store) {
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndpointForPrimaryStorage(store);
-        } else if (store.getRole() == DataStoreRole.Image) {
+        } else if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
             // in case there is no ssvm, directly send down command hypervisor
             // host
             // otherwise, send to localhost for bootstrap system vm template
