@@ -298,6 +298,8 @@ UPDATE `cloud`.`vm_template` set guest_os_id = 166 where guest_os_id = 206;
 UPDATE `cloud`.`vm_instance` set guest_os_id = 166 where guest_os_id = 206;
 DELETE IGNORE FROM `cloud`.`guest_os` where id=206;
 
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (141, UUID(), 1, 'CentOS 5.6 (32-bit)');
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (142, UUID(), 1, 'CentOS 5.6 (64-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (169, UUID(), 10, 'Ubuntu 11.04 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (170, UUID(), 10, 'Ubuntu 11.04 (64-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (171, UUID(), 1, 'CentOS 6.3 (32-bit)');
