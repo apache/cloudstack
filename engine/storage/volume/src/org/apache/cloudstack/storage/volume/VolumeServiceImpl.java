@@ -876,7 +876,7 @@ public class VolumeServiceImpl implements VolumeService {
                 future.complete(res);
             }
         } catch (Exception e) {
-            s_logger.error("Failed to process copy volume callback", e);
+            s_logger.error("Failed to process migrate volume callback", e);
             res.setResult(e.toString());
             future.complete(res);
         }

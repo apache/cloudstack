@@ -329,6 +329,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait, _mgmtServer.getExecuteInSequence());
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = ep.sendMessage(cmd);
+            // delete volume on cache store
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
+            }
             return answer;
         }
 
@@ -457,7 +461,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     @Override
     public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-                          AsyncCompletionCallback<CopyCommandResult> callback) {
+            AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);
