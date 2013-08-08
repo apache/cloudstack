@@ -1251,7 +1251,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             // attachment
             DatastoreMO secondaryDsMo = new DatastoreMO(hostService.getServiceContext(null), morSecondaryDs);
             String storeName = secondaryDsMo.getName();
-            String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
+            String isoDatastorePath = String.format("[%s] %s/%s", storeName, isoStorePathFromRoot, isoFileName);
 
             if (isAttach) {
                 vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false);
