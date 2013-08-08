@@ -221,7 +221,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     public EndPoint select(DataStore store) {
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndpointForPrimaryStorage(store);
-        } else if (store.getRole() == DataStoreRole.Image) {
+        } else if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
             // in case there is no ssvm, directly send down command hypervisor
             // host
             // otherwise, send to localhost for bootstrap system vm template

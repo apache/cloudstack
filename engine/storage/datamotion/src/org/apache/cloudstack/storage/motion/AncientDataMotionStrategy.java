@@ -182,7 +182,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         Answer answer = null;
-        boolean usingCache = false;
         DataObject cacheData = null;
         DataObject srcForCopy = srcData;
         try {
@@ -196,10 +195,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             answer = ep.sendMessage(cmd);
 
             if (cacheData != null) {
-                if (answer == null || !answer.getResult()) {
+                if (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME) {
+                    // volume transfer from primary to secondary or vice versa. Volume transfer between primary pools are already handled by copyVolumeBetweenPools
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
-                    cacheMgr.releaseCacheObject(srcForCopy);
+                    // for template, we want to leave it on cache for performance reason
+                    if (answer == null || !answer.getResult()) {
+                        cacheMgr.deleteCacheObject(srcForCopy);
+                    } else {
+                        cacheMgr.releaseCacheObject(srcForCopy);
+                    }
                 }
             }
             return answer;

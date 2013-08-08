@@ -2780,12 +2780,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         // Clean up code to remove all those previous uploadVO and uploadMonitor code. Previous code is trying to fake an async operation purely in
         // db table with uploadVO and async_job entry, but internal implementation is actually synchronous.
-        StoragePool srcPool = (StoragePool) dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
         ImageStoreEntity secStore = (ImageStoreEntity) dataStoreMgr.getImageStore(zoneId);
-        String secondaryStorageURL = secStore.getUri();
 
-        String value = _configDao.getValue(Config.CopyVolumeWait.toString());
-        int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
