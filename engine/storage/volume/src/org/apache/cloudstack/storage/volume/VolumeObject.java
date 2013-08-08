@@ -502,7 +502,9 @@ public class VolumeObject implements VolumeInfo {
                             this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
-                    volStore.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        volStore.setSize(newVol.getSize());
+                    }
                     this.volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }
@@ -595,7 +597,9 @@ public class VolumeObject implements VolumeInfo {
                             this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
-                    volStore.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        volStore.setSize(newVol.getSize());
+                    }
                     this.volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }

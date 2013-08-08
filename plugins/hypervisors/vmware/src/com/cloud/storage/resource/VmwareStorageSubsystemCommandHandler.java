@@ -30,6 +30,7 @@ import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import java.io.File;
 
@@ -76,6 +77,17 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         }
 
         if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
+            //need to take extra processing for vmware, such as packing to ova, before sending to S3
+            if (srcData.getObjectType() == DataObjectType.VOLUME) {
+                NfsTO cacheStore = (NfsTO)srcDataStore;
+                String parentPath = storageResource.getRootDir(cacheStore.getUrl());
+                VolumeObjectTO vol = (VolumeObjectTO)srcData;
+                String path = vol.getPath();
+                int index = path.lastIndexOf(File.separator);
+                String name = path.substring(index + 1);
+                storageManager.createOva(parentPath + File.separator + path, name);
+                vol.setPath(path + File.separator + name + ".ova");
+            }
             needDelegation = true;
         }
 

@@ -204,7 +204,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy object failed: " + e.toString());
+            s_logger.debug("copy object failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
