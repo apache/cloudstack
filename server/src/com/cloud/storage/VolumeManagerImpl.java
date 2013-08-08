@@ -1245,7 +1245,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vol.addPayload(payload);
 
             AsyncCallFuture<VolumeApiResult> future = volService.resize(vol);
-            future.get();
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.warn("Failed to resize the volume " + volume);
+                return null;
+            }
+            
             volume = _volsDao.findById(volume.getId());
 
             if (newDiskOffering != null) {
@@ -1266,11 +1271,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
             return volume;
         } catch (InterruptedException e) {
-            s_logger.debug("failed get resize volume result", e);
+            s_logger.warn("failed get resize volume result", e);
         } catch (ExecutionException e) {
-            s_logger.debug("failed get resize volume result", e);
+            s_logger.warn("failed get resize volume result", e);
         } catch (Exception e) {
-            s_logger.debug("failed get resize volume result", e);
+            s_logger.warn("failed get resize volume result", e);
         }
 
         return null;
