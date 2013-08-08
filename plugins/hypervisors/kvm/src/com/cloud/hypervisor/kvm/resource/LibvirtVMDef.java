@@ -24,6 +24,8 @@ import java.util.UUID;
 
 public class LibvirtVMDef {
     private String _hvsType;
+    private static long _libvirtVersion;
+    private static long _qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -646,26 +648,39 @@ public class LibvirtVMDef {
         private String _ipAddr;
         private String _scriptPath;
         private nicModel _model;
+        private Integer _networkRateKBps;
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
 
         public void defBridgeNet(String brName, String targetBrName,
                 String macAddr, nicModel model) {
+            defBridgeNet(brName, targetBrName, macAddr, model, 0);
+        }
+
+        public void defBridgeNet(String brName, String targetBrName,
+                String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.BRIDGE;
             _sourceName = brName;
             _networkName = targetBrName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defPrivateNet(String networkName, String targetName,
                 String macAddr, nicModel model) {
+            defPrivateNet(networkName, targetName, macAddr, model, 0);
+        }
+
+        public void defPrivateNet(String networkName, String targetName,
+                String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.NETWORK;
             _sourceName = networkName;
             _networkName = targetName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defEthernet(String targetName, String macAddr,  nicModel model) {
@@ -740,6 +755,12 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if ((_libvirtVersion >= 9008) && (_networkRateKBps > 0)) {
+                netBuilder.append("<bandwidth>\n");
+                netBuilder.append("<inbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
+                netBuilder.append("<outbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
+                netBuilder.append("</bandwidth>\n");
             }
             if (_virtualPortType != null) {
                 netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");
@@ -903,6 +924,14 @@ public class LibvirtVMDef {
 
     public void setHvsType(String hvs) {
         _hvsType = hvs;
+    }
+
+    public void setLibvirtVersion(long libvirtVersion) {
+        _libvirtVersion = libvirtVersion;
+    }
+
+    public void setQemuVersion(long qemuVersion) {
+        _qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {

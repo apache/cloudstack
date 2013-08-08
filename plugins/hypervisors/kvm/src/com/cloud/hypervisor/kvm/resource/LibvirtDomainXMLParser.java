@@ -116,15 +116,22 @@ public class LibvirtDomainXMLParser {
                 String dev = getAttrValue("target", "dev", nic);
                 String model = getAttrValue("model", "type", nic);
                 InterfaceDef def = new InterfaceDef();
-
+                NodeList bandwidth = nic.getElementsByTagName("bandwidth");
+                Integer networkRateKBps = 0;
+                if ((bandwidth != null) && (bandwidth.getLength() !=0)) {
+                    Integer inbound = Integer.valueOf(getAttrValue("inbound", "average", (Element)bandwidth.item(0)));
+                    Integer outbound = Integer.valueOf(getAttrValue("outbound", "average", (Element)bandwidth.item(0)));
+                    if (inbound == outbound)
+                        networkRateKBps = inbound;
+                }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
                     def.defPrivateNet(network, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()));
+                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
                     def.defBridgeNet(bridge, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()));
+                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 }
                 interfaces.add(def);
             }

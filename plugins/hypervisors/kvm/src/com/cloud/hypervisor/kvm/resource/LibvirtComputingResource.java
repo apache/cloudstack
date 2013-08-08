@@ -266,6 +266,7 @@ ServerResource {
     private int _migrateSpeed;
 
     private long _hvVersion;
+    private long _kernelVersion;
     private KVMHAMonitor _monitor;
     private final String _SSHKEYSPATH = "/root/.ssh";
     private final String _SSHPRVKEYPATH = _SSHKEYSPATH + File.separator
@@ -316,6 +317,8 @@ ServerResource {
 
     protected String _hypervisorType;
     protected String _hypervisorURI;
+    protected long _hypervisorLibvirtVersion;
+    protected long _hypervisorQemuVersion;
     protected String _hypervisorPath;
     protected String _sysvmISOPath;
     protected String _privNwName;
@@ -683,6 +686,8 @@ ServerResource {
         try {
             _hvVersion = conn.getVersion();
             _hvVersion = (_hvVersion % 1000000) / 1000;
+            _hypervisorLibvirtVersion = conn.getLibVirVersion();
+            _hypervisorQemuVersion = conn.getVersion();
         } catch (LibvirtException e) {
 
         }
@@ -799,6 +804,10 @@ ServerResource {
         } catch (Exception e) {
             throw new ConfigurationException("Failed to initialize libvirt.vif.driver " + e);
         }
+
+        String unameKernelVersion = Script.runSimpleBashScript("uname -r");
+        String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
+        _kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
 
         return true;
     }
@@ -3016,10 +3025,13 @@ ServerResource {
         vm.setDomUUID(UUID.nameUUIDFromBytes(vmTO.getName().getBytes())
                 .toString());
         vm.setDomDescription(vmTO.getOs());
+        vm.setLibvirtVersion(_hypervisorLibvirtVersion);
+        vm.setQemuVersion(_hypervisorQemuVersion);
 
         GuestDef guest = new GuestDef();
         guest.setGuestType(GuestDef.guestType.KVM);
         guest.setGuestArch(vmTO.getArch());
+
         guest.setMachineType("pc");
         guest.setBootOrder(GuestDef.bootOrder.CDROM);
         guest.setBootOrder(GuestDef.bootOrder.HARDISK);
