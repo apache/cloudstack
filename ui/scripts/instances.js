@@ -1861,7 +1861,11 @@
             allowedActions.push("snapshot");
             allowedActions.push("destroy");            
             allowedActions.push("reset");
-            allowedActions.push("scaleUp");
+             
+            //when userVm is running, scaleUp is not supported for KVM
+            if (jsonObj.hypervisor != 'KVM') {
+            	allowedActions.push("scaleUp");
+            }              
 
             if (isAdmin())
                 allowedActions.push("migrate");
@@ -1884,7 +1888,7 @@
             allowedActions.push("destroy");
             allowedActions.push("reset");
             allowedActions.push("snapshot");
-            allowedActions.push("scaleUp");
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
             allowedActions.push("changeAffinity");
 
             if (isAdmin())

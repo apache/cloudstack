@@ -16101,8 +16101,16 @@
 
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
+            
+            //when systemVm is running, scaleUp is not supported for KVM and XenServer.
+            //however, listRouters API doesn't return hypervisor property....
+            /*
+            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'XenServer') {
+            	allowedActions.push("scaleUp");
+            }  
+            */
             allowedActions.push("scaleUp");
-            //	if(jsonObj.vpcid != null)
+            
             allowedActions.push("restart");
 
             allowedActions.push("viewConsole");
@@ -16110,7 +16118,7 @@
                 allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
-            allowedActions.push("scaleUp");
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
             allowedActions.push("remove");
         }
         return allowedActions;
@@ -16140,13 +16148,22 @@
             allowedActions.push("stop");
             allowedActions.push("restart");
             allowedActions.push("remove");
+            
+            //when systemVm is running, scaleUp is not supported for KVM and XenServer.            
+            //however, listSystemVms API doesn't return hypervisor property....
+            /*
+            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'XenServer') {
+            	allowedActions.push("scaleUp");
+            }  
+            */
             allowedActions.push("scaleUp");
+            
             allowedActions.push("viewConsole");
             if (isAdmin())
                 allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
-            allowedActions.push("scaleUp");            
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors           
             allowedActions.push("remove");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("remove");
