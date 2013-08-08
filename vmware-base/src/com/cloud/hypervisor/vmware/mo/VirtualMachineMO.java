@@ -2200,6 +2200,11 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public int getCoresPerSocket() throws Exception {
+        // number of cores per socket is 1 in case of ESXi. It's not defined explicitly and the property is support since vSphere API 5.0.
+        String apiVersion = HypervisorHostHelper.getVcenterApiVersion(_context);
+        if (apiVersion.compareTo("5.0") < 0) {
+            return 1;
+        }
         return (Integer)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.numCoresPerSocket");
     }
 
