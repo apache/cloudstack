@@ -17,7 +17,6 @@
 package com.cloud.keystore;
 
 import java.sql.PreparedStatement;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -32,6 +31,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component
 @Local(value={KeystoreDao.class})
@@ -53,8 +54,7 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
 	public List<KeystoreVO> findCertChain() {
 		SearchCriteria<KeystoreVO> sc =  CertChainSearch.create();
 		List<KeystoreVO> ks = listBy(sc);
-		Collections.sort(ks, new Comparator() { @Override
-        public int compare(Object o1, Object o2) {
+		Collections.sort(ks, new Comparator() { public int compare(Object o1, Object o2) {
 			Integer seq1 = ((KeystoreVO)o1).getIndex();
 			Integer seq2 = ((KeystoreVO)o2).getIndex();
 			return seq1.compareTo(seq2);
@@ -99,7 +99,7 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
 	@Override
 	@DB
 	public void save(String alias, String certificate, Integer index, String domainSuffix) {
-		KeystoreVO ks = findByName(alias);
+		KeystoreVO ks = this.findByName(alias);
 		if (ks != null) {
 			ks.setCertificate(certificate);
 			ks.setName(alias);
@@ -112,7 +112,7 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
 			newks.setName(alias);
 			newks.setIndex(index);
 			newks.setDomainSuffix(domainSuffix);
-			persist(newks);
+			this.persist(newks);
 		}
 	}
 }

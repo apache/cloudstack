@@ -32,11 +32,10 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;

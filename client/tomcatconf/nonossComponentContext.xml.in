@@ -52,7 +52,7 @@
   <!--
     DAO with customized configuration under non-OSS deployment
   -->
-  <bean id="configurationDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl">
+  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
     <property name="configParams">
       <map>
         <entry key="premium" value="true" />

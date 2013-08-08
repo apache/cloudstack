@@ -23,7 +23,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,10 +47,9 @@ import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.config.ConfigDepot;
+import org.apache.cloudstack.config.ConfigKey;
+import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -78,12 +76,14 @@ import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.HostTransferMapVO.HostTransferState;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
@@ -134,14 +134,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         super();
     }
 
-    protected final ConfigKey<Boolean> EnableLB = new ConfigKey<Boolean>(Boolean.class, "agent.lb.enabled", "Advanced", "false",
-            "Enable agent load balancing between management server nodes", true);
-    protected final ConfigKey<Double> ConnectedAgentThreshold = new ConfigKey<Double>(Double.class, "agent.load.threshold", "Advanced", "0.7",
-            "What percentage of the agents can be held by one management server before load balancing happens", true);
-    protected final ConfigKey<Integer> LoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", "16",
-            "How many agents to connect to in each round", true);
-    protected final ConfigKey<Integer> ScanInterval = new ConfigKey<Integer>(Integer.class, "direct.agent.scan.interval", "Advanced", "90",
-            "Interval between scans to load agents", false);
+    protected final ConfigKey<Boolean> EnableLB = new ConfigKey<Boolean>(Boolean.class, "agent.lb.enabled", "Advanced", AgentManager.class, "false",
+            "Enable agent load balancing between management server nodes", true, "True/False");
+    protected final ConfigKey<Double> ConnectedAgentThreshold = new ConfigKey<Double>(Double.class, "agent.load.threshold", "Advanced", AgentManager.class, "0.7",
+            "What percentage of the agents can be held by one management server before load balancing happens", true, "0-1");
+    protected final ConfigKey<Integer> LoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", AgentManager.class, "16",
+            "How many agents to connect to in each round", true, "");
+    protected final ConfigKey<Integer> ScanInterval = new ConfigKey<Integer>(Integer.class, "direct.agent.scan.interval", "Advanced", AgentManager.class, "90",
+            "Interval between scans to load agents", false, "Seconds");
     
 
     protected ConfigValue<Boolean> _agentLBEnabled;
@@ -508,13 +508,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     throw new CloudRuntimeException("Unable to resolve " + ip);
                 }
                 try {
-                    ch = SocketChannel.open(new InetSocketAddress(addr, _port.value()));
+                    ch = SocketChannel.open(new InetSocketAddress(addr, _port));
                     ch.configureBlocking(true); // make sure we are working at blocking mode
                     ch.socket().setKeepAlive(true);
                     ch.socket().setSoTimeout(60 * 1000);
                     try {
                         SSLContext sslContext = Link.initSSLContext(true);
-                        sslEngine = sslContext.createSSLEngine(ip, _port.value());
+                        sslEngine = sslContext.createSSLEngine(ip, _port);
                         sslEngine.setUseClientMode(true);
 
                         Link.doHandshake(ch, sslEngine, true);
@@ -1241,6 +1241,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
 
+    public boolean executeResourceUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
+        return _resourceMgr.executeUserRequest(hostId, event);
+    }
+
     protected class ClusterDispatcher implements ClusterManager.Dispatcher {
         @Override
         public String getName() {
@@ -1313,7 +1317,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 boolean result = false;
                 try {
-                    result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent());
+                    result = executeResourceUserRequest(cmd.getHostId(), cmd.getEvent());
                     s_logger.debug("Result is " + result);
                 } catch (AgentUnavailableException ex) {
                     s_logger.warn("Agent is unavailable", ex);
@@ -1404,18 +1408,5 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
         profilerAgentLB.stop();
-    }
-    
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        ConfigKey<?>[] keys = super.getConfigKeys();
-        
-        List<ConfigKey<?>> keysLst = new ArrayList<ConfigKey<?>>();
-        keysLst.addAll(Arrays.asList(keys));
-        keysLst.add(EnableLB);
-        keysLst.add(ConnectedAgentThreshold);
-        keysLst.add(LoadSize);
-        keysLst.add(ScanInterval);
-        return keysLst.toArray(new ConfigKey<?>[keysLst.size()]);
     }
 }

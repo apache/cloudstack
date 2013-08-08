@@ -34,7 +34,7 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
-import java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class DatacenterMO extends BaseMO {
 

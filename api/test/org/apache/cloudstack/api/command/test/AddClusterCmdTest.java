@@ -16,25 +16,24 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import java.util.Arrays;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
-
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceService;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class AddClusterCmdTest extends TestCase {
 
@@ -45,7 +44,6 @@ public class AddClusterCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Override
     @Before
     public void setUp() {
         /*
@@ -112,7 +110,8 @@ public class AddClusterCmdTest extends TestCase {
         Cluster cluster = Mockito.mock(Cluster.class);
         Cluster[] clusterArray = new Cluster[] { cluster };
 
-        Mockito.doReturn(Arrays.asList(clusterArray)).when(resourceService).discoverCluster(addClusterCmd);
+        Mockito.when(resourceService.discoverCluster(addClusterCmd))
+                .thenReturn(Arrays.asList(clusterArray));
 
         addClusterCmd.execute();
 

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.config.dao;
+package com.cloud.configuration.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,8 +29,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.framework.config.ConfigurationVO;
-
+import com.cloud.configuration.ConfigurationVO;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -49,13 +48,13 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 
     final SearchBuilder<ConfigurationVO> InstanceSearch;
     final SearchBuilder<ConfigurationVO> NameSearch;
-    
+
     public static final String UPDATE_CONFIGURATION_SQL = "UPDATE configuration SET value = ? WHERE name = ?";
 
     public ConfigurationDaoImpl () {
         InstanceSearch = createSearchBuilder();
         InstanceSearch.and("instance", InstanceSearch.entity().getInstance(), SearchCriteria.Op.EQ);
-        
+
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
@@ -65,10 +64,10 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     public boolean isPremium() {
         return _premium;
     }
-    
+
     @Override
     public void invalidateCache() {
-    	_configs = null;
+	_configs = null;
     }
 
     @Override
@@ -82,21 +81,21 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             List<ConfigurationVO> configurations = listIncludingRemovedBy(sc);
 
             for (ConfigurationVO config : configurations) {
-            	if (config.getValue() != null)
-            		_configs.put(config.getName(), config.getValue());
+		if (config.getValue() != null)
+			_configs.put(config.getName(), config.getValue());
             }
 
             if(!"DEFAULT".equals(instance)){
-            	//Default instance params are already added, need not add again 
-            	sc = InstanceSearch.create();
-            	sc.setParameters("instance", instance);
+		//Default instance params are already added, need not add again
+		sc = InstanceSearch.create();
+		sc.setParameters("instance", instance);
 
-            	configurations = listIncludingRemovedBy(sc);
+		configurations = listIncludingRemovedBy(sc);
 
-            	for (ConfigurationVO config : configurations) {
-            		if (config.getValue() != null)
-            			_configs.put(config.getName(), config.getValue());
-            	}
+		for (ConfigurationVO config : configurations) {
+			if (config.getValue() != null)
+				_configs.put(config.getName(), config.getValue());
+		}
             }
 
         }
@@ -109,12 +108,12 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     public Map<String, String> getConfiguration(Map<String, ? extends Object> params) {
         return getConfiguration("DEFAULT", params);
     }
-    
+
     @Override
     public Map<String, String> getConfiguration() {
         return getConfiguration("DEFAULT", new HashMap<String, Object>());
     }
-    
+
     protected void mergeConfigs(Map<String, String> dbParams, Map<String, ? extends Object> xmlParams) {
         for (Map.Entry<String, ? extends Object> param : xmlParams.entrySet()) {
             dbParams.put(param.getKey(), (String)param.getValue());
@@ -123,9 +122,9 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 
     @Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name, params);
+	super.configure(name, params);
 
-    	Object premium = params.get("premium");
+	Object premium = params.get("premium");
         _premium = (premium != null) && ((String) premium).equals("true");
 
         return true;
@@ -134,7 +133,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     //Use update method with category instead
     @Override @Deprecated
     public boolean update(String name, String value) {
-    	Transaction txn = Transaction.currentTxn();
+	Transaction txn = Transaction.currentTxn();
 		try {
 			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
 			stmt.setString(1, value);
@@ -149,7 +148,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 
     @Override
     public boolean update(String name, String category, String value) {
-    	Transaction txn = Transaction.currentTxn();
+	Transaction txn = Transaction.currentTxn();
 		try {
 			value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
 			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
@@ -162,13 +161,13 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 		}
 		return false;
     }
-    
+
     @Override
     public String getValue(String name) {
-    	ConfigurationVO config =  findByName(name);
+	ConfigurationVO config =  findByName(name);
         return (config == null) ? null : config.getValue();
     }
-    
+
     @Override
     @DB
     public String getValueAndInitIfNotExist(String name, String category, String initValue) {
@@ -195,12 +194,12 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 
         }
     }
-    
+
     @Override
     public ConfigurationVO findByName(String name) {
         SearchCriteria<ConfigurationVO> sc = NameSearch.create();
         sc.setParameters("name", name);
         return findOneIncludingRemovedBy(sc);
     }
-    
+
 }

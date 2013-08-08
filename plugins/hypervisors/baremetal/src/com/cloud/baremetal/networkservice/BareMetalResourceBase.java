@@ -25,14 +25,12 @@ package com.cloud.baremetal.networkservice;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -68,6 +66,7 @@ import com.cloud.baremetal.manager.BaremetalManager;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -79,6 +78,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 
 @Local(value = ServerResource.class)
 public class BareMetalResourceBase extends ManagerBase implements ServerResource {
@@ -133,8 +134,8 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 			_cpuNum = Long.parseLong((String) params.get(ApiConstants.CPU_NUMBER));
 		} catch (NumberFormatException e) {
 			throw new ConfigurationException(String.format("Unable to parse number of CPU or memory capacity "
-			        + "or cpu capacity(cpu number = %1$s memCapacity=%2$s, cpuCapacity=%3$s", params.get(ApiConstants.CPU_NUMBER),
-			        params.get(ApiConstants.MEMORY), params.get(ApiConstants.CPU_SPEED)));
+			        + "or cpu capacity(cpu number = %1$s memCapacity=%2$s, cpuCapacity=%3$s", (String) params.get(ApiConstants.CPU_NUMBER),
+			        (String) params.get(ApiConstants.MEMORY), (String) params.get(ApiConstants.CPU_SPEED)));
 		}
 
 		_zone = (String) params.get("zone");

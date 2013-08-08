@@ -59,7 +59,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.vm.ReservationContext;
 
-import java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class NiciraNvpGuestNetworkGuruTest {
 	PhysicalNetworkDao physnetdao = mock (PhysicalNetworkDao.class);
