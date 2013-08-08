@@ -30,7 +30,7 @@
     <repository>
         <id>mido-maven-public-releases</id>
         <name>mido-maven-public-releases</name>
-        <url>https://googledrive.com/host/0B7iVfAZ_5GmJTk9PUDFNLTl5MVk/releases</url>
+        <url>http://cs-maven.midokura.com/releases</url>
     </repository>
 </repositories>
   <dependencies>
