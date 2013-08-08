@@ -2833,37 +2833,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     assert (volumeDsDetails != null);
                     VirtualDevice device;
                     
-                    datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmName, volumeDsDetails.second(), 
+                    datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameOnVcenter, volumeDsDetails.second(), 
                     	volumeTO.getPath());
                     device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(),
                         (controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
-                    
-/*                    
-                    datastoreDiskPath = String.format("[%s] %s.vmdk", volumeDsDetails.second().getName(), volumeTO.getPath());
-                    
-                    String chainInfo = volumeTO.getChainInfo();
-
-					// chainInfo is no longer in use
-                    if (chainInfo != null && !chainInfo.isEmpty()) {
-                        String[] diskChain = _gson.fromJson(chainInfo, String[].class);
-                        if (diskChain == null || diskChain.length < 1) {
-                            s_logger.warn("Empty previously-saved chain info, fall back to the original");
-                            device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(),
-                                    (controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
-                        } else {
-                            s_logger.info("Attach the disk with stored chain info: " + chainInfo);
-                            for (int j = 0; j < diskChain.length; j++) {
-                                diskChain[j] = String.format("[%s] %s", volumeDsDetails.second().getName(), diskChain[j]);
-                            }
-
-                            device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, diskChain, volumeDsDetails.first(),
-                                    (controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
-                        }
-                    } else {
-                        device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(),
-                                (controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
-                    }
-*/
                     
                     deviceConfigSpecArray[i].setDevice(device);
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
