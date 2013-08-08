@@ -27,12 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
-
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -79,7 +75,10 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
 
 
 @Local(value = Discoverer.class)
@@ -291,7 +290,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		if (privateTrafficLabel != null) {
             s_logger.info("Detected private network label : " + privateTrafficLabel);
 		}
-
+        Pair<Boolean, Long> vsmInfo = new Pair<Boolean, Long>(false, 0L);
         if (nexusDVS) {
 			if (zoneType != NetworkType.Basic) {
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
@@ -309,7 +308,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             String vsmPassword = _urlParams.get("vsmpassword");
             String clusterName = cluster.getName();
             try {
-                _nexusElement.validateVsmCluster(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
+                vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
             } catch(ResourceInUseException ex) {
                 DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
                 throw discEx;
@@ -435,6 +434,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		} finally {
 			if (context != null)
 				context.close();
+            if (vsmInfo.first()) {
+                try {
+                    _nexusElement.deleteCiscoNexusVSM(vsmInfo.second().longValue());
+                } catch(Exception e) {
+                }
+            }
 		}
 	}
 

@@ -17,11 +17,9 @@
 
 package com.cloud.network.element;
 
-import java.lang.Class;
-import java.lang.String;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -30,8 +28,8 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
-import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
+import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMsCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.Config;
@@ -44,29 +42,30 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.CiscoNexusVSMDeviceManagerImpl;
+import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.Network;
-import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
+import com.cloud.server.ManagementService;
+import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.server.ManagementService;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
 public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService, NetworkElement, Manager {
@@ -261,7 +260,10 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @DB
-    public boolean validateVsmCluster(String vsmIp, String vsmUser, String vsmPassword, long clusterId, String clusterName) throws ResourceInUseException {
+    public Pair<Boolean, Long> validateAndAddVsm(String vsmIp, String vsmUser, String vsmPassword, long clusterId, String clusterName) throws ResourceInUseException {
+        CiscoNexusVSMDeviceVO vsm = null;
+        boolean vsmAdded = false;
+        Long vsmId = 0L;
         if(vsmIp != null && vsmUser != null && vsmPassword != null) {
             NetconfHelper netconfClient;
             try {
@@ -277,7 +279,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
             Transaction txn;
 
             // If VSM already exists and is mapped to a cluster, fail this operation.
-            CiscoNexusVSMDeviceVO vsm = _vsmDao.getVSMbyIpaddress(vsmIp);
+            vsm = _vsmDao.getVSMbyIpaddress(vsmIp);
             if(vsm != null) {
                 List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
                 if (clusterList != null && !clusterList.isEmpty()) {
@@ -343,6 +345,10 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
             _clusterDao.remove(clusterId);
             throw new CloudRuntimeException(msg);
         }
-        return true;
+        if (vsm != null) {
+            vsmAdded = true;
+            vsmId = vsm.getId();
+        }
+        return new Pair<Boolean, Long>(vsmAdded, vsmId);
     }
 }
