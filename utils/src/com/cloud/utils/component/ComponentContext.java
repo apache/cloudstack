@@ -89,7 +89,7 @@ public class ComponentContext implements ApplicationContextAware {
             try {
             	entry.getValue().check();
             } catch(Throwable e) {
-            	s_logger.error("System integrity check failed. Refuse to startup");
+            	s_logger.error("System integrity check failed. Refuse to startup", e);
             	System.exit(1);
             }
         }
