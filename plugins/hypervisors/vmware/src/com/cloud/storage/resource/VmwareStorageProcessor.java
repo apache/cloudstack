@@ -405,7 +405,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 hostService.invalidateServiceContext(null);
             }
 
-            String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "CopyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new CopyCmdAnswer(e.toString());
         }
@@ -1154,7 +1154,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
-           }
+            }
 
             if (morDs == null) {
                 String msg = "Unable to find the mounted datastore to execute AttachVolumeCommand, vmName: " + vmName;
@@ -1166,30 +1166,32 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String datastoreVolumePath;
 
             if(isAttach) {
-            	if(!isManaged)
-	            	datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, 
-		                dsMo, volumeTO.getPath());
-            	else 
-            		datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+                if(!isManaged) {
+                    datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName,
+                            dsMo, volumeTO.getPath());
+                } else {
+                    datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+                }
             } else {
-            	datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
-            	if(!dsMo.fileExists(datastoreVolumePath))
-            		datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+                if(!dsMo.fileExists(datastoreVolumePath)) {
+                    datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                }
             }
-            
+
             disk.setVdiUuid(datastoreVolumePath);
 
             AttachAnswer answer = new AttachAnswer(disk);
             if (isAttach) {
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
-            } else {	
+            } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);
 
                 if (isManaged) {
                     this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
                 } else {
-                	VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath());
+                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath());
                 }
             }
 
@@ -1448,10 +1450,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         }
                     }
 
-                    if (s_logger.isInfoEnabled())
+                    if (s_logger.isInfoEnabled()) {
                         s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
-                    
-                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));                   
+                    }
+
+                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));
                     return new Answer(cmd, true, "Success");
                 }
 
@@ -1471,8 +1474,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));                   
-            
+            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));
+
             return new Answer(cmd, true, "Success");
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
