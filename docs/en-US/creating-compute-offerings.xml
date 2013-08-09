@@ -54,6 +54,10 @@
                         hosts</para></listitem>
             <listitem><para><emphasis role="bold">CPU cap</emphasis>: Whether to limit the level of CPU usage even if
                         spare capacity is available.</para></listitem>
+            <listitem><para><emphasis role="bold">isVolatile</emphasis>: If checked, VMs created from this service
+                offering will have their root disks reset upon reboot. This is useful for
+                secure environments that need a fresh start on every boot and for desktops
+                that should not retain state. </para></listitem>
             <listitem><para><emphasis role="bold">Public</emphasis>: Indicate whether the service offering should be
                         available all domains or only some domains. Choose Yes to make it available
                         to all domains. Choose No to limit the scope to a subdomain; &PRODUCT;
