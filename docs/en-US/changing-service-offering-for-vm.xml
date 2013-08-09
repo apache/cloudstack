@@ -28,7 +28,8 @@
 			<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
 			<listitem><para>In the left navigation, click Instances.</para></listitem>
 			<listitem><para>Choose the VM that you want to work with.</para></listitem>
-			<listitem><para>Click the Stop button to stop the VM.<inlinemediaobject>
+			<listitem><para>(Skip this step if you have enabled dynamic VM scaling; see <xref linkend="change-cpu-ram-for-vm"/>.)</para>
+				<para>Click the Stop button to stop the VM.<inlinemediaobject>
 					<imageobject>
 						<imagedata fileref="./images/stop-instance-icon.png"/>
 					</imageobject>
@@ -50,5 +51,49 @@
 			<listitem><para>Select the offering you want to apply to the selected VM.</para></listitem>
 			<listitem><para>Click OK.</para></listitem>
 		</orderedlist>
+	<section id="change-cpu-ram-for-vm">
+		<!-- CLOUDSTACK-658 -->
+		<title>CPU and Memory Scaling for Running VMs</title>
+		<para>(Supported on VMware and XenServer)</para>
+		<para>It is not always possible to accurately predict the CPU and RAM requirements
+			when you first deploy a VM.
+			You might need to increase or decrease these resources at any time during the life of a VM.
+			You can dynamically modify CPU and RAM levels to
+			change these resources for a running VM without incurring any downtime.</para>
+		<para>Dynamic CPU and RAM scaling can be used in the following cases:</para>
+		<itemizedlist>
+			<listitem><para>New VMs that are created
+				after the installation of &PRODUCT; 4.2.
+				If you are upgrading from a previous version of &PRODUCT;,
+				your existing VMs created with previous versions
+				will not have the dynamic scaling capability.</para>
+			</listitem>
+			<listitem><para>User VMs on hosts running VMware and XenServer.</para></listitem>
+			<listitem><para>System VMs on VMware.</para></listitem>
+			<listitem><para>VM Tools or XenServer Tools must be installed on the virtual machine.</para></listitem>
+			<listitem><para>The new requested CPU and RAM values must be within the constraints allowed by the hypervisor
+				and the VM operating system.</para></listitem>
+		</itemizedlist>
+		<para>To configure this feature, use the following new global configuration variables:</para>
+		<itemizedlist>
+			<listitem><para>enable.dynamic.scale.vm: Set to True to enable the feature. By default, the feature is turned off.</para></listitem>
+			<listitem><para>scale.retry: How many times to attempt the scaling operation. Default = 2.</para></listitem>
+		</itemizedlist>
+		<para>To modify the CPU and/or RAM capacity of a virtual machine, 
+			you need to change
+			the compute offering of the VM to a new compute offering that has the
+			desired CPU and RAM values. You can use the same steps
+			described above in <xref linkend="changing-service-offering-for-vm"/>, but skip the step where you
+			stop the virtual machine. Of course, you might have to create a new compute offering first.</para>
+		<para>When you submit a dynamic scaling request,
+			the resources will be scaled up on the current host if possible.
+			If the host does not have enough resources, the VM will be live migrated
+			to another host in the same cluster.
+			If there is no host in the cluster that can fulfill the requested level of CPU and RAM,
+			the scaling operation will fail.
+			The VM will continue to run as it was before.</para>
+		<warning><para>&PRODUCT; will not check to be sure that the new CPU and RAM levels are compatible
+			with the OS running on the VM.</para></warning>
 	</section>
+</section>
 
