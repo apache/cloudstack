@@ -1092,7 +1092,7 @@ ServerResource {
         }
     }
 
-    private void passCmdLine(String vmName, String cmdLine)
+    private boolean passCmdLine(String vmName, String cmdLine)
             throws InternalErrorException {
         final Script command = new Script(_patchViaSocketPath, 5*1000, s_logger);
         String result;
@@ -1101,7 +1101,9 @@ ServerResource {
         result = command.execute();
         if (result != null) {
             s_logger.debug("passcmd failed:" + result);
+            return false;
         }
+        return true;
     }
 
     boolean isDirectAttachedNetwork(String type) {
@@ -3459,8 +3461,12 @@ ServerResource {
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 if ((_kernelVersion < 2006034) && (conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
-                    for (int count = 0; count < 10; count ++) {
-                        passCmdLine(vmName, vmSpec.getBootArgs());
+                    //wait for 5 minutes at most
+                    for (int count = 0; count < 30; count ++) {
+                        boolean succeed = passCmdLine(vmName, vmSpec.getBootArgs());
+                        if (succeed) {
+                            break;
+                        }
                         try {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
