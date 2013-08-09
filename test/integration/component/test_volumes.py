@@ -111,22 +111,22 @@ class TestAttachVolume(cloudstackTestCase):
         #get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
                              cls.api_client,
-                             hypervisor = cls.services["virtual_machine"]["hypervisor"],
                              type ='Routing',
                              zoneid = cls.zone.id,
                              podid = cls.pod.id,
                              )
         ver = listHost[0].hypervisorversion
+        hv = listHost[0].hypervisor
         cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
-        cmd.hypervisor = cls.services["virtual_machine"]["hypervisor"]
+        cmd.hypervisor = hv
         res = cls.api_client.listHypervisorCapabilities(cmd)
         cls.debug('Hypervisor Capabilities: {}'.format(res))
         for i in range(len(res)):
             if res[i].hypervisorversion == ver:
                 break
-        max_data_volumes = int(res[i].maxdatavolumeslimit)
-        cls.debug('max data volumes:{}'.format(max_data_volumes))
-        cls.services["volume"]["max"] = max_data_volumes
+        cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
+        cls.services["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
@@ -173,7 +173,7 @@ class TestAttachVolume(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "needle"])
     def test_01_volume_attach(self):
         """Test Attach volumes (max capacity)
         """
@@ -185,7 +185,8 @@ class TestAttachVolume(cloudstackTestCase):
         # 5. Start The VM. Start VM should be successful
 
         # Create 5 volumes and attach to VM
-        for i in range(self.services["volume"]["max"] - 1):
+        for i in range(self.max_data_volumes):
+            self.debug(i)
             volume = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
@@ -224,22 +225,21 @@ class TestAttachVolume(cloudstackTestCase):
                                     type='DATADISK',
                                     listall=True
                                     )
-        self.assertEqual(
-                                isinstance(list_volume_response, list),
-                                True,
-                                "Check list volumes response for valid list"
-                        )
-
         self.assertNotEqual(
-                                list_volume_response,
-                                None,
-                                "Check if volume exists in ListVolumes"
-                                )
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
         self.assertEqual(
-                            len(list_volume_response),
-                            self.services["volume"]["max"],
-                            "Check number of data volumes attached to VM"
-                        )
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
+        self.assertEqual(
+            len(list_volume_response),
+            self.max_data_volumes,
+            "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes)
+        )
         self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
         # Reboot VM
         self.virtual_machine.reboot(self.apiclient)
@@ -352,17 +352,16 @@ class TestAttachVolume(cloudstackTestCase):
                                             self.apiclient,
                                             id=volume.id
                                             )
-        self.assertEqual(
-                                isinstance(list_volume_response, list),
-                                True,
-                                "Check list volumes response for valid list"
-                        )
-
         self.assertNotEqual(
-                            list_volume_response,
-                            None,
-                            "Check if volume exists in ListVolumes"
-                            )
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
         # Attach volume to VM
         with self.assertRaises(Exception):
             self.debug("Trying to Attach volume: %s to VM: %s" % (
@@ -402,22 +401,22 @@ class TestAttachDetachVolume(cloudstackTestCase):
         #get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
                              cls.api_client,
-                             hypervisor = cls.services["virtual_machine"]["hypervisor"],
                              type ='Routing',
                              zoneid = cls.zone.id,
                              podid = cls.pod.id,
                              )
         ver = listHost[0].hypervisorversion
+        hv = listHost[0].hypervisor
         cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
-        cmd.hypervisor = cls.services["virtual_machine"]["hypervisor"]
+        cmd.hypervisor = hv #cls.services["virtual_machine"]["hypervisor"]
         res = cls.api_client.listHypervisorCapabilities(cmd)
         cls.debug('Hypervisor Capabilities: {}'.format(res))
         for i in range(len(res)):
             if res[i].hypervisorversion == ver:
                 break
-        max_data_volumes = int(res[i].maxdatavolumeslimit)
-        cls.debug('max data volumes:{}'.format(max_data_volumes))
-        cls.services["volume"]["max"] = max_data_volumes
+        cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
+        cls.services["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
@@ -477,7 +476,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
 
         volumes = []
         # Create 5 volumes and attach to VM
-        for i in range(self.services["volume"]["max"] - 1):
+        for i in range(self.max_data_volumes):
             volume = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
@@ -498,17 +497,16 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=volume.id
                                                 )
-            self.assertEqual(
-                                isinstance(list_volume_response, list),
-                                True,
-                                "Check list volumes response for valid list"
-                        )
-
             self.assertNotEqual(
-                                list_volume_response,
-                                None,
-                                "Check if volume exists in ListVolumes"
-                                )
+                list_volume_response,
+                None,
+                "Check if volume exists in ListVolumes"
+            )
+            self.assertEqual(
+                isinstance(list_volume_response, list),
+                True,
+                "Check list volumes response for valid list"
+            )
             self.debug("Attach volume: %s to VM: %s" % (
                                                 volume.id,
                                                 self.virtual_machine.id
@@ -526,22 +524,21 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                     type='DATADISK',
                                     listall=True
                                     )
-        self.assertEqual(
-                                isinstance(list_volume_response, list),
-                                True,
-                                "Check list volumes response for valid list"
-                        )
-
         self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
         self.assertEqual(
-                            len(list_volume_response),
-                            self.services["volume"]["max"],
-                            "Check number of data volumes attached to VM"
+                                isinstance(list_volume_response, list),
+                                True,
+                                "Check list volumes response for valid list"
                         )
+        self.assertEqual(
+            len(list_volume_response),
+            self.max_data_volumes,
+            "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes)
+        )
 
         # Detach all volumes from VM
         for volume in volumes:
@@ -668,22 +665,22 @@ class TestAttachVolumeISO(cloudstackTestCase):
         #get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
                              cls.api_client,
-                             hypervisor = cls.services["virtual_machine"]["hypervisor"],
                              type ='Routing',
                              zoneid = cls.zone.id,
                              podid = cls.pod.id,
                              )
         ver = listHost[0].hypervisorversion
+        hv = listHost[0].hypervisor
         cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
-        cmd.hypervisor = cls.services["virtual_machine"]["hypervisor"]
+        cmd.hypervisor = hv
         res = cls.api_client.listHypervisorCapabilities(cmd)
         cls.debug('Hypervisor Capabilities: {}'.format(res))
         for i in range(len(res)):
             if res[i].hypervisorversion == ver:
                 break
-        max_data_volumes = int(res[i].maxdatavolumeslimit)
-        cls.debug('max data volumes:{}'.format(max_data_volumes))
-        cls.services["volume"]["max"] = max_data_volumes
+        cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
+        cls.services["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
@@ -740,7 +737,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
         # 3. Verify that attach ISO is successful
 
         # Create 5 volumes and attach to VM
-        for i in range(self.services["volume"]["max"] - 1):
+        for i in range(self.max_data_volumes):
             volume = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
@@ -758,16 +755,16 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=volume.id
                                                 )
-            self.assertEqual(
-                                isinstance(list_volume_response, list),
-                                True,
-                                "Check list volumes response for valid list"
-                        )
             self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
+            self.assertEqual(
+                                isinstance(list_volume_response, list),
+                                True,
+                                "Check list volumes response for valid list"
+                        )
             # Attach volume to VM
             self.virtual_machine.attach_volume(
                                                 self.apiclient,
@@ -781,21 +778,21 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                     type='DATADISK',
                                     listall=True
                                     )
-        self.assertEqual(
-                                isinstance(list_volume_response, list),
-                                True,
-                                "Check list volumes response for valid list"
-                        )
         self.assertNotEqual(
                                 list_volume_response,
                                 None,
                                 "Check if volume exists in ListVolumes"
                                 )
         self.assertEqual(
-                            len(list_volume_response),
-                            self.services["volume"]["max"],
-                            "Check number of data volumes attached to VM"
+                                isinstance(list_volume_response, list),
+                                True,
+                                "Check list volumes response for valid list"
                         )
+        self.assertEqual(
+            len(list_volume_response),
+            self.max_data_volumes,
+            "Volumes attached to the VM %s. Expected %s" % (len(list_volume_response), self.max_data_volumes)
+        )
         # Create an ISO and attach it to VM
         iso = Iso.create(
                          self.apiclient,
@@ -943,17 +940,16 @@ class TestVolumes(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=self.volume.id
                                                 )
-        self.assertEqual(
-                         isinstance(list_volume_response, list),
-                         True,
-                         "Check list volumes response for valid list"
-                        )
         self.assertNotEqual(
                             list_volume_response,
                             None,
                             "Check if volume exists in ListVolumes"
                             )
-
+        self.assertEqual(
+                         isinstance(list_volume_response, list),
+                         True,
+                         "Check list volumes response for valid list"
+                        )
         volume = list_volume_response[0]
 
         self.assertEqual(
@@ -987,16 +983,16 @@ class TestVolumes(cloudstackTestCase):
                                     type='DATADISK',
                                     listall=True
                                     )
-        self.assertEqual(
-                         isinstance(list_volume_response, list),
-                         True,
-                         "Check list volumes response for valid list"
-                        )
         self.assertNotEqual(
-                                list_volume_response,
-                                None,
-                                "Check if volume exists in ListVolumes"
-                                )
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
         volume = list_volume_response[0]
         self.assertEqual(
                         volume.vmname,
@@ -1033,17 +1029,16 @@ class TestVolumes(cloudstackTestCase):
                                             self.apiclient,
                                             id=self.volume.id
                                             )
-        self.assertEqual(
-                         isinstance(list_volume_response, list),
-                         True,
-                         "Check list volumes response for valid list"
-                        )
-
         self.assertNotEqual(
                             list_volume_response,
                             None,
                             "Check if volume exists in ListVolumes"
                             )
+        self.assertEqual(
+                         isinstance(list_volume_response, list),
+                         True,
+                         "Check list volumes response for valid list"
+                        )
         volume = list_volume_response[0]
         self.assertEqual(
                          volume.virtualmachineid,
@@ -1077,12 +1072,11 @@ class TestVolumes(cloudstackTestCase):
         list_volume_response = list_volumes(
                                             self.apiclient,
                                             id=self.volume.id,
-                                            type='DATADISK'
                                             )
         self.assertEqual(
                         list_volume_response,
                         None,
-                        "Check if volume exists in ListVolumes"
+                        "Volume %s was not deleted" % self.volume.id
                     )
         return
 
