@@ -1911,8 +1911,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
          *  so we assume that it's VLAN for now
          */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true, BroadcastDomainType.Vlan, null);
+        	synchronized(vmMo.getRunningHost().getMor().getValue().intern()) {
+	            networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
+	                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true, BroadcastDomainType.Vlan, null);
+        	}
         } else {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
                     vmMo.getRunningHost(), vlanId, null, null, null, _ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan);
@@ -3246,9 +3248,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_logger.info("Prepare network on " + switchType + " " + switchName + " with name prefix: " + namePrefix);
 
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix,
-                    hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
-                    !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType(), nicTo.getUuid());
+        	synchronized(hostMo.getMor().getValue().intern()) {
+	            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix,
+	                    hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
+	                    !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType(), nicTo.getUuid());
+        	}
         }
         else {
             String vlanId = getVlanInfo(nicTo, switchName.second());
