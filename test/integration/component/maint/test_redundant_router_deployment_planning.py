@@ -196,7 +196,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
-            self.debug("Warning: Exception during cleanup : %s" % e)
+            self.warn("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
@@ -391,7 +391,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                 cmd.allocationstate = 'Disabled'
                 self.apiclient.updatePod(cmd)
 
-            self.debug("Warning: Disabled all pods in zone")
+            self.warn("Warning: Disabled all pods in zone")
 
             cmd = updatePod.updatePodCmd()
             cmd.id = pods[0].id
@@ -528,11 +528,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                         allocationstate="Disabled"
                         )
 
-        for pod in pods:
-            cmd = updatePod.updatePodCmd()
-            cmd.id = pod.id
-            cmd.allocationstate = 'Enabled'
-            self.apiclient.updatePod(cmd)
+        if pods is not None:
+            for pod in pods:
+                cmd = updatePod.updatePodCmd()
+                cmd.id = pod.id
+                cmd.allocationstate = 'Enabled'
+                self.apiclient.updatePod(cmd)
         return
 
     @attr(tags=["advanced", "advancedns"])
@@ -611,7 +612,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                 cmd.allocationstate = 'Disabled'
                 self.apiclient.updatePod(cmd)
 
-            self.debug("Warning: Disabled all pods in zone")
+            self.warn("Warning: Disabled all pods in zone")
 
             cmd = updatePod.updatePodCmd()
             cmd.id = pods[0].id
@@ -627,7 +628,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                 cmd.allocationstate = 'Disabled'
                 self.apiclient.updateCluster(cmd)
 
-            self.debug("Warning: Disabled all pods in zone")
+            self.warn("Warning: Disabled all pods in zone")
 
             cmd = updateCluster.updateClusterCmd()
             cmd.id = clusters[0].id
@@ -751,17 +752,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                         listall=True,
                         allocationstate="Disabled"
                         )
-        self.assertEqual(
-                         isinstance(pods, list),
-                         True,
-                         "List pods should not return an empty response"
-                         )
-
-        for pod in pods:
-            cmd = updatePod.updatePodCmd()
-            cmd.id = pod.id
-            cmd.allocationstate = 'Enabled'
-            self.apiclient.updatePod(cmd)
+        if pods is not None:
+            for pod in pods:
+                cmd = updatePod.updatePodCmd()
+                cmd.id = pod.id
+                cmd.allocationstate = 'Enabled'
+                self.apiclient.updatePod(cmd)
 
         clusters = Cluster.list(
                                 self.apiclient,
@@ -770,11 +766,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                                 listall=True
                                 )
 
-        for cluster in clusters:
-                cmd = updateCluster.updateClusterCmd()
-                cmd.id = cluster.id
-                cmd.allocationstate = 'Enabled'
-                self.apiclient.updateCluster(cmd)
+        if clusters is not None:
+            for cluster in clusters:
+                    cmd = updateCluster.updateClusterCmd()
+                    cmd.id = cluster.id
+                    cmd.allocationstate = 'Enabled'
+                    self.apiclient.updateCluster(cmd)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -852,7 +849,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                 cmd.allocationstate = 'Disabled'
                 self.apiclient.updatePod(cmd)
 
-            self.debug("Warning: Disabled all pods in zone")
+            self.warn("Warning: Disabled all pods in zone")
 
             cmd = updatePod.updatePodCmd()
             cmd.id = pods[0].id
@@ -868,7 +865,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                 cmd.allocationstate = 'Disabled'
                 self.apiclient.updateCluster(cmd)
 
-            self.debug("Warning: Disabled all pods in zone")
+            self.warn("Warning: Disabled all pods in zone")
 
             cmd = updateCluster.updateClusterCmd()
             cmd.id = clusters[0].id
