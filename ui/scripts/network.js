@@ -1168,20 +1168,13 @@
                                                     });
                                                 }
                                             });
-                                            $.ajax({
-                                                url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid), //include currently selected network offeirng to dropdown
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                                                    $(networkOfferingObjs).each(function() {
-                                                        items.push({
-                                                            id: this.id,
-                                                            description: this.displaytext
-                                                        });
-                                                    });
-                                                }
-                                            });
+                                                                                        
+                                            //include currently selected network offeirng to dropdown
+                                            items.push({
+                                                id: args.context.networks[0].networkofferingid,
+                                                description: args.context.networks[0].networkofferingdisplaytext
+                                            });                                                                                   
+                                          
                                             args.response.success({
                                                 data: items
                                             });
@@ -2707,28 +2700,20 @@
                                         var havingVpnService = false;
 
                                         if ('networks' in args.context && args.context.networks[0].vpcid == null) { //a non-VPC network from Guest Network section
-                                            $.ajax({
-                                                url: createURL('listNetworkOfferings'),
-                                                data: {
-                                                    listAll: true,
-                                                    id: args.context.networks[0].networkofferingid
-                                                },
-                                                async: false,
-                                                success: function(json) {
-                                                    var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
-                                                    $(networkoffering.service).each(function() {
-                                                        var thisService = this;
-                                                        if (thisService.name == "Firewall")
-                                                            havingFirewallService = true;
-                                                        if (thisService.name == "PortForwarding")
-                                                            havingPortForwardingService = true;
-                                                        if (thisService.name == "Lb")
-                                                            havingLbService = true;
-                                                        if (thisService.name == "Vpn")
-                                                            havingVpnService = true;
-                                                    });
-                                                }
-                                            });
+                                            var services = args.context.networks[0].service;
+                                            if(services != null) {
+                                            	for(var i = 0; i < services.length; i++) {                                    		
+                                            		var thisService = services[i];
+                                            		if (thisService.name == "Firewall")
+                                                        havingFirewallService = true;
+                                                    if (thisService.name == "PortForwarding")
+                                                        havingPortForwardingService = true;
+                                                    if (thisService.name == "Lb")
+                                                        havingLbService = true;
+                                                    if (thisService.name == "Vpn")
+                                                        havingVpnService = true;                                                                            		
+                                            	}
+                                            }  
                                         } else { //a VPC network from Guest Network section or from VPC section
                                             // Firewall is not supported in IP from VPC section
                                             // (because ACL has already supported in tier from VPC section)
