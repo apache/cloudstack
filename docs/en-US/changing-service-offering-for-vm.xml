@@ -83,8 +83,7 @@
 			you need to change
 			the compute offering of the VM to a new compute offering that has the
 			desired CPU and RAM values. You can use the same steps
-			described in "Changing a Service Offering for a VM" in the
-			&PRODUCT; 3.0.6 Administration Guide, but skip the step where you
+			described above in <xref linkend="changing-service-offering-for-vm"/>, but skip the step where you
 			stop the virtual machine. Of course, you might have to create a new compute offering first.</para>
 		<para>When you submit a dynamic scaling request,
 			the resources will be scaled up on the current host if possible.
