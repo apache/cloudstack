@@ -46,4 +46,10 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
     List<DedicatedResourceVO> listByDomainId(Long domainId);
 
     List<DedicatedResourceVO> listZonesNotInDomainIds(List<Long> domainIds);
+
+    List<Long> listAllPods();
+
+    List<Long> listAllClusters();
+
+    List<Long> listAllHosts();
 }
