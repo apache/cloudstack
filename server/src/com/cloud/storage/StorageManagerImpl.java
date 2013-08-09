@@ -1158,6 +1158,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
+                        _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
                         _snapshotStoreDao.remove(destroyedSnapshotStoreVO.getId());
                     }
 
