@@ -40,6 +40,9 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
@@ -298,6 +301,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ManagementService _mgr;
     @Inject
     DedicatedResourceDao _dedicatedDao;
+    @Inject
+    AffinityGroupDao _affinityGroupDao;
+    @Inject
+    AffinityGroupService _affinityGroupService;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -1968,8 +1975,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             zone = _zoneDao.persist(zone);
             if (domainId != null) {
                 // zone is explicitly dedicated to this domain
+                // create affinity group associated.
+                AffinityGroup group = createDedicatedAffinityGroup(null, domainId, null);
                 DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null,
-                        domainId, null);
+                        domainId, null, group.getId());
                 _dedicatedDao.persist(dedicatedResource);
             }
 
@@ -1984,6 +1993,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } finally {
             txn.close();
         }
+    }
+
+    private AffinityGroup createDedicatedAffinityGroup(String affinityGroupName, Long domainId, Long accountId) {
+        if (affinityGroupName == null) {
+            // default to a groupname with account/domain information
+            affinityGroupName = "ZoneDedicatedGrp-domain-" + domainId + (accountId != null ? "-acct-" + accountId : "");
+        }
+
+        AffinityGroup group = null;
+        String accountName = null;
+
+        if (accountId != null) {
+            AccountVO account = _accountDao.findById(accountId);
+            accountName = account.getAccountName();
+
+            group = _affinityGroupDao.findByAccountAndName(accountId, affinityGroupName);
+            if (group != null) {
+                return group;
+            }
+        } else {
+            // domain level group
+            group = _affinityGroupDao.findDomainLevelGroupByName(domainId, affinityGroupName);
+            if (group != null) {
+                return group;
+            }
+        }
+
+        group = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName,
+                "ExplicitDedication", "dedicated resources group");
+
+        return group;
+
     }
 
     @Override

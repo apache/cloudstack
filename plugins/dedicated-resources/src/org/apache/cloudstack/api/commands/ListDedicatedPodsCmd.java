@@ -21,12 +21,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -60,6 +62,9 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
             description = "the name of the account associated with the pod. Must be used with domainId.")
     private String accountName;
 
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list dedicated pods by affinity group")
+    private Long affinityGroupId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -74,6 +79,10 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
 
     public String getAccountName(){
         return accountName;
+    }
+
+    public Long getAffinityGroupId() {
+        return affinityGroupId;
     }
 
     /////////////////////////////////////////////////////

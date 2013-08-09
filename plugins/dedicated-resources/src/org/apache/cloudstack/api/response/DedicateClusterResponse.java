@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import javax.persistence.Column;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
@@ -36,6 +38,10 @@ public class DedicateClusterResponse extends BaseResponse {
 
     @SerializedName("accountid") @Param(description="the Account ID of the cluster")
     private String accountId;
+
+    @SerializedName("affinitygroupid")
+    @Param(description = "the Dedication Affinity Group ID of the cluster")
+    private String affinityGroupId;
 
     public String getId() {
         return id;
@@ -75,5 +81,13 @@ public class DedicateClusterResponse extends BaseResponse {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getAffinityGroupId() {
+        return affinityGroupId;
+    }
+
+    public void setAffinityGroupId(String affinityGroupId) {
+        this.affinityGroupId = affinityGroupId;
     }
 }

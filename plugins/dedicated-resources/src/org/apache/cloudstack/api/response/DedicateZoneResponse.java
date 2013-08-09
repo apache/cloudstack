@@ -40,6 +40,10 @@ public class DedicateZoneResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the Account Id to which the Zone is dedicated")
     private String accountId;
 
+    @SerializedName("affinitygroupid")
+    @Param(description = "the Dedication Affinity Group ID of the zone")
+    private String affinityGroupId;
+
     public String getId() {
         return id;
     }
@@ -80,4 +84,11 @@ public class DedicateZoneResponse extends BaseResponse {
         this.accountId = accountId;
     }
 
+    public String getAffinityGroupId() {
+        return affinityGroupId;
+    }
+
+    public void setAffinityGroupId(String affinityGroupId) {
+        this.affinityGroupId = affinityGroupId;
+    }
 }

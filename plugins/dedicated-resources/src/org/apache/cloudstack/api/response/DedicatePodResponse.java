@@ -40,6 +40,10 @@ public class DedicatePodResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the Account Id to which the Pod is dedicated")
     private String accountId;
 
+    @SerializedName("affinitygroupid")
+    @Param(description = "the Dedication Affinity Group ID of the pod")
+    private String affinityGroupId;
+
     public String getId() {
         return id;
     }
@@ -78,5 +82,13 @@ public class DedicatePodResponse extends BaseResponse {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public String getAffinityGroupId() {
+        return affinityGroupId;
+    }
+
+    public void setAffinityGroupId(String affinityGroupId) {
+        this.affinityGroupId = affinityGroupId;
     }
 }
