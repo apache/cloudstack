@@ -982,57 +982,47 @@
                         },
 
                         tabFilter: function(args) {
-                            var networkOfferingHavingELB = false;
+                            var networkHavingELB = false;
                             var hasNetworkACL = false;
                             var hasSRXFirewall = false;
                             var isVPC = false;
                             var isAdvancedSGZone = false;
                             var hiddenTabs = [];
                             var isSharedNetwork;
+                          
+                            var thisNetwork = args.context.networks[0];    
+                            if (thisNetwork.vpcid != null) {
+                                isVPC = true;
+                            }
+                            if (thisNetwork.type == 'Shared') {
+                                isSharedNetwork = true;
+                            }
 
-                            // Get network offering data
-                            $.ajax({
-                                url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-                                    var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
+                            $(thisNetwork.service).each(function() {
+                                var thisService = this;
 
-                                    if (networkoffering.forvpc) {
-                                        isVPC = true;
-                                    }
-
-                                    if (networkoffering.guestiptype == 'Shared') {
-                                        isSharedNetwork = true;
-                                    }
-
-                                    $(networkoffering.service).each(function() {
-                                        var thisService = this;
-
-                                        if (thisService.name == 'NetworkACL') {
-                                            hasNetworkACL = true;
-                                        } else if (thisService.name == "Lb") {
-                                            $(thisService.capability).each(function() {
-                                                if (this.name == "ElasticLb" && this.value == "true") {
-                                                    networkOfferingHavingELB = true;
-                                                }
-                                            });
-                                        }
-
-                                        if (thisService.name == 'Firewall') {
-                                            $(thisService.provider).each(function() {
-                                                if (this.name == 'JuniperSRX') {
-                                                    hasSRXFirewall = true;
-
-                                                    return false;
-                                                }
-
-                                                return true;
-                                            });
+                                if (thisService.name == 'NetworkACL') {
+                                    hasNetworkACL = true;
+                                } else if (thisService.name == "Lb") {
+                                    $(thisService.capability).each(function() {
+                                        if (this.name == "ElasticLb" && this.value == "true") {
+                                            networkHavingELB = true;
                                         }
                                     });
                                 }
-                            });
+
+                                if (thisService.name == 'Firewall') {
+                                    $(thisService.provider).each(function() {
+                                        if (this.name == 'JuniperSRX') {
+                                            hasSRXFirewall = true;
+
+                                            return false;
+                                        }
+
+                                        return true;
+                                    });
+                                }
+                            });                       
 
                             // Get zone data
                             $.ajax({
@@ -1048,7 +1038,7 @@
                                 }
                             });
 
-                            if (!networkOfferingHavingELB) {
+                            if (!networkHavingELB) {
                                 hiddenTabs.push("addloadBalancer");
                             }
 
