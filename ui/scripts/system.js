@@ -13850,7 +13850,7 @@
                                     $.ajax({
                                     	url: createURL('listUcsManagers'),
                                     	data: {
-                                    		id: args.context.physicalResources[0].id 
+                                    		id: args.context.ucsManagers[0].id 
                 			            },                                      
                                         success: function(json) {
                                             //for testing only (begin)
