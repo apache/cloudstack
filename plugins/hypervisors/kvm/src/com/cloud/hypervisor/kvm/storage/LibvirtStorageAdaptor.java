@@ -73,6 +73,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
     private String _lockfile = "KVMFILELOCK" + File.separator + ".lock";
+    private static final int ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM = 300; // 300 seconds
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
     private int rbdFeatures = (1<<0); /* Feature 1<<0 means layering in RBD format 2 */
@@ -1175,7 +1176,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
         String lockFile = spd.getTargetPath() + File.separator + _lockfile;
         s_logger.debug("Attempting to lock pool " + pool.getName() + " with file " + lockFile);
-        if (lock(lockFile, 30)) {
+        if (lock(lockFile, ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM)) {
             try {
                 pool.refresh(0);
             } finally {
@@ -1195,7 +1196,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
         String lockFile = pool.getLocalPath() + File.separator + _lockfile;
         s_logger.debug("Attempting to lock pool " + pool.getName() + " with file " + lockFile);
-        if (lock(lockFile, 30)) {
+        if (lock(lockFile, ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM)) {
             try {
                 vol.delete(0);
             } finally {
