@@ -166,7 +166,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
             return findEndPointForImageMove(srcStore, destStore);
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
-            EndPoint ep = findEndpointForImageStorage(destStore);
+            // pick ssvm based on image cache dc
+            DataStore selectedStore = null;
+            if (srcStore.getRole() == DataStoreRole.ImageCache) {
+                selectedStore = srcStore;
+            } else {
+                selectedStore = destStore;
+            }
+            EndPoint ep = findEndpointForImageStorage(selectedStore);
             return ep;
         } else if (moveBetweenImages(srcStore, destStore)) {
             EndPoint ep = findEndpointForImageStorage(destStore);
