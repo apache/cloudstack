@@ -2166,12 +2166,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
-        // If the disk is not attached to any VM then it can be moved. Otherwise, it needs to be attached to a vm
-        // running on a hypervisor that supports storage motion so that it be be migrated.
-        if (instanceId != null && !liveMigrateVolume) {
-            throw new InvalidParameterValueException("Volume needs to be detached from VM");
-        }
-
         if (liveMigrateVolume && !cmd.isLiveMigrate()) {
             throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " +
                     "the parameter livemigrate should be specified");

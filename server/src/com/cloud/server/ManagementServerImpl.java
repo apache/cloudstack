@@ -1244,18 +1244,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Volume must be attached to an instance for live migration.
         List<StoragePool> allPools = new ArrayList<StoragePool>();
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-        Long instanceId = volume.getInstanceId();
-        VMInstanceVO vm = null;
-        if (instanceId != null) {
-            vm = _vmInstanceDao.findById(instanceId);
-        }
-
-        // Check that the VM is in correct state.
-        if (vm == null || vm.getState() != State.Running) {
-            s_logger.info("Volume " + volume + " isn't attached to any running vm. Only volumes attached to a running" +
-                    " VM can be migrated.");
-            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
-        }
 
         // Volume must be in Ready state to be migrated.
         if (!Volume.State.Ready.equals(volume.getState())) {
@@ -1268,70 +1256,91 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
         }
 
-        // Check if the underlying hypervisor supports storage motion.
-        boolean storageMotionSupported = false;
-        Long hostId = vm.getHostId();
-        if (hostId != null) {
-            HostVO host = _hostDao.findById(hostId);
-            HypervisorCapabilitiesVO capabilities = null;
-            if (host != null) {
-                capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(),
-                        host.getHypervisorVersion());
-            } else {
-                s_logger.error("Details of the host on which the vm " + vm + ", to which volume "+ volume + " is "
-                        + "attached, couldn't be retrieved.");
-            }
-
-            if (capabilities != null) {
-                storageMotionSupported = capabilities.isStorageMotionSupported();
-            } else {
-                s_logger.error("Capabilities for host " + host + " couldn't be retrieved.");
-            }
+        Long instanceId = volume.getInstanceId();
+        VMInstanceVO vm = null;
+        if (instanceId != null) {
+            vm = _vmInstanceDao.findById(instanceId);
         }
 
-        if (storageMotionSupported) {
-            // Source pool of the volume.
-            StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
+        if (vm == null) {
+            s_logger.info("Volume " + volume + " isn't attached to any vm. Looking for storage pools in the " +
+                    "zone to which this volumes can be migrated.");
+        } else if (vm.getState() != State.Running) {
+            s_logger.info("Volume " + volume + " isn't attached to any running vm. Looking for storage pools in the " +
+                    "cluster to which this volumes can be migrated.");
+        } else {
+            s_logger.info("Volume " + volume + " is attached to any running vm. Looking for storage pools in the " +
+                    "cluster to which this volumes can be migrated.");
+            boolean storageMotionSupported = false;
+            // Check if the underlying hypervisor supports storage motion.
+            Long hostId = vm.getHostId();
+            if (hostId != null) {
+                HostVO host = _hostDao.findById(hostId);
+                HypervisorCapabilitiesVO capabilities = null;
+                if (host != null) {
+                    capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(),
+                            host.getHypervisorVersion());
+                } else {
+                    s_logger.error("Details of the host on which the vm " + vm + ", to which volume "+ volume + " is "
+                            + "attached, couldn't be retrieved.");
+                }
 
-            // Get all the pools available. Only shared pools are considered because only a volume on a shared pools
-            // can be live migrated while the virtual machine stays on the same host.
-            List<StoragePoolVO> storagePools = null;
-            if (srcVolumePool.getClusterId() == null) {
-                storagePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
-            } else {
-                storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-            }
-
-            storagePools.remove(srcVolumePool);
-            for (StoragePoolVO pool : storagePools) {
-                if (pool.isShared()) {
-                    allPools.add((StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId()));
+                if (capabilities != null) {
+                    storageMotionSupported = capabilities.isStorageMotionSupported();
+                } else {
+                    s_logger.error("Capabilities for host " + host + " couldn't be retrieved.");
                 }
             }
 
-            // Get all the suitable pools.
-            // Exclude the current pool from the list of pools to which the volume can be migrated.
-            ExcludeList avoid = new ExcludeList();
-            avoid.addPool(srcVolumePool.getId());
-
-            // Volume stays in the same cluster after migration.
-            DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(),
-                    srcVolumePool.getClusterId(), null, null, null);
-            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
-
-            // Call the storage pool allocator to find the list of storage pools.
-            for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-                List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid,
-                        StoragePoolAllocator.RETURN_UPTO_ALL);
-                if (pools != null && !pools.isEmpty()) {
-                    suitablePools.addAll(pools);
-                    break;
-                }
+            if (!storageMotionSupported) {
+                s_logger.info("Volume " + volume + " is attached to a running vm and the hypervisor doesn't support" +
+                        " storage motion.");
+                return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
             }
         }
+
+        // Source pool of the volume.
+        StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
+        // Get all the pools available. Only shared pools are considered because only a volume on a shared pools
+        // can be live migrated while the virtual machine stays on the same host.
+        List<StoragePoolVO> storagePools = null;
+        if (srcVolumePool.getClusterId() == null) {
+            storagePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
+        } else {
+            storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), srcVolumePool.getPodId(),
+                    srcVolumePool.getClusterId(), null);
+        }
+
+        storagePools.remove(srcVolumePool);
+        for (StoragePoolVO pool : storagePools) {
+            if (pool.isShared()) {
+                allPools.add((StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId()));
+            }
+        }
+
+        // Get all the suitable pools.
+        // Exclude the current pool from the list of pools to which the volume can be migrated.
+        ExcludeList avoid = new ExcludeList();
+        avoid.addPool(srcVolumePool.getId());
+
+        // Volume stays in the same cluster after migration.
+        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(),
+                srcVolumePool.getClusterId(), null, null, null);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+
+        // Call the storage pool allocator to find the list of storage pools.
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid,
+                    StoragePoolAllocator.RETURN_UPTO_ALL);
+            if (pools != null && !pools.isEmpty()) {
+                suitablePools.addAll(pools);
+                break;
+            }
+        }
+
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
