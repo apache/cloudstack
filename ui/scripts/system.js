@@ -13902,7 +13902,7 @@
                                             data: {
                                                 ucsmanagerid: args.context.ucsManagers[0].id
                                             },
-                                            error: function(json) {
+                                            success: function(json) {
                                                 //for testing only (begin)
                                             	/*
                                             	json = {
