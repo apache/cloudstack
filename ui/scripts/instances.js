@@ -1275,9 +1275,9 @@
                     },
 
                     scaleUp: {
-                        label: 'Scale UP Virtual Machine',
+                        label: 'label.change.service.offering',
                         createForm: {
-                            title: 'Scale UP Virtual Machine',
+                            title: 'label.change.service.offering',
                             desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',                            
                             fields: {
                                 serviceOffering: {

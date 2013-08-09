@@ -6618,7 +6618,7 @@
                                                     },
 
                                                     scaleUp: {
-                                                        label: 'scaleUp System VM',
+                                                        label: 'label.change.service.offering',
                                                         createForm: {
                                                             title: 'label.change.service.offering',
                                                             desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',  
@@ -7585,7 +7585,7 @@
                             },
 
                             scaleUp: {
-                                label: 'scaleUp Router VM',
+                                label: 'label.change.service.offering',
                                 createForm: {
                                     title: 'label.change.service.offering',
                                     desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',  
@@ -8134,7 +8134,7 @@
                             },
 
                             scaleUp: {
-                                label: 'scaleUp System VM',
+                                label: 'label.change.service.offering',
                                 createForm: {
                                     title: 'label.change.service.offering',
                                     desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',  
