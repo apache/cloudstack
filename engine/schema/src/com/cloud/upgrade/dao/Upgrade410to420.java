@@ -1293,7 +1293,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
                 int index = backUpPath.indexOf("snapshots"+File.separator);
                 if (index > 1){
-                    String correctedPath = File.separator + backUpPath.substring(index);
+                    String correctedPath = backUpPath.substring(index);
                     s_logger.debug("Updating Snapshot with id: "+id+" original backup path: "+backUpPath+ " updated backup path: "+correctedPath);
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
                     pstmt.setString(1, correctedPath);
@@ -1960,10 +1960,17 @@ public class Upgrade410to420 implements DbUpgrade {
 
         s_logger.debug("Updating snapshot_store_ref table from snapshots table");
         try {
+            //Update all snapshots except KVM snapshots
             snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and sechost_id is not null and removed is null");
+                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and sechost_id is not null and removed is null");
             int rowCount = snapshotStoreInsert.executeUpdate();
-            s_logger.debug("Insert modified " + rowCount + " rows");
+            s_logger.debug("Inserted " + rowCount + " snapshots into snapshot_store_ref");
+
+            //backsnap_id for KVM snapshots is complate path. CONCAT is not required
+            snapshotStoreInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, backup_snap_id, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type = 'KVM' and sechost_id is not null and removed is null");
+            rowCount = snapshotStoreInsert.executeUpdate();
+            s_logger.debug("Inserted " + rowCount + " KVM snapshots into snapshot_store_ref");
         }
         catch (SQLException e) {
             String msg = "Unable to migrate snapshot_store_ref." + e.getMessage();
