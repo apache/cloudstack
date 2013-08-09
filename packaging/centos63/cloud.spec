@@ -401,7 +401,9 @@ fi
 if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
     mv %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/management/db.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
-    cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    if [ -f "%{_sysconfdir}/cloud.rpmsave/management/key" ]; then    
+        cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    fi
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/cloud.rpmsave/management/db.properties.rpmsave
 fi
@@ -409,27 +411,37 @@ fi
 # Choose server.xml and tomcat.conf links based on old config, if exists
 serverxml=%{_sysconfdir}/%{name}/management/server.xml
 oldserverxml=%{_sysconfdir}/cloud.rpmsave/management/server.xml
-if [ -L $oldserverxml ] ; then
-    if stat -c %N $oldserverxml | grep -q server-nonssl ; then
-        if [ -L $serverxml ]; then rm -f $serverxml; fi
-        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
-    elif stat -c %N $oldserverxml| grep -q server-ssl ; then
-        if [ -L $serverxml ]; then rm -f $serverxml; fi
+if [ -f $oldserverxml ] || [ -L $oldserverxml ]; then
+    if stat -c %N $oldserverxml| grep -q server-ssl ; then
+        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at
+        echo %{_sysconfdir}/%{name}/management
+    else
+        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
+        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at
+        echo %{_sysconfdir}/%{name}/management
+
     fi
 else
     echo "Unable to determine ssl settings for server.xml, please run cloudstack-setup-management manually"
 fi
 
+
 tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
 oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat6.conf
-if [ -L $oldtomcatconf ] ; then
-    if stat -c %N $oldtomcatconf | grep -q tomcat6-nonssl ; then
-        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
-    elif stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
-        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
+    if stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
+        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at
+        echo %{_sysconfdir}/%{name}/management
+    else
+        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at
+        echo %{_sysconfdir}/%{name}/management
     fi
 else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
