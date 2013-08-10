@@ -145,7 +145,7 @@ public class CitrixResourceBaseTest {
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getMinSpeed();
         doReturn(true).when(vmSpec).getLimitCpuUse();
-        doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "100", "vmname", "i-2-3-VM");
+        doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
         Map<String, String> args = (Map<String, String>)mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
@@ -154,6 +154,6 @@ public class CitrixResourceBaseTest {
 
         verify(vmSpec, times(1)).getLimitCpuUse();
         verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
-        verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "100", "vmname", "i-2-3-VM");
+        verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
     }
 }

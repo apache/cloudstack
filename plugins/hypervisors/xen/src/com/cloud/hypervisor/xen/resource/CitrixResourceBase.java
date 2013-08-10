@@ -653,14 +653,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // weight based allocation
 
-            cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
+            cpuWeight = (int)((speed * 0.99) / _host.speed * _maxWeight);
             if (cpuWeight > _maxWeight) {
                 cpuWeight = _maxWeight;
             }
 
             if (vmSpec.getLimitCpuUse()) {
                 long utilization = 0; // max CPU cap, default is unlimited
-                utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
+                utilization = (int) ((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
                 //vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization)); currently xenserver doesnot support Xapi to add VCPUs params live.
                 callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName() );
             }
