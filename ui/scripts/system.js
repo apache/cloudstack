@@ -1086,16 +1086,15 @@
                                     var data = {
                                     	id: selectedPhysicalNetworkObj.id,
                                     };                                 
-                                    if (args.data.vlan != null && args.data.vlan.length > 0) {
-                                    	$.extend(data, {
-                                    		vlan: args.data.vlan
-                                    	});
-                                    }                                        
-                                    if (args.data.tags != null && args.data.tags.length > 0) {
-                                    	$.extend(data, {
-                                    		tags: args.data.tags
-                                    	});
-                                    }    
+                                   
+                                	$.extend(data, {
+                                		vlan: args.data.vlan
+                                	});                                                                       
+                                
+                                	$.extend(data, {
+                                		tags: args.data.tags
+                                	});
+                                        
                                     $.ajax({
                                         url: createURL('updatePhysicalNetwork'),
                                         data: data,
