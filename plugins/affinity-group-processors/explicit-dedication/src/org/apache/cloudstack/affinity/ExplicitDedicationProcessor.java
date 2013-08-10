@@ -277,7 +277,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 List<HostVO> hostList = _hostDao.findByClusterId(dr.getClusterId());
                 for (HostVO host : hostList) {
                     DedicatedResourceVO dHost = _dedicatedDao.findByHostId(host.getId());
-                    if (dHost != null) {
+                    if (dHost != null && !dedicatedResources.contains(dHost)) {
                         avoidList.addHost(host.getId());
                     } else {
                         includeList.addHost(host.getId());
@@ -292,7 +292,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 //add all cluster under this pod in includeList
                 List<ClusterVO> clusterList = _clusterDao.listByPodId(dr.getPodId());
                 for (ClusterVO cluster : clusterList) {
-                    if (_dedicatedDao.findByClusterId(cluster.getId()) != null) {
+                    DedicatedResourceVO dCluster = _dedicatedDao.findByClusterId(cluster.getId());
+                    if (dCluster != null && !dedicatedResources.contains(dCluster)) {
                         avoidList.addCluster(cluster.getId());
                     } else {
                         includeList.addCluster(cluster.getId());
@@ -301,7 +302,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 //add all hosts inside this pod in includeList
                 List<HostVO> hostList = _hostDao.findByPodId(dr.getPodId());
                 for (HostVO host : hostList) {
-                    if (_dedicatedDao.findByHostId(host.getId()) != null) {
+                    DedicatedResourceVO dHost = _dedicatedDao.findByHostId(host.getId());
+                    if (dHost != null && !dedicatedResources.contains(dHost)) {
                         avoidList.addHost(host.getId());
                     } else {
                         includeList.addHost(host.getId());
@@ -314,7 +316,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 //add all Pod under this data center in includeList
                 List<HostPodVO> podList = _podDao.listByDataCenterId(dr.getDataCenterId());
                 for (HostPodVO pod : podList) {
-                    if (_dedicatedDao.findByPodId(pod.getId()) != null) {
+                    DedicatedResourceVO dPod = _dedicatedDao.findByPodId(pod.getId());
+                    if (dPod != null && !dedicatedResources.contains(dPod)) {
                         avoidList.addPod(pod.getId());
                     } else {
                         includeList.addPod(pod.getId());
@@ -322,7 +325,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 }
                 List<ClusterVO> clusterList = _clusterDao.listClustersByDcId(dr.getDataCenterId());
                 for (ClusterVO cluster : clusterList) {
-                    if (_dedicatedDao.findByClusterId(cluster.getId()) != null) {
+                    DedicatedResourceVO dCluster = _dedicatedDao.findByClusterId(cluster.getId());
+                    if (dCluster != null && !dedicatedResources.contains(dCluster)) {
                         avoidList.addCluster(cluster.getId());
                     } else {
                         includeList.addCluster(cluster.getId());
@@ -331,7 +335,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 //add all hosts inside this in includeList
                 List<HostVO> hostList = _hostDao.listByDataCenterId(dr.getDataCenterId());
                 for (HostVO host : hostList) {
-                    if (_dedicatedDao.findByHostId(host.getId()) != null) {
+                    DedicatedResourceVO dHost = _dedicatedDao.findByHostId(host.getId());
+                    if (dHost != null && !dedicatedResources.contains(dHost)) {
                         avoidList.addHost(host.getId());
                     } else {
                         includeList.addHost(host.getId());
