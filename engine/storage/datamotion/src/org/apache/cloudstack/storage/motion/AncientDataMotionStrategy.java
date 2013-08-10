@@ -177,6 +177,21 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return zoneScope;
     }
 
+    private Scope pickCacheScopeForCopy(DataObject srcData, DataObject destData) {
+        Scope srcScope = srcData.getDataStore().getScope();
+        Scope destScope = destData.getDataStore().getScope();
+
+        Scope selectedScope = null;
+        if (srcScope.getScopeId() != null) {
+            selectedScope = srcScope;
+        } else if (destScope.getScopeId() != null) {
+            selectedScope = destScope;
+        } else {
+            s_logger.warn("Cannot find a zone-wide scope for move between cache store and image store");
+        }
+        return selectedScope;
+    }
+
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
@@ -186,7 +201,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         DataObject srcForCopy = srcData;
         try {
             if (needCacheStorage(srcData, destData)) {
-                Scope destScope = getZoneScope(destData.getDataStore().getScope());
+                Scope destScope = pickCacheScopeForCopy(srcData, destData);
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
@@ -436,7 +451,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
-                cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
+                Scope selectedScope = pickCacheScopeForCopy(srcData, destData);
+                cacheData = cacheMgr.getCacheObject(srcData, selectedScope);
 
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, _mgmtServer.getExecuteInSequence());
                 cmd.setCacheTO(cacheData.getTO());
