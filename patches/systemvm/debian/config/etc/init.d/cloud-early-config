@@ -754,7 +754,15 @@ setup_vpc_apache2() {
 }
 
 
+clean_ipalias_config() {
+rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
+rm -f /etc/apache2/sites-available/ipAlias*
+rm -f /etc/apache2/sites-enabled/ipAlias*
+rm -rf /etc/failure_config
+}
+
 setup_apache2() {
+  clean_ipalias_config
   log_it "Setting up apache web server"
   local ip=$1
   [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
