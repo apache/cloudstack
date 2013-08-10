@@ -6522,13 +6522,31 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vdir.nameLabel = iqn;
             vdir.SR = sr;
             vdir.type = Types.VdiType.USER;
-            vdir.virtualSize = sr.getPhysicalSize(conn) - sr.getPhysicalUtilisation(conn) - getMetadata(sr.getPhysicalSize(conn));
+
+            long totalSpace = sr.getPhysicalSize(conn);
+            long unavailableSpace = sr.getPhysicalUtilisation(conn);
+
+            vdir.virtualSize = totalSpace - unavailableSpace;
 
             if (vdir.virtualSize < 0) {
-            	throw new CloudRuntimeException("VDI virtual size cannot be less than 0.");
+                throw new CloudRuntimeException("VDI virtual size cannot be less than 0.");
             }
 
-            vdi = VDI.create(conn, vdir);
+            long maxNumberOfTries = (totalSpace / unavailableSpace >= 1) ? (totalSpace / unavailableSpace) : 1;
+            long tryNumber = 0;
+
+            while (tryNumber <= maxNumberOfTries) {
+                try {
+                    vdi = VDI.create(conn, vdir);
+
+                    break;
+                }
+                catch (Exception ex) {
+                    tryNumber++;
+
+                    vdir.virtualSize -= unavailableSpace;
+                }
+            }
         }
         else {
             vdi = sr.getVDIs(conn).iterator().next();
