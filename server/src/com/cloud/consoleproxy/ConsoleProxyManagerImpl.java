@@ -658,17 +658,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         VMTemplateVO template = null;
-        HypervisorType defaultHypervisor = _resourceMgr.getDefaultHypervisor(dataCenterId);
-        if (defaultHypervisor != HypervisorType.None) {
-            template = _templateDao.findSystemVMReadyTemplate(dataCenterId, defaultHypervisor);
-            if (template == null) {
-                throw new CloudRuntimeException("Not able to find the System template or not downloaded in zone " + dataCenterId + " corresponding to default System vm hypervisor " + defaultHypervisor);
-            }
-        } else {
-            template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
-            if (template == null) {
-                throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
-            }
+        HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
+        template = _templateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
+        if (template == null) {
+             throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, template);

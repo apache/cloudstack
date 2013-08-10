@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -1397,6 +1398,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (defaultHype == HypervisorType.None) {
             List<HypervisorType> supportedHypes = getSupportedHypervisorTypes(zoneId, false, null);
             if (supportedHypes.size() > 0) {
+                Collections.shuffle(supportedHypes);
                 defaultHype = supportedHypes.get(0);
             }
         }
