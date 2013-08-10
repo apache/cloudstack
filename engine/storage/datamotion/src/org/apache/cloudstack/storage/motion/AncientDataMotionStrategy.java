@@ -80,7 +80,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class AncientDataMotionStrategy implements DataMotionStrategy {
+public class
+        AncientDataMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
     @Inject
     EndPointSelector selector;

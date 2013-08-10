@@ -35,6 +35,11 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.utils.S3Utils;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -91,6 +96,8 @@ import com.ceph.rados.IoCTX;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdImage;
 import com.ceph.rbd.RbdException;
+
+import static com.cloud.utils.S3Utils.putFile;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -293,13 +300,114 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        DataStoreTO srcStore = srcData.getDataStore();
+        DataStoreTO destStore = destData.getDataStore();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) destStore;
+        if (!(srcStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("can only handle nfs storage");
+        }
+        NfsTO nfsStore = (NfsTO)srcStore;
+        String srcVolumePath = srcData.getPath();
+        String secondaryStorageUrl = nfsStore.getUrl();
+        KVMStoragePool secondaryStoragePool = null;
+        KVMStoragePool primaryPool = null;
+        try {
+            try {
+                primaryPool = storagePoolMgr.getStoragePool(
+                        primaryStore.getPoolType(),
+                        primaryStore.getUuid());
+            } catch (CloudRuntimeException e) {
+                if (e.getMessage().contains("not found")) {
+                    primaryPool = storagePoolMgr.createStoragePool(primaryStore.getUuid(),
+                            primaryStore.getHost(), primaryStore.getPort(),
+                            primaryStore.getPath(), null,
+                            primaryStore.getPoolType());
+                } else {
+                    return new CopyCmdAnswer(e.getMessage());
+                }
+            }
+
+            String volumeName = UUID.randomUUID().toString();
+
+            int index = srcVolumePath.lastIndexOf(File.separator);
+            String volumeDir = srcVolumePath.substring(0, index);
+            String srcVolumeName = srcVolumePath.substring(index + 1);
+            secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
+                    secondaryStorageUrl + File.separator + volumeDir
+                           );
+            KVMPhysicalDisk volume = secondaryStoragePool
+                    .getPhysicalDisk(srcVolumeName + ".qcow2");
+            storagePoolMgr.copyPhysicalDisk(volume, volumeName,
+                    primaryPool);
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(volumeName);
+            return new CopyCmdAnswer(newVol);
+        } catch (CloudRuntimeException e) {
+            return new CopyCmdAnswer(e.toString());
+        } finally {
+            if (secondaryStoragePool != null) {
+                storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
+            }
+        }
     }
 
     @Override
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
-        return null;
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        DataStoreTO srcStore = srcData.getDataStore();
+        DataStoreTO destStore = destData.getDataStore();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) srcStore;
+        if (!(destStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("can only handle nfs storage");
+        }
+        NfsTO nfsStore = (NfsTO)destStore;
+        String srcVolumePath = srcData.getPath();
+        String destVolumePath = destData.getPath();
+        String secondaryStorageUrl = nfsStore.getUrl();
+        KVMStoragePool secondaryStoragePool = null;
+        KVMStoragePool primaryPool = null;
+        try {
+            try {
+                primaryPool = storagePoolMgr.getStoragePool(
+                        primaryStore.getPoolType(),
+                        primaryStore.getUuid());
+            } catch (CloudRuntimeException e) {
+                if (e.getMessage().contains("not found")) {
+                    primaryPool = storagePoolMgr.createStoragePool(primaryStore.getUuid(),
+                            primaryStore.getHost(), primaryStore.getPort(),
+                            primaryStore.getPath(), null,
+                            primaryStore.getPoolType());
+                } else {
+                    return new CopyCmdAnswer(e.getMessage());
+                }
+            }
+
+            String volumeName = UUID.randomUUID().toString();
+
+
+            String destVolumeName = volumeName + ".qcow2";
+            KVMPhysicalDisk volume = primaryPool.getPhysicalDisk(srcVolumePath);
+            secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
+                    secondaryStorageUrl);
+            secondaryStoragePool.createFolder(destVolumePath);
+            storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
+            secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
+                    secondaryStorageUrl  + File.separator + destVolumePath);
+            storagePoolMgr.copyPhysicalDisk(volume,
+                    destVolumeName,secondaryStoragePool);
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(destVolumePath + File.separator + volumeName);
+            return new CopyCmdAnswer(newVol);
+        } catch (CloudRuntimeException e) {
+            return new CopyCmdAnswer(e.toString());
+        } finally {
+            if (secondaryStoragePool != null) {
+                storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
+            }
+        }
     }
 
     @Override
@@ -419,7 +527,70 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
+    protected String copyToS3(File srcFile, S3TO destStore, String destPath) {
+        final String bucket = destStore.getBucketName();
 
+        String key = destPath + S3Utils.SEPARATOR + srcFile.getName();
+        putFile(destStore, srcFile, bucket, key);
+        return key;
+    }
+    protected Answer copyToObjectStore(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData;
+        DataStoreTO imageStore = destData.getDataStore();
+        NfsTO srcStore = (NfsTO)srcData.getDataStore();
+        String srcPath = srcData.getPath();
+        int index = srcPath.lastIndexOf(File.separator);
+        String srcSnapshotDir = srcPath.substring(0, index);
+        String srcFileName = srcPath.substring(index + 1);
+        KVMStoragePool srcStorePool = null;
+        try {
+            srcStorePool = storagePoolMgr.getStoragePoolByURI(srcStore.getUrl() + File.separator + srcSnapshotDir);
+            if (srcStorePool == null) {
+                return new CopyCmdAnswer("Can't get store:" + srcStore.getUrl());
+            }
+            File srcFile = new File(srcStorePool.getLocalPath() + File.separator + srcFileName);
+            if (!srcFile.exists()) {
+                return new CopyCmdAnswer("Can't find src file: " + srcPath);
+            }
+            String destPath = null;
+            if (imageStore instanceof S3TO) {
+                destPath = copyToS3(srcFile, (S3TO)imageStore, destData.getPath());
+            } else {
+                return new CopyCmdAnswer("Unsupported protocol");
+            }
+            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            newSnapshot.setPath(destPath);
+            return new CopyCmdAnswer(newSnapshot);
+        } finally {
+            if (srcStorePool != null) {
+                srcStorePool.delete();
+            }
+        }
+    }
+
+    protected Answer backupSnapshotForObjectStore(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData;
+        DataStoreTO imageStore = destData.getDataStore();
+        DataTO cacheData = cmd.getCacheTO();
+        if (cacheData == null) {
+            return new CopyCmdAnswer("Failed to copy to object store without cache store");
+        }
+        DataStoreTO cacheStore = cacheData.getDataStore();
+        ((SnapshotObjectTO) destData).setDataStore(cacheStore);
+        CopyCmdAnswer answer = (CopyCmdAnswer)backupSnapshot(cmd);
+        if (!answer.getResult()) {
+            return answer;
+        }
+        SnapshotObjectTO snapshotOnCacheStore = (SnapshotObjectTO)answer.getNewData();
+        snapshotOnCacheStore.setDataStore(cacheStore);
+        ((SnapshotObjectTO) destData).setDataStore(imageStore);
+        CopyCommand newCpyCmd = new CopyCommand(snapshotOnCacheStore, destData, cmd.getWait(), cmd.executeInSequence());
+        return copyToObjectStore(newCpyCmd);
+    }
     @Override
     public Answer backupSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
@@ -430,7 +601,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         DataStoreTO imageStore = destData.getDataStore();
 
         if (!(imageStore instanceof NfsTO)) {
-            return new CopyCmdAnswer("unsupported protocol");
+            return backupSnapshotForObjectStore(cmd);
         }
         NfsTO nfsImageStore = (NfsTO) imageStore;
 
