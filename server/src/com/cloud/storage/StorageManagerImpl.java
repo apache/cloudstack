@@ -81,6 +81,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -206,6 +207,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected VMInstanceDao _vmInstanceDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao = null;
+    @Inject
+    protected StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject
     protected ImageStoreDao _imageStoreDao = null;
     @Inject
@@ -778,12 +781,37 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (tags != null) {
+            Map<String, String> existingDetails = _storagePoolDetailsDao.getDetails(id);
+            Set<String> existingKeys = existingDetails.keySet();
+
+            Map<String, String> existingDetailsToKeep = new HashMap<String, String>();
+
+            for (String existingKey : existingKeys) {
+                String existingValue = existingDetails.get(existingKey);
+
+                if (!Boolean.TRUE.toString().equalsIgnoreCase(existingValue)) {
+                    existingDetailsToKeep.put(existingKey, existingValue);
+                }
+            }
+
             Map<String, String> details = new HashMap<String, String>();
             for (String tag : tags) {
                 tag = tag.trim();
                 if (tag.length() > 0 && !details.containsKey(tag)) {
                     details.put(tag, "true");
                 }
+            }
+
+            Set<String> existingKeysToKeep = existingDetailsToKeep.keySet();
+
+            for (String existingKeyToKeep : existingKeysToKeep) {
+                String existingValueToKeep = existingDetailsToKeep.get(existingKeyToKeep);
+
+                if (details.containsKey(existingKeyToKeep)) {
+                    throw new CloudRuntimeException("Storage tag '" + existingKeyToKeep + "' conflicts with a stored property of this primary storage. No changes were made.");
+                }
+
+                details.put(existingKeyToKeep, existingValueToKeep);
             }
 
             _storagePoolDao.updateDetails(id, details);
