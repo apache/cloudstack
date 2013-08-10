@@ -295,36 +295,17 @@
             var trafficData = $trafficType.data('traffic-type-data') ?
                 $trafficType.data('traffic-type-data') : {};
             var hypervisor = getData($trafficType.closest('.zone-wizard')).zone.hypervisor;
-            var fields = {
-                label: {
-                    label: hypervisor + ' ' + _l('label.traffic.label'),
-                    defaultValue: trafficData.label
-                }
-            };
-
-            if (hypervisor === 'VMware') {
-                $.extend(fields, {
-                    vlanid: { label: 'VLAN ID' },
-                    switchType: {
-                        label: 'label.switch.type',
-                        select: function(args) {
-                            args.response.success({
-                                data: [
-                                    { id: 'vmwaresvs', description: 'VMware SVS' },
-                                    { id: 'vmwaredvs', description: 'VMware DVS' },
-                                    { id: 'nexusdvs', description: 'Nexus DVS' }
-                                ]
-                            });
-                        }
-                    }
-                });
-            }
 
             cloudStack.dialog.createForm({
                 form: {
                     title: _l('label.edit.traffic.type'),
                     desc: _l('message.edit.traffic.type'),
-                    fields: fields
+                    fields: {
+                        label: {
+                            label: hypervisor + ' ' + _l('label.traffic.label'),
+                            defaultValue: trafficData.label
+                        }
+                    }
                 },
 
                 after: function(args) {
