@@ -183,11 +183,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         Scope selectedScope = null;
         if (srcScope.getScopeId() != null) {
-            selectedScope = srcScope;
+            selectedScope = getZoneScope(srcScope);
         } else if (destScope.getScopeId() != null) {
-            selectedScope = destScope;
+            selectedScope = getZoneScope(destScope);
         } else {
-            s_logger.warn("Cannot find a zone-wide scope for move between cache store and image store");
+            s_logger.warn("Cannot find a zone-wide scope for movement that needs a cache storage");
         }
         return selectedScope;
     }
