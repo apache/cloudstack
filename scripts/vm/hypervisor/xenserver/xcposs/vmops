@@ -61,34 +61,7 @@ def setup_iscsi(session, args):
        txt = ''
    return '> DONE <'
  
-@echo
-def getvncport(session, args):
-    domid = args['domID']
-    hvm = args['hvm']
-    version = args['version']
-    if hvm == 'true':
-        path1 = "/local/domain/" + domid + "/qemu-pid"
-        path2 = "/local/domain/" + domid + "/console/vnc-port"
-    else:
-        if version[:3] == '6.0':
-            path1 = "/local/domain/" + domid + "/vncterm-pid"
-            path2 = "/local/domain/" + domid + "/console/vnc-port"
-        else:
-            path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
-            path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
-    try:
-        cmd = ["xenstore-read", path1]
-        pid = util.pread2(cmd)
-        pid = pid.strip()
-        cmd = ["ps", pid]
-        util.pread2(cmd)
-        cmd = ["xenstore-read", path2]
-        vncport = util.pread2(cmd)
-        vncport = vncport.strip()
-        return vncport
-    except:
-        return ''
-   
+
 @echo
 def getgateway(session, args):
     mgmt_ip = args['mgmtIP']
@@ -1498,7 +1471,7 @@ def getDomRVersion(session, args):
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
-                            "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
+                            "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "ipassoc": ipassoc, "savePassword": savePassword, 
                             "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
