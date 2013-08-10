@@ -3954,10 +3954,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     relocateSpec.setDatastore(morDsAtSource);
                     isFirstDs = false;
                 }
-                srcDiskName = String.format("[%s] %s.vmdk", srcDsName, volume.getPath());
+                srcDiskName = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(
+                	new DatastoreMO(srcHyperHost.getContext(), morDsAtSource), 
+                	vmName, 
+                	volume.getPath() + ".vmdk");
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
-                diskLocator.setDiskId(getVirtualDiskInfo(vmMo, srcDiskName));
+                diskLocator.setDiskId(getVirtualDiskInfo(vmMo, volume.getPath() + ".vmdk"));
 
                 diskLocators.add(diskLocator);
 
@@ -4075,10 +4078,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            srcDiskName = String.format("[%s] %s.vmdk", srcDsName, volumePath);
+            srcDiskName = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(
+            	new DatastoreMO(srcHyperHost.getContext(), morDs), vmName, 
+            	volumePath + ".vmdk");
             diskLocator = new VirtualMachineRelocateSpecDiskLocator();
             diskLocator.setDatastore(morDs);
-            diskLocator.setDiskId(getVirtualDiskInfo(vmMo, srcDiskName));
+            diskLocator.setDiskId(getVirtualDiskInfo(vmMo, volumePath + ".vmdk"));
 
             diskLocators.add(diskLocator);
             relocateSpec.getDisk().add(diskLocator);
