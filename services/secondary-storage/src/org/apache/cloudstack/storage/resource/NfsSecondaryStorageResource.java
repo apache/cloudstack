@@ -734,7 +734,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
 
             final String bucket = s3.getBucketName();
-            final File srcFile = _storage.getFile(templatePath);
+            File srcFile = _storage.getFile(templatePath);
+            if (!srcFile.exists()) {
+                srcFile = _storage.getFile(templatePath + ".qcow2");
+                if (!srcFile.exists()) {
+                    return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                }
+            }
             ImageFormat format = this.getTemplateFormat(templatePath);
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
             putFile(s3, srcFile, bucket, key);
