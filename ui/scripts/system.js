@@ -6256,20 +6256,26 @@
                                                 success: function(json) {
                                                     selectedZoneObj = json.listzonesresponse.zone[0];
                                                     $.ajax({
-                                                        url: createURL("listDedicatedZones&zoneid=" + args.context.physicalResources[0].id),
-                                                        dataType: "json",
+                                                        url: createURL('listDedicatedZones'),
+                                                        data: {
+                                                        	zoneid: args.context.physicalResources[0].id
+                                                        },
                                                         async: false,
-                                                        success: function(json) {
+                                                        success: function(json) {                                                       
                                                             if (json.listdedicatedzonesresponse.dedicatedzone != undefined) {
-                                                                var zoneItem = json.listdedicatedzonesresponse.dedicatedzone[0];
-                                                                if (zoneItem.domainid != null) {
-                                                                    $.extend(selectedZoneObj, zoneItem, {
-                                                                        isdedicated: 'Yes'
+                                                                var dedicatedzoneObj = json.listdedicatedzonesresponse.dedicatedzone[0];
+                                                                if (dedicatedzoneObj.domainid != null) {
+                                                                    $.extend(selectedZoneObj, {
+                                                                        isdedicated: 'Yes',
+                                                                        domainid: dedicatedzoneObj.domainid,
+                                                                        accountid: dedicatedzoneObj.accountid
                                                                     });
                                                                 }
                                                             } else {
                                                                 $.extend(selectedZoneObj, {
-                                                                    isdedicated: 'No'
+                                                                    isdedicated: 'No',
+                                                                    domainid: null,
+                                                                    accountid: null
                                                                 })
                                                             }
                                                         }
