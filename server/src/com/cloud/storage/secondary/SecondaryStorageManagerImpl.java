@@ -720,7 +720,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
-            VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
+            VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
             if (template == null) {
                 s_logger.debug("No hypervisor host added  in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
                 return false;
