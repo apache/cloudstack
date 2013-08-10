@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.vmware.util;
 
 import java.lang.reflect.Method;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +47,7 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.ServiceContent;
+import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.UpdateSet;
@@ -140,7 +142,7 @@ public class VmwareClient {
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
         Map<String, List<String>> headers = (Map<String, List<String>>) ((BindingProvider) vimPort)
                 .getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
-        List<String> cookies = (List<String>) headers.get("Set-cookie");
+        List<String> cookies = headers.get("Set-cookie");
         String cookieValue = cookies.get(0);
         StringTokenizer tokenizer = new StringTokenizer(cookieValue, ";");
         cookieValue = tokenizer.nextToken();
@@ -235,7 +237,7 @@ public class VmwareClient {
                 if (dynamicPropertyName.indexOf("ArrayOf") != -1) {
                     String methodName = "get"
                             + dynamicPropertyName
-                                    .substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
+                            .substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
 
                     Method getMorMethod = dpCls.getDeclaredMethod(methodName, null);
                     propertyValue = getMorMethod.invoke(propertyValue, (Object[]) null);
@@ -263,19 +265,99 @@ public class VmwareClient {
         return vimPort.retrieveProperties(propCollectorRef, specArr);
     }
 
+    public boolean waitForTask(ManagedObjectReference task) throws RuntimeFaultFaultMsg, RemoteException, InterruptedException {
+        return waitForTask(task, 500, 1000);
+    }
+
     /**
-     * This method returns a boolean value specifying whether the Task is
-     * succeeded or failed.
-     *
+     * Workaround for waitForTaskNotThreadSafe. Modified from Task.java from http://sourceforge.net/p/vijava/code/288/tree/.
+     * 
+     * This is a replacement for waitForTaskNotThreadSafe() that uses a timed polling in place of propertyCollector.waitForValues. The delay between each poll is configurable based
+     * on the last seen task state. The method will sleep for the number of milliseconds specified in runningDelayInMillSecond while the task is in the running state. The method
+     * will sleep for the number of milliseconds specified in queuedDelayInMillSecond while the task is in the queued state.
+     * 
+     * This method will eat 3 exceptions while trying to get TaskInfo and TaskState. On the fourth try, the captured exception is thrown.
+     * 
+     * @param runningDelayInMillSecond
+     *            - number of milliseconds to sleep between polls for a running task
+     * @param queuedDelayInMillSecond
+     *            - number of milliseconds to sleep between polls for a queued task
+     * @return String based on TaskInfoState
+     * @throws RuntimeFault
+     * @throws RemoteException
+     * @throws InterruptedException
+     * @throws RuntimeException
+     *             if the third exception is not RuntimeFault or RemoteException
+     * 
+     * 
+     */
+    public boolean waitForTask(ManagedObjectReference task, int runningDelayInMillSecond, int queuedDelayInMillSecond) throws RuntimeFaultFaultMsg, RemoteException,
+    InterruptedException {
+        boolean retVal = false;
+        TaskInfoState tState = null;
+        int tries = 0;
+        int maxTries = 3;
+        Exception getInfoException = null;
+
+        while ((tState == null) || tState.equals(TaskInfoState.RUNNING) || tState.equals(TaskInfoState.QUEUED)) {
+            tState = null;
+            getInfoException = null;
+            tries = 0;
+            // under load getTaskInfo may return null when there really is valid task info, so we try 3 times to get it.
+            while (tState == null) {
+                tries++;
+                if (tries > maxTries) {
+                    if (getInfoException == null) {
+                        throw new RuntimeException("VCenter failed to return task info after 3 tries.");
+                    } else if (getInfoException instanceof RuntimeFaultFaultMsg) {
+                        throw (RuntimeFaultFaultMsg) getInfoException;
+                    } else if (getInfoException instanceof RemoteException) {
+                        throw (RemoteException) getInfoException;
+                    } else {
+                        throw new RuntimeException(getInfoException);
+                    }
+                }
+
+                try {
+                    TaskInfo tInfo = (TaskInfo) getDynamicProperty(task, "info");
+                    if (tInfo != null) {
+                        tState = tInfo.getState();
+                    }
+                } catch (Exception e) {
+                    // silently catch 3 exceptions
+                    getInfoException = e;
+                }
+            }
+
+            // sleep for a specified time based on task state.
+            if (tState.equals(TaskInfoState.RUNNING)) {
+                Thread.sleep(runningDelayInMillSecond);
+            } else {
+                Thread.sleep(queuedDelayInMillSecond);
+            }
+        }
+
+        if (tState.equals(TaskInfoState.SUCCESS)) {
+            retVal = true;
+        }
+        return retVal;
+    }
+
+    /**
+     * This method returns a boolean value specifying whether the Task is succeeded or failed.
+     * 
+     * Based on VI JAVA forum discussion: If there is another thread or client calling waitForUpdate(), the behavior of this method is not predictable. This usually happens with VI
+     * Client plug-in which shares the session with the VI Client which use waitForUpdate() extensively. The safer way is to poll the related info.state and check its value.
+     * 
      * @param task
      *            ManagedObjectReference representing the Task.
-     *
+     * 
      * @return boolean value representing the Task result.
      * @throws InvalidCollectorVersionFaultMsg
      * @throws RuntimeFaultFaultMsg
      * @throws InvalidPropertyFaultMsg
      */
-    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    public boolean waitForTaskNotThreadSafe(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
 
         boolean retVal = false;
 
@@ -395,116 +477,116 @@ public class VmwareClient {
         SelectionSpec genericSpec = new SelectionSpec();
         genericSpec.setName(name);
         return genericSpec;
-     }
+    }
 
     /*
      * @return An array of SelectionSpec covering VM, Host, Resource pool,
      * Cluster Compute Resource and Datastore.
      */
     private List<SelectionSpec> constructCompleteTraversalSpec() {
-       // ResourcePools to VM: RP -> VM
-       TraversalSpec rpToVm = new TraversalSpec();
-       rpToVm.setName("rpToVm");
-       rpToVm.setType("ResourcePool");
-       rpToVm.setPath("vm");
-       rpToVm.setSkip(Boolean.FALSE);
+        // ResourcePools to VM: RP -> VM
+        TraversalSpec rpToVm = new TraversalSpec();
+        rpToVm.setName("rpToVm");
+        rpToVm.setType("ResourcePool");
+        rpToVm.setPath("vm");
+        rpToVm.setSkip(Boolean.FALSE);
 
-       // VirtualApp to VM: vApp -> VM
-       TraversalSpec vAppToVM = new TraversalSpec();
-       vAppToVM.setName("vAppToVM");
-       vAppToVM.setType("VirtualApp");
-       vAppToVM.setPath("vm");
+        // VirtualApp to VM: vApp -> VM
+        TraversalSpec vAppToVM = new TraversalSpec();
+        vAppToVM.setName("vAppToVM");
+        vAppToVM.setType("VirtualApp");
+        vAppToVM.setPath("vm");
 
-       // Host to VM: HostSystem -> VM
-       TraversalSpec hToVm = new TraversalSpec();
-       hToVm.setType("HostSystem");
-       hToVm.setPath("vm");
-       hToVm.setName("hToVm");
-       hToVm.getSelectSet().add(getSelectionSpec("VisitFolders"));
-       hToVm.setSkip(Boolean.FALSE);
+        // Host to VM: HostSystem -> VM
+        TraversalSpec hToVm = new TraversalSpec();
+        hToVm.setType("HostSystem");
+        hToVm.setPath("vm");
+        hToVm.setName("hToVm");
+        hToVm.getSelectSet().add(getSelectionSpec("VisitFolders"));
+        hToVm.setSkip(Boolean.FALSE);
 
-       // DataCenter to DataStore: DC -> DS
-       TraversalSpec dcToDs = new TraversalSpec();
-       dcToDs.setType("Datacenter");
-       dcToDs.setPath("datastore");
-       dcToDs.setName("dcToDs");
-       dcToDs.setSkip(Boolean.FALSE);
+        // DataCenter to DataStore: DC -> DS
+        TraversalSpec dcToDs = new TraversalSpec();
+        dcToDs.setType("Datacenter");
+        dcToDs.setPath("datastore");
+        dcToDs.setName("dcToDs");
+        dcToDs.setSkip(Boolean.FALSE);
 
-       // Recurse through all ResourcePools
-       TraversalSpec rpToRp = new TraversalSpec();
-       rpToRp.setType("ResourcePool");
-       rpToRp.setPath("resourcePool");
-       rpToRp.setSkip(Boolean.FALSE);
-       rpToRp.setName("rpToRp");
-       rpToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
+        // Recurse through all ResourcePools
+        TraversalSpec rpToRp = new TraversalSpec();
+        rpToRp.setType("ResourcePool");
+        rpToRp.setPath("resourcePool");
+        rpToRp.setSkip(Boolean.FALSE);
+        rpToRp.setName("rpToRp");
+        rpToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
 
-       TraversalSpec crToRp = new TraversalSpec();
-       crToRp.setType("ComputeResource");
-       crToRp.setPath("resourcePool");
-       crToRp.setSkip(Boolean.FALSE);
-       crToRp.setName("crToRp");
-       crToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
+        TraversalSpec crToRp = new TraversalSpec();
+        crToRp.setType("ComputeResource");
+        crToRp.setPath("resourcePool");
+        crToRp.setSkip(Boolean.FALSE);
+        crToRp.setName("crToRp");
+        crToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
 
-       TraversalSpec crToH = new TraversalSpec();
-       crToH.setSkip(Boolean.FALSE);
-       crToH.setType("ComputeResource");
-       crToH.setPath("host");
-       crToH.setName("crToH");
+        TraversalSpec crToH = new TraversalSpec();
+        crToH.setSkip(Boolean.FALSE);
+        crToH.setType("ComputeResource");
+        crToH.setPath("host");
+        crToH.setName("crToH");
 
-       TraversalSpec dcToHf = new TraversalSpec();
-       dcToHf.setSkip(Boolean.FALSE);
-       dcToHf.setType("Datacenter");
-       dcToHf.setPath("hostFolder");
-       dcToHf.setName("dcToHf");
-       dcToHf.getSelectSet().add(getSelectionSpec("VisitFolders"));
+        TraversalSpec dcToHf = new TraversalSpec();
+        dcToHf.setSkip(Boolean.FALSE);
+        dcToHf.setType("Datacenter");
+        dcToHf.setPath("hostFolder");
+        dcToHf.setName("dcToHf");
+        dcToHf.getSelectSet().add(getSelectionSpec("VisitFolders"));
 
-       TraversalSpec vAppToRp = new TraversalSpec();
-       vAppToRp.setName("vAppToRp");
-       vAppToRp.setType("VirtualApp");
-       vAppToRp.setPath("resourcePool");
-       vAppToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
+        TraversalSpec vAppToRp = new TraversalSpec();
+        vAppToRp.setName("vAppToRp");
+        vAppToRp.setType("VirtualApp");
+        vAppToRp.setPath("resourcePool");
+        vAppToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
 
-       TraversalSpec dcToVmf = new TraversalSpec();
-       dcToVmf.setType("Datacenter");
-       dcToVmf.setSkip(Boolean.FALSE);
-       dcToVmf.setPath("vmFolder");
-       dcToVmf.setName("dcToVmf");
-       dcToVmf.getSelectSet().add(getSelectionSpec("VisitFolders"));
+        TraversalSpec dcToVmf = new TraversalSpec();
+        dcToVmf.setType("Datacenter");
+        dcToVmf.setSkip(Boolean.FALSE);
+        dcToVmf.setPath("vmFolder");
+        dcToVmf.setName("dcToVmf");
+        dcToVmf.getSelectSet().add(getSelectionSpec("VisitFolders"));
 
-       // For Folder -> Folder recursion
-       TraversalSpec visitFolders = new TraversalSpec();
-       visitFolders.setType("Folder");
-       visitFolders.setPath("childEntity");
-       visitFolders.setSkip(Boolean.FALSE);
-       visitFolders.setName("VisitFolders");
-       List<SelectionSpec> sspecarrvf = new ArrayList<SelectionSpec>();
-       sspecarrvf.add(getSelectionSpec("crToRp"));
-       sspecarrvf.add(getSelectionSpec("crToH"));
-       sspecarrvf.add(getSelectionSpec("dcToVmf"));
-       sspecarrvf.add(getSelectionSpec("dcToHf"));
-       sspecarrvf.add(getSelectionSpec("vAppToRp"));
-       sspecarrvf.add(getSelectionSpec("vAppToVM"));
-       sspecarrvf.add(getSelectionSpec("dcToDs"));
-       sspecarrvf.add(getSelectionSpec("hToVm"));
-       sspecarrvf.add(getSelectionSpec("rpToVm"));
-       sspecarrvf.add(getSelectionSpec("VisitFolders"));
+        // For Folder -> Folder recursion
+        TraversalSpec visitFolders = new TraversalSpec();
+        visitFolders.setType("Folder");
+        visitFolders.setPath("childEntity");
+        visitFolders.setSkip(Boolean.FALSE);
+        visitFolders.setName("VisitFolders");
+        List<SelectionSpec> sspecarrvf = new ArrayList<SelectionSpec>();
+        sspecarrvf.add(getSelectionSpec("crToRp"));
+        sspecarrvf.add(getSelectionSpec("crToH"));
+        sspecarrvf.add(getSelectionSpec("dcToVmf"));
+        sspecarrvf.add(getSelectionSpec("dcToHf"));
+        sspecarrvf.add(getSelectionSpec("vAppToRp"));
+        sspecarrvf.add(getSelectionSpec("vAppToVM"));
+        sspecarrvf.add(getSelectionSpec("dcToDs"));
+        sspecarrvf.add(getSelectionSpec("hToVm"));
+        sspecarrvf.add(getSelectionSpec("rpToVm"));
+        sspecarrvf.add(getSelectionSpec("VisitFolders"));
 
-       visitFolders.getSelectSet().addAll(sspecarrvf);
+        visitFolders.getSelectSet().addAll(sspecarrvf);
 
-       List<SelectionSpec> resultspec = new ArrayList<SelectionSpec>();
-       resultspec.add(visitFolders);
-       resultspec.add(crToRp);
-       resultspec.add(crToH);
-       resultspec.add(dcToVmf);
-       resultspec.add(dcToHf);
-       resultspec.add(vAppToRp);
-       resultspec.add(vAppToVM);
-       resultspec.add(dcToDs);
-       resultspec.add(hToVm);
-       resultspec.add(rpToVm);
-       resultspec.add(rpToRp);
+        List<SelectionSpec> resultspec = new ArrayList<SelectionSpec>();
+        resultspec.add(visitFolders);
+        resultspec.add(crToRp);
+        resultspec.add(crToH);
+        resultspec.add(dcToVmf);
+        resultspec.add(dcToHf);
+        resultspec.add(vAppToRp);
+        resultspec.add(vAppToVM);
+        resultspec.add(dcToDs);
+        resultspec.add(hToVm);
+        resultspec.add(rpToVm);
+        resultspec.add(rpToRp);
 
-       return resultspec;
+        return resultspec;
     }
 
 
@@ -553,8 +635,9 @@ public class VmwareClient {
             if (type == null || type.equals(mor.getType())) {
                 if (propary.size() > 0) {
                     String propval = (String) propary.get(0).getVal();
-                    if (propval != null && name.equalsIgnoreCase(propval))
+                    if (propval != null && name.equalsIgnoreCase(propval)) {
                         return mor;
+                    }
                 }
             }
         }
@@ -569,11 +652,11 @@ public class VmwareClient {
      * @return the ManagedObjectReference for that property.
      */
     public ManagedObjectReference getMoRefProp(ManagedObjectReference objMor, String propName) throws Exception {
-       Object props = getDynamicProperty(objMor, propName);
-       ManagedObjectReference propmor = null;
-       if (!props.getClass().isArray()) {
-          propmor = (ManagedObjectReference)props;
-       }
-       return propmor;
+        Object props = getDynamicProperty(objMor, propName);
+        ManagedObjectReference propmor = null;
+        if (!props.getClass().isArray()) {
+            propmor = (ManagedObjectReference)props;
+        }
+        return propmor;
     }
 }
