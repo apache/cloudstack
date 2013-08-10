@@ -2142,6 +2142,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Volume must be in ready state");
         }
 
+        if (storagePoolId == vol.getPoolId()) {
+            throw new InvalidParameterValueException("Specified destination pool and the current volume storage pool are same");
+        }
+
         boolean liveMigrateVolume = false;
         Long instanceId = vol.getInstanceId();
         VMInstanceVO vm = null;
