@@ -6498,11 +6498,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    // for about 1 GiB of physical size, about 4 MiB seems to be used for metadata
-    private long getMetadata(long physicalSize) {
-    	return (long)(physicalSize * 0.00390625); // 1 GiB / 4 MiB = 0.00390625
-    }
-
     protected VDI handleSrAndVdiAttach(String iqn, String storageHostName,
             String chapInitiatorName, String chapInitiatorPassword) throws Types.XenAPIException, XmlRpcException, CloudRuntimeException {
         VDI vdi = null;
