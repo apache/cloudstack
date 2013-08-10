@@ -223,14 +223,15 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             int cpuWeight = _maxWeight; // cpu_weight
             int utilization = 0; // max CPU cap, default is unlimited
 
-            // weight based allocation
+            // weight based allocation, CPU weight is calculated per VCPU
             cpuWeight = (int) ((speed * 0.99) / _host.speed * _maxWeight);
             if (cpuWeight > _maxWeight) {
                 cpuWeight = _maxWeight;
             }
 
             if (vmSpec.getLimitCpuUse()) {
-                utilization = (int) ((speed * 0.99) / _host.speed * 100);
+                // CPU cap is per VM, so need to assign cap based on the number of vcpus
+                utilization = (int) ((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
             }
 
             vcpuParams.put("weight", Integer.toString(cpuWeight));
