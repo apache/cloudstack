@@ -134,8 +134,9 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
         networkid = cls.virtual_machine.nic[0].networkid
 
-        # create egress rule to allow wget of my butt-set-guest-password script
-        EgressFireWallRule.create(cls.api_client,
+        # create egress rule to allow wget of my cloud-set-guest-password script
+        if zone.networktype.lower == 'advanced':
+            EgressFireWallRule.create(cls.api_client,
                                   networkid=networkid,
                                   protocol=cls.services["egress"]["protocol"],
                                   startport=cls.services["egress"]["startport"],
