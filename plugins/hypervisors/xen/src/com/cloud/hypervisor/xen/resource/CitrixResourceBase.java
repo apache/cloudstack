@@ -2477,10 +2477,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Set<VM> vms = VM.getByNameLabel(conn, cmd.getName());
             if(vms.size() == 1) {
-                int vncport = getVncPort(conn, vms.iterator().next());
                 String consoleurl;
                 consoleurl = "consoleurl=" +getVncUrl(conn, vms.iterator().next()) + "&" +"sessionref="+ conn.getSessionReference();
-                return new GetVncPortAnswer(cmd, consoleurl, vncport);
+                return new GetVncPortAnswer(cmd, consoleurl, -1);
             } else {
                 return new GetVncPortAnswer(cmd, "There are " + vms.size() + " VMs named " + cmd.getName());
             }
@@ -3369,47 +3368,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return new ReadyAnswer(cmd);
-    }
-
-    //
-    // using synchronized on VM name in the caller does not prevent multiple
-    // commands being sent against
-    // the same VM, there will be a race condition here in finally clause and
-    // the main block if
-    // there are multiple requests going on
-    //
-    // Therefore, a lazy solution is to add a synchronized guard here
-    protected int getVncPort(Connection conn, VM vm) {
-        VM.Record record;
-        try {
-            record = vm.getRecord(conn);
-            Set<Console> consoles = record.consoles;
-            if (consoles.isEmpty()) {
-                s_logger.warn("There are no Consoles available to the vm : " + record.nameDescription);
-                return -1;
-            }
-            consoles.iterator();
-        } catch (XenAPIException e) {
-            String msg = "Unable to get vnc-port due to " + e.toString();
-            s_logger.warn(msg, e);
-            return -1;
-        } catch (XmlRpcException e) {
-            String msg = "Unable to get vnc-port due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            return -1;
-        }
-        String hvm = "true";
-        if (record.HVMBootPolicy.isEmpty()) {
-            hvm = "false";
-        }
-
-        String vncport = callHostPlugin(conn, "vmops", "getvncport", "domID", record.domid.toString(), "hvm", hvm, "version", _host.product_version);
-        if (vncport == null || vncport.isEmpty()) {
-            return -1;
-        }
-
-        vncport = vncport.replace("\n", "");
-        return NumbersUtil.parseInt(vncport, -1);
     }
 
     protected String getVncUrl(Connection conn, VM vm) {
