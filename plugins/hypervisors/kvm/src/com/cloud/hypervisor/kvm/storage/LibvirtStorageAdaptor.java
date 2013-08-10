@@ -88,7 +88,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean createFolder(String uuid, String path) {
         String mountPoint = _mountPoint + File.separator + uuid;
-        File f = new File(mountPoint + path);
+        File f = new File(mountPoint + File.separator + path);
         if (!f.exists()) {
             f.mkdirs();
         }
