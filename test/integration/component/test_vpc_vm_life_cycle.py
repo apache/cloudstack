@@ -190,6 +190,7 @@ class Services:
         }
 
 
+@unittest.skip("skipped - Test case need to enable after fixing the issues")
 class TestVMLifeCycleVPC(cloudstackTestCase):
 
     @classmethod
