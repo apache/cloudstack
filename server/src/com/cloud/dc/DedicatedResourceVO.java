@@ -26,6 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+
 @Entity
 @Table(name="dedicated_resources")
 public class DedicatedResourceVO implements DedicatedResources{
@@ -141,5 +142,14 @@ public class DedicatedResourceVO implements DedicatedResources{
 
     public long getAffinityGroupId() {
         return affinityGroupId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DedicatedResourceVO) {
+            return ((DedicatedResourceVO) obj).getId() == this.getId();
+        } else {
+            return false;
+        }
     }
 }
