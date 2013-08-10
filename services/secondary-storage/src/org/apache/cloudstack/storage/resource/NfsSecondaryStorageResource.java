@@ -506,9 +506,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
                 template.setFormat(snapshot.getVolume().getFormat());
                 return new CopyCmdAnswer(template);
+            } else if (destDataStore instanceof S3TO) {
+                //create template on the same data store
+                CopyCmdAnswer answer = (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO) srcDataStore,
+                        (TemplateObjectTO) destData, (NfsTO) srcDataStore);
+                if (!answer.getResult()) {
+                    return answer;
+                }
+                TemplateObjectTO newTemplate = (TemplateObjectTO)answer.getNewData();
+                newTemplate.setDataStore(srcDataStore);
+                CopyCommand newCpyCmd = new CopyCommand(newTemplate, destData, cmd.getWait(), cmd.executeInSequence());
+                return copyFromNfsToS3(newCpyCmd);
             }
         }
-        return new CopyCmdAnswer("");
+        s_logger.debug("Failed to create templat from snapshot");
+        return new CopyCmdAnswer("Unsupported prototcol");
     }
 
     protected Answer copyFromNfsToImage(CopyCommand cmd) {
