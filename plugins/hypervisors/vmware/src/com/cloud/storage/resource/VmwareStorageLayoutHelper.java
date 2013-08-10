@@ -64,6 +64,29 @@ public class VmwareStorageLayoutHelper {
     	return null;
     }
     
+    public static String findVolumeDatastoreFullPath(DatastoreMO dsMo, String vmName, String vmdkFileName) throws Exception {
+    	if(vmName != null) {
+    		String path = getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkFileName);
+    		if(!dsMo.fileExists(path)) {
+    			path = getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+    			
+    			// to save one call to vCenter, we won't check file existence for this round, so the caller
+    			// may still fail with exception, but if that's case, we will let it fail anyway
+    		}
+    		return path;
+    	} else {
+			String path = getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+    		if(!dsMo.fileExists(path)) {
+    			// Datastore file movement is not atomic operations, we need to sync and repair
+    			path = dsMo.searchFileInSubFolders(vmdkFileName, false);
+
+    			// to save one call to vCenter, we won't check file existence for this round, so the caller
+    			// may still fail with exception, but if that's case, we will let it fail anyway
+    		}
+    		return path;
+    	}
+    }
+    
     public static String syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, 
     	DatastoreMO ds, String vmdkName) throws Exception {
     	
