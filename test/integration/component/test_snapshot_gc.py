@@ -263,6 +263,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                     path,
                     self.services["paths"]["mount_dir"]
                     ),
+                "cd %s" % self.services["paths"]["mount_dir"],
                 "ls %s" % (
                     snapshotPath
                     ),
@@ -276,6 +277,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             snapshots.extend(result)
             # Unmount the Sec Storage
             cmds = [
+                "cd",
                 "umount %s" % (self.services["paths"]["mount_dir"]),
             ]
             for c in cmds:
