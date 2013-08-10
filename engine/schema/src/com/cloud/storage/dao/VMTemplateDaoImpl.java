@@ -334,6 +334,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltTypeHyperSearch.done();
 
         readySystemTemplateSearch = createSearchBuilder();
+        readySystemTemplateSearch.and("removed", readySystemTemplateSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         readySystemTemplateSearch.and("templateType", readySystemTemplateSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         SearchBuilder<TemplateDataStoreVO>  templateDownloadSearch = _templateDataStoreDao.createSearchBuilder();
         templateDownloadSearch.and("downloadState", templateDownloadSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
@@ -800,7 +801,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         if (tmplts.size() > 0) {
             if (hypervisorType == HypervisorType.Any) {
-                Collections.shuffle(tmplts);
                 return tmplts.get(0);
             }
             for (VMTemplateVO tmplt : tmplts) {
