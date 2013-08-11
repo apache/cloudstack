@@ -138,7 +138,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
 
     
-    protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
+    protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller, Boolean ignoreVmState) {
         if (ipAddress == null || ipAddress.getAllocatedTime() == null || ipAddress.getAllocatedToAccountId() == null) {
             throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
         }
@@ -148,7 +148,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
-            throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
+            if (!ignoreVmState) {
+                throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
+            }
         }
 
         _accountMgr.checkAccess(caller, null, true, ipAddress, userVm);
@@ -545,7 +547,12 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 }
 
                 // Check permissions
-                checkIpAndUserVm(ipAddress, vm, caller);
+                if (ipAddress.getSystem()) {
+                    // when system is enabling static NAT on system IP's (for EIP) ignore VM state
+                    checkIpAndUserVm(ipAddress, vm, caller, true);
+                } else {
+                    checkIpAndUserVm(ipAddress, vm, caller, false);
+                }
 
                 //is static nat is for vm secondary ip
                 //dstIp = guestNic.getIp4Address();
@@ -1186,7 +1193,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
-        checkIpAndUserVm(ipAddress, null, caller);
+        checkIpAndUserVm(ipAddress, null, caller, false);
 
         if (ipAddress.getSystem()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Can't disable static nat for system IP address with specified id");
@@ -1220,7 +1227,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = true;
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
-        checkIpAndUserVm(ipAddress, null, caller);
+        checkIpAndUserVm(ipAddress, null, caller, false);
         long networkId = ipAddress.getAssociatedWithNetworkId();
 
         if (!ipAddress.isOneToOneNat()) {
