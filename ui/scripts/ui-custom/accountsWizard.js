@@ -93,7 +93,7 @@
                 if (ldapStatus) {
                     var $table = $wizard.find('.ldap-account-choice tbody');
                     $.ajax({
-                        url: createURL("listAllLdapUsers"),
+			url: createURL("listLdapUsers&listtype=new"),
                         dataType: "json",
                         async: false,
                         success: function(json) {

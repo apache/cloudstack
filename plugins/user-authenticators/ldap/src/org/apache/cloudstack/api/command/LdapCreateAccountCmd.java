@@ -42,9 +42,9 @@ import com.cloud.user.AccountService;
 import com.cloud.user.UserAccount;
 
 @APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0")
-public class LdapCreateAccount extends BaseCmd {
+public class LdapCreateAccountCmd extends BaseCmd {
 	public static final Logger s_logger = Logger
-			.getLogger(LdapCreateAccount.class.getName());
+			.getLogger(LdapCreateAccountCmd.class.getName());
 	private static final String s_name = "createaccountresponse";
 
 	@Inject
@@ -77,28 +77,33 @@ public class LdapCreateAccount extends BaseCmd {
 	@Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, description = "User UUID, required for adding account from external provisioning system")
 	private String userUUID;
 
-	public LdapCreateAccount() {
+	public LdapCreateAccountCmd() {
 		super();
 	}
 
-	public LdapCreateAccount(final LdapManager ldapManager,
+	public LdapCreateAccountCmd(final LdapManager ldapManager,
 			final AccountService accountService) {
 		super();
 		_ldapManager = ldapManager;
 		_accountService = accountService;
 	}
 
+	UserAccount createCloudstackUserAccount(final LdapUser user) {
+		return _accountService.createUserAccount(username, generatePassword(),
+				user.getFirstname(), user.getLastname(), user.getEmail(),
+				timezone, accountName, accountType, domainId, networkDomain,
+				details, accountUUID, userUUID);
+	}
+
 	@Override
 	public void execute() throws ServerApiException {
-		updateCallContext();
+		final CallContext callContext = getCurrentContext();
+		callContext.setEventDetails("Account Name: " + accountName
+				+ ", Domain Id:" + domainId);
 		try {
 			final LdapUser user = _ldapManager.getUser(username);
 			validateUser(user);
-			final UserAccount userAccount = _accountService.createUserAccount(
-					username, generatePassword(), user.getFirstname(),
-					user.getLastname(), user.getEmail(), timezone, accountName,
-					accountType, domainId, networkDomain, details, accountUUID,
-					userUUID);
+			final UserAccount userAccount = createCloudstackUserAccount(user);
 			if (userAccount != null) {
 				final AccountResponse response = _responseGenerator
 						.createUserAccountResponse(userAccount);
@@ -132,14 +137,13 @@ public class LdapCreateAccount extends BaseCmd {
 		return s_name;
 	}
 
+	CallContext getCurrentContext() {
+		return CallContext.current();
+	}
+
 	@Override
 	public long getEntityOwnerId() {
 		return Account.ACCOUNT_ID_SYSTEM;
-	}
-
-	private void updateCallContext() {
-		CallContext.current().setEventDetails(
-				"Account Name: " + accountName + ", Domain Id:" + domainId);
 	}
 
 	private boolean validateUser(final LdapUser user) throws ServerApiException {

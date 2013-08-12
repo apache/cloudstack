@@ -16,6 +16,7 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
+import org.apache.cloudstack.ldap.NoSuchLdapUserException;
 
 class NoSuchLdapUserExceptionSpec extends spock.lang.Specification {
     def "Test that the username is correctly set within the No such LDAP user exception object"() {

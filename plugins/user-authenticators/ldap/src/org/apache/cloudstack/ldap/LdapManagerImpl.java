@@ -26,10 +26,10 @@ import javax.naming.directory.DirContext;
 
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapCreateAccount;
+import org.apache.cloudstack.api.command.LdapCreateAccountCmd;
 import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapListAllUsersCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
+import org.apache.cloudstack.api.command.LdapListUsersCmd;
 import org.apache.cloudstack.api.command.LdapUserSearchCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
@@ -159,11 +159,11 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 	public List<Class<?>> getCommands() {
 		final List<Class<?>> cmdList = new ArrayList<Class<?>>();
 		cmdList.add(LdapUserSearchCmd.class);
-		cmdList.add(LdapListAllUsersCmd.class);
+		cmdList.add(LdapListUsersCmd.class);
 		cmdList.add(LdapAddConfigurationCmd.class);
 		cmdList.add(LdapDeleteConfigurationCmd.class);
 		cmdList.add(LdapListConfigurationCmd.class);
-		cmdList.add(LdapCreateAccount.class);
+		cmdList.add(LdapCreateAccountCmd.class);
 		return cmdList;
 	}
 

@@ -16,51 +16,57 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
+import org.apache.cloudstack.api.ServerApiException
+import org.apache.cloudstack.api.command.LdapUserSearchCmd
+import org.apache.cloudstack.api.response.LdapUserResponse
+import org.apache.cloudstack.ldap.LdapManager
+import org.apache.cloudstack.ldap.LdapUser
+import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException
 
 class LdapSearchUserCmdSpec extends spock.lang.Specification {
     def "Test getEntityOwnerId is 1"() {
-        given:
+	given: "We have an Ldap manager and ldap user search cmd"
         def ldapManager = Mock(LdapManager)
         def ldapUserSearchCmd = new LdapUserSearchCmd(ldapManager)
-        when:
-	long ownerId = ldapUserSearchCmd.getEntityOwnerId()
-        then:
-	ownerId == 1
+	when: "getEntityOwnerId is called"
+		long ownerId = ldapUserSearchCmd.getEntityOwnerId()
+	then: "1 is returned"
+		ownerId == 1
     }
 
     def "Test successful empty response from execute"() {
-        given:
+	given: "We have an Ldap manager and ldap user search cmd"
         def ldapManager = Mock(LdapManager)
         ldapManager.searchUsers(_) >> {throw new NoLdapUserMatchingQueryException()}
         def ldapUserSearchCmd = new LdapUserSearchCmd(ldapManager)
-        when:
+	when: "The command is executed with no users found"
         ldapUserSearchCmd.execute()
-        then:
+	then: "An empty array is returned"
         ldapUserSearchCmd.responseObject.getResponses().size() == 0
     }
 
     def "Test successful response from execute"() {
-        given:
+	given: "We have an Ldap manager and ldap user search cmd"
         def ldapManager = Mock(LdapManager)
-	List<LdapUser> users = new ArrayList()
-	users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
-	ldapManager.searchUsers(_) >> users
-	LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
-	ldapManager.createLdapUserResponse(_) >> response
+		List<LdapUser> users = new ArrayList()
+		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
+		ldapManager.searchUsers(_) >> users
+		LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
+		ldapManager.createLdapUserResponse(_) >> response
         def ldapUserSearchCmd = new LdapUserSearchCmd(ldapManager)
-        when:
-	ldapUserSearchCmd.execute()
-        then:
-	ldapUserSearchCmd.responseObject.getResponses().size() != 0
+	when: "The command is executed"
+		ldapUserSearchCmd.execute()
+	then: "A array with length of atleast 1 is returned"
+		ldapUserSearchCmd.responseObject.getResponses().size() > 0
     }
 
     def "Test successful return of getCommandName"() {
-        given:
+	given: "We have an Ldap manager and ldap user search cmd"
         def ldapManager = Mock(LdapManager)
         def ldapUserSearchCmd = new LdapUserSearchCmd(ldapManager)
-        when:
+	when: "When a request for the command name is made"
         String commandName = ldapUserSearchCmd.getCommandName()
-        then:
+	then: "ldapuserresponse is returned"
         commandName == "ldapuserresponse"
     }
 }
