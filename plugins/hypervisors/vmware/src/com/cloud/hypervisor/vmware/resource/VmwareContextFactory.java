@@ -25,22 +25,23 @@ import org.springframework.stereotype.Component;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 import com.cloud.utils.StringUtils;
 
 @Component
 public class VmwareContextFactory {
-
     private static final Logger s_logger = Logger.getLogger(VmwareContextFactory.class);
 
 	private static volatile int s_seq = 1;
 	private static VmwareManager s_vmwareMgr;
+	private static VmwareContextPool s_pool;
 
 	@Inject VmwareManager _vmwareMgr;
 
 	static {
 		// skip certificate check
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
-		//s_vmwareMgr = ComponentContext.inject(VmwareManagerImpl.class);
+		s_pool = new VmwareContextPool();
 	}
 
 	@PostConstruct
@@ -54,8 +55,6 @@ public class VmwareContextFactory {
 		assert(vCenterPassword != null);
 
 		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-		//String[] params = new String[] {"--url", serviceUrl, "--username", vCenterUserName, "--password", vCenterPassword };
-
 		if(s_logger.isDebugEnabled())
 			s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " + StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
@@ -68,6 +67,23 @@ public class VmwareContextFactory {
 		context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());
 		context.registerStockObject("manageportgroup", s_vmwareMgr.getManagementPortGroupName());
 
+		return context;
+	}
+	
+	public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+		if(context == null)
+			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+		
+		if(context != null) {
+			context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+			
+			context.registerStockObject(VmwareManager.CONTEXT_STOCK_NAME, s_vmwareMgr);
+
+			context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());
+			context.registerStockObject("manageportgroup", s_vmwareMgr.getManagementPortGroupName());
+		}
+		
 		return context;
 	}
 }

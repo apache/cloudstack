@@ -370,7 +370,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
-    protected VmwareContext _serviceContext;
+    protected ThreadLocal<VmwareContext> _serviceContext = new ThreadLocal<VmwareContext>();
     protected String _hostName;
 
     protected HashMap<String, State> _vms = new HashMap<String, State>(71);
@@ -596,9 +596,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
         } finally {
+        	recycleServiceContext();
             NDC.pop();
         }
-
 
         if(s_logger.isTraceEnabled())
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
@@ -3316,7 +3316,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
+    protected Answer execute(final RemoteAccessVpnCfgCommand cmd) {
         String controlIp = getRouterSshControlIp(cmd);
         StringBuffer argsBuf = new StringBuffer();
         if (cmd.isCreate()) {
@@ -3360,7 +3360,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Answer(cmd);
     }
 
-    protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
+    protected Answer execute(final VpnUsersCfgCommand cmd) {
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
         String controlIp = getRouterSshControlIp(cmd);
@@ -5348,7 +5348,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
 
     @Override
-    public synchronized CreateAnswer execute(CreateCommand cmd) {
+    public CreateAnswer execute(CreateCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource CreateCommand: " + _gson.toJson(cmd));
         }
@@ -5382,12 +5382,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
 
                         String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName);
-                        synchronized (this) {
-                            s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                            VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
-                            vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, -1);
-                            vmMo.detachDisk(volumeDatastorePath, false);
-                        }
+
+                        s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
+                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
+                        vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, -1);
+                        vmMo.detachDisk(volumeDatastorePath, false);
 
                         VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), vmdkName, dskch.getSize(), null);
                         return new CreateAnswer(cmd, vol);
@@ -5439,13 +5438,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         throw new Exception("Unable to create a dummy VM for volume creation");
                     }
 
-                    synchronized (this) {
-                        // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
+                    // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
+                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
 
-                        vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, vmMo.getScsiDeviceControllerKey());
-                        vmMo.detachDisk(volumeDatastorePath, false);
-                    }
+                    vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dskch.getSize()), morDatastore, vmMo.getScsiDeviceControllerKey());
+                    vmMo.detachDisk(volumeDatastorePath, false);
 
                     VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), volumeUuid, dskch.getSize(), null);
                     return new CreateAnswer(cmd, vol);
@@ -5612,6 +5609,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Host " + hyperHost.getHyperHostName() + " is not in connected state");
                 return null;
             }
+            
+            ((HostMO)hyperHost).enableVncOnHostFirewall();
 
             AboutInfo aboutInfo = ((HostMO)hyperHost).getHostAboutInfo();
             hostApiVersion = aboutInfo.getApiVersion();
@@ -6436,48 +6435,40 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     @Override
-    public synchronized VmwareContext getServiceContext(Command cmd) {
-        if (_serviceContext == null) {
-            try {
-                _serviceContext = VmwareContextFactory.create(_vCenterAddress, _username, _password);
-                VmwareHypervisorHost hyperHost = getHyperHost(_serviceContext, cmd);
-                assert(hyperHost instanceof HostMO);
-
-                HostFirewallSystemMO firewallMo = ((HostMO)hyperHost).getHostFirewallSystemMO();
-                boolean bRefresh = false;
-                if(firewallMo != null) {
-                    HostFirewallInfo firewallInfo = firewallMo.getFirewallInfo();
-                    if(firewallInfo != null && firewallInfo.getRuleset() != null) {
-                        for(HostFirewallRuleset rule : firewallInfo.getRuleset()) {
-                            if("vncServer".equalsIgnoreCase(rule.getKey())) {
-                                bRefresh = true;
-                                firewallMo.enableRuleset("vncServer");
-                            } else if("gdbserver".equalsIgnoreCase(rule.getKey())) {
-                                bRefresh = true;
-                                firewallMo.enableRuleset("gdbserver");
-                            }
-                        }
-                    }
-
-                    if(bRefresh)
-                        firewallMo.refreshFirewall();
-                }
-            } catch (Exception e) {
-                s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);
-                throw new CloudRuntimeException("Unable to connect to vSphere server: " + _vCenterAddress);
-            }
+    public VmwareContext getServiceContext(Command cmd) {
+    	if(_serviceContext.get() != null)
+    		return _serviceContext.get();
+    	
+    	VmwareContext context = null;
+        try {
+            context = VmwareContextFactory.getContext(_vCenterAddress, _username, _password);
+            _serviceContext.set(context);
+        } catch (Exception e) {
+            s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);
+            throw new CloudRuntimeException("Unable to connect to vSphere server: " + _vCenterAddress);
         }
-        return _serviceContext;
+        return context;
     }
 
     @Override
-    public synchronized void invalidateServiceContext(VmwareContext context) {
-        if (_serviceContext != null) {
-            _serviceContext.close();
-        }
-        _serviceContext = null;
+    public void invalidateServiceContext(VmwareContext context) {
+    	assert(_serviceContext.get() == context);
+    	
+    	_serviceContext.set(null);
+    	if(context != null)
+    		context.close();
     }
 
+	private void recycleServiceContext() {
+		VmwareContext context = _serviceContext.get();
+		_serviceContext.set(null);
+		
+		if(context != null) {
+			assert(context.getPool() != null);
+			context.getPool().returnContext(context);
+		}
+	}
+    
     @Override
     public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
         if (_morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
@@ -6502,7 +6493,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public void setName(String name) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -6526,7 +6516,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public void setRunLevel(int level) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -6534,6 +6523,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // TODO Auto-generated method stub
         return null;
     }
+    
     private boolean isVMWareToolsInstalled(VirtualMachineMO vmMo) throws Exception{
         GuestInfo guestInfo = vmMo.getVmGuestInfo();
         return (guestInfo != null && guestInfo.getGuestState() != null && guestInfo.getGuestState().equalsIgnoreCase("running"));

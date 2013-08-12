@@ -45,6 +45,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -57,6 +58,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
     private final Gson _gson;
     private final StorageSubsystemCommandHandler storageSubsystemHandler;
+    
+    private ThreadLocal<VmwareContext> currentContext = new ThreadLocal<VmwareContext>();
 
     /*
      * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
@@ -73,47 +76,52 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         vmwareStorageSubsystemCommandHandler.setStorageResource(_resource);
         vmwareStorageSubsystemCommandHandler.setStorageManager(_storageMgr);
         storageSubsystemHandler = vmwareStorageSubsystemCommandHandler;
-
     }
 
     @Override
     public Answer executeRequest(Command cmd) {
-        Answer answer;
-        if (cmd instanceof PrimaryStorageDownloadCommand) {
-            answer = execute((PrimaryStorageDownloadCommand) cmd);
-        } else if (cmd instanceof BackupSnapshotCommand) {
-            answer = execute((BackupSnapshotCommand) cmd);
-        } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
-            answer = execute((CreatePrivateTemplateFromVolumeCommand) cmd);
-        } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
-            answer = execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
-        } else if (cmd instanceof CopyVolumeCommand) {
-            answer = execute((CopyVolumeCommand) cmd);
-        } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
-            answer = execute((CreateVolumeFromSnapshotCommand) cmd);
-        } else if (cmd instanceof StorageSubSystemCommand) {
-            answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
-        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
-            answer = execute((CreateEntityDownloadURLCommand)cmd);
-        } else {
-            answer = _resource.defaultAction(cmd);
-        }
-
-        // special handling to pass-back context info for cleanups
-        if (cmd.getContextParam("execid") != null) {
-            answer.setContextParam("execid", cmd.getContextParam("execid"));
-        }
-
-        if (cmd.getContextParam("checkpoint") != null) {
-            answer.setContextParam("checkpoint", cmd.getContextParam("checkpoint"));
-        }
-
-        if (cmd.getContextParam("checkpoint2") != null) {
-            answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
-        }
-
-        return answer;
+    	
+    	try {
+	        Answer answer;
+	        if (cmd instanceof PrimaryStorageDownloadCommand) {
+	            answer = execute((PrimaryStorageDownloadCommand) cmd);
+	        } else if (cmd instanceof BackupSnapshotCommand) {
+	            answer = execute((BackupSnapshotCommand) cmd);
+	        } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
+	            answer = execute((CreatePrivateTemplateFromVolumeCommand) cmd);
+	        } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
+	            answer = execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
+	        } else if (cmd instanceof CopyVolumeCommand) {
+	            answer = execute((CopyVolumeCommand) cmd);
+	        } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
+	            answer = execute((CreateVolumeFromSnapshotCommand) cmd);
+	        } else if (cmd instanceof StorageSubSystemCommand) {
+	            answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
+	        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+	            answer = execute((CreateEntityDownloadURLCommand)cmd);
+	        } else {
+	            answer = _resource.defaultAction(cmd);
+	        }
+	
+	        // special handling to pass-back context info for cleanups
+	        if (cmd.getContextParam("execid") != null) {
+	            answer.setContextParam("execid", cmd.getContextParam("execid"));
+	        }
+	
+	        if (cmd.getContextParam("checkpoint") != null) {
+	            answer.setContextParam("checkpoint", cmd.getContextParam("checkpoint"));
+	        }
+	
+	        if (cmd.getContextParam("checkpoint2") != null) {
+	            answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
+	        }
+	
+	        return answer;
+    	} finally {
+    		recycleServiceContext();
+    	}
     }
+    
     protected Answer execute(CreateEntityDownloadURLCommand cmd) {
         boolean result = _storageMgr.execute(this, cmd);
         return _resource.defaultAction(cmd);
@@ -199,30 +207,38 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
         try {
             _resource.ensureOutgoingRuleForAddress(vCenterAddress);
-            VmwareContext context = null;
-
-            // cached VmwareContext may be timed out in vCenter, give it a
-            // chance to reclaim a new context from factory
-            for (int i = 0; i < 2; i++) {
-                context = VmwareSecondaryStorageContextFactory.create(vCenterAddress, username, password);
-                if (!validateContext(context, cmd)) {
-                    invalidateServiceContext(context);
-                }
-            }
-
+            
+    		VmwareContext context = currentContext.get();
+    		if(context == null) {
+    			s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username 
+    				+ ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
+                context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
+    		}
+    		
             if (context != null) {
                 context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
                 context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
             }
+            currentContext.set(context);
             return context;
         } catch (Exception e) {
             s_logger.error("Unexpected exception " + e.toString(), e);
             return null;
         }
     }
+    
+    public void recycleServiceContext() {
+    	if(currentContext.get() != null) {
+    		VmwareContext context = currentContext.get();
+    		currentContext.set(null);
+    		assert(context.getPool() != null);
+    		context.getPool().returnContext(context);
+    	}
+    }
 
     @Override
     public void invalidateServiceContext(VmwareContext context) {
+    	currentContext.set(null);
         VmwareSecondaryStorageContextFactory.invalidate(context);
     }
 

@@ -265,7 +265,7 @@ public class VmwareClient {
         return vimPort.retrieveProperties(propCollectorRef, specArr);
     }
 
-    public boolean waitForTask(ManagedObjectReference task) throws RuntimeFaultFaultMsg, RemoteException, InterruptedException {
+    public boolean waitForTask2(ManagedObjectReference task) throws RuntimeFaultFaultMsg, RemoteException, InterruptedException {
         return waitForTask(task, 500, 1000);
     }
 
@@ -357,7 +357,7 @@ public class VmwareClient {
      * @throws RuntimeFaultFaultMsg
      * @throws InvalidPropertyFaultMsg
      */
-    public boolean waitForTaskNotThreadSafe(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
 
         boolean retVal = false;
 
