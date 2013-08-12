@@ -2286,3 +2286,14 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'kvm.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'eip.use.multiple.netscalers', 'false', 'Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'snapshot.backup.rightafter', 'true', 'backup snapshot right after snapshot is taken');
+
+DELETE FROM `cloud`.`configuration` where name='vmware.guest.vswitch';
+DELETE FROM `cloud`.`configuration` where name='vmware.private.vswitch';
+DELETE FROM `cloud`.`configuration` where name='vmware.public.vswitch';
+
+
+UPDATE `cloud`.`autoscale_vmgroups` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`autoscale_vmprofiles` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
