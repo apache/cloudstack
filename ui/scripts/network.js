@@ -1994,21 +1994,30 @@
                                     return true; //VPC section, show Acquire IP button
                                 }
                             },
-                            messages: {
-                                /*
-                confirm: function(args) {
-                  if(args.context.vpc)
-                    return 'message.acquire.new.ip.vpc';
-                   else
-                     return 'message.acquire.new.ip';
-                },
-                */
+                            messages: {                           
                                 notification: function(args) {
                                     return 'label.acquire.new.ip';
                                 }
                             },
                             createForm: {
                                 title: 'label.acquire.new.ip',
+                                desc: 'Please confirm that you want to acquire new IP',
+                                preFilter: function(args) {                            	
+                                	$.ajax({
+                                		url: createURL('listRegions'),
+                                		success: function(json) {
+                                		    var items = json.listregionsresponse.region;	
+                                		    if(items != null) {
+                                		    	var region = items[0];                                		    	
+                                		    	if(region.portableipserviceenabled == true) {
+                                		    		args.$form.find('.form-item[rel=isportable]').css('display', 'inline-block');
+                                		    	} else {
+                                		    		args.$form.find('.form-item[rel=isportable]').hide();
+                                		    	}                              		    	
+                                		    }
+                                		}                                		
+                                	});                                	
+                                },
                                 fields: {
                                     isportable: {
                                         label: 'label.cross.zones',
@@ -2025,14 +2034,19 @@
                                             args.response.success({
                                                 data: items
                                             });
-                                        }
+                                        },
+                                        isHidden: true
                                     }
                                 }
                             },
                             action: function(args) {
-                                var dataObj = {
-                                    isportable: args.data.isportable
-                                };
+                            	var dataObj = {};                            	
+                            	if (args.$form.find('.form-item[rel=isportable]').css("display") != "none") {
+                            		$.extend(dataObj, {
+                            			isportable: args.data.isportable
+                            		});                            	
+                            	}
+                            	                            	
                                 if ('vpc' in args.context) { //from VPC section
                                     $.extend(dataObj, {
                                         vpcid: args.context.vpc[0].id
