@@ -21,6 +21,11 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-volume-solidfire</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -29,7 +34,7 @@
       <artifactId>cloud-plugin-acl-static-role-based</artifactId>
       <version>${project.version}</version>
     </dependency>
-     <dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-dedicated-resources</artifactId>
       <version>${project.version}</version>
@@ -89,7 +94,12 @@
       <artifactId>cloud-plugin-network-midonet</artifactId>
       <version>${project.version}</version>
     </dependency>
-  <dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-ssp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-internallb</artifactId>
       <version>${project.version}</version>
@@ -110,9 +120,14 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-       <groupId>org.apache.cloudstack</groupId>
-       <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
-       <version>${project.version}</version>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -163,90 +178,92 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
-	<groupId>org.apache.cloudstack</groupId>
-	<artifactId>cloud-framework-ipc</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-framework-rest</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-api</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-	<artifactId>cloud-engine-components-api</artifactId>
-	<version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-compute</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-network</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-orchestration</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-schema</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-backup</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-image</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-imagemotion</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-snapshot</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-engine-storage-volume</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+      <artifactId>cloud-framework-ipc</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-plugin-storage-volume-default</artifactId>
-        <version>${project.version}</version>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-rest</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-components-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-network</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-orchestration</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-schema</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-cache</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-image</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-datamotion</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-snapshot</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-volume</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-volume-default</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-image-default</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-image-s3</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-image-swift</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -265,8 +282,21 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
     <plugins>
+      <plugin>
+        <groupId>ru.concerteza.buildnumber</groupId>
+        <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+        <version>1.2.6</version>
+        <executions>
+          <execution>
+            <id>git-buildnumber</id>
+            <goals>
+              <goal>extract-buildnumber</goal>
+            </goals>
+            <phase>prepare-package</phase>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -274,6 +304,15 @@
         <configuration>
           <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
           <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <Implementation-Revision>${git.revision}</Implementation-Revision>
+              <Implementation-Branch>${git.branch}</Implementation-Branch>
+            </manifestEntries>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
@@ -281,14 +320,17 @@
         <artifactId>maven-jetty-plugin</artifactId>
         <version>6.1.26</version>
         <configuration>
+          <scanIntervalSeconds>0</scanIntervalSeconds>
+          <stopPort>9966</stopPort>
+          <stopKey>stop-jetty</stopKey>
           <connectors>
             <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
               <port>8080</port>
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
+          <webXml>${project.build.directory}/generated-webapp/WEB-INF/web.xml</webXml>
+          <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
             <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
@@ -326,8 +368,7 @@
                     <include name="web.xml"/>
                   </fileset>
                 </copy>
-                <copy
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes">
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/WEB-INF/classes">
                     <include name="resources/**/*"/>
                   </fileset>
@@ -346,7 +387,8 @@
                     </filterreader>
                   </filterchain>
                 </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
+                <copy overwrite="true"
+                  todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/tomcatconf">
                     <include name="*.in"/>
                   </fileset>
@@ -470,7 +512,7 @@
               <target if="${quickcloud}">
                 <echo>quickcloud</echo>
                 <replaceregexp
-                    file="${basedir}/target/generated-webapp/WEB-INF/classes/applicationContext.xml"
+                  file="${basedir}/target/generated-webapp/WEB-INF/classes/applicationContext.xml"
                   match="com.cloud.consoleproxy.ConsoleProxyManagerImpl"
                   replace="com.cloud.consoleproxy.StaticConsoleProxyManager" byline="true"/>
               </target>
@@ -482,7 +524,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.5.1</version>
         <executions>
           <execution>
             <id>copy</id>
@@ -514,8 +555,8 @@
     </plugins>
     <pluginManagement>
       <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings
-          only. It has no influence on the Maven build itself. -->
+        <!--This plugin's configuration is used to store Eclipse m2e settings only.
+          It has no influence on the Maven build itself. -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>

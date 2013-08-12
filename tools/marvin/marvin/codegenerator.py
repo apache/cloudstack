@@ -450,6 +450,8 @@ if __name__ == "__main__":
     parser.add_option("-e", "--endpoint", dest="endpoint",
                       help="The endpoint mgmt server (with open 8096) where\
  apis are discovered, default is localhost")
+    parser.add_option("-y", "--entity", dest="entity",
+                      help="Generate entity based classes")
 
     (options, args) = parser.parse_args()
 

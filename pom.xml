@@ -19,7 +19,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.2.0-SNAPSHOT</version>
+  <version>4.3.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
@@ -34,7 +34,6 @@
   </issueManagement>
 
   <properties>
-    <!--skipTests>true</skipTests -->
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -55,7 +54,7 @@
     <cs.jpa.version>2.0.0</cs.jpa.version>
     <cs.jasypt.version>1.9.0</cs.jasypt.version>
     <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
-    <cs.ehcache.version>1.5.0</cs.ehcache.version>
+    <cs.ehcache.version>2.6.6</cs.ehcache.version>
     <cs.gson.version>1.7.1</cs.gson.version>
     <cs.guava.version>14.0-rc1</cs.guava.version>
     <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
@@ -76,7 +75,7 @@
     <cs.vmware.api.version>5.1</cs.vmware.api.version>
     <org.springframework.version>3.1.2.RELEASE</org.springframework.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
-    <cs.aws.sdk.version>1.3.21.1</cs.aws.sdk.version>
+    <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
@@ -181,6 +180,205 @@
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
         <version>${cs.mysql.version}</version>
+        <scope>provided,test</scope>
+      </dependency>
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>${cs.log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>cglib</groupId>
+        <artifactId>cglib-nodep</artifactId>
+        <version>${cs.cglib.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-dbcp</groupId>
+        <artifactId>commons-dbcp</artifactId>
+        <version>${cs.dbcp.version}</version>
+        <exclusions>
+          <exclusion>
+            <artifactId>commons-pool</artifactId>
+            <groupId>commons-pool</groupId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>net.sf.ehcache</groupId>
+        <artifactId>ehcache-core</artifactId>
+        <version>${cs.ehcache.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-pool</groupId>
+        <artifactId>commons-pool</artifactId>
+        <version>${cs.pool.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>${cs.codec.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk16</artifactId>
+        <version>${cs.bcprov.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.jcraft</groupId>
+        <artifactId>jsch</artifactId>
+        <version>${cs.jsch.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jasypt</groupId>
+        <artifactId>jasypt</artifactId>
+        <version>${cs.jasypt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.trilead</groupId>
+        <artifactId>trilead-ssh2</artifactId>
+        <version>${cs.trilead.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk</artifactId>
+        <version>${cs.aws.sdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>apache-log4j-extras</artifactId>
+        <version>${cs.log4j.extras.version}</version>
+        <exclusions>
+          <exclusion>
+            <artifactId>log4j</artifactId>
+            <groupId>log4j</groupId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>javax.ejb</groupId>
+        <artifactId>ejb-api</artifactId>
+        <version>${cs.ejb.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.googlecode.java-ipv6</groupId>
+        <artifactId>java-ipv6</artifactId>
+        <version>${cs.java-ipv6.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-configuration</groupId>
+        <artifactId>commons-configuration</artifactId>
+        <version>${cs.configuration.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${cs.commons-io.version}</version>
+      </dependency>
+      <!-- Test dependency in mysql for db tests -->
+      <dependency>
+        <groupId>org.reflections</groupId>
+        <artifactId>reflections</artifactId>
+        <version>${cs.reflections.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.owasp.esapi</groupId>
+        <artifactId>esapi</artifactId>
+        <version>2.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.persistence</groupId>
+        <artifactId>javax.persistence</artifactId>
+        <version>${cs.jpa.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-web</artifactId>
+        <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>${cs.servlet.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>${cs.httpcore.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>${cs.httpcore.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.thoughtworks.xstream</groupId>
+        <artifactId>xstream</artifactId>
+        <version>${cs.xstream.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>mail</artifactId>
+        <version>${cs.mail.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jstl</groupId>
+        <artifactId>jstl</artifactId>
+        <version>${cs.jstl.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-aop</artifactId>
+        <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${org.springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>${cs.gson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${cs.guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.servicemix.bundles</groupId>
+        <artifactId>org.apache.servicemix.bundles.snmp4j</artifactId>
+        <version>2.1.0_1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjtools</artifactId>
+        <version>1.6.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.axis</groupId>
+        <artifactId>axis</artifactId>
+        <version>${cs.axis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-daemon</groupId>
+        <artifactId>commons-daemon</artifactId>
+        <version>${cs.daemon.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.axis</groupId>
+        <artifactId>axis-jaxrpc</artifactId>
+        <version>${cs.axis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>wsdl4j</groupId>
+        <artifactId>wsdl4j</artifactId>
+        <version>1.4</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -193,35 +391,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-core</artifactId>
-      <version>${org.springframework.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-context</artifactId>
-      <version>${org.springframework.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-web</artifactId>
-      <version>${org.springframework.version}</version>
-    </dependency>
-    <!-- <dependency> <groupId>org.springframework</groupId> <artifactId>spring-expression</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-beans</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-aop</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-context-support</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-tx</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-jdbc</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-orm</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-oxm</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-webmvc</artifactId>
-      <version>${org.springframework.version}</version> </dependency> -->
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.9.5</version>
@@ -232,16 +401,6 @@
       <artifactId>spring-test</artifactId>
       <version>${org.springframework.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.aspectj</groupId>
-      <artifactId>aspectjrt</artifactId>
-      <version>1.7.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.aspectj</groupId>
-      <artifactId>aspectjweaver</artifactId>
-      <version>1.7.1</version>
     </dependency>
     <dependency>
       <groupId>javax.inject</groupId>
@@ -269,7 +428,7 @@
             <excludeDefaultDirectories>true</excludeDefaultDirectories>
             <filesets>
               <fileset>
-                <directory>target</directory>
+                <directory>${cs.target.dir}</directory>
                 <includes>
                   <include>**/*</include>
                 </includes>
@@ -317,12 +476,8 @@
               <pluginExecutions>
                 <pluginExecution>
                   <pluginExecutionFilter>
-                    <groupId>
-                      org.apache.maven.plugins
-                    </groupId>
-                    <artifactId>
-                      maven-antrun-plugin
-                    </artifactId>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
                     <versionRange>[1.7,)</versionRange>
                     <goals>
                       <goal>run</goal>
@@ -340,6 +495,11 @@
           <groupId>org.apache.tomcat.maven</groupId>
           <artifactId>tomcat7-maven-plugin</artifactId>
           <version>2.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.7</version>
         </plugin>
         <plugin>
           <groupId>org.apache.rat</groupId>
@@ -394,6 +554,7 @@
               <exclude>tools/appliance/definitions/devcloud/*</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate64/*</exclude>
+              <exclude>tools/appliance/definitions/builtin/*</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
@@ -456,6 +617,8 @@
               <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
+              <exclude>tools/ngui/static/bootstrap/*</exclude>
+              <exclude>tools/ngui/static/js/lib/*</exclude>
             </excludes>
           </configuration>
         </plugin>
