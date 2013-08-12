@@ -5125,7 +5125,7 @@ service cloudstack-agent start
             <listitem>
               <para>Merge your changes from the backup file into the new
                   <filename>components.xml</filename>.</para>
-              <programlisting># vi /etc/cloud/management/components.xml</programlisting>
+              <programlisting># vi /etc/cloudstack/management/components.xml</programlisting>
             </listitem>
           </orderedlist>
           <note>
@@ -5180,7 +5180,7 @@ service cloudstack-agent start
           </note>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Configure a yum or apt respository containing the &PRODUCT; packages as outlined
+              <para>Configure a yum or apt repository containing the &PRODUCT; packages as outlined
                 in the Installation Guide.</para>
             </listitem>
             <listitem>
@@ -5199,7 +5199,7 @@ service cloudstack-agent start
               <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
-              <para>Edit <filename>/etc/cloud/agent/agent.properties</filename> to change the
+              <para>Edit <filename>/etc/cloudstack/agent/agent.properties</filename> to change the
                 resource parameter from
                 "com.cloud.agent.resource.computing.LibvirtComputingResource" to
                 "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource".</para>
@@ -6009,15 +6009,15 @@ service cloudstack-agent start
                   </thead>
                   <tbody>
                     <row>
-                      <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename></para></entry>
+                      <entry><para><filename>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename></para></entry>
                       <entry><para><filename>/opt/xensource/sm/NFSSR.py</filename></para></entry>
                     </row>
                     <row>
-                      <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename></para></entry>
+                      <entry><para><filename>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename></para></entry>
                       <entry><para><filename>/opt/xensource/bin/setupxenserver.sh</filename></para></entry>
                     </row>
                     <row>
-                      <entry><para><filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename></para></entry>
+                      <entry><para><filename>/usr/lib64/cloudstack-common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename></para></entry>
                       <entry><para><filename>/opt/xensource/bin/make_migratable.sh</filename></para></entry>
                     </row>
                   </tbody>
