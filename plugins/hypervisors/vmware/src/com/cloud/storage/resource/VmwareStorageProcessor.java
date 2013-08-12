@@ -260,7 +260,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 hostService.invalidateServiceContext(context);
             }
 
-            String msg = "Unable to execute PrimaryStorageDownloadCommand due to exception";
+            String msg = "Unable to copy template to primary storage due to exception:" + e.toString();
             s_logger.error(msg, e);
             return new CopyCmdAnswer(msg);
         }
