@@ -47,7 +47,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface VolumeManager extends VolumeApiService {
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId,
             Long destPoolClusterId, HypervisorType dataDiskHyperType)
-            throws ConcurrentOperationException;
+            throws ConcurrentOperationException, StorageUnavailableException;
 
     @Override
     VolumeVO uploadVolume(UploadVolumeCmd cmd)
@@ -97,7 +97,7 @@ public interface VolumeManager extends VolumeApiService {
 
     boolean storageMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            StoragePool destPool);
+            StoragePool destPool) throws StorageUnavailableException;
 
     void prepareForMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,

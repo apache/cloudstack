@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.dao.IPAddressDao;
 import org.apache.log4j.Logger;
 
@@ -1417,6 +1418,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Failed to migration: " + e.toString());
             throw new CloudRuntimeException("Failed to migration: " + e.toString());
         } catch (InsufficientCapacityException e) {
+            s_logger.debug("Failed to migration: " + e.toString());
+            throw new CloudRuntimeException("Failed to migration: " + e.toString());
+        } catch (StorageUnavailableException e) {
             s_logger.debug("Failed to migration: " + e.toString());
             throw new CloudRuntimeException("Failed to migration: " + e.toString());
         } finally {

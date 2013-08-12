@@ -340,7 +340,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId,
             Long destPoolPodId, Long destPoolClusterId,
             HypervisorType dataDiskHyperType)
-                    throws ConcurrentOperationException {
+                    throws ConcurrentOperationException, StorageUnavailableException {
 
         // Find a destination storage pool with the specified criteria
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume
@@ -1892,6 +1892,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 } catch (ConcurrentOperationException e) {
                     s_logger.debug("move volume failed", e);
                     throw new CloudRuntimeException("move volume failed", e);
+                } catch (StorageUnavailableException e) {
+                    s_logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
                 }
             }
         }
@@ -2157,7 +2160,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @DB
     @Override
-    public Volume migrateVolume(MigrateVolumeCmd cmd) {
+    public Volume migrateVolume(MigrateVolumeCmd cmd){
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
 
@@ -2221,28 +2224,32 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (liveMigrateVolume) {
             newVol = liveMigrateVolume(vol, destPool);
         } else {
-            newVol = migrateVolume(vol, destPool);
+            try {
+                newVol = migrateVolume(vol, destPool);
+            } catch(StorageUnavailableException e) {
+               s_logger.debug("Failed to migrate volume: ", e);
+            }
         }
         return newVol;
     }
 
     @DB
-    protected Volume migrateVolume(Volume volume, StoragePool destPool) {
+    protected Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(vol, (DataStore)destPool);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 s_logger.error("migrate volume failed:" + result.getResult());
-                return null;
+                throw new StorageUnavailableException("migrate volume failed: " + result.getResult(), destPool.getId());
             }
             return result.getVolume();
         } catch (InterruptedException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new StorageUnavailableException("migrate vlume failed:" + e.toString(), destPool.getId());
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new StorageUnavailableException("migrate vlume failed:" + e.toString(), destPool.getId());
         }
     }
 
@@ -2309,7 +2316,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     public boolean storageMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            StoragePool destPool) {
+            StoragePool destPool) throws StorageUnavailableException {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         List<Volume> volumesNeedToMigrate = new ArrayList<Volume>();
 
@@ -2570,8 +2577,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 vol = task.volume;
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
-                migrateVolume(task.volume, pool);
-                vol = task.volume;
+                vol = migrateVolume(task.volume, pool);
             } else if (task.type == VolumeTaskType.RECREATE) {
                 Pair<VolumeVO, DataStore> result = recreateVolume(task.volume, vm, dest);
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
@@ -2617,9 +2623,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
-
-
-
 
     @Override
     public boolean canVmRestartOnAnotherServer(long vmId) {
