@@ -40,8 +40,8 @@ import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.DeleteUcsManagerCmd;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
@@ -503,6 +503,7 @@ public class UcsManagerImpl implements UcsManager {
         cmds.add(ListUcsProfileCmd.class);
         cmds.add(AddUcsManagerCmd.class);
         cmds.add(AssociateUcsProfileToBladeCmd.class);
+        cmds.add(DeleteUcsManagerCmd.class);
         return cmds;
     }
 
