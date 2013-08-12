@@ -35,7 +35,12 @@ public class RegionVO implements Region{
 
     @Column(name="end_point")
     private String endPoint;
-    
+
+    @Column(name="gslb_service_enabled")
+    private boolean gslbEnabled;
+
+    @Column(name="portableip_service_enabled")
+    private boolean portableipEnabled;
 
     public boolean getGslbEnabled() {
         return gslbEnabled;
@@ -44,9 +49,6 @@ public class RegionVO implements Region{
     public void setGslbEnabled(boolean gslbEnabled) {
         this.gslbEnabled = gslbEnabled;
     }
-
-    @Column(name="gslb_service_enabled")
-    private boolean gslbEnabled;
 
     public RegionVO() {
     }
@@ -78,10 +80,35 @@ public class RegionVO implements Region{
 		this.endPoint = endPoint;
 	}
 
-
     @Override
     public boolean checkIfServiceEnabled(Service service) {
-        return gslbEnabled;
+        if (Service.Gslb.equals(service)) {
+            return gslbEnabled;
+        } else if (Service.PortableIp.equals(service)) {
+            return portableipEnabled;
+        } else {
+             assert false: "Unknown Region level Service";
+            return false;
+        }
     }
 
+    @Override
+    public void enableService(org.apache.cloudstack.region.Region.Service service) {
+        if (Service.Gslb.equals(service)) {
+            this.gslbEnabled = true;
+        } else if (Service.PortableIp.equals(service)) {
+            this.portableipEnabled = true;
+        } else {
+            assert false: "Unknown Region level Service";
+            return;
+        }
+    }
+
+    public boolean getPortableipEnabled() {
+        return portableipEnabled;
+    }
+
+    public void setPortableipEnabled(boolean portableipEnabled) {
+        this.portableipEnabled = portableipEnabled;
+    }
 }
