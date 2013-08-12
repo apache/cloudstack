@@ -238,7 +238,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
             Long accountId, Long affinityGroupId) {
         SearchCriteria<DedicatedResourceVO> sc = ListAllZonesSearch.create();
         if (dataCenterId != null) {
-            sc.setParameters("dataCenterId", dataCenterId);
+            sc.setParameters("zoneId", dataCenterId);
         }
         if (affinityGroupId != null) {
             sc.setParameters("affinityGroupId", affinityGroupId);
