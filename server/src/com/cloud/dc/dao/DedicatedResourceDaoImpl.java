@@ -228,7 +228,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId){
         SearchCriteria<DedicatedResourceVO> sc = ListAllZonesSearch.create();
         if (dataCenterId != null) {
-            sc.setParameters("dataCenterId", dataCenterId);
+            sc.setParameters("zoneId", dataCenterId);
         }
         if(domainId != null) {
             sc.setParameters("domainId", domainId);
