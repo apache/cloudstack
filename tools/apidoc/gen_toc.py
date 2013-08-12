@@ -160,6 +160,7 @@ known_categories = {
     'Ucs' : 'UCS',
     'CacheStores' : 'Cache Stores',
     'CacheStore' : 'Cache Store'
+    'OvsElement' : 'Ovs Element'
     }
 
 

@@ -196,7 +196,6 @@ DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
 DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
 DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
-DROP TABLE IF EXISTS `cloud`.`ovs_nic_map`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2474,15 +2473,6 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY(`nic`) REFERENCES `nics`(`uuid`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ovs_nic_map` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `logicalswitch` varchar(255) NOT NULL COMMENT 'uuid of logical switch this port is provisioned on',
-  `logicalswitchport` varchar(255) UNIQUE COMMENT 'uuid of this logical switch port',
-  `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_ovs_nic_map__nic` FOREIGN KEY(`nic`) REFERENCES `nics`(`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

@@ -91,9 +91,9 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	public Network design(NetworkOffering offering, DeploymentPlan plan,
 			Network userSpecified, Account owner) {
 
-		if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
-			return null;
-		}
+		// if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
+		// return null;
+		// }
 		PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan
 				.getPhysicalNetworkId());
 		DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -118,10 +118,11 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 			throws InsufficientVirtualNetworkCapcityException {
 		assert (network.getState() == State.Implementing) : "Why are we implementing "
 				+ network;
-		if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
-			return null;
-		}
+		// if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
+		// return null;
+		// }
 		long dcId = dest.getDataCenter().getId();
+		NetworkType nwType = dest.getDataCenter().getNetworkType();
 		// get physical network id
 		Long physicalNetworkId = network.getPhysicalNetworkId();
 		// physical network id can be null in Guest Network in Basic zone, so
@@ -129,6 +130,13 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 		if (physicalNetworkId == null) {
 			physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId,
 					offering.getTags(), offering.getTrafficType());
+		}
+		PhysicalNetworkVO physnet = _physicalNetworkDao
+				.findById(physicalNetworkId);
+
+		if (!canHandle(offering, nwType, physnet)) {
+			s_logger.debug("Refusing to design this network");
+			return null;
 		}
 		NetworkVO implemented = (NetworkVO) super.implement(network, offering,
 				dest, context);

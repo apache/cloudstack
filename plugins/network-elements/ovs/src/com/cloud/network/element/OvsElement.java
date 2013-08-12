@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,8 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.ovs.OvsTunnelManager;
+import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
@@ -54,9 +57,11 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = { NetworkElement.class, ConnectivityProvider.class,
 		SourceNatServiceProvider.class, StaticNatServiceProvider.class,
@@ -73,6 +78,10 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 	NetworkServiceMapDao _ntwkSrvcDao;
 	@Inject
 	ResourceManager _resourceMgr;
+	@Inject
+	DomainRouterDao _routerDao;
+	@Inject
+	VpcVirtualNetworkApplianceManager _routerMgr;
 
 	private static final Logger s_logger = Logger.getLogger(OvsElement.class);
 	private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -130,8 +139,6 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 		if (!canHandle(network, Service.Connectivity)) {
 			return false;
 		}
-		// TODO: implement SourceNat immediately when we code L3 services
-
 		return true;
 	}
 
@@ -221,35 +228,35 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 			return false;
 		}
 
-		if ((services.contains(Service.PortForwarding) || services
-				.contains(Service.StaticNat))
-				&& !services.contains(Service.SourceNat)) {
-			s_logger.warn("Unable to provide StaticNat and/or PortForwarding without the SourceNat service");
-			return false;
-		}
+		// if ((services.contains(Service.PortForwarding) || services
+		// .contains(Service.StaticNat))
+		// && !services.contains(Service.SourceNat)) {
+		// s_logger.warn("Unable to provide StaticNat and/or PortForwarding without the SourceNat service");
+		// return false;
+		// }
 		return true;
 	}
 
 	private static Map<Service, Map<Capability, String>> setCapabilities() {
 		Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
-		// we need L3 support for coding L3 services in next period
-
 		// L2 Support : SDN provisioning
 		capabilities.put(Service.Connectivity, null);
 
+		// TODO: we need L3 support for coding L3 services in next period
 		// L3 Support : Generic?
-		capabilities.put(Service.Gateway, null);
+		// capabilities.put(Service.Gateway, null);
 
 		// L3 Support : SourceNat
-		Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
-		sourceNatCapabilities.put(Capability.SupportedSourceNatTypes,
-				"peraccount");
-		sourceNatCapabilities.put(Capability.RedundantRouter, "false");
-		capabilities.put(Service.SourceNat, sourceNatCapabilities);
+		// Map<Capability, String> sourceNatCapabilities = new
+		// HashMap<Capability, String>();
+		// sourceNatCapabilities.put(Capability.SupportedSourceNatTypes,
+		// "peraccount");
+		// sourceNatCapabilities.put(Capability.RedundantRouter, "false");
+		// capabilities.put(Service.SourceNat, sourceNatCapabilities);
 
 		// L3 Support : Port Forwarding
-		capabilities.put(Service.PortForwarding, null);
+		// capabilities.put(Service.PortForwarding, null);
 
 		// L3 support : StaticNat
 		capabilities.put(Service.StaticNat, null);
@@ -259,7 +266,8 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 
 	@Override
 	public List<Class<?>> getCommands() {
-		return null;
+		List<Class<?>> cmdList = new ArrayList<Class<?>>();
+		return cmdList;
 	}
 
 	@Override
@@ -291,24 +299,53 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 	// TODO: Adding L3 services below
 	@Override
 	public IpDeployer getIpDeployer(Network network) {
-		// TODO Auto-generated method stub
-		return null;
+		return this;
 	}
 
 	@Override
 	public boolean applyIps(Network network,
 			List<? extends PublicIpAddress> ipAddress, Set<Service> services)
 			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
+		boolean canHandle = true;
+		for (Service service : services) {
+			// check if Ovs can handle services except SourceNat
+			if (!canHandle(network, service) && service != Service.SourceNat) {
+				canHandle = false;
+				break;
+			}
+		}
+		if (canHandle) {
+			List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+					network.getId(), Role.VIRTUAL_ROUTER);
+			if (routers == null || routers.isEmpty()) {
+				s_logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual "
+						+ "router doesn't exist in the network "
+						+ network.getId());
+				return true;
+			}
+
+			return _routerMgr.associatePublicIP(network, ipAddress, routers);
+		} else {
+			return false;
+		}
 	}
 
 	@Override
-	public boolean applyStaticNats(Network config,
+	public boolean applyStaticNats(Network network,
 			List<? extends StaticNat> rules)
 			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
+		if (!canHandle(network, Service.StaticNat)) {
+			return false;
+		}
+		List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+				network.getId(), Role.VIRTUAL_ROUTER);
+		if (routers == null || routers.isEmpty()) {
+			s_logger.debug("Ovs element doesn't need to apply static nat on the backend; virtual "
+					+ "router doesn't exist in the network " + network.getId());
+			return true;
+		}
+
+		return _routerMgr.applyStaticNats(network, rules, routers);
 	}
 
 	@Override

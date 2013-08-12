@@ -17916,35 +17916,55 @@
             jsonObj["redundantRouterState"] = "";
         }
     }
+  };
 
-    var refreshNspData = function(nspName) {
-        var array1 = [];
-        if (nspName != null)
-            array1.push("&name=" + nspName);
-
-        $.ajax({
-            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id + array1.join("")),
-            dataType: "json",
-            async: false,
-            success: function(json) {
-                nspMap = {}; //reset
-
-                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-                if (items != null) {
-                    for (var i = 0; i < items.length; i++) {
-                        switch (items[i].name) {
-                            case "VirtualRouter":
-                                nspMap["virtualRouter"] = items[i];
-                                break;
-                            case "InternalLbVm":
-                                nspMap["InternalLbVm"] = items[i];
-                                break;
-                            case "VpcVirtualRouter":
-                                nspMap["vpcVirtualRouter"] = items[i];
-                                break;
-                            case "Netscaler":
-                                nspMap["netscaler"] = items[i];
-                                break;
+	var addExtraPropertiesToClusterObject = function(jsonObj) {
+		if(jsonObj.managedstate == "Managed") {
+			jsonObj.state = jsonObj.allocationstate; //jsonObj.state == Enabled, Disabled
+		}
+		else {
+			jsonObj.state = jsonObj.managedstate; //jsonObj.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
+		}
+  }
+	
+	var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {  		
+		if(jsonObj.isredundantrouter == true)
+			jsonObj["redundantRouterState"] = jsonObj.redundantstate;
+		else
+			jsonObj["redundantRouterState"] = "";				
+  }	
+	
+	var refreshNspData = function(nspName) {	  
+		var array1 = [];
+		if(nspName != null)
+		  array1.push("&name=" + nspName);
+		
+		$.ajax({
+			url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id + array1.join("")),
+			dataType: "json",
+			async: false,
+			success: function(json) {
+			  nspMap = {}; //reset 
+			
+				var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;	        
+        if(items != null) {				
+					for(var i = 0; i < items.length; i++) {
+						switch(items[i].name) {
+							case "VirtualRouter":
+								nspMap["virtualRouter"] = items[i];
+								break;
+              case "Ovs":
+                nspMap["Ovs"] = items[i];
+                break;
+							case "InternalLbVm":
+							  nspMap["InternalLbVm"] = items[i];
+							  break;
+							case "VpcVirtualRouter":
+							  nspMap["vpcVirtualRouter"] = items[i];
+							  break;
+							case "Netscaler":
+								nspMap["netscaler"] = items[i];
+								break;
                             case "MidoNet":
                                 nspMap["midoNet"] = items[i];
                                 break;
@@ -17969,59 +17989,52 @@
                             case "NiciraNvp":
                                 nspMap["niciraNvp"] = items[i];
                                 break;
-                            case "BigSwitchVns":
-                                nspMap["bigswitchVns"] = items[i];
-                                break;
-                        }
-                    }
-                }
-            }
-        });
-
-        nspHardcodingArray = [{
-            id: 'netscaler',
-            name: 'NetScaler',
-            state: nspMap.netscaler ? nspMap.netscaler.state : 'Disabled'
-        }, {
-            id: 'virtualRouter',
-            name: 'Virtual Router',
-            state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
-        }, {
-            id: 'niciraNvp',
-            name: 'Nicira Nvp',
-            state: nspMap.niciraNvp ? nspMap.niciraNvp.state : 'Disabled'
-        }, {
-            id: 'bigswitchVns',
-            name: 'BigSwitch Vns',
-            state: nspMap.bigswitchVns ? nspMap.bigswitchVns.state : 'Disabled'
-        }, {
-            id: 'BaremetalDhcpProvider',
-            name: 'Baremetal DHCP',
-            state: nspMap.BaremetalDhcpProvider ? nspMap.BaremetalDhcpProvider.state : 'Disabled'
-        }, {
-            id: 'BaremetalPxeProvider',
-            name: 'Baremetal PXE',
-            state: nspMap.BaremetalPxeProvider ? nspMap.BaremetalPxeProvider.state : 'Disabled'
-        }];
-
-        $(window).trigger('cloudStack.system.serviceProviders.makeHarcodedArray', {
-            nspHardcodingArray: nspHardcodingArray,
-            selectedZoneObj: selectedZoneObj,
-            selectedPhysicalNetworkObj: selectedPhysicalNetworkObj
-        });
-
-        if (selectedZoneObj.networktype == "Basic") {
-            nspHardcodingArray.push({
-                id: 'securityGroups',
-                name: 'Security Groups',
-                state: nspMap.securityGroups ? nspMap.securityGroups.state : 'Disabled'
-            });
-        } else if (selectedZoneObj.networktype == "Advanced") {
-            nspHardcodingArray.push({
-                id: 'midoNet',
-                name: 'MidoNet',
-                state: nspMap.midoNet ? nspMap.midoNet.state : 'Disabled'
-            });
+                                                        case "BigSwitchVns":
+                                                                nspMap["bigswitchVns"] = items[i];
+                                                                break;
+						}
+					}
+				}
+			}
+		});
+   
+		nspHardcodingArray = [
+			{
+				id: 'netscaler',
+				name: 'NetScaler',
+				state: nspMap.netscaler? nspMap.netscaler.state : 'Disabled'
+			},
+			{
+				id: 'virtualRouter',
+				name: 'Virtual Router',
+				state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
+			},
+      {
+        id: 'Ovs',
+        name: 'Ovs',
+        state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
+      },
+            {
+                id: 'niciraNvp',
+                name: 'Nicira Nvp',
+                state: nspMap.niciraNvp ? nspMap.niciraNvp.state : 'Disabled'
+            },
+                        {
+                                id: 'bigswitchVns',
+                                name: 'BigSwitch Vns',
+                                state: nspMap.bigswitchVns ? nspMap.bigswitchVns.state : 'Disabled'
+                        },
+      {
+        id: 'BaremetalDhcpProvider',
+        name: 'Baremetal DHCP',
+        state: nspMap.BaremetalDhcpProvider ? nspMap.BaremetalDhcpProvider.state : 'Disabled'
+      },
+      {
+        id: 'BaremetalPxeProvider',
+        name: 'Baremetal PXE',
+        state: nspMap.BaremetalPxeProvider ? nspMap.BaremetalPxeProvider.state : 'Disabled'
+      }
+		];
 
             nspHardcodingArray.push({
                 id: 'InternalLbVm',

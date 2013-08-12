@@ -271,17 +271,23 @@ def is_xcp(session, args):
     return platform
 
 def getLabel(session, args):
+    i = 0
     pif_list_cmd = [lib.XE_PATH, 'pif-list', '--minimal']
     pif_list_str = lib.do_cmd(pif_list_cmd)
-    pif_uuid = pif_list_str.split(',')[0].strip()
-    network_cmd = [lib.XE_PATH, 'pif-param-get', 'uuid=%s' % pif_uuid,
-                               'param-name=network-uuid']
-    network_uuid = lib.do_cmd(network_cmd).split('.')[0]
-
-    label_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid,
-                               'param-name=name-label']
-    label = lib.do_cmd(label_cmd).split('.')[0]
-    return label
+    while True:
+		pif_uuid = pif_list_str.split(',')[i].strip()
+		network_cmd = [lib.XE_PATH, 'pif-param-get', 'uuid=%s' % pif_uuid, 'param-name=network-uuid']
+		network_uuid = lib.do_cmd(network_cmd).split('.')[0]
+		iface_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid, 'param-name=bridge']
+		iface = lib.do_cmd(iface_cmd)
+		status,output = commands.getstatusoutput("ifconfig "+iface+" | grep inet")
+		if (status != 0):
+			i += 1
+			continue
+    	label_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid, 'param-name=name-label']
+    	label = lib.do_cmd(label_cmd).split('.')[0]
+    	return label
+    return False
 
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,

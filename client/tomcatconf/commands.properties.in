@@ -503,6 +503,11 @@ createVirtualRouterElement=7
 configureVirtualRouterElement=7
 listVirtualRouterElements=7
 
+#### ovs commands
+createOvsElement=7
+configureOvsElement=7
+listOvsElements=7
+
 #### usage commands
 generateUsageRecords=1
 listUsageRecords=7

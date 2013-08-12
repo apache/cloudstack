@@ -2103,6 +2103,28 @@ CREATE TABLE `cloud`.`vm_disk_statistics` (
 insert into `cloud`.`vm_disk_statistics`(data_center_id,account_id,vm_id,volume_id) 
 select volumes.data_center_id, volumes.account_id, vm_instance.id, volumes.id from volumes,vm_instance where vm_instance.vm_type="User" and vm_instance.state<>"Expunging" and volumes.instance_id=vm_instance.id order by vm_instance.id;
 
+DROP TABLE IF EXISTS `cloud`.`ovs_nic_map`;
+CREATE TABLE `cloud`.`ovs_nic_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `logicalswitch` varchar(255) NOT NULL COMMENT 'uuid of logical switch this port is provisioned on',
+  `logicalswitchport` varchar(255) UNIQUE COMMENT 'uuid of this logical switch port',
+  `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_ovs_nic_map__nic` FOREIGN KEY(`nic`) REFERENCES `nics`(`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`ovs_providers`;
+CREATE TABLE `cloud`.`ovs_providers` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
+  `uuid` varchar(40),
+  `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_ovs_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_ovs_providers__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `cloud_usage`.`vm_disk_statistics`;
 CREATE TABLE `cloud_usage`.`vm_disk_statistics` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
