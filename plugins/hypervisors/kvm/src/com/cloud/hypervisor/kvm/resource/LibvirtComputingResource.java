@@ -768,9 +768,11 @@ ServerResource {
             if(_hypervisorLibvirtVersion < (9 * 1000 + 10)) {
                 s_logger.warn("LibVirt version 0.9.10 required for guest cpu mode, but version " +
                         prettyVersion(_hypervisorLibvirtVersion) + " detected, so it will be disabled");
-                _guestCpuMode = null;
-                _guestCpuModel = null;
+                _guestCpuMode = "";
+                _guestCpuModel = "";
             }
+            params.put("guest.cpu.mode", _guestCpuMode);
+            params.put("guest.cpu.model", _guestCpuModel);
         }
 
         String[] info = NetUtils.getNetworkParams(_privateNic);
