@@ -85,7 +85,6 @@ Requires: %{name}-common = %{_ver}
 Requires: %{name}-awsapi = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
-Obsoletes: cloud-daemonize < 4.1.0
 Obsoletes: cloud-server < 4.1.0
 Obsoletes: cloud-test < 4.1.0 
 Provides:  cloud-client
@@ -105,6 +104,7 @@ Obsoletes: cloud-deps < 4.1.0
 Obsoletes: cloud-python < 4.1.0
 Obsoletes: cloud-setup < 4.1.0
 Obsoletes: cloud-cli < 4.1.0
+Obsoletes: cloud-daemonize < 4.1.0
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
