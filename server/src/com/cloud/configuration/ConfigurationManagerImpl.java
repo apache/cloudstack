@@ -80,6 +80,7 @@ import org.apache.cloudstack.region.PortableIpRangeDao;
 import org.apache.cloudstack.region.PortableIpRangeVO;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -4974,7 +4975,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String netmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
 
-        Region region = _regionDao.findById(regionId);
+        RegionVO region = _regionDao.findById(regionId);
         if (region == null) {
             throw new InvalidParameterValueException("Invalid region ID: " + regionId);
         }
@@ -5033,6 +5034,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             startIpLong++;
         }
 
+        // implicitly enable portable IP service for the region
+        region.setPortableipEnabled(true);
+        _regionDao.update(region.getId(), region);
+
         txn.commit();
         portableIpLock.unlock();
         return portableIpRange;
@@ -5044,6 +5049,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             eventDescription = "deleting portable ip range", async = false)
     public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
         long rangeId = cmd.getId();
+
         PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(rangeId);
         if (portableIpRange == null) {
             throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
@@ -5056,12 +5062,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (fullIpRange != null && freeIpRange != null) {
             if (fullIpRange.size() == freeIpRange.size()) {
                 _portableIpRangeDao.expunge(portableIpRange.getId());
+                List<PortableIpRangeVO> pipranges = _portableIpRangeDao.listAll();
+                if (pipranges == null || pipranges.isEmpty()) {
+                    RegionVO region = _regionDao.findById(portableIpRange.getRegionId());
+                    region.setPortableipEnabled(false);
+                    _regionDao.update(region.getId(), region);
+                }
                 return true;
             } else {
                 throw new InvalidParameterValueException("Can't delete portable IP range as there are IP's assigned.");
             }
         }
-
         return false;
     }
 

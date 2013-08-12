@@ -2837,6 +2837,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(region.getName());
         response.setEndPoint(region.getEndPoint());
         response.setObjectName("region");
+        response.setGslbServiceEnabled(region.checkIfServiceEnabled(Region.Service.Gslb));
+        response.setPortableipServiceEnabled(region.checkIfServiceEnabled(Region.Service.PortableIp));
         return response;
     }
 

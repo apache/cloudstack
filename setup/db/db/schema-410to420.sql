@@ -516,6 +516,8 @@ CREATE VIEW `cloud`.`event_view` AS
             left join
         `cloud`.`event` eve ON event.start_id = eve.id;
 
+ALTER TABLE `cloud`.`region` ADD COLUMN `portableip_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Portable IP service enalbed in the Region';
+
 ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enalbed in the Region';
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting as gslb service provider in the zone';
