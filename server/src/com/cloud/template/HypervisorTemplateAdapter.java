@@ -49,10 +49,13 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.org.Grouping;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
@@ -81,6 +84,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Inject VMTemplateZoneDao templateZoneDao;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    DataCenterDao _dcDao;
 
     @Override
     public String getName() {
@@ -184,6 +189,22 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         Collections.shuffle(imageStores);// For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
+            // skip data stores for a disabled zone
+            Long zoneId = imageStore.getScope().getScopeId();
+            if (zoneId != null) {
+                DataCenterVO zone = _dcDao.findById(zoneId);
+                if (zone == null) {
+                    s_logger.warn("Unable to find zone by id " + zoneId + ", so skip downloading template to its image store " + imageStore.getId());
+                    continue;
+                }
+
+                // Check if zone is disabled
+                if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+                    s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
+                    continue;
+                }
+            }
+
             TemplateInfo tmpl = this.imageFactory.getTemplate(template.getId(), imageStore);
             CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
             AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
