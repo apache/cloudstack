@@ -981,7 +981,7 @@
                                         return 'label.action.download.volume';
                                     },
                                     complete: function(args) {
-                                        var url = decodeURIComponent(args.url);
+                                        var url = args.url;
                                         var htmlMsg = _l('message.download.volume');
                                         var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                                         //$infoContainer.find("#info").html(htmlMsg2);
