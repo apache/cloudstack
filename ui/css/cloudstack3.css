@@ -7743,7 +7743,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   text-shadow: 0px 1px #FFFFFF;
 }
 
-.multi-edit .disabled .button.add-vm .button.custom-action {
+.multi-edit td.disabled .button.add-vm.custom-action {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
