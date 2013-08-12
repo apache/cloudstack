@@ -1836,42 +1836,64 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         deviceId = getDeviceId(vmId, deviceId);
         VolumeInfo volumeOnPrimaryStorage = volume;
-        if (volume.getState().equals(Volume.State.Allocated)
-                || volume.getState() == Volume.State.Uploaded) {
-            try {
-                volumeOnPrimaryStorage = createVolumeOnPrimaryStorage(vm, rootVolumeOfVm, volume, rootDiskHyperType);
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to create volume on primary storage", e);
-                throw new CloudRuntimeException("Failed to create volume on primary storage", e);
+
+        // Check if volume is stored on secondary storage
+        boolean isVolumeOnSec = false;
+        VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
+        if (volOnSecondary != null) {
+            isVolumeOnSec = true;
+            if(volOnSecondary.getState() != Volume.State.Uploaded) {
+                throw new InvalidParameterValueException("Volume is not uploaded yet. Please try this operation once the volume is uploaded");
+            }
+        }
+        
+        boolean createVolumeOnBackend = true;
+        if (rootVolumeOfVm.getState() == Volume.State.Allocated) {
+            createVolumeOnBackend = false;
+            if(isVolumeOnSec) {
+                throw new CloudRuntimeException("Cant attach uploaded volume to the vm which is not created. Please start it and then retry");
             }
         }
 
-        // reload the volume from db
-        volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
-        boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
-
-        if (moveVolumeNeeded) {
-            PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)volumeOnPrimaryStorage.getDataStore();
-            if (primaryStore.isLocal()) {
-                throw new CloudRuntimeException(
-                        "Failed to attach local data volume "
-                                + volume.getName()
-                                + " to VM "
-                                + vm.getDisplayName()
-                                + " as migration of local data volume is not allowed");
+        // Create volume on the backend only when VM's root volume is allocated
+        if (createVolumeOnBackend) {
+            if (volume.getState().equals(Volume.State.Allocated)
+                    || volume.getState() == Volume.State.Uploaded) {
+                try {
+                    volumeOnPrimaryStorage = createVolumeOnPrimaryStorage(vm, rootVolumeOfVm, volume, rootDiskHyperType);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to create volume on primary storage", e);
+                    throw new CloudRuntimeException("Failed to create volume on primary storage", e);
+                }
             }
-            StoragePoolVO vmRootVolumePool = _storagePoolDao
-                    .findById(rootVolumeOfVm.getPoolId());
 
-            try {
-                volumeOnPrimaryStorage = moveVolume(volumeOnPrimaryStorage,
-                        vmRootVolumePool.getDataCenterId(),
-                        vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(),
-                        dataDiskHyperType);
-            } catch (ConcurrentOperationException e) {
-                s_logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
+            // reload the volume from db
+            volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
+            boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
+
+            if (moveVolumeNeeded) {
+                PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)volumeOnPrimaryStorage.getDataStore();
+                if (primaryStore.isLocal()) {
+                    throw new CloudRuntimeException(
+                            "Failed to attach local data volume "
+                                    + volume.getName()
+                                    + " to VM "
+                                    + vm.getDisplayName()
+                                    + " as migration of local data volume is not allowed");
+                }
+                StoragePoolVO vmRootVolumePool = _storagePoolDao
+                        .findById(rootVolumeOfVm.getPoolId());
+
+                try {
+                    volumeOnPrimaryStorage = moveVolume(volumeOnPrimaryStorage,
+                            vmRootVolumePool.getDataCenterId(),
+                            vmRootVolumePool.getPodId(),
+                            vmRootVolumePool.getClusterId(),
+                            dataDiskHyperType);
+                } catch (ConcurrentOperationException e) {
+                    s_logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
+                }
             }
         }
 
