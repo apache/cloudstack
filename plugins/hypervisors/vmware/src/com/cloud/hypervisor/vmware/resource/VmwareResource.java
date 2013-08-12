@@ -2679,7 +2679,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 ManagedObjectReference environmentBrowser =
                         context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
                 HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
-                if (hostCapability.isNestedHVSupported()) {
+                Boolean nestedHvSupported = hostCapability.isNestedHVSupported();
+                if (nestedHvSupported != null && nestedHvSupported.booleanValue()) {
                     s_logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
                     vmConfigSpec.setNestedHVEnabled(true);
                 }
