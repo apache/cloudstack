@@ -904,14 +904,16 @@
                                 if ($(this).val() == "VMware") {
                                     //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                                     if (dvSwitchEnabled) {
-                                        /*   $fields.filter('[rel=vSwitchPublicType]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
+                                        /*   
+										$fields.filter('[rel=vSwitchPublicType]').css('display', 'inline-block');
+										$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
 
-                        $form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
-                        $form.find('.form-item[rel=vSwitchGuestName]').css('display','inline-block');
+										$form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
+										$form.find('.form-item[rel=vSwitchGuestName]').css('display','inline-block');
 
-                       $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').css('display','inline-block');
-                        $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').css('display','inline-block');*/
+										$form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').css('display','inline-block');
+										$form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').css('display','inline-block');
+						                */
 
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');
                                         $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').removeAttr('checked');
@@ -922,10 +924,12 @@
 
 
                                     } else {
-                                        /*    $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
-                         $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
-                          $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
-                          $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');*/
+                                        /*    
+										$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+									    $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+									    $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
+									    $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');
+						                */
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                         $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
 
@@ -947,10 +951,10 @@
 
                                     $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                     $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
 
 
                                     $form.find('[rel=vCenterHost]').css('display', 'none');
@@ -1005,7 +1009,7 @@
 
                     },
 
-
+                    /*
                     vSwitchPublicType: {
                         label: 'Public Traffic vSwitch Type',
                         select: function(args) {
@@ -1068,15 +1072,16 @@
                         isHidden: true,
                         dependsOn: 'overridepublictraffic'
                     },
-
+                    */
+					
+					/*
                     vSwitchPublicName: {
                         label: 'Public Traffic vSwitch Name',
                         dependsOn: 'overridepublictraffic',
                         isHidden: true
-
-
                     },
-
+                    */
+					
                     overrideguesttraffic: {
                         label: 'Override Guest-Traffic',
                         isBoolean: true,
@@ -1084,7 +1089,7 @@
 
                     },
 
-
+                    /*
                     vSwitchGuestType: {
                         label: 'Guest Traffic vSwitch Type',
                         select: function(args) {
@@ -1149,13 +1154,15 @@
                         dependsOn: 'overrideguesttraffic'
 
                     },
-
+                    */
+					
+					/*
                     vSwitchGuestName: {
                         label: 'Guest Traffic vSwitch Name',
                         dependsOn: 'overrideguesttraffic',
                         isHidden: true
-
                     },
+					*/
 
                     //Cisco Nexus Vswitch
                     vsmipaddress: {
@@ -3762,20 +3769,25 @@
                         array1.push("&password=" + todb(args.data.cluster.vCenterPassword));
 
                         //dvswitch is enabled
+						/*
                         if (args.data.cluster.vSwitchPublicType != "")
                             array1.push('&publicvswitchtype=' + args.data.cluster.vSwitchPublicType);
+						*/
 
+						/*
                         if (args.data.cluster.vSwitchPublicName != "")
                             array1.push("&publicvswitchname=" + args.data.cluster.vSwitchPublicName);
+                        */
 
-
-
+                        /*
                         if (args.data.cluster.vSwitchGuestType != "")
                             array1.push('&guestvswitchtype=' + args.data.cluster.vSwitchGuestType);
-
+                        */
+						
+						/*
                         if (args.data.cluster.vSwitchGuestName != "")
                             array1.push("&guestvswitchname=" + args.data.cluster.vSwitchGuestName);
-
+						*/
 
                         if (args.data.cluster.vsmipaddress) { // vSwitch is enabled
                             array1.push('&vsmipaddress=' + args.data.cluster.vsmipaddress);
