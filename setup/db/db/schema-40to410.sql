@@ -234,6 +234,7 @@ UPDATE `cloud`.`vpc_gateways` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`vpc_offerings` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`vpn_users` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`volumes` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`configuration` set value = '/var/cloudstack/mnt' where name = 'mount.parent';
 -- UPDATE `cloud`.`autoscale_vmgroups` set uuid=id WHERE uuid is NULL;
 -- UPDATE `cloud`.`autoscale_vmprofiles` set uuid=id WHERE uuid is NULL;
 -- UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
