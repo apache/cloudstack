@@ -79,4 +79,7 @@ public interface AffinityGroupService {
 
     boolean isAffinityGroupAvailableInDomain(long affinityGroupId, long domainId);
 
+    AffinityGroup createAffinityGroupInternal(String account, Long domainId, String affinityGroupName,
+            String affinityGroupType, String description);
+
 }

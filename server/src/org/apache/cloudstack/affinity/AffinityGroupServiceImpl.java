@@ -134,6 +134,34 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         AffinityGroupProcessor processor = typeProcessorMap.get(affinityGroupType);
 
+        if (processor.isAdminControlledGroup()) {
+            throw new PermissionDeniedException("Cannot create the affinity group");
+        }
+
+        return createAffinityGroupInternal(account, domainId, affinityGroupName, affinityGroupType, description);
+    }
+
+    @DB
+    @Override
+    public AffinityGroup createAffinityGroupInternal(String account, Long domainId, String affinityGroupName,
+            String affinityGroupType, String description) {
+
+        Account caller = UserContext.current().getCaller();
+
+        // validate the affinityGroupType
+        Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
+        if (typeProcessorMap != null && !typeProcessorMap.isEmpty()) {
+            if (!typeProcessorMap.containsKey(affinityGroupType)) {
+                throw new InvalidParameterValueException("Unable to create affinity group, invalid affinity group type"
+                        + affinityGroupType);
+            }
+        } else {
+            throw new InvalidParameterValueException(
+                    "Unable to create affinity group, no Affinity Group Types configured");
+        }
+
+        AffinityGroupProcessor processor = typeProcessorMap.get(affinityGroupType);
+
         if (processor.isAdminControlledGroup() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot create the affinity group");
         }
