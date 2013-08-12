@@ -148,68 +148,7 @@
                 item.issystem == true) {
                 return [];
             }
-
-            if (item.networkOfferingConserveMode == false) {
-                /*
-         (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
-         */
-                if (item.issourcenat == true) {
-                    disallowedActions.push('enableStaticNAT');
-                    disallowedActions.push('enableVPN');
-                }
-
-                /*
-         (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
-         1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-         2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-         3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-         4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-         */
-                else { //item.issourcenat == false
-                    if (item.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-                        disallowedActions.push('enableVPN');
-                    }
-                    if (item.vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-                        disallowedActions.push('enableStaticNAT');
-                    }
-
-                    //3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-                    $.ajax({
-                        url: createURL('listPortForwardingRules'),
-                        data: {
-                            ipaddressid: item.id,
-                            listAll: true
-                        },
-                        dataType: 'json',
-                        async: false,
-                        success: function(json) {
-                            var rules = json.listportforwardingrulesresponse.portforwardingrule;
-                            if (rules != null && rules.length > 0) {
-                                disallowedActions.push('enableVPN');
-                                disallowedActions.push('enableStaticNAT');
-                            }
-                        }
-                    });
-
-                    //4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-                    $.ajax({
-                        url: createURL('listLoadBalancerRules'),
-                        data: {
-                            publicipid: item.id,
-                            listAll: true
-                        },
-                        dataType: 'json',
-                        async: false,
-                        success: function(json) {
-                            var rules = json.listloadbalancerrulesresponse.loadbalancerrule;
-                            if (rules != null && rules.length > 0) {
-                                disallowedActions.push('enableVPN');
-                                disallowedActions.push('enableStaticNAT');
-                            }
-                        }
-                    });
-                }
-            }
+            
             if (item.networkOfferingConserveMode == false) {
                 /*
 				(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
