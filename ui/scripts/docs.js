@@ -36,26 +36,26 @@ cloudStack.docs = {
     //Delete/archive events
     helpEventsDeleteType: {
 
-        desc: 'Delete all the events by specifying its TYPE eg . USER.LOGIN',
+        desc: 'Delete all the events by specifying its TYPE (e.g., USER.LOGIN)',
         externalLink: ''
 
     },
 
     helpEventsDeleteDate: {
 
-        desc: 'Delete all the events which have been created after this date ',
+        desc: 'Delete all the events which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
     helpEventsArchiveType: {
 
-        desc: 'Archive all the events by specifying its TYPE (integer number)',
+        desc: 'Archive all the events by specifying its TYPE (i.e., USER.LOGIN)',
         externalLink: ''
     },
 
     helpEventsArchiveDate: {
 
-        desc: 'Archive all the events which have been created after this date',
+        desc: 'Archive all the events which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
@@ -69,7 +69,7 @@ cloudStack.docs = {
 
     helpAlertsDeleteDate: {
 
-        desc: 'Delete all the alerts which have been created after this date ',
+        desc: 'Delete all the alerts which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
@@ -81,7 +81,7 @@ cloudStack.docs = {
 
     helpAlertsArchiveDate: {
 
-        desc: 'Archive all the alerts which have been created after this date',
+        desc: 'Archive all the alerts which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
