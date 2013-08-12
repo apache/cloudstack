@@ -2306,3 +2306,10 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'Snap
 DELETE FROM `cloud`.`configuration` where name='vmware.guest.vswitch';
 DELETE FROM `cloud`.`configuration` where name='vmware.private.vswitch';
 DELETE FROM `cloud`.`configuration` where name='vmware.public.vswitch';
+
+
+UPDATE `cloud`.`autoscale_vmgroups` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`autoscale_vmprofiles` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
