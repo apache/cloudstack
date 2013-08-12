@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.utils.exception.ExceptionUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -260,7 +261,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 hostService.invalidateServiceContext(context);
             }
 
-            String msg = "Unable to copy template to primary storage due to exception:" + e.toString();
+            String msg = "Unable to copy template to primary storage due to exception:" + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new CopyCmdAnswer(msg);
         }
@@ -420,7 +421,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 this.hostService.invalidateServiceContext(null);
             }
 
-            String msg = "CopyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "clone volume from base image failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new CopyCmdAnswer(e.toString());
         }
@@ -503,7 +504,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             String msg = "Unable to execute CopyVolumeCommand due to exception";
             s_logger.error(msg, t);
-            return new CopyCmdAnswer("CopyVolumeCommand failed due to exception: " + t.toString());
+            return new CopyCmdAnswer("copy volume secondary to primary failed due to exception: " + VmwareHelper.getExceptionMessage(t));
         }
 
     }
@@ -612,7 +613,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             String msg = "Unable to execute CopyVolumeCommand due to exception";
             s_logger.error(msg, e);
-            return new CopyCmdAnswer("CopyVolumeCommand failed due to exception: " + e.toString());
+            return new CopyCmdAnswer("copy volume from primary to secondary failed due to exception: " + VmwareHelper.getExceptionMessage(e));
         }
     }
 
@@ -781,7 +782,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             s_logger.error("Unexpecpted exception ", e);
 
-            details = "CreatePrivateTemplateFromVolumeCommand exception: " + e.toString();
+            details = "create template from volume exception: " + VmwareHelper.getExceptionMessage(e);
             return new CopyCmdAnswer(details);
         }
     }
@@ -978,7 +979,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             s_logger.error("Unexpecpted exception ", e);
 
-            details = "CreatePrivateTemplateFromSnapshotCommand exception: " + e.toString();
+            details = "create template from snapshot exception: " + VmwareHelper.getExceptionMessage(e);
             return new CopyCmdAnswer(details);
         }
     }
@@ -1149,7 +1150,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             s_logger.error("Unexpecpted exception ", e);
 
-            details = "BackupSnapshotCommand exception: " + e.toString();
+            details = "backup snapshot exception: " + VmwareHelper.getExceptionMessage(e);
             return new CopyCmdAnswer(details);
         }
     }
@@ -1417,7 +1418,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 this.hostService.invalidateServiceContext(null);
             }
 
-            String msg = "CreateCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "create volume failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new CreateObjectAnswer(e.toString());
         }
@@ -1576,7 +1577,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 this.hostService.invalidateServiceContext(null);
             }
 
-            String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "delete volume failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -1697,7 +1698,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             s_logger.error("Unexpecpted exception ", e);
-            details = "CreateVolumeFromSnapshotCommand exception: " + e.toString();
+            details = "create volume from snapshot exception: " + VmwareHelper.getExceptionMessage(e);
         }
         return new CopyCmdAnswer(details);
     }
