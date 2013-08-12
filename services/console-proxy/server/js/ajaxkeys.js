@@ -170,7 +170,6 @@ KEYBOARD_TYPE_UK = "uk";
 var	keyboardTables = [
            {tindex: 0, keyboardType: KEYBOARD_TYPE_COOKED, mappingTable:
                {X11: [  {keycode: 220, entry: X11_KEY_YEN_MARK},
-                        {keycode: 186, entry: X11_KEY_COLON, browser: "Chrome"},
                         {keycode: 226, entry: X11_KEY_REVERSE_SOLIUS},
 
                         {keycode: 240, entry: [
