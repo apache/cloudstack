@@ -22,14 +22,16 @@ import java.util.Map;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 
 public class VmwareSecondaryStorageContextFactory {
 	private static volatile int s_seq = 1;
 
-	private static Map<String, VmwareContext> s_contextMap = new HashMap<String, VmwareContext>();
+	private static VmwareContextPool s_pool;
 
 	public static void initFactoryEnvironment() {
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
+		s_pool = new VmwareContextPool();
 	}
 
 	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
@@ -37,37 +39,31 @@ public class VmwareSecondaryStorageContextFactory {
 		assert(vCenterUserName != null);
 		assert(vCenterPassword != null);
 
-		VmwareContext context = null;
-
-		synchronized(s_contextMap) {
-			context = s_contextMap.get(vCenterAddress);
-			if(context == null) {
-				String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-				//String[] params = new String[] {"--url", serviceUrl, "--username", vCenterUserName, "--password", vCenterPassword };
-				VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-				vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
-				context = new VmwareContext(vimClient, vCenterAddress);
-				context.registerStockObject("username", vCenterUserName);
-				context.registerStockObject("password", vCenterPassword);
-
-				s_contextMap.put(vCenterAddress, context);
-			}
-		}
-
+		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
+		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
+		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
 		assert(context != null);
 		return context;
 	}
-
-	public static void invalidate(VmwareContext context) {
-		synchronized(s_contextMap) {
-            for(Iterator<Map.Entry<String, VmwareContext>> entryIter = s_contextMap.entrySet().iterator(); entryIter.hasNext();) {
-                Map.Entry<String, VmwareContext> entry = entryIter.next();
-                if(entry.getValue() == context) {
-                    entryIter.remove();
-                }
-			}
+	
+	public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+		if(context == null) {
+			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
 		}
-
+		
+		if(context != null) {
+			context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+			
+			context.registerStockObject("username", vCenterUserName);
+			context.registerStockObject("password", vCenterPassword);
+		}
+		
+		return context;
+	}
+	
+	public static void invalidate(VmwareContext context) {
 		context.close();
 	}
 }

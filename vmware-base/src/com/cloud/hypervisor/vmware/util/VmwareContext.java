@@ -37,7 +37,6 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
-import javax.xml.ws.BindingProvider;
 
 import org.apache.log4j.Logger;
 
@@ -59,12 +58,16 @@ public class VmwareContext {
 
     private static int MAX_CONNECT_RETRY = 5;
     private static int CONNECT_RETRY_INTERVAL = 1000;
+    
+	private int _CHUNKSIZE = 1*1024*1024;		// 1M
 
 	private VmwareClient _vimClient;
 	private String _serverAddress;
 
 	private Map<String, Object> _stockMap = new HashMap<String, Object>();
-	private int _CHUNKSIZE = 1*1024*1024;		// 1M
+
+	private VmwareContextPool _pool;
+	private String _poolKey;
 
 	static {
 		try {
@@ -97,6 +100,12 @@ public class VmwareContext {
 			_stockMap.remove(name);
 		}
 	}
+	
+	public void clearStockObjects() {
+		synchronized(_stockMap) {
+			_stockMap.clear();
+		}
+	}
 
 	@SuppressWarnings("unchecked")
 	public <T> T getStockObject(String name) {
@@ -109,12 +118,6 @@ public class VmwareContext {
 		return _serverAddress;
 	}
 
-	/*
-	public ServiceConnection getServiceConnection() {
-		return _vimClient.getServiceConnection3();
-	}
-	*/
-
 	public VimPortType getService() {
 		return _vimClient.getService();
 	}
@@ -122,12 +125,6 @@ public class VmwareContext {
 	public ServiceContent getServiceContent() {
 		return _vimClient.getServiceContent();
 	}
-
-	/*
-	public ServiceUtil getServiceUtil() {
-		return _vimClient.getServiceUtil3();
-	}
-	*/
 
 	public ManagedObjectReference getPropertyCollector(){
 	    return _vimClient.getPropCol();
@@ -140,7 +137,23 @@ public class VmwareContext {
 	public VmwareClient getVimClient(){
 	    return _vimClient;
 	}
-
+	
+	public void setPoolInfo(VmwareContextPool pool, String poolKey) {
+		_pool = pool;
+		_poolKey = poolKey;
+	}
+	
+	public VmwareContextPool getPool() {
+		return _pool;
+	}
+	
+	public String getPoolKey() {
+		return _poolKey;
+	}
+	
+	public void idleCheck() throws Exception {
+		getRootFolder();
+	}
 
 	public ManagedObjectReference getHostMorByPath(String inventoryPath) throws Exception {
 		assert(inventoryPath != null);
@@ -595,6 +608,7 @@ public class VmwareContext {
 	}
 
 	public void close() {
+		clearStockObjects();
 		try {
 			_vimClient.disconnect();
 		} catch(Exception e) {

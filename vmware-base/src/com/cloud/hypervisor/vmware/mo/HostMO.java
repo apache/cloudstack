@@ -39,6 +39,8 @@ import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostConfigManager;
 import com.vmware.vim25.HostConnectInfo;
+import com.vmware.vim25.HostFirewallInfo;
+import com.vmware.vim25.HostFirewallRuleset;
 import com.vmware.vim25.HostHardwareSummary;
 import com.vmware.vim25.HostHyperThreadScheduleInfo;
 import com.vmware.vim25.HostIpRouteEntry;
@@ -1030,5 +1032,26 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         return new LicenseAssignmentManagerMO(_context, licenseAssignmentManager);
     }
+    
+    public void enableVncOnHostFirewall() throws Exception {
+        HostFirewallSystemMO firewallMo = getHostFirewallSystemMO();
+        boolean bRefresh = false;
+        if(firewallMo != null) {
+            HostFirewallInfo firewallInfo = firewallMo.getFirewallInfo();
+            if(firewallInfo != null && firewallInfo.getRuleset() != null) {
+                for(HostFirewallRuleset rule : firewallInfo.getRuleset()) {
+                    if("vncServer".equalsIgnoreCase(rule.getKey())) {
+                        bRefresh = true;
+                        firewallMo.enableRuleset("vncServer");
+                    } else if("gdbserver".equalsIgnoreCase(rule.getKey())) {
+                        bRefresh = true;
+                        firewallMo.enableRuleset("gdbserver");
+                    }
+                }
+            }
 
+            if(bRefresh)
+                firewallMo.refreshFirewall();
+        }
+    }
 }
