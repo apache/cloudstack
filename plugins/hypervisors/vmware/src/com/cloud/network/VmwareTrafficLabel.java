@@ -58,15 +58,15 @@ public class VmwareTrafficLabel implements TrafficLabel {
     }
 
     private void _parseLabel(String networkLabel, VirtualSwitchType defVswitchType) {
+        // Set defaults for label in case of distributed vSwitch
+        if (defVswitchType.equals(VirtualSwitchType.VMwareDistributedVirtualSwitch)) {
+            _vSwitchName = DEFAULT_DVSWITCH_NAME;
+            _vSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        } else if (defVswitchType.equals(VirtualSwitchType.NexusDistributedVirtualSwitch)) {
+            _vSwitchName = DEFAULT_NDVSWITCH_NAME;
+            _vSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
+        }
         if (networkLabel == null || networkLabel.isEmpty()) {
-            // Set defaults for label in case of distributed vSwitch
-            if (defVswitchType.equals(VirtualSwitchType.VMwareDistributedVirtualSwitch)) {
-                _vSwitchName = DEFAULT_DVSWITCH_NAME;
-                _vSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
-            } else if (defVswitchType.equals(VirtualSwitchType.NexusDistributedVirtualSwitch)) {
-                _vSwitchName = DEFAULT_NDVSWITCH_NAME;
-                _vSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
-            }
             return;
         }
         String[] tokens = networkLabel.split(",");

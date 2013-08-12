@@ -291,7 +291,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             s_logger.info("Detected private network label : " + privateTrafficLabel);
 		}
         Pair<Boolean, Long> vsmInfo = new Pair<Boolean, Long>(false, 0L);
-        if (nexusDVS) {
+        if (nexusDVS &&
+                (guestTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) ||
+                ((zoneType == NetworkType.Advanced) && (publicTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch))) {
+            // Expect Cisco Nexus VSM details only if following 2 condition met
+            // 1) The global config parameter vmware.use.nexus.vswitch
+            // 2) Atleast 1 traffic type uses Nexus distributed virtual switch as backend.
 			if (zoneType != NetworkType.Basic) {
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
 				if (publicTrafficLabel != null) {
@@ -650,33 +655,24 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             throw e;
         }
 
-        if (defaultVirtualSwitchType.equals(VirtualSwitchType.StandardVirtualSwitch)|| (vSwitchType == null && vSwitchName == null)) {
-            // Case of no cluster level override configuration defined.
-            // Depend only on zone wide traffic label
-            // If global param for dvSwitch is false return default traffic info object with vmware standard vswitch
-            return trafficLabelObj;
-        } else {
-            // Need to persist cluster level override configuration to db
-            clusterDetails = _clusterDetailsDao.findDetails(clusterId);
-        }
-
+        clusterDetails = _clusterDetailsDao.findDetails(clusterId);
         if (vSwitchName != null) {
             trafficLabelObj.setVirtualSwitchName(vSwitchName);
-            if (trafficType == TrafficType.Guest) {
-                clusterDetails.put(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, vSwitchName);
-            } else {
-                clusterDetails.put(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, vSwitchName);
-            }
+        }
+        if (trafficType == TrafficType.Guest) {
+            clusterDetails.put(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, trafficLabelObj.getVirtualSwitchName());
+        } else {
+            clusterDetails.put(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, trafficLabelObj.getVirtualSwitchName());
         }
 
         if (vSwitchType != null) {
             validateVswitchType(vSwitchType);
             trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(vSwitchType));
-            if (trafficType == TrafficType.Guest) {
-                clusterDetails.put(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, vSwitchType);
-            } else {
-                clusterDetails.put(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, vSwitchType);
-            }
+        }
+        if (trafficType == TrafficType.Guest) {
+            clusterDetails.put(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, trafficLabelObj.getVirtualSwitchType().toString());
+        } else {
+            clusterDetails.put(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, trafficLabelObj.getVirtualSwitchType().toString());
         }
 
         // Save cluster level override configuration to cluster details
