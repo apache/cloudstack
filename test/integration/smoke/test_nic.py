@@ -129,7 +129,7 @@ class Services:
             # CentOS 5.3 (64-bit)
         }
 
-class TestDeployVM(cloudstackTestCase):
+class TestNic(cloudstackTestCase):
 
     def setUp(self):
         self.cleanup = []
