@@ -41,7 +41,7 @@ dbHost=
 dbUser=
 dbPassword=
 jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.0.jar'
-while getopts 'm:h:f:u:Ft:e:s:o:r:d' OPTION
+while getopts 'm:h:f:u:Ft:e:s:o:r:d:' OPTION
 do
   case $OPTION in
   m)	mflag=1
