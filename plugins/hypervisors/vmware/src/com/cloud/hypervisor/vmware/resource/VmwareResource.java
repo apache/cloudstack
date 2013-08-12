@@ -2680,7 +2680,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
                 HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
                 Boolean nestedHvSupported = hostCapability.isNestedHVSupported();
-                if (nestedHvSupported != null && nestedHvSupported.booleanValue()) {
+                if (nestedHvSupported == null) {
+                    // nestedHvEnabled property is supported only since VMware 5.1. It's not defined for earlier versions.
+                    s_logger.warn("Hypervisor doesn't support nested virtualization, unable to set config for VM " +vmSpec.getName());
+                } else if (nestedHvSupported.booleanValue()) {
                     s_logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
                     vmConfigSpec.setNestedHVEnabled(true);
                 }
