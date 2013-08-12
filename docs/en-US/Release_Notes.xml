@@ -118,9 +118,9 @@ under the License.
       <section id="vnmc-cisco">
         <title>Cisco VNMC Support</title>
         <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-742"
-          >CLOUDSTACK-742</ulink>:&PRODUCT; supports Cisco Virtual Network Management Center (VNMC) on Cisco Nexus 1000v
-          dvSwich-enabled VMware hypervisors. &PRODUCT; supports Cisco ASA 1000v as an external
-          Firewall provider when integrated with Cisco VNMC. </para>
+            >CLOUDSTACK-742</ulink>:&PRODUCT; supports Cisco Virtual Network Management Center
+          (VNMC) on Cisco Nexus 1000v dvSwich-enabled VMware hypervisors. &PRODUCT; supports Cisco
+          ASA 1000v as an external Firewall provider when integrated with Cisco VNMC. </para>
         <para>When Cisco VNMC is integrated with ASA 1000v Cloud Firewall and Cisco Nexus 1000v
           dvSwitch in &PRODUCT; you will be able to: </para>
         <itemizedlist>
@@ -152,7 +152,8 @@ under the License.
       <section id="vmware-vswitch">
         <!-- CS-17424 -->
         <title>VMware vNetwork Distributed vSwitch</title>
-        <para>&PRODUCT; 4.2 supports VMware vSphere Distributed Switch (VDS) for virtual network
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-742"
+          >CLOUDSTACK-742</ulink>:&PRODUCT; 4.2 supports VMware vSphere Distributed Switch (VDS) for virtual network
           configuration in a VMware vSphere environment. Each vCenter server instance can support up
           to 128 VDSs and each VDS can manage up to 500 VMware hosts.</para>
         <section id="about-dvswitch">
@@ -182,9 +183,30 @@ under the License.
           </para>
         </section>
       </section>
-      <section id="add-remove-network-vm">
-        <title>Add/Remove Network on VM</title>
-        <para>###</para>
+      <section id="health-check">
+        <title>Health Checks for Load Balanced Instances</title>
+        <note>
+          <para>CLOUDSTACK-4243: This feature is supported only on NetScaler version 10.0 and beyond. The Nitro API
+            is not compatible with NetScaler 9.3 and therefore this version is not supported for
+            this feature.</para>
+        </note>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-816"
+          >CLOUDSTACK-816</ulink>:(NetScaler load balancer only) A load balancer rule distributes requests among a pool
+          of services (a service in this context means an application running on a virtual machine).
+          When creating a load balancer rule, you can specify a health check which will ensure that
+          the rule forwards requests only to services that are healthy (running and available). This
+          is in addition to specifying the stickiness policy, algorithm, and other load balancer
+          rule options. You can configure one health check policy per load balancer rule.</para>
+        <para>When a health check is in effect, the load balancer will stop forwarding requests to
+          any resources that it has found to be unhealthy. If the resource later becomes available
+          again, the periodic health check (periodicity is configurable) will discover it and the
+          resource will once again be added to the pool of resources that can receive requests from
+          the load balancer.</para>
+        <para>You can delete or modify existing health check policies.</para>
+        <para>To configure how often the health check is performed by default, use the global
+          configuration setting healthcheck.update.interval. This default applies to all the health
+          check policies in the cloud. You can override this value for an individual health check
+          policy.</para>
       </section>
       <section id="resize-volumes">
         <title>Resize Volumes Feature</title>
