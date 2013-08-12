@@ -104,7 +104,6 @@ Obsoletes: cloud-deps < 4.1.0
 Obsoletes: cloud-python < 4.1.0
 Obsoletes: cloud-setup < 4.1.0
 Obsoletes: cloud-cli < 4.1.0
-Obsoletes: cloud-daemonize < 4.1.0
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -130,6 +129,7 @@ Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-agent-libs < 4.1.0
 Obsoletes: cloud-test < 4.1.0
+Obsoletes: cloud-daemonize < 4.1.0
 Group: System Environment/Libraries
 %description agent
 The CloudStack agent for KVM hypervisors
