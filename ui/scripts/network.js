@@ -5977,9 +5977,37 @@
         }
     };
 
-    function getExtaPropertiesForIpObj(ipObj, args) {
-        if ('networks' in args.context) { //from Guest Network section
-            //get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
+    function getExtaPropertiesForIpObj(ipObj, args) {	    
+        if (!('vpc' in args.context)) { //from Guest Network section            
+			var services = args.context.networks[0].service;
+			if(services != null) {
+				for(var i = 0; i < services.length; i++) {                                    		
+					var thisService = services[i];					
+					if (thisService.name == "Vpn") {
+					    ipObj.networkOfferingHavingVpnService = true; 
+						break;
+					}
+				}
+			}		
+			if (ipObj.networkOfferingHavingVpnService == true) {
+				$.ajax({
+					url: createURL('listRemoteAccessVpns'),
+					data: {
+						listAll: true,
+						publicipid: ipObj.id
+					},
+					async: false,
+					success: function(vpnResponse) {
+						var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+						if (isVPNEnabled) {
+							ipObj.vpnenabled = true;
+							ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+						};
+					}
+				});
+			}
+			
+			//get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
             $.ajax({
                 url: createURL('listNetworkOfferings'),
                 data: {
@@ -5987,32 +6015,10 @@
                 },
                 async: false,
                 success: function(json) {
-                    var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
-                    ipObj.networkOfferingConserveMode = networkOfferingObj.conservemode;
-
-                    $(networkOfferingObj.service).each(function() {
-                        var thisService = this;
-                        if (thisService.name == "Vpn")
-                            ipObj.networkOfferingHavingVpnService = true;
-                    });
-
-                    if (ipObj.networkOfferingHavingVpnService == true) {
-                        $.ajax({
-                            url: createURL('listRemoteAccessVpns'),
-                            data: {
-                                listAll: true,
-                                publicipid: ipObj.id
-                            },
-                            async: false,
-                            success: function(vpnResponse) {
-                                var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-                                if (isVPNEnabled) {
-                                    ipObj.vpnenabled = true;
-                                    ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-                                };
-                            }
-                        });
-                    }
+				    if(json.listnetworkofferingsresponse.networkoffering != null) {
+						var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
+						ipObj.networkOfferingConserveMode = networkOfferingObj.conservemode;
+					}
                 }
             });
         } else { //from VPC section
