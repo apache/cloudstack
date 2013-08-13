@@ -1147,22 +1147,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return deleteStoragePool(pool.getUuid());
     }
 
-    public boolean deleteVbdByPath(String diskPath) {
-        Connect conn;
-        try {
-            conn = LibvirtConnection.getConnection();
-            StorageVol vol = conn.storageVolLookupByPath(diskPath);
-            if(vol != null) {
-                s_logger.debug("requested delete disk " + diskPath);
-                vol.delete(0);
-            }
-        } catch (LibvirtException e) {
-            s_logger.debug("Libvirt error in attempting to find and delete patch disk:" + e.toString());
-            return false;
-        }
-        return true;
-    }
-
     // refreshPool and deleteVol are used to fix CLOUDSTACK-2729/CLOUDSTACK-2780
     // They are caused by a libvirt bug (https://bugzilla.redhat.com/show_bug.cgi?id=977706)
     // However, we also need to fix the issues in CloudStack source code.
