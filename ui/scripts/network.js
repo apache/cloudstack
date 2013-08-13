@@ -1947,12 +1947,17 @@
                                 		success: function(json) {
                                 		    var items = json.listregionsresponse.region;	
                                 		    if(items != null) {
-                                		    	var region = items[0];                                		    	
-                                		    	if(region.portableipserviceenabled == true) {
-                                		    		args.$form.find('.form-item[rel=isportable]').css('display', 'inline-block');
-                                		    	} else {
-                                		    		args.$form.find('.form-item[rel=isportable]').hide();
-                                		    	}                              		    	
+                                		    	for(var i = 0; i < items.length; i++) {
+                                		    		var region = items[0];  
+                                		    		if(region.name == 'Local') {
+	                                    		    	if(region.portableipserviceenabled == true) {
+	                                    		    		args.$form.find('.form-item[rel=isportable]').css('display', 'inline-block');
+	                                    		    	} else {
+	                                    		    		args.$form.find('.form-item[rel=isportable]').hide();
+	                                    		    	}  
+	                                    		    	break;
+                                		    		}
+                                		    	}               		    	
                                 		    }
                                 		}                                		
                                 	});                                	
