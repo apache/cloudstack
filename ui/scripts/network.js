@@ -3236,6 +3236,7 @@
                                         },
                                         multipleAdd: true,
 
+                                        /*
                                         fieldPreFilter: function(args) {
                                             var hiddenFields = [];
                                             if ('vpc' in args.context) { //from VPC section
@@ -3270,6 +3271,8 @@
                                             }
                                             return hiddenFields; // Returns fields to be hidden
                                         },
+                                        */
+                                        
                                         fields: {
                                             'name': {
                                                 edit: true,

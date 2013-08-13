@@ -17,6 +17,8 @@
 (function($, cloudStack) {
     var aclMultiEdit = {
         noSelect: true,
+        
+        /*
         fieldPreFilter: function(args) {
             var context = args.context;
             var hiddenFields = [];
@@ -27,6 +29,8 @@
 
             return hiddenFields; // Returns fields to be hidden
         },
+        */
+        
         reorder: {
             moveDrag: {
                 action: function(args) {
