@@ -2538,9 +2538,9 @@ public class Upgrade410to420 implements DbUpgrade {
         try {
             s_logger.debug("Setting format to RAW for all volumes on RBD primary storage pools");
             pstmt = conn.prepareStatement("UPDATE volumes SET format = 'RAW' WHERE pool_id IN(SELECT id FROM storage_pool WHERE pool_type = 'RBD')");
-            pstmt.executeQuery();
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Failed to update volume format to RAW for volumes on RBD pools");
+            throw new CloudRuntimeException("Failed to update volume format to RAW for volumes on RBD pools due to exception ", e);
         }
     }
 }
