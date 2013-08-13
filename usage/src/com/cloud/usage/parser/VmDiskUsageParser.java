@@ -157,11 +157,7 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
             }
         }
 
-        try {
-            m_usageDao.saveUsageRecords(usageRecords);
-        } catch (Exception ex) {
-            s_logger.error("Exception in usage manager", ex);
-        }
+        m_usageDao.saveUsageRecords(usageRecords);
 
         return true;
     }
