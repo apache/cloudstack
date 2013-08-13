@@ -2202,6 +2202,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingId(networkOffering.getUuid());
             response.setNetworkOfferingName(networkOffering.getName());
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
+            response.setNetworkOfferingConserveMode(networkOffering.isConserveMode());
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.getIsPersistent());
