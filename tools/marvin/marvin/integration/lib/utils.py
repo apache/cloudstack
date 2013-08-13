@@ -195,3 +195,16 @@ def isAlmostEqual(first_digit, second_digit, range=0):
     except Exception as e:
         raise e
     return digits_equal_within_range
+
+
+def xsplit(txt, seps):
+    """
+    Split a string in `txt` by list of delimiters in `seps`
+    @param txt: string to split
+    @param seps: list of separators
+    @return: list of split units
+    """
+    default_sep = seps[0]
+    for sep in seps[1:]: # we skip seps[0] because that's the default separator
+        txt = txt.replace(sep, default_sep)
+    return [i.strip() for i in txt.split(default_sep)]
