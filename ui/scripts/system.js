@@ -10683,21 +10683,21 @@
                                     vsmipaddress: {
                                         label: 'Nexus 1000v IP Address',
                                         validation: {
-                                            required: true
+                                            required: false
                                         },
                                         isHidden: false
                                     },
                                     vsmusername: {
                                         label: 'Nexus 1000v Username',
                                         validation: {
-                                            required: true
+                                            required: false
                                         },
                                         isHidden: false
                                     },
                                     vsmpassword: {
                                         label: 'Nexus 1000v Password',
                                         validation: {
-                                            required: true
+                                            required: false
                                         },
                                         isPassword: true,
                                         isHidden: false
@@ -10741,11 +10741,17 @@
                                     if (args.data.vSwitchGuestName != "")
                                         array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
 
-                                    if (args.data.vsmipaddress) {
-                                        array1.push('&vsmipaddress=' + args.data.vsmipaddress);
-                                        array1.push('&vsmusername=' + args.data.vsmusername);
-                                        array1.push('&vsmpassword=' + args.data.vsmpassword);
+                                    if (args.data.vsmipaddress != null && args.data.vsmipaddress.length > 0) {
+                                        array1.push('&vsmipaddress=' + args.data.vsmipaddress);                                        
                                     }
+                                    
+                                    if(args.data.vsmusername != null && args.data.vsmusername.length > 0) {
+                                    	array1.push('&vsmusername=' + args.data.vsmusername);
+                                    }
+                                    
+                                    if(args.data.vsmpassword != null && args.data.vsmpassword.length > 0) {
+                                    	array1.push('&vsmpassword=' + args.data.vsmpassword);
+                                    }                                                                        
 
                                     var hostname = args.data.vCenterHost;
                                     var dcName = args.data.vCenterDatacenter;
