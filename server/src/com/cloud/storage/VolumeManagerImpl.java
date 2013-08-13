@@ -1096,12 +1096,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Can't resize a volume that has never been attached, not sure which hypervisor type. Recreate volume to resize.");
         }
 
-        /* Only works for KVM/Xen for now */
+        /* Only works for KVM/Xen/VMware for now */
         if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM
                 && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
                 && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware) {
             throw new InvalidParameterValueException(
-                    "Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
+                    "Cloudstack currently only supports volumes marked as KVM or XenServer or ESX hypervisor for resize");
         }
 
 
