@@ -545,11 +545,43 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String path = cmd.getPath();
         String vmName = cmd.getInstanceName();
         long newSize = cmd.getNewSize() / 1024;
+        long oldSize = cmd.getCurrentSize()/1024;
+        boolean useWorkerVm = false;
+
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        String poolId = cmd.getPoolUuid();
+        VirtualMachineMO vmMo = null;
+        DatastoreMO dsMo = null;
+        ManagedObjectReference morDS = null;
+        String vmdkDataStorePath = null;
 
         try {
-            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            if (newSize < oldSize) {
+                throw new Exception("VMware doesn't support shrinking volume from larger size: " + oldSize/(1024*1024) + " GB to a smaller size: " + newSize/(1024*1024) + " GB");
+            } else if (newSize == oldSize) {
+                return new ResizeVolumeAnswer(cmd, true, "success", newSize*1024);
+            }
+            if (vmName.equalsIgnoreCase("none")) {
+                // we need to spawn a worker VM to attach the volume to and
+                // resize the volume.
+                useWorkerVm = true;
+                vmName = this.getWorkerName(getServiceContext(), cmd, 0);
+
+                morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
+                dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
+                s_logger.info("Create worker VM " + vmName);
+                vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName);
+                if (vmMo == null) {
+                    throw new Exception("Unable to create a worker VM for volume resize");
+                }
+
+                synchronized (this) {
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, path + ".vmdk");
+                    vmMo.attachDisk(new String[] { vmdkDataStorePath }, morDS);
+                }
+            }
             // find VM through datacenter (VM is not at the target host yet)
-            VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             if (vmMo == null) {
                 String msg = "VM " + vmName + " does not exist in VMware datacenter";
                 s_logger.error(msg);
@@ -563,13 +595,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("No such disk device: " + path);
             }
             VirtualDisk disk = vdisk.first();
-            long oldSize = disk.getCapacityInKB();
-            if (newSize < oldSize) {
-                throw new Exception("VMware doesn't support shrinking volume from larger size: " + oldSize/(1024*1024) + " GB to a smaller size: "
-                        + newSize/(1024*1024) + " GB");
-            } else if (newSize == oldSize) {
-                return new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
-            }
             disk.setCapacityInKB(newSize);
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
@@ -586,6 +611,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error("Unable to resize volume", e);
             String error = "Failed to resize volume: " + e.getMessage();
             return new ResizeVolumeAnswer(cmd, false, error);
+        } finally {
+            try {
+                if (useWorkerVm == true) {
+                    s_logger.info("Destroy worker VM after volume resize");
+                    vmMo.detachDisk(vmdkDataStorePath, false);
+                    vmMo.destroy();
+                }
+            } catch (Throwable e) {
+                s_logger.info("Failed to destroy worker VM: " + vmName);
+            }
         }
     }
 
