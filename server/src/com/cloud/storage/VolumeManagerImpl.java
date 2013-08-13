@@ -1852,9 +1852,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         boolean createVolumeOnBackend = true;
         if (rootVolumeOfVm.getState() == Volume.State.Allocated) {
             createVolumeOnBackend = false;
-            if(isVolumeOnSec) {
-                throw new CloudRuntimeException("Cant attach uploaded volume to the vm which is not created. Please start it and then retry");
-            }
         }
 
         // Create volume on the backend only when VM's root volume is allocated
