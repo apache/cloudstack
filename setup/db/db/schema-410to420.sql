@@ -2302,4 +2302,5 @@ update `cloud`.`configuration` set component = 'SnapshotManager' where category 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.lru.interval', '30', 'time interval for unused data on cache storage (in days).');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.enabled', 'true', 'enable or disable cache storage replacement algorithm.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.interval', '86400', 'time interval between cache replacement threads (in seconds).');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', 'vmware.nested.virtualization', 'false', 'When set to true this will enable nested virtualization when this is supported by the hypervisor');
 
