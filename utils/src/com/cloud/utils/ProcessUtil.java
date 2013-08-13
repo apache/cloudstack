@@ -16,19 +16,23 @@
 // under the License.
 package com.cloud.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Properties;
+import java.io.InputStreamReader;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+
+import java.util.Properties;
 
 public class ProcessUtil {
     private static final Logger s_logger = Logger.getLogger(ProcessUtil.class.getName());
@@ -63,9 +67,11 @@ public class ProcessUtil {
 	            if (!pidFile.exists()) {
 	                throw new ConfigurationException("Unable to write to " + pidFile.getAbsolutePath() + ".  Are you sure you're running as root?");
 	            }
-
-	            final String pidLine = FileUtils.readFileToString(pidFile).trim();
-	            if (pidLine.isEmpty()) {
+	
+	            final FileInputStream is = new FileInputStream(pidFile);
+	            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+	            final String pidLine = reader.readLine();
+	            if (pidLine == null) {
 	                throw new ConfigurationException("Java process is being started twice.  If this is not true, remove " + pidFile.getAbsolutePath());
 	            }
 	            try {
@@ -95,7 +101,9 @@ public class ProcessUtil {
 	
 	        final String pid = parser.getLine();
 	
-	        FileUtils.writeStringToFile(pidFile, pid + "\n");
+	        final FileOutputStream strm = new FileOutputStream(pidFile);
+	        strm.write((pid + "\n").getBytes());
+	        strm.close();
 	    } catch (final IOException e) {
 	        throw new CloudRuntimeException("Unable to create the " + pidFile.getAbsolutePath() + ".  Are you running as root?", e);
 	    }
