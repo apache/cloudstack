@@ -2297,3 +2297,4 @@ UPDATE `cloud`.`autoscale_vmprofiles` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
+update `cloud`.`configuration` set component = 'SnapshotManager' where category = 'Snapshots' and component = 'none';
