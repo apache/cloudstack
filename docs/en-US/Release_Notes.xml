@@ -150,12 +150,11 @@ under the License.
         </itemizedlist>
       </section>
       <section id="vmware-vswitch">
-        <!-- CS-17424 -->
         <title>VMware vNetwork Distributed vSwitch</title>
-        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-742"
-          >CLOUDSTACK-742</ulink>:&PRODUCT; 4.2 supports VMware vSphere Distributed Switch (VDS) for virtual network
-          configuration in a VMware vSphere environment. Each vCenter server instance can support up
-          to 128 VDSs and each VDS can manage up to 500 VMware hosts.</para>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-772"
+            >CLOUDSTACK-772</ulink>:&PRODUCT; 4.2 supports VMware vSphere Distributed Switch (VDS)
+          for virtual network configuration in a VMware vSphere environment. Each vCenter server
+          instance can support up to 128 VDSs and each VDS can manage up to 500 VMware hosts.</para>
         <section id="about-dvswitch">
           <title>About VMware Distributed Virtual Switch</title>
           <para>VMware VDS is an aggregation of host-level virtual switches on a VMware vCenter
@@ -186,17 +185,18 @@ under the License.
       <section id="health-check">
         <title>Health Checks for Load Balanced Instances</title>
         <note>
-          <para>CLOUDSTACK-4243: This feature is supported only on NetScaler version 10.0 and beyond. The Nitro API
-            is not compatible with NetScaler 9.3 and therefore this version is not supported for
-            this feature.</para>
+          <para>CLOUDSTACK-4243: This feature is supported only on NetScaler version 10.0 and
+            beyond. The Nitro API is not compatible with NetScaler 9.3 and therefore this version is
+            not supported for this feature.</para>
         </note>
         <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-816"
-          >CLOUDSTACK-816</ulink>:(NetScaler load balancer only) A load balancer rule distributes requests among a pool
-          of services (a service in this context means an application running on a virtual machine).
-          When creating a load balancer rule, you can specify a health check which will ensure that
-          the rule forwards requests only to services that are healthy (running and available). This
-          is in addition to specifying the stickiness policy, algorithm, and other load balancer
-          rule options. You can configure one health check policy per load balancer rule.</para>
+            >CLOUDSTACK-816</ulink>:(NetScaler load balancer only) A load balancer rule distributes
+          requests among a pool of services (a service in this context means an application running
+          on a virtual machine). When creating a load balancer rule, you can specify a health check
+          which will ensure that the rule forwards requests only to services that are healthy
+          (running and available). This is in addition to specifying the stickiness policy,
+          algorithm, and other load balancer rule options. You can configure one health check policy
+          per load balancer rule.</para>
         <para>When a health check is in effect, the load balancer will stop forwarding requests to
           any resources that it has found to be unhealthy. If the resource later becomes available
           again, the periodic health check (periodicity is configurable) will discover it and the
@@ -1517,12 +1517,11 @@ service cloudstack-agent start
                       <entry><para>XenServer</para></entry>
                       <entry><para>Name: systemvm-xenserver-4.2.0</para>
                         <para>Description: systemvm-xenserver-4.2.0</para>
-                        <para>URL:
-                          http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2</para>
+                        <para>URL:http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2 </para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: XenServer</para>
                         <para>Format: VHD</para>
-                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                        <para>OS Type: Debian GNU/Linux 6.0 (32-bit)</para>
                         <para>Extractable: no</para>
                         <para>Password Enabled: no</para>
                         <para>Public: no</para>
@@ -1534,7 +1533,7 @@ service cloudstack-agent start
                       <entry><para>Name: systemvm-kvm-4.2.0</para>
                         <para>Description: systemvm-kvm-4.2.0</para>
                         <para>URL:
-                          http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2</para>
+                          http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: KVM</para>
                         <para>Format: QCOW2</para>
@@ -1550,7 +1549,7 @@ service cloudstack-agent start
                       <entry><para>Name: systemvm-vmware-4.2.0</para>
                         <para>Description: systemvm-vmware-4.2.0</para>
                         <para>URL:
-                          http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
+                          http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: VMware</para>
                         <para>Format: OVA</para>
@@ -1822,7 +1821,7 @@ service cloudstack-agent start
           <para>On the management server node, run the following command. It is recommended that you
             use the command-line flags to provide your own encryption keys. See Password and Key
             Encryption in the Installation Guide.</para>
-          <programlisting><prompt>#</prompt> <command>cloud-setup-encryption</command> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable></programlisting>
+          <programlisting><prompt>#</prompt> <command>cloudstack-setup-encryption</command> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable></programlisting>
           <para>When used without arguments, as in the following example, the default encryption
             type and keys will be used:</para>
           <itemizedlist>
