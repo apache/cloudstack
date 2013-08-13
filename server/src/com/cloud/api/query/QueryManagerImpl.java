@@ -2497,12 +2497,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             /*
              * List all resources due to Explicit Dedication except the
-             * dedicated resources of other account if (domainId != null) { //
-             * for domainId != null // right now, we made the decision to only
-             * list zones associated // with this domain, private zone
-             * sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId); } else
+             * dedicated resources of other account
              */
-            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (domainId != null && account.getType() == Account.ACCOUNT_TYPE_ADMIN) { //
+                // for domainId != null // right now, we made the decision to
+                // only
+                // / list zones associated // with this domain, private zone
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 // it was decided to return all zones for the user's domain, and
                 // everything above till root
                 // list all zones belonging to this domain, and all of its

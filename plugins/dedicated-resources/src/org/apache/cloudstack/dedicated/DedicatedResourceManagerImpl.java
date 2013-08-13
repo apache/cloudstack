@@ -237,6 +237,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 dedicatedResource.setAccountId(accountId);
             }
             dedicatedResource = _dedicatedDao.persist(dedicatedResource);
+
+            // save the domainId in the zone
+            dc.setDomainId(domainId);
+            if (!_zoneDao.update(zoneId, dc)) {
+                throw new CloudRuntimeException(
+                        "Failed to dedicate zone, could not set domainId. Please contact Cloud Support.");
+            }
+
         } catch (Exception e) {
             s_logger.error("Unable to dedicate zone due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
@@ -905,6 +913,19 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             if (!_dedicatedDao.remove(resourceId)) {
                 throw new CloudRuntimeException("Failed to delete Resource " + resourceId);
             }
+            if (zoneId != null) {
+                // remove the domainId set in zone
+                DataCenterVO dc = _zoneDao.findById(zoneId);
+                if (dc != null) {
+                    dc.setDomainId(null);
+                    dc.setDomain(null);
+                    if (!_zoneDao.update(zoneId, dc)) {
+                        throw new CloudRuntimeException(
+                                "Failed to release dedicated zone, could not clear domainId. Please contact Cloud Support.");
+                    }
+                }
+            }
+
             txn.commit();
 
             // find the group associated and check if there are any more

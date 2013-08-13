@@ -1543,6 +1543,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             DedicatedResourceVO dr = _dedicatedDao.findByZoneId(zoneId);
             if (dr != null) {
                 _dedicatedDao.remove(dr.getId());
+                // find the group associated and check if there are any more
+                // resources under that group
+                List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(dr
+                        .getAffinityGroupId());
+                if (resourcesInGroup.isEmpty()) {
+                    // delete the group
+                    _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null);
+                }
             }
         }
 
@@ -1695,12 +1703,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // update a private zone to public; not vice versa
-        if (isPublic != null && isPublic) {
-            zone.setDomainId(null);
-            zone.setDomain(null);
-        }
-
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -1752,6 +1754,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (dhcpProvider != null) {
             zone.setDhcpProvider(dhcpProvider);
         }
+        
+        // update a private zone to public; not vice versa
+        if (isPublic != null && isPublic) {
+            zone.setDomainId(null);
+            zone.setDomain(null);
+
+            // release the dedication for this zone
+            DedicatedResourceVO resource = _dedicatedDao.findByZoneId(zoneId);
+            Long resourceId = null;
+            if (resource != null) {
+                resourceId = resource.getId();
+                if (!_dedicatedDao.remove(resourceId)) {
+                    throw new CloudRuntimeException("Failed to delete dedicated Zone Resource " + resourceId);
+                }
+                // find the group associated and check if there are any more
+                // resources under that group
+                List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource.getAffinityGroupId());
+                if (resourcesInGroup.isEmpty()) {
+                    // delete the group
+                    _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+                }
+            }
+        }
 
         if (!_zoneDao.update(zoneId, zone)) {
             throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
@@ -1794,7 +1819,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             txn.start();
             // Create the new zone in the database
             DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr,
-                    null, null, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled,
+                    domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled,
+                    isLocalStorageEnabled,
                     ip6Dns1, ip6Dns2);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
@@ -1807,7 +1833,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             zone = _zoneDao.persist(zone);
             if (domainId != null) {
                 // zone is explicitly dedicated to this domain
-                // create affinity group associated.
+                // create affinity group associated and dedicate the zone.
                 AffinityGroup group = createDedicatedAffinityGroup(null, domainId, null);
                 DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null,
                         domainId, null, group.getId());
