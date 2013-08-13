@@ -1847,9 +1847,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
         if (volOnSecondary != null) {
             isVolumeOnSec = true;
-            if(volOnSecondary.getState() != Volume.State.Uploaded) {
-                throw new InvalidParameterValueException("Volume is not uploaded yet. Please try this operation once the volume is uploaded");
-            }
         }
         
         boolean createVolumeOnBackend = true;
