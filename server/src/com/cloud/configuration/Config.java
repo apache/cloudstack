@@ -71,7 +71,7 @@ public enum Config {
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null, ConfigurationParameterScope.zone.toString()),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
-    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unsed data on cache storage (in days).", null),
+    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unused data on cache storage (in days).", null),
     StorageCacheReplacementEnabled("Storage", ManagementServer.class, Boolean.class, "storage.cache.replacement.enabled", "true", "enable or disable cache storage replacement algorithm.", null),
     StorageCacheReplacementInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.interval", "86400", "time interval between cache replacement threads (in seconds).", null),
     MaxUploadVolumeSize("Storage",  ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),

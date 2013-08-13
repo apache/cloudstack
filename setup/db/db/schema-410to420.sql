@@ -2298,3 +2298,8 @@ UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
 update `cloud`.`configuration` set component = 'SnapshotManager' where category = 'Snapshots' and component = 'none';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.lru.interval', '30', 'time interval for unused data on cache storage (in days).');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.enabled', 'true', 'enable or disable cache storage replacement algorithm.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.cache.replacement.interval', '86400', 'time interval between cache replacement threads (in seconds).');
+
