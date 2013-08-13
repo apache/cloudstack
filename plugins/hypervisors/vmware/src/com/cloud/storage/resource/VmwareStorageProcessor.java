@@ -1174,9 +1174,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
                 }
             } else {
-                datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
-                if(!dsMo.fileExists(datastoreVolumePath)) {
-                    datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                if(!isManaged) {
+                    datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+                    if(!dsMo.fileExists(datastoreVolumePath)) {
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                    }
+                } else {
+                    datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
                 }
             }
 

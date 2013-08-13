@@ -1824,13 +1824,20 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         HypervisorType dataDiskHyperType = _volsDao.getHypervisorType(volume
                 .getId());
-        if (dataDiskHyperType != HypervisorType.None
-                && rootDiskHyperType != dataDiskHyperType) {
-            throw new InvalidParameterValueException(
-                    "Can't attach a volume created by: " + dataDiskHyperType
-                    + " to a " + rootDiskHyperType + " vm");
-        }
 
+        VolumeVO dataDiskVol = _volsDao.findById(volume.getId());
+        StoragePoolVO dataDiskStoragePool = _storagePoolDao.findById(dataDiskVol.getPoolId());
+
+        // managed storage can be used for different types of hypervisors
+        // only perform this check if the volume's storage pool is not null and not managed
+        if (dataDiskStoragePool != null && !dataDiskStoragePool.isManaged()) {
+            if (dataDiskHyperType != HypervisorType.None
+                && rootDiskHyperType != dataDiskHyperType) {
+                throw new InvalidParameterValueException(
+                        "Can't attach a volume created by: " + dataDiskHyperType
+                        + " to a " + rootDiskHyperType + " vm");
+            }
+        }
 
         deviceId = getDeviceId(vmId, deviceId);
         VolumeInfo volumeOnPrimaryStorage = volume;
