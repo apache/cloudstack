@@ -3381,11 +3381,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
             //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findById(LoadBalancerVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(lb.getUuid());
+            if(lb != null){
+                usageRecResponse.setUsageId(lb.getUuid());
+            }
         } else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
             //Port Forwarding Rule ID
             PortForwardingRuleVO pf = _entityMgr.findById(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(pf.getUuid());
+            if(pf != null){
+                usageRecResponse.setUsageId(pf.getUuid());
+            }
 
         } else if(usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING){
             //Network Offering Id
@@ -3397,7 +3401,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
             //VPN User ID
             VpnUserVO vpnUser = _entityMgr.findById(VpnUserVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(vpnUser.getUuid());
+            if(vpnUser != null){
+                usageRecResponse.setUsageId(vpnUser.getUuid());
+            }
 
         } else if(usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP){
             //Security Group Id
