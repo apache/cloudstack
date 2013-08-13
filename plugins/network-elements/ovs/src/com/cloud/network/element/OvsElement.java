@@ -68,7 +68,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 		PortForwardingServiceProvider.class, IpDeployer.class })
 public class OvsElement extends AdapterBase implements NetworkElement,
 		OvsElementService, ConnectivityProvider, ResourceStateAdapter,
-		SourceNatServiceProvider, PortForwardingServiceProvider,
+		PortForwardingServiceProvider,
 		StaticNatServiceProvider, IpDeployer {
 	@Inject
 	OvsTunnelManager _ovsTunnelMgr;
@@ -228,12 +228,6 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 			return false;
 		}
 
-		// if ((services.contains(Service.PortForwarding) || services
-		// .contains(Service.StaticNat))
-		// && !services.contains(Service.SourceNat)) {
-		// s_logger.warn("Unable to provide StaticNat and/or PortForwarding without the SourceNat service");
-		// return false;
-		// }
 		return true;
 	}
 
@@ -243,7 +237,6 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 		// L2 Support : SDN provisioning
 		capabilities.put(Service.Connectivity, null);
 
-		// TODO: we need L3 support for coding L3 services in next period
 		// L3 Support : Generic?
 		// capabilities.put(Service.Gateway, null);
 
@@ -256,7 +249,7 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 		// capabilities.put(Service.SourceNat, sourceNatCapabilities);
 
 		// L3 Support : Port Forwarding
-		// capabilities.put(Service.PortForwarding, null);
+		 capabilities.put(Service.PortForwarding, null);
 
 		// L3 support : StaticNat
 		capabilities.put(Service.StaticNat, null);
@@ -296,7 +289,6 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 		return new DeleteHostAnswer(true);
 	}
 
-	// TODO: Adding L3 services below
 	@Override
 	public IpDeployer getIpDeployer(Network network) {
 		return this;
@@ -331,8 +323,7 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 	}
 
 	@Override
-	public boolean applyStaticNats(Network network,
-			List<? extends StaticNat> rules)
+	public boolean applyStaticNats(Network network, List<? extends StaticNat> rules)
 			throws ResourceUnavailableException {
 		if (!canHandle(network, Service.StaticNat)) {
 			return false;
@@ -351,7 +342,17 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 	@Override
 	public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
 			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
+		if (!canHandle(network, Service.PortForwarding)) {
+			return false;
+		}
+		List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+				network.getId(), Role.VIRTUAL_ROUTER);
+		if (routers == null || routers.isEmpty()) {
+			s_logger.debug("Ovs element doesn't need to apply firewall rules on the backend; virtual "
+					+ "router doesn't exist in the network " + network.getId());
+			return true;
+		}
+
+		return _routerMgr.applyFirewallRules(network, rules, routers);
 	}
 }
