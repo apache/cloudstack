@@ -51,21 +51,6 @@
         <para>&PRODUCT; supports only one gateway for a subnet; overlapping subnets are not
           currently supported</para>
       </listitem>
-      <listitem>
-        <para>Services, such as User Data and Reset SSH Key, runs on the primary IP of the eth0
-          interface. In the case of multiple subnets, the primary IP is allocated from the first
-          subnet to the eth0 interface of the virtual router. If virtual router is used for
-          providing DNS service, &PRODUCT;adds an entry, <code>eth0Ip data-server</code>, in the
-            <code>/etc/hosts</code> directory of the router VM. To access the User Data and Reset
-          SSH Key services from any additional subnets,  use <code>data-server</code> instead of
-          using the eth0 IP of the router. </para>
-        <para>For the Reset SSH Key service, the ssh-key reset script has been modified to fetch the
-          public key by using the name <code>data-server</code> instead of the eth0 IP of the
-          router. Therefore, if you want to implement the multiple subnet feature, update the user
-          VM templates with this modified ssh-key restart script. All VMs deployed prior to using
-          this feature will be able to use the service with the old script. Updating templates is
-          required only for the VMs that are deployed in the new subnet.</para>
-      </listitem>
     </itemizedlist>
   </section>
   <section id="how-to-add-ip">
