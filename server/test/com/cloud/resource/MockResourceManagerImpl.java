@@ -26,10 +26,17 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.*;
-import org.apache.cloudstack.api.command.admin.storage.*;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -44,10 +51,9 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.ImageStore;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -428,7 +434,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#findPod(com.cloud.template.VirtualMachineTemplate, com.cloud.service.ServiceOfferingVO, com.cloud.dc.DataCenterVO, long, java.util.Set)
      */
     @Override
-    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc,
+    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc,
             long accountId, Set<Long> avoids) {
         // TODO Auto-generated method stub
         return null;

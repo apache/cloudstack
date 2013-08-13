@@ -43,6 +43,13 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+/**
+ * VolumeOrchestrationService is a PURE orchestration service on CloudStack
+ * volumes.  It does not understand resource limits, ACL, action events, or
+ * anything that has to do with the self-service portion of CloudStack.  Its
+ * job is to carry out any orchestration needed among the physical components
+ * to provision volumes.
+ */
 public interface VolumeOrchestrationService {
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException;
 

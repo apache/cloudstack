@@ -709,7 +709,9 @@
     <property name="Planners" value="#{deploymentPlanners.Adapters}" />
   </bean>
 
-  <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">
+  <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl"/>
+  
+  <bean id="volumeOrchestrator" class="org.apache.cloudstack.engine.orchestration.VolumeOrchestrator">
     <property name="StoragePoolAllocators" value="#{storagePoolAllocators.Adapters}" />
   </bean>
 
@@ -852,8 +854,7 @@
   <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
   <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
   <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />
-
-  <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
+  <bean id="volumeApiServiceImpl" class="com.cloud.storage.VolumeApiServiceImpl"/>
   <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
   <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl" />
 

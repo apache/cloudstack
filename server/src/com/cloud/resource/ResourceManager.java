@@ -22,6 +22,7 @@ import java.util.Set;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -33,8 +34,8 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState.Event;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -124,7 +125,7 @@ public interface ResourceManager extends ResourceService {
      * @param userId
      * @return
      */
-    Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids);
+    Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc, long accountId, Set<Long> avoids);
 
     HostStats getHostStatistics(long hostId);
 
