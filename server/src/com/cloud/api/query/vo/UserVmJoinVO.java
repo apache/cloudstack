@@ -1653,7 +1653,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Override
     public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("VM[").append(id).append("|").append(hostName).append("]").toString();
+            toString = new StringBuilder("VM[").append(id).append("|").append(name).append("]").toString();
         }
         return toString;
     }
