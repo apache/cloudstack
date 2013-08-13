@@ -459,6 +459,65 @@
                     $input.wrap($('<div>').addClass('range-item'));
                     $input.addClass("disallowSpecialCharacters");
 
+                } else if (field.has_units) { // An input box and a drop down with unit options
+                    var textbox = $('<input>')
+                        .attr({
+                            type: 'text',
+                            name: key
+                        })
+                        .css('width', 'auto');
+                    var unitSelect = $('<select>')
+                        .attr({
+                            name: key+'_unit'
+                        })
+                        .data('key', key)
+                        .css('width', 'auto');
+
+                    $input = textbox;
+
+                    textbox.appendTo($value);
+                    unitSelect.appendTo($value);
+
+                    $.each(field.units, function() {
+                        var id = this.id;
+                        var text = this.text;
+                        var toBase = this.toBase;
+                        var fromBase = this.fromBase;
+
+                        var option = $('<option>')
+                                .appendTo(unitSelect)
+                                .val(_s(id))
+                                .html(_s(text))
+                                .data('toBase', toBase)
+                                .data('fromBase', fromBase);
+                    });
+
+                    unitSelect.focus(function() {
+                        this.oldUnit = this.value;
+                    });
+
+                    unitSelect.change(function() {
+                        if ($(this).parent().length == 0)
+                            return;
+
+                        var oldUnit = this.oldUnit;
+                        var newUnit = this.value;
+                        var key = $(this).data('key');
+                        var value = $(this).closest('form').find('input[name='+key+']').attr('value');
+
+                        if (!value || value.length === 0 || !oldUnit || oldUnit == newUnit)
+                            return;
+
+                        var toBase = $(this).closest('form').find('option[value='+oldUnit+']').data('toBase');
+                        var fromBase = $(this).closest('form').find('option[value='+newUnit+']').data('fromBase');
+
+                        var baseValue = toBase(value);
+                        var newValue = fromBase(baseValue);
+
+                        $(this).closest('form').find('input[name='+key+']').attr('value', newValue);
+
+                        this.oldUnit = newUnit;
+                    })
                 } else { //text field
                     $input = $('<input>').attr({
                         name: key,
