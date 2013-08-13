@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.orchestration;
+package org.apache.cloudstack.engine.orchestration;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -45,7 +46,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
@@ -89,7 +89,7 @@ public class CloudOrchestrator implements OrchestrationService {
 	protected AccountDao _accountDao = null;
 
     @Inject
-    VolumeManager _volumeMgr;
+    VolumeOrchestrationService _volumeMgr;
 
 	public CloudOrchestrator() {
 	}

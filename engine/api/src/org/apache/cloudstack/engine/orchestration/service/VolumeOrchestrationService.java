@@ -16,33 +16,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.storage;
+package org.apache.cloudstack.engine.orchestration.service;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-public interface VolumeManager {
+public interface VolumeOrchestrationService {
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException;
 
-    VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId);
+    Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
 
-    boolean volumeOnSharedStoragePool(VolumeVO volume);
+    boolean volumeOnSharedStoragePool(Volume volume);
 
     boolean volumeInactive(Volume volume);
 
@@ -50,11 +56,11 @@ public interface VolumeManager {
 
     Volume migrateVolume(Volume volume, StoragePool destPool);
 
-    void destroyVolume(VolumeVO volume);
+    void destroyVolume(Volume volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, VMTemplateVO template, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
 
-    VolumeInfo createVolumeOnPrimaryStorage(VMInstanceVO vm, VolumeVO rootVolumeOfVm, VolumeInfo volume, HypervisorType rootDiskHyperType) throws NoTransitionException;
+    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, Volume rootVolumeOfVm, VolumeInfo volume, HypervisorType rootDiskHyperType) throws NoTransitionException;
 
     void release(VirtualMachineProfile profile);
 
@@ -70,11 +76,13 @@ public interface VolumeManager {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOfferingVO offering, VMTemplateVO template, VMInstanceVO vm, Account owner);
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, VirtualMachineTemplate template, VirtualMachine vm, Account owner);
 
     String getVmNameFromVolumeId(long volumeId);
 
     String getStoragePoolOfVolume(long volumeId);
 
     boolean validateVolumeSizeRange(long size);
+
+    StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 }

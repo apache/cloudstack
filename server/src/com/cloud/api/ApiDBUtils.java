@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -235,7 +236,6 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -293,7 +293,7 @@ public class ApiDBUtils {
     static AsyncJobManager _asyncMgr;
     static SecurityGroupManager _securityGroupMgr;
     static StorageManager _storageMgr;
-    static VolumeManager _volumeMgr;
+    static VolumeOrchestrationService _volumeMgr;
     static UserVmManager _userVmMgr;
     static NetworkModel _networkModel;
     static NetworkManager _networkMgr;
@@ -411,7 +411,7 @@ public class ApiDBUtils {
     @Inject private NetworkManager networkMgr;
     @Inject private StatsCollector statsCollector;
     @Inject private TemplateManager templateMgr;
-    @Inject private VolumeManager volumeMgr;
+    @Inject private VolumeOrchestrationService volumeMgr;
 
     @Inject private AccountDao accountDao;
     @Inject private AccountVlanMapDao accountVlanMapDao;

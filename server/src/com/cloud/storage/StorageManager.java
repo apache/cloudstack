@@ -18,7 +18,6 @@ package com.cloud.storage;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -29,8 +28,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.CapacityVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -38,7 +35,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
@@ -106,9 +102,7 @@ public interface StorageManager extends StorageService {
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
-    StoragePool findStoragePool(DiskProfile dskCh, DataCenterVO dc,
-            Pod pod, Long clusterId, Long hostId, VMInstanceVO vm,
-            Set<StoragePool> avoid);
+
 
     void connectHostToSharedPool(long hostId, long poolId)
             throws StorageUnavailableException;

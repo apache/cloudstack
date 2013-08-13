@@ -20,7 +20,6 @@ package org.apache.cloudstack.storage.snapshot;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -28,6 +27,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -40,10 +41,12 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -65,7 +68,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Inject
     protected SnapshotManager snapshotMgr;
     @Inject
-    protected VolumeManager volumeMgr;
+    protected VolumeOrchestrationService volumeMgr;
     @Inject
     protected SnapshotStateMachineManager stateMachineManager;
     @Inject

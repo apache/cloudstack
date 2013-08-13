@@ -37,6 +37,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -83,7 +84,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -109,7 +109,7 @@ public class VirtualMachineManagerImplTest {
     @Spy
     VirtualMachineManagerImpl _vmMgr = new VirtualMachineManagerImpl();
     @Mock
-    VolumeManager _storageMgr;
+    VolumeOrchestrationService _storageMgr;
     @Mock
     Account _account;
     @Mock

@@ -30,13 +30,14 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -61,7 +63,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Inject
     StorageManager storageMgr;
     @Inject
-    VolumeManager volumeMgr;
+    VolumeOrchestrationService volumeMgr;
     @Inject
     VMInstanceDao vmDao;
     @Inject

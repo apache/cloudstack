@@ -48,6 +48,7 @@ import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.capacity.CapacityManager;
@@ -65,7 +66,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -84,7 +84,7 @@ public class UserVmManagerTest {
 
     @Spy UserVmManagerImpl _userVmMgr = new UserVmManagerImpl();
     @Mock VirtualMachineManager _itMgr;
-    @Mock VolumeManager _storageMgr;
+    @Mock VolumeOrchestrationService _storageMgr;
     @Mock Account _account;
     @Mock AccountManager _accountMgr;
     @Mock AccountService _accountService;

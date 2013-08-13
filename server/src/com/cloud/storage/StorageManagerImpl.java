@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -66,7 +65,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -107,11 +105,8 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -168,11 +163,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -265,16 +257,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private TemplateService _imageSrv;
     @Inject
     EndPointSelector _epSelector;
-
-    protected List<StoragePoolAllocator> _storagePoolAllocators;
-
-    public List<StoragePoolAllocator> getStoragePoolAllocators() {
-        return _storagePoolAllocators;
-    }
-
-    public void setStoragePoolAllocators(List<StoragePoolAllocator> _storagePoolAllocators) {
-        this._storagePoolAllocators = _storagePoolAllocators;
-    }
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -401,36 +383,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return false;
-    }
-
-    @Override
-    public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, Pod pod, Long clusterId, Long hostId, VMInstanceVO vm,
-            final Set<StoragePool> avoid) {
-        Long podId = null;
-        if (pod != null) {
-            podId = pod.getId();
-        } else if (clusterId != null) {
-            ClusterVO cluster = _clusterDao.findById(clusterId);
-            if (cluster != null) {
-                podId = cluster.getPodId();
-            }
-        }
-
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-
-            ExcludeList avoidList = new ExcludeList();
-            for (StoragePool pool : avoid) {
-                avoidList.addPool(pool.getId());
-            }
-            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
-
-            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
-            if (poolList != null && !poolList.isEmpty()) {
-                return (StoragePool) dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
-            }
-        }
-        return null;
     }
 
     @Override

@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -166,7 +167,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
     @Inject
-    VolumeManager _volumeMgr;
+    VolumeOrchestrationService _volumeMgr;
 
     @Inject
     EntityManager _entityMgr;
@@ -717,7 +718,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
-            while ((pool = storageMgr.findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
+            while ((pool = _volumeMgr.findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
                 break;
             }
         }

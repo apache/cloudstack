@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -92,7 +93,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -190,7 +190,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private VMSnapshotDao _vmSnapshotDao;
     String _name;
     @Inject TemplateManager templateMgr;
-    @Inject VolumeManager volumeMgr;
+    @Inject VolumeOrchestrationService volumeMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject SnapshotService snapshotSrv;
     @Inject VolumeDataFactory volFactory;

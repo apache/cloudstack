@@ -44,6 +44,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-orchestration</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim25</artifactId>
       <version>${cs.vmware.api.version}</version>

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -66,7 +67,6 @@ import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -116,7 +116,7 @@ public class
     @Inject
     VMTemplatePoolDao templatePoolDao;
     @Inject
-    VolumeManager volumeMgr;
+    VolumeOrchestrationService volumeMgr;
     @Inject
     StorageCacheManager cacheMgr;
     @Inject

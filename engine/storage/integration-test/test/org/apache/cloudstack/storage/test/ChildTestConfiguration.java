@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.test;
 import java.io.IOException;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
@@ -63,7 +64,6 @@ import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.OCFS2ManagerImpl;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
@@ -172,8 +172,8 @@ public class ChildTestConfiguration extends TestConfiguration {
     }
 
     @Bean
-    public VolumeManager volumeMgr() {
-        return Mockito.mock(VolumeManager.class);
+    public VolumeOrchestrationService volumeMgr() {
+        return Mockito.mock(VolumeOrchestrationService.class);
     }
 
     @Bean

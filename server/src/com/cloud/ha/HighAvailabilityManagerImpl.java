@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
@@ -60,7 +61,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.AccountManager;
@@ -154,7 +154,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    VolumeManager volumeMgr;
+    VolumeOrchestrationService volumeMgr;
 
     String _instance;
     ScheduledExecutorService _executor;

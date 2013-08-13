@@ -82,4 +82,5 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     void setIopsWriteRate(Long iopsWriteRate);
 
     Long getIopsWriteRate();
+
 }
