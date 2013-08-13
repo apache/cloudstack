@@ -2955,7 +2955,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             for (int i=0 ; i < existingRanges.size(); i++){
                 int existingStartVlan = existingRanges.get(i).first();
                 int existingEndVlan = existingRanges.get(i).second();
-                if (startVlan >= existingStartVlan && endVlan <= existingEndVlan) {
+                if (startVlan <= endVlan && startVlan >= existingStartVlan && endVlan <= existingEndVlan) {
                         exists = true;
                         break;
                     }
