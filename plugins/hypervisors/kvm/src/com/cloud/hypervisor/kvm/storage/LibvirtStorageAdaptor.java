@@ -1022,13 +1022,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
               * A HUGE performance gain can be achieved here if QCOW2 -> RBD format 2 can be done in one step
               */
             s_logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
-            String tmpFile = "/tmp/" + name;
+            String sourceFile;
+            boolean useTmpFile = false;
 
             try {
-                srcFile = new QemuImgFile(sourcePath, sourceFormat);
-                destFile = new QemuImgFile(tmpFile);
-                s_logger.debug("Converting " + srcFile.getFileName() +  " to " + tmpFile +  " as a temporary file for RBD conversion");
-                qemu.convert(srcFile, destFile);
+                if (sourceFormat != destFormat) {
+                    srcFile = new QemuImgFile(sourcePath, sourceFormat);
+                    destFile = new QemuImgFile("/tmp/" + name);
+                    s_logger.debug("Converting " + srcFile.getFileName() +  " to " + destFile.getFileName() +  " as a temporary file for RBD conversion");
+                    qemu.convert(srcFile, destFile);
+                    sourceFile = destFile.getFileName();
+                    useTmpFile = true;
+                } else {
+                    // Source file is RAW, we can write directly to RBD
+                    sourceFile = sourcePath;
+                }
 
                 // We now convert the temporary file to a RBD image with format 2
                 Rados r = new Rados(destPool.getAuthUserName());
@@ -1045,13 +1053,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 RbdImage image = rbd.open(name);
 
-                // We now read the temporary file and write it to the RBD image
-                File fh = new File(tmpFile);
+                File fh = new File(sourceFile);
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fh));
 
                 int chunkSize = 4194304;
                 long offset = 0;
-                s_logger.debug("Reading temporary file " + tmpFile + " (" + fh.length() + " bytes) into RBD image " + name + " in chunks of " + chunkSize + " bytes");
+                s_logger.debug("Reading file " + sourceFile + " (" + fh.length() + " bytes) into RBD image " + name + " in chunks of " + chunkSize + " bytes");
                 while(true) {
                     byte[] buf = new byte[chunkSize];
 
@@ -1062,10 +1069,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     image.write(buf, offset, bytes);
                     offset += bytes;
                 }
-                s_logger.debug("Completed writing " + tmpFile + " to RBD image " + name + ". Bytes written: " + offset);
+                s_logger.debug("Completed writing " + sourceFile + " to RBD image " + name + ". Bytes written: " + offset);
                 bis.close();
-                s_logger.debug("Removing temporary file " + tmpFile);
-                fh.delete();
+
+                if (useTmpFile) {
+                    s_logger.debug("Removing temporary file " + sourceFile);
+                    fh.delete();
+                }
 
                 /* Snapshot the image and protect that snapshot so we can clone (layer) from it */
                 s_logger.debug("Creating RBD snapshot " + this.rbdTemplateSnapName + " on image " + name);
