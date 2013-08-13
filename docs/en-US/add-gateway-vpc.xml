@@ -135,11 +135,13 @@
     <para>You might want to deploy multiple VPCs with the same super CIDR and guest tier CIDR.
       Therefore, multiple guest VMs from different VPCs can have the same IPs to reach a enterprise
       data center through the private gateway. In such cases, a NAT service need to be configured on
-      the private gateway. If Source NAT is enabled, the guest VMs in VPC reaches the enterprise
-      network via private gateway IP address by using the NAT service. </para>
+      the private gateway to avoid IP conflicts. If Source NAT is enabled, the guest VMs in VPC
+      reaches the enterprise network via private gateway IP address by using the NAT service. </para>
     <para>The Source NAT service on a private gateway can be enabled while adding the private
       gateway. On deletion of a private gateway, source NAT rules specific to the private gateway
       are deleted.</para>
+    <para>To enable source NAT on existing private gateways, delete them and create afresh with
+      source NAT. </para>
   </section>
   <section id="acl-private-gateway">
     <title>ACL on Private Gateway</title>
