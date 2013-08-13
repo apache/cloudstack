@@ -68,6 +68,8 @@ public class VmwareContext {
 
 	private VmwareContextPool _pool;
 	private String _poolKey;
+	
+	private static volatile int s_outstandingCount = 0;
 
 	static {
 		try {
@@ -87,6 +89,8 @@ public class VmwareContext {
 
 		_vimClient = client;
 		_serverAddress = address;
+		
+		registerOutstandingContext();
 	}
 
 	public void registerStockObject(String name, Object obj) {
@@ -153,6 +157,18 @@ public class VmwareContext {
 	
 	public void idleCheck() throws Exception {
 		getRootFolder();
+	}
+	
+	public static int getOutstandingContextCount() {
+		return s_outstandingCount;
+	}
+	
+	public static void registerOutstandingContext() {
+		s_outstandingCount++;
+	}
+	
+	public static void unregisterOutstandingContext() {
+		s_outstandingCount--;
 	}
 
 	public ManagedObjectReference getHostMorByPath(String inventoryPath) throws Exception {
@@ -614,6 +630,7 @@ public class VmwareContext {
 		} catch(Exception e) {
 			s_logger.warn("Unexpected exception: ", e);
 		}
+		unregisterOutstandingContext();
 	}
 
 	public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
