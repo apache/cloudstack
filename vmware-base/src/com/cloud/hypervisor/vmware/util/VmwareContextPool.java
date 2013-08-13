@@ -63,15 +63,17 @@ public class VmwareContextPool {
 
 			if(l.size() > 0) {
 				if(s_logger.isTraceEnabled())
-					s_logger.trace("Return a VmwareContext from the pool.");
+					s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
 				
 				VmwareContext context = l.remove(0);
 				context.setPoolInfo(this, poolKey);
 				return context;
 			}
 			
-			if(s_logger.isInfoEnabled())
-				s_logger.info("No VmwareContext is available from the idle pool, create a new one");
+			if(s_logger.isTraceEnabled())
+				s_logger.trace("No VmwareContext is available from the idle pool: " + poolKey + ", create a new one and current outstanding count is: " + VmwareContext.getOutstandingContextCount());
+			
+			// TODO, we need to control the maximum number of outstanding VmwareContext object in the future
 			return null;
 		}
 	}
@@ -89,9 +91,13 @@ public class VmwareContextPool {
 			if(l.size() < _maxIdleQueueLength) {
 				context.clearStockObjects();
 				l.add(context);
+				
+				if(s_logger.isTraceEnabled())
+					s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " 
+						+ l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
 			} else {
-				if(s_logger.isInfoEnabled())
-					s_logger.info("VmwareContextPool queue exceeds limits, queue size: " + l.size());
+				if(s_logger.isTraceEnabled())
+					s_logger.trace("VmwareContextPool queue exceeds limits, queue size: " + l.size());
 				context.close();
 			}
 		}
@@ -99,11 +105,13 @@ public class VmwareContextPool {
 	
 	private void getIdleCheckContexts(List<VmwareContext> l, int batchSize) {
 		synchronized(_pool) {
-			for(List<VmwareContext> entryList : _pool.values()) {
-				if(entryList != null) {
+			for(Map.Entry<String, List<VmwareContext>> entry : _pool.entrySet()) {
+				if(entry.getValue() != null) {
 					int count = 0;
-					while(entryList.size() > 0 && count < batchSize) {
-						l.add(entryList.remove(0));
+					while(entry.getValue().size() > 0 && count < batchSize) {
+						VmwareContext context = entry.getValue().remove(0);
+						context.setPoolInfo(this, entry.getKey());
+						l.add(context);
 						count++;
 					}
 				}
@@ -132,6 +140,9 @@ public class VmwareContextPool {
 		for(VmwareContext context : l) {
 			try {
 				context.idleCheck();
+				
+				if(s_logger.isTraceEnabled())
+					s_logger.trace("Recyle context after idle check");
 				returnContext(context);
 			} catch(Throwable e) {
 				s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
