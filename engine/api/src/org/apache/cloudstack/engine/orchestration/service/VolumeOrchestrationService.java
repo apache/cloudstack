@@ -51,7 +51,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * to provision volumes.
  */
 public interface VolumeOrchestrationService {
-    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException;
+    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException, StorageUnavailableException;
 
     Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
 
@@ -61,7 +61,7 @@ public interface VolumeOrchestrationService {
 
     String getVmNameOnVolume(Volume volume);
 
-    Volume migrateVolume(Volume volume, StoragePool destPool);
+    Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
 
     void destroyVolume(Volume volume);
 
@@ -75,7 +75,7 @@ public interface VolumeOrchestrationService {
 
     void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost, Map<Volume, StoragePool> volumeToPool);
 
-    boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool);
+    boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool) throws StorageUnavailableException;
 
     void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 

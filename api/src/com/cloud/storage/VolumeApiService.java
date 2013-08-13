@@ -20,6 +20,7 @@ package com.cloud.storage;
 
 import java.net.URISyntaxException;
 
+import com.cloud.exception.StorageUnavailableException;
 import org.apache.cloudstack.api.command.user.volume.*;
 
 import com.cloud.exception.ConcurrentOperationException;
