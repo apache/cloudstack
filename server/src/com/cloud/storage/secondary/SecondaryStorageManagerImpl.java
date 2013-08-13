@@ -1023,13 +1023,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
         if (_configDao.isPremium()) {
-            if (profile.getHypervisorType() == HypervisorType.VMware) {
-            	s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the PremiumSecondaryStorageResource");
-            	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
-            } else {
-            	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
-                buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
-            }
+            s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the PremiumSecondaryStorageResource");
+            buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
         } else {
             buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
         }
