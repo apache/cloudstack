@@ -825,7 +825,7 @@
   <bean id="apiServer" class="com.cloud.api.ApiServer" />
   <bean id="apiServlet" class="com.cloud.api.ApiServlet" />
   <bean id="bAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
-  <bean id="cloudOrchestrator" class="org.apache.cloudstack.platform.orchestration.CloudOrchestrator" />
+  <bean id="cloudOrchestrator" class="org.apache.cloudstack.engine.orchestration.CloudOrchestrator" />
   <bean id="clusterRestService" class="org.apache.cloudstack.engine.rest.service.api.ClusterRestService" />
   <bean id="consoleProxyServlet" class="com.cloud.servlet.ConsoleProxyServlet" />
   <bean id="dataCenterResourceManagerImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManagerImpl" />
