@@ -326,7 +326,8 @@
                         };
                         if ('affinityGroups' in args.context) {
                             $.extend(data, {
-                                selectedObj: args.context.affinityGroups[0]
+                                selectedObj: args.context.affinityGroups[0],
+                                selectedObjNonEditable: true
                             });
                         }
                         args.response.success({
