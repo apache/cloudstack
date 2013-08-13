@@ -1132,11 +1132,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (keyword != null) {
             SearchCriteria<DomainRouterJoinVO> ssc = _routerJoinDao.createSearchCriteria();
-            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
-            sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("instanceName", SearchCriteria.Op.SC, ssc);
         }
 
         if (name != null) {
