@@ -1168,21 +1168,21 @@
                     vsmipaddress: {
                         label: 'Nexus 1000v IP Address',
                         validation: {
-                            required: true
+                            required: false
                         },
                         isHidden: true
                     },
                     vsmusername: {
                         label: 'Nexus 1000v Username',
                         validation: {
-                            required: true
+                            required: false
                         },
                         isHidden: true
                     },
                     vsmpassword: {
                         label: 'Nexus 1000v Password',
                         validation: {
-                            required: true
+                            required: false
                         },
                         isPassword: true,
                         isHidden: true
@@ -3789,11 +3789,17 @@
                             array1.push("&guestvswitchname=" + args.data.cluster.vSwitchGuestName);
 						*/
 
-                        if (args.data.cluster.vsmipaddress) { // vSwitch is enabled
+                        if (args.data.cluster.vsmipaddress != null && args.data.cluster.vsmipaddress.length > 0) { 
                             array1.push('&vsmipaddress=' + args.data.cluster.vsmipaddress);
-                            array1.push('&vsmusername=' + args.data.cluster.vsmusername);
-                            array1.push('&vsmpassword=' + args.data.cluster.vsmpassword);
                         }
+                        
+                        if(args.data.cluster.vsmusername != null && args.data.cluster.vsmusername.length > 0) {
+                        	array1.push('&vsmusername=' + args.data.cluster.vsmusername);
+                        }
+                          
+                        if(args.data.cluster.vsmpassword != null && args.data.cluster.vsmpassword.length > 0) {
+                        	array1.push('&vsmpassword=' + args.data.cluster.vsmpassword);
+                        }  
 
                         var hostname = args.data.cluster.vCenterHost;
                         var dcName = args.data.cluster.vCenterDatacenter;
