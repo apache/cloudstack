@@ -28,6 +28,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 
 import com.cloud.deploy.DeploymentPlanner;
@@ -101,6 +103,8 @@ public class Upgrade410to420 implements DbUpgrade {
         migrateVolumeHostRef(conn);
         migrateTemplateHostRef(conn);
         migrateSnapshotStoreRef(conn);
+        migrateS3ToImageStore(conn);
+        migrateSwiftToImageStore(conn);
         fixNiciraKeys(conn);
         fixRouterKeys(conn);
         encryptSite2SitePSK(conn);
@@ -306,19 +310,19 @@ public class Upgrade410to420 implements DbUpgrade {
 
             Map<HypervisorType, String> newTemplateUrl = new HashMap<HypervisorType, String>(){
                 {   put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
-                    put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
-                    put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
-                    put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");
-                    put(HypervisorType.Hyperv, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
+                put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
+                put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
+                put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");
+                put(HypervisorType.Hyperv, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
                 }
             };
 
             Map<HypervisorType, String> newTemplateChecksum = new HashMap<HypervisorType, String>(){
                 {   put(HypervisorType.XenServer, "fb1b6e032a160d86f2c28feb5add6d83");
-                    put(HypervisorType.VMware, "8fde62b1089e5844a9cd3b9b953f9596");
-                    put(HypervisorType.KVM, "6cea42b2633841648040becb588bd8f0");
-                    put(HypervisorType.LXC, "2755de1f9ef2ce4d6f2bee2efbb4da92");
-                    put(HypervisorType.Hyperv, "fb1b6e032a160d86f2c28feb5add6d83");
+                put(HypervisorType.VMware, "8fde62b1089e5844a9cd3b9b953f9596");
+                put(HypervisorType.KVM, "6cea42b2633841648040becb588bd8f0");
+                put(HypervisorType.LXC, "2755de1f9ef2ce4d6f2bee2efbb4da92");
+                put(HypervisorType.Hyperv, "fb1b6e032a160d86f2c28feb5add6d83");
                 }
             };
 
@@ -1707,140 +1711,56 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    // migrate secondary storages (NFS, S3, Swift) from host, s3, swift tables to image_store table
+    // migrate secondary storages NFS from host tables to image_store table
     private void migrateSecondaryStorageToImageStore(Connection conn) {
         PreparedStatement storeInsert = null;
         PreparedStatement storeDetailInsert = null;
-        PreparedStatement storeQuery = null;
-        PreparedStatement s3Query = null;
-        PreparedStatement swiftQuery = null;
         PreparedStatement nfsQuery = null;
+        PreparedStatement pstmt = null;
         ResultSet rs = null;
         ResultSet storeInfo = null;
-        Long storeId = null;
 
         s_logger.debug("Migrating secondary storage to image store");
+        boolean hasS3orSwift = false;
         try {
-            storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
+            s_logger.debug("Checking if we need to migrate NFS secondary storage to image store or staging store");
+            int numRows = 0;
+            pstmt = conn.prepareStatement("select count(*) from `cloud`.`s3`");
+            rs = pstmt.executeQuery();
+            if(rs.next()){
+                numRows = rs.getInt(1);
+            }
+            rs.close();
+            pstmt.close();
+            if (numRows > 0){
+                hasS3orSwift = true;
+            } else{
+                // check if there is swift storage
+                pstmt = conn.prepareStatement("select count(*) from `cloud`.`swift`");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    numRows = rs.getInt(1);
+                }
+                rs.close();
+                pstmt.close();
+                if ( numRows > 0){
+                    hasS3orSwift = true;
+                }
+            }
+
+            String store_role = "Image";
+            if ( hasS3orSwift){
+                store_role = "ImageCache";
+            }
+
+            s_logger.debug("Migrating NFS secondary storage to " + store_role + " store");
+
             storeDetailInsert = conn
                     .prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
-            /*
-            // migrate S3 secondary storage
-            storeInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
-            s3Query = conn
-                    .prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, max_error_retry, socket_timeout, created from `cloud`.`s3`");
-            rs = s3Query.executeQuery();
-
-            while (rs.next()) {
-                Long s3_id = rs.getLong("id");
-                String s3_uuid = rs.getString("uuid");
-                String s3_accesskey = rs.getString("access_key");
-                String s3_secretkey = rs.getString("secret_key");
-                String s3_endpoint = rs.getString("end_point");
-                String s3_bucket = rs.getString("bucket");
-                boolean s3_https = rs.getObject("https") != null ? (rs.getInt("https") == 0 ? false : true) : false;
-                Integer s3_connectiontimeout = rs.getObject("connection_timeout") != null ? rs
-                        .getInt("connection_timeout") : null;
-                Integer s3_retry = rs.getObject("max_error_retry") != null ? rs.getInt("max_error_retry") : null;
-                Integer s3_sockettimeout = rs.getObject("socket_timeout") != null ? rs.getInt("socket_timeout") : null;
-                Date s3_created = rs.getDate("created");
-
-                // insert entry in image_store table and image_store_details
-                // table and store s3_id and store_id mapping
-
-                storeInsert.setString(1, s3_uuid);
-                storeInsert.setString(2, s3_uuid);
-                storeInsert.setString(3, s3_https ? "https" : "http");
-                storeInsert.setDate(4, s3_created);
-                storeInsert.executeUpdate();
-
-                storeQuery.setString(1, s3_uuid);
-                storeInfo = storeQuery.executeQuery();
-                if (storeInfo.next()) {
-                    storeId = storeInfo.getLong("id");
-                }
-
-                Map<String, String> detailMap = new HashMap<String, String>();
-                detailMap.put(ApiConstants.S3_ACCESS_KEY, s3_accesskey);
-                detailMap.put(ApiConstants.S3_SECRET_KEY, s3_secretkey);
-                detailMap.put(ApiConstants.S3_BUCKET_NAME, s3_bucket);
-                detailMap.put(ApiConstants.S3_END_POINT, s3_endpoint);
-                detailMap.put(ApiConstants.S3_HTTPS_FLAG, String.valueOf(s3_https));
-                if (s3_connectiontimeout != null) {
-                    detailMap.put(ApiConstants.S3_CONNECTION_TIMEOUT, String.valueOf(s3_connectiontimeout));
-                }
-                if (s3_retry != null) {
-                    detailMap.put(ApiConstants.S3_MAX_ERROR_RETRY, String.valueOf(s3_retry));
-                }
-                if (s3_sockettimeout != null) {
-                    detailMap.put(ApiConstants.S3_SOCKET_TIMEOUT, String.valueOf(s3_sockettimeout));
-                }
-
-                Iterator<String> keyIt = detailMap.keySet().iterator();
-                while (keyIt.hasNext()) {
-                    String key = keyIt.next();
-                    String val = detailMap.get(key);
-                    storeDetailInsert.setLong(1, storeId);
-                    storeDetailInsert.setString(2, key);
-                    storeDetailInsert.setString(3, val);
-                    storeDetailInsert.executeUpdate();
-                }
-                s3_store_id_map.put(s3_id, storeId);
-            }
-
-            // migrate SWIFT secondary storage
-            storeInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
-            swiftQuery = conn
-                    .prepareStatement("select id, uuid, url, account, username, key, created from `cloud`.`swift`");
-            rs = swiftQuery.executeQuery();
-
-            while (rs.next()) {
-                Long swift_id = rs.getLong("id");
-                String swift_uuid = rs.getString("uuid");
-                String swift_url = rs.getString("url");
-                String swift_account = rs.getString("account");
-                String swift_username = rs.getString("username");
-                String swift_key = rs.getString("key");
-                Date swift_created = rs.getDate("created");
-
-                // insert entry in image_store table and image_store_details
-                // table and store swift_id and store_id mapping
-                storeInsert.setString(1, swift_uuid);
-                storeInsert.setString(2, swift_uuid);
-                storeInsert.setString(3, swift_url);
-                storeInsert.setDate(4, swift_created);
-                storeInsert.executeUpdate();
-
-                storeQuery.setString(1, swift_uuid);
-                storeInfo = storeQuery.executeQuery();
-                if (storeInfo.next()) {
-                    storeId = storeInfo.getLong("id");
-                }
-
-                Map<String, String> detailMap = new HashMap<String, String>();
-                detailMap.put(ApiConstants.ACCOUNT, swift_account);
-                detailMap.put(ApiConstants.USERNAME, swift_username);
-                detailMap.put(ApiConstants.KEY, swift_key);
-
-                Iterator<String> keyIt = detailMap.keySet().iterator();
-                while (keyIt.hasNext()) {
-                    String key = keyIt.next();
-                    String val = detailMap.get(key);
-                    storeDetailInsert.setLong(1, storeId);
-                    storeDetailInsert.setString(2, key);
-                    storeDetailInsert.setString(3, val);
-                    storeDetailInsert.executeUpdate();
-                }
-                swift_store_id_map.put(swift_id, storeId);
-            }
-            */
-
             // migrate NFS secondary storage, for nfs, keep previous host_id as the store_id
             storeInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', 'Image', ?, ?, ?)");
+                    .prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
             nfsQuery = conn
                     .prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
             rs = nfsQuery.executeQuery();
@@ -1861,23 +1781,16 @@ public class Upgrade410to420 implements DbUpgrade {
                 storeInsert.setString(3, nfs_uuid);
                 storeInsert.setString(4, nfs_url);
                 storeInsert.setInt(5, nfs_dcid);
-                storeInsert.setString(6, nfs_parent);
+                storeInsert.setString(6,  store_role);
+                storeInsert.setString(7, nfs_parent);
                 if (nfs_totalsize != null){
-                    storeInsert.setLong(7,  nfs_totalsize);
+                    storeInsert.setLong(8,  nfs_totalsize);
                 }
                 else{
-                    storeInsert.setNull(7, Types.BIGINT);
+                    storeInsert.setNull(8, Types.BIGINT);
                 }
-                storeInsert.setDate(8, nfs_created);
+                storeInsert.setDate(9, nfs_created);
                 storeInsert.executeUpdate();
-
-                storeQuery.setString(1, nfs_uuid);
-                storeInfo = storeQuery.executeQuery();
-                if (storeInfo.next()) {
-                    storeId = storeInfo.getLong("id");
-                }
-
-                //host_store_id_map.put(nfs_id, storeId);
             }
         }
         catch (SQLException e) {
@@ -1899,17 +1812,11 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (storeDetailInsert != null) {
                     storeDetailInsert.close();
                 }
-                if (storeQuery != null) {
-                    storeQuery.close();
-                }
-                if (swiftQuery != null) {
-                    swiftQuery.close();
-                }
-                if (s3Query != null) {
-                    s3Query.close();
-                }
                 if (nfsQuery != null) {
                     nfsQuery.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
                 }
             } catch (SQLException e) {
             }
@@ -2016,6 +1923,449 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
         s_logger.debug("Completed updating snapshot_store_ref table from snapshots table");
+    }
+
+    // migrate secondary storages S3 from s3 tables to image_store table
+    private void migrateS3ToImageStore(Connection conn) {
+        PreparedStatement storeInsert = null;
+        PreparedStatement storeDetailInsert = null;
+        PreparedStatement storeQuery = null;
+        PreparedStatement s3Query = null;
+        ResultSet rs = null;
+        ResultSet storeInfo = null;
+        Long storeId = null;
+        Map<Long, Long> s3_store_id_map = new HashMap<Long, Long>();
+
+        s_logger.debug("Migrating S3 to image store");
+        try {
+            storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
+            storeDetailInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+
+            // migrate S3 to image_store
+            storeInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
+            s3Query = conn
+                    .prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, max_error_retry, socket_timeout, created from `cloud`.`s3`");
+            rs = s3Query.executeQuery();
+
+            while (rs.next()) {
+                Long s3_id = rs.getLong("id");
+                String s3_uuid = rs.getString("uuid");
+                String s3_accesskey = rs.getString("access_key");
+                String s3_secretkey = rs.getString("secret_key");
+                String s3_endpoint = rs.getString("end_point");
+                String s3_bucket = rs.getString("bucket");
+                boolean s3_https = rs.getObject("https") != null ? (rs.getInt("https") == 0 ? false : true) : false;
+                Integer s3_connectiontimeout = rs.getObject("connection_timeout") != null ? rs.getInt("connection_timeout") : null;
+                Integer s3_retry = rs.getObject("max_error_retry") != null ? rs.getInt("max_error_retry") : null;
+                Integer s3_sockettimeout = rs.getObject("socket_timeout") != null ? rs.getInt("socket_timeout") : null;
+                Date s3_created = rs.getDate("created");
+
+                // insert entry in image_store table and image_store_details
+                // table and store s3_id and store_id mapping
+
+                storeInsert.setString(1, s3_uuid);
+                storeInsert.setString(2, s3_uuid);
+                storeInsert.setString(3, s3_https ? "https" : "http");
+                storeInsert.setDate(4, s3_created);
+                storeInsert.executeUpdate();
+
+                storeQuery.setString(1, s3_uuid);
+                storeInfo = storeQuery.executeQuery();
+                if (storeInfo.next()) {
+                    storeId = storeInfo.getLong("id");
+                }
+
+                Map<String, String> detailMap = new HashMap<String, String>();
+                detailMap.put(ApiConstants.S3_ACCESS_KEY, s3_accesskey);
+                detailMap.put(ApiConstants.S3_SECRET_KEY, s3_secretkey);
+                detailMap.put(ApiConstants.S3_BUCKET_NAME, s3_bucket);
+                detailMap.put(ApiConstants.S3_END_POINT, s3_endpoint);
+                detailMap.put(ApiConstants.S3_HTTPS_FLAG, String.valueOf(s3_https));
+                if (s3_connectiontimeout != null) {
+                    detailMap.put(ApiConstants.S3_CONNECTION_TIMEOUT, String.valueOf(s3_connectiontimeout));
+                }
+                if (s3_retry != null) {
+                    detailMap.put(ApiConstants.S3_MAX_ERROR_RETRY, String.valueOf(s3_retry));
+                }
+                if (s3_sockettimeout != null) {
+                    detailMap.put(ApiConstants.S3_SOCKET_TIMEOUT, String.valueOf(s3_sockettimeout));
+                }
+
+                Iterator<String> keyIt = detailMap.keySet().iterator();
+                while (keyIt.hasNext()) {
+                    String key = keyIt.next();
+                    String val = detailMap.get(key);
+                    storeDetailInsert.setLong(1, storeId);
+                    storeDetailInsert.setString(2, key);
+                    storeDetailInsert.setString(3, val);
+                    storeDetailInsert.executeUpdate();
+                }
+                s3_store_id_map.put(s3_id, storeId);
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to migrate S3 secondary storages." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (storeInfo != null) {
+                    storeInfo.close();
+                }
+
+                if (storeInsert != null) {
+                    storeInsert.close();
+                }
+                if (storeDetailInsert != null) {
+                    storeDetailInsert.close();
+                }
+                if (storeQuery != null) {
+                    storeQuery.close();
+                }
+                if (s3Query != null) {
+                    s3Query.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+        s_logger.debug("Migrating template_s3_ref to template_store_ref");
+        migrateTemplateS3Ref(conn, s3_store_id_map);
+
+        s_logger.debug("Migrating s3 backedup snapshots to snapshot_store_ref");
+        migrateSnapshotS3Ref(conn, s3_store_id_map);
+
+        s_logger.debug("Completed migrating S3 secondary storage to image store");
+    }
+
+    // migrate template_s3_ref to template_store_ref
+    private void migrateTemplateS3Ref(Connection conn, Map<Long, Long> s3StoreMap) {
+        PreparedStatement tmplStoreInsert = null;
+        PreparedStatement s3Query = null;
+        ResultSet rs = null;
+
+        s_logger.debug("Updating template_store_ref table from template_s3_ref table");
+        try{
+            tmplStoreInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
+            s3Query = conn
+                    .prepareStatement("select template_s3_ref.s3_id, template_s3_ref.template_id, template_s3_ref.created, template_s3_ref.size, template_s3_ref.physical_size, vm_template.account_id from `cloud`.`template_s3_ref`, `cloud`.`vm_template` where vm_template.id = template_s3_ref.template_id");
+            rs = s3Query.executeQuery();
+
+            while (rs.next()) {
+                Long s3_id = rs.getLong("s3_id");
+                Long s3_tmpl_id = rs.getLong("template_id");
+                Date s3_created = rs.getDate("created");
+                Long s3_size = rs.getObject("size") != null ? rs.getLong("size") : null;
+                Long s3_psize = rs.getObject("physical_size") != null ? rs.getLong("physical_size") : null;
+                Long account_id = rs.getLong("account_id");
+
+                tmplStoreInsert.setLong(1, s3StoreMap.get(s3_id));
+                tmplStoreInsert.setLong(2, s3_tmpl_id);
+                tmplStoreInsert.setDate(3, s3_created);
+                if (s3_size != null) {
+                    tmplStoreInsert.setLong(4, s3_size);
+                } else {
+                    tmplStoreInsert.setNull(4, Types.BIGINT);
+                }
+                if (s3_psize != null) {
+                    tmplStoreInsert.setLong(5, s3_psize);
+                } else {
+                    tmplStoreInsert.setNull(5, Types.BIGINT);
+                }
+                String path = "template/tmpl/" + account_id + "/" + s3_tmpl_id;
+                tmplStoreInsert.setString(6,  path);
+                tmplStoreInsert.setString(7,  path);
+                tmplStoreInsert.executeUpdate();
+            }
+        }
+        catch (SQLException e) {
+            String msg = "Unable to migrate template_s3_ref." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (tmplStoreInsert != null) {
+                    tmplStoreInsert.close();
+                }
+                if (s3Query != null) {
+                    s3Query.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed migrating template_s3_ref table.");
+    }
+
+    // migrate some entry contents of snapshots to snapshot_store_ref
+    private void migrateSnapshotS3Ref(Connection conn, Map<Long, Long> s3StoreMap) {
+        PreparedStatement snapshotStoreInsert = null;
+        PreparedStatement s3Query = null;
+        ResultSet rs = null;
+
+
+        s_logger.debug("Updating snapshot_store_ref table from snapshots table for s3");
+        try {
+            snapshotStoreInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
+            s3Query = conn
+                    .prepareStatement("select s3_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and s3_id is not null and removed is null");
+            rs = s3Query.executeQuery();
+
+            while (rs.next()) {
+                Long s3_id = rs.getLong("s3_id");
+                Long snapshot_id = rs.getLong("id");
+                Date s3_created = rs.getDate("created");
+                Long s3_size = rs.getObject("size") != null ? rs.getLong("size") : null;
+                Long s3_prev_id = rs.getObject("prev_snap_id") != null ? rs.getLong("prev_snap_id") : null;
+                String install_path = rs.getString(6);
+                Long s3_vol_id = rs.getLong("volume_id");
+
+                snapshotStoreInsert.setLong(1, s3StoreMap.get(s3_id));
+                snapshotStoreInsert.setLong(2, snapshot_id);
+                snapshotStoreInsert.setDate(3, s3_created);
+                if (s3_size != null) {
+                    snapshotStoreInsert.setLong(4, s3_size);
+                } else {
+                    snapshotStoreInsert.setNull(4, Types.BIGINT);
+                }
+                if (s3_prev_id != null) {
+                    snapshotStoreInsert.setLong(5, s3_prev_id);
+                } else {
+                    snapshotStoreInsert.setNull(5, Types.BIGINT);
+                }
+                snapshotStoreInsert.setString(6, install_path);
+                snapshotStoreInsert.setLong(7, s3_vol_id);
+                snapshotStoreInsert.executeUpdate();
+            }
+        }
+        catch (SQLException e) {
+            String msg = "Unable to migrate s3 backedup snapshots to snapshot_store_ref." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try{
+                if (snapshotStoreInsert != null) {
+                    snapshotStoreInsert.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed updating snapshot_store_ref table from s3 snapshots entries");
+    }
+
+    // migrate secondary storages Swift from swift tables to image_store table
+    private void migrateSwiftToImageStore(Connection conn) {
+        PreparedStatement storeInsert = null;
+        PreparedStatement storeDetailInsert = null;
+        PreparedStatement storeQuery = null;
+        PreparedStatement swiftQuery = null;
+        ResultSet rs = null;
+        ResultSet storeInfo = null;
+        Long storeId = null;
+        Map<Long, Long> swift_store_id_map = new HashMap<Long, Long>();
+
+        s_logger.debug("Migrating Swift to image store");
+        try {
+            storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
+            storeDetailInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+
+            // migrate SWIFT secondary storage
+            storeInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
+            swiftQuery = conn.prepareStatement("select id, uuid, url, account, username, swift.key, created from `cloud`.`swift`");
+            rs = swiftQuery.executeQuery();
+
+            while (rs.next()) {
+                Long swift_id = rs.getLong("id");
+                String swift_uuid = rs.getString("uuid");
+                String swift_url = rs.getString("url");
+                String swift_account = rs.getString("account");
+                String swift_username = rs.getString("username");
+                String swift_key = rs.getString("key");
+                Date swift_created = rs.getDate("created");
+
+                // insert entry in image_store table and image_store_details
+                // table and store swift_id and store_id mapping
+                storeInsert.setString(1, swift_uuid);
+                storeInsert.setString(2, swift_uuid);
+                storeInsert.setString(3, swift_url);
+                storeInsert.setDate(4, swift_created);
+                storeInsert.executeUpdate();
+
+                storeQuery.setString(1, swift_uuid);
+                storeInfo = storeQuery.executeQuery();
+                if (storeInfo.next()) {
+                    storeId = storeInfo.getLong("id");
+                }
+
+                Map<String, String> detailMap = new HashMap<String, String>();
+                detailMap.put(ApiConstants.ACCOUNT, swift_account);
+                detailMap.put(ApiConstants.USERNAME, swift_username);
+                detailMap.put(ApiConstants.KEY, swift_key);
+
+                Iterator<String> keyIt = detailMap.keySet().iterator();
+                while (keyIt.hasNext()) {
+                    String key = keyIt.next();
+                    String val = detailMap.get(key);
+                    storeDetailInsert.setLong(1, storeId);
+                    storeDetailInsert.setString(2, key);
+                    storeDetailInsert.setString(3, val);
+                    storeDetailInsert.executeUpdate();
+                }
+                swift_store_id_map.put(swift_id, storeId);
+            }
+        }
+        catch (SQLException e) {
+            String msg = "Unable to migrate swift secondary storages." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (storeInfo != null) {
+                    storeInfo.close();
+                }
+
+                if (storeInsert != null) {
+                    storeInsert.close();
+                }
+                if (storeDetailInsert != null) {
+                    storeDetailInsert.close();
+                }
+                if (storeQuery != null) {
+                    storeQuery.close();
+                }
+                if (swiftQuery != null) {
+                    swiftQuery.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+        s_logger.debug("Migrating template_swift_ref to template_store_ref");
+        migrateTemplateSwiftRef(conn, swift_store_id_map);
+
+        s_logger.debug("Migrating swift backedup snapshots to snapshot_store_ref");
+        migrateSnapshotSwiftRef(conn, swift_store_id_map);
+
+        s_logger.debug("Completed migrating Swift secondary storage to image store");
+    }
+
+    // migrate template_s3_ref to template_store_ref
+    private void migrateTemplateSwiftRef(Connection conn, Map<Long, Long> swiftStoreMap) {
+        PreparedStatement tmplStoreInsert = null;
+        PreparedStatement s3Query = null;
+        ResultSet rs = null;
+
+        s_logger.debug("Updating template_store_ref table from template_swift_ref table");
+        try {
+            tmplStoreInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
+            s3Query = conn.prepareStatement("select swift_id, template_id, created, path, size, physical_size from `cloud`.`template_swift_ref`");
+            rs = s3Query.executeQuery();
+
+            while (rs.next()) {
+                Long swift_id = rs.getLong("swift_id");
+                Long tmpl_id = rs.getLong("template_id");
+                Date created = rs.getDate("created");
+                String path = rs.getString("path");
+                Long size = rs.getObject("size") != null ? rs.getLong("size") : null;
+                Long psize = rs.getObject("physical_size") != null ? rs.getLong("physical_size") : null;
+
+                tmplStoreInsert.setLong(1, swiftStoreMap.get(swift_id));
+                tmplStoreInsert.setLong(2, tmpl_id);
+                tmplStoreInsert.setDate(3, created);
+                if (size != null) {
+                    tmplStoreInsert.setLong(4, size);
+                } else {
+                    tmplStoreInsert.setNull(4, Types.BIGINT);
+                }
+                if (psize != null) {
+                    tmplStoreInsert.setLong(5, psize);
+                } else {
+                    tmplStoreInsert.setNull(5, Types.BIGINT);
+                }
+                tmplStoreInsert.setString(6, path);
+                tmplStoreInsert.setString(7, path);
+                tmplStoreInsert.executeUpdate();
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to migrate template_swift_ref." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (tmplStoreInsert != null) {
+                    tmplStoreInsert.close();
+                }
+                if (s3Query != null) {
+                    s3Query.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed migrating template_swift_ref table.");
+    }
+
+    // migrate some entry contents of snapshots to snapshot_store_ref
+    private void migrateSnapshotSwiftRef(Connection conn, Map<Long, Long> swiftStoreMap) {
+        PreparedStatement snapshotStoreInsert = null;
+        PreparedStatement s3Query = null;
+        ResultSet rs = null;
+
+        s_logger.debug("Updating snapshot_store_ref table from snapshots table for swift");
+        try {
+            snapshotStoreInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
+            s3Query = conn
+                    .prepareStatement("select swift_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and swift_id is not null and removed is null");
+            rs = s3Query.executeQuery();
+
+            while (rs.next()) {
+                Long swift_id = rs.getLong("swift_id");
+                Long snapshot_id = rs.getLong("id");
+                Date created = rs.getDate("created");
+                Long size = rs.getLong("size");
+                Long prev_id = rs.getLong("prev_snap_id");
+                String install_path = rs.getString(6);
+                Long vol_id = rs.getLong("volume_id");
+
+                snapshotStoreInsert.setLong(1, swiftStoreMap.get(swift_id));
+                snapshotStoreInsert.setLong(2, snapshot_id);
+                snapshotStoreInsert.setDate(3, created);
+                snapshotStoreInsert.setLong(4, size);
+                snapshotStoreInsert.setLong(5, prev_id);
+                snapshotStoreInsert.setString(6, install_path);
+                snapshotStoreInsert.setLong(7, vol_id);
+                snapshotStoreInsert.executeUpdate();
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to migrate swift backedup snapshots to snapshot_store_ref." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (snapshotStoreInsert != null) {
+                    snapshotStoreInsert.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed updating snapshot_store_ref table from swift snapshots entries");
     }
 
     private void fixNiciraKeys(Connection conn) {
