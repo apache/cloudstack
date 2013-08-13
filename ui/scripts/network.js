@@ -136,24 +136,24 @@
         ipAddress: function(args) {
             var allowedActions = args.context.actions;
             var disallowedActions = [];
-            var item = args.context.item;
-            var status = item.state;
+            var ipObj = args.context.item;
+            var status = ipObj.state;
 
             if (status == 'Destroyed' ||
                 status == 'Releasing' ||
                 status == 'Released' ||
                 status == 'Creating' ||
                 status == 'Allocating' ||
-                item.account == 'system' ||
-                item.issystem == true) {
+                ipObj.account == 'system' ||
+                ipObj.issystem == true) {
                 return [];
             }
             
-            if (item.networkOfferingConserveMode == false) {
+            if (args.context.networks[0].networkofferingconservemode == false) {
                 /*
 				(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
 				*/
-                if (item.issourcenat == true) {
+                if (ipObj.issourcenat == true) {
                     disallowedActions.push('enableStaticNAT');
                     disallowedActions.push('enableVPN');
                 }
@@ -165,11 +165,11 @@
 				3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
 				4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
 				*/
-                else { //item.issourcenat == false
-                    if (item.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+                else { //ipObj.issourcenat == false
+                    if (ipObj.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
                         disallowedActions.push('enableVPN');
                     }
-                    if (item.vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+                    if (ipObj.vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
                         disallowedActions.push('enableStaticNAT');
                     }
 
@@ -177,7 +177,7 @@
                     $.ajax({
                         url: createURL('listPortForwardingRules'),
                         data: {
-                            ipaddressid: item.id,
+                            ipaddressid: ipObj.id,
                             listAll: true
                         },
                         dataType: 'json',
@@ -195,7 +195,7 @@
                     $.ajax({
                         url: createURL('listLoadBalancerRules'),
                         data: {
-                            publicipid: item.id,
+                            publicipid: ipObj.id,
                             listAll: true
                         },
                         dataType: 'json',
@@ -211,24 +211,24 @@
                 }
             }
 
-            if (item.isstaticnat) {
+            if (ipObj.isstaticnat) {
                 disallowedActions.push('enableStaticNAT');
             } else {
                 disallowedActions.push('disableStaticNAT');
             }
 
-            if (item.networkOfferingHavingVpnService == true) {
-                if (item.vpnenabled) {
+            if (ipObj.networkOfferingHavingVpnService == true) {
+                if (ipObj.vpnenabled) {
                     disallowedActions.push('enableVPN');
                 } else {
                     disallowedActions.push('disableVPN');
                 }
-            } else { //item.networkOfferingHavingVpnService == false
+            } else { //ipObj.networkOfferingHavingVpnService == false
                 disallowedActions.push('disableVPN');
                 disallowedActions.push('enableVPN');
             }
 
-            if (item.issourcenat) {
+            if (ipObj.issourcenat) {
                 disallowedActions.push('enableStaticNAT');
                 disallowedActions.push('disableStaticNAT');
                 disallowedActions.push('remove');
@@ -2706,7 +2706,7 @@
                                                 });
                                             }
                                         }
-                                        if (args.context.ipAddresses[0].networkOfferingConserveMode == false) {
+                                        if (args.context.networks[0].networkofferingconservemode == false) {
                                             /*
                        (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
                        */
@@ -5961,24 +5961,8 @@
 						};
 					}
 				});
-			}
-			
-			//get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
-            $.ajax({
-                url: createURL('listNetworkOfferings'),
-                data: {
-                    id: args.context.networks[0].networkofferingid
-                },
-                async: false,
-                success: function(json) {
-				    if(json.listnetworkofferingsresponse.networkoffering != null) {
-						var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
-						ipObj.networkOfferingConserveMode = networkOfferingObj.conservemode;
-					}
-                }
-            });
-        } else { //from VPC section
-            ipObj.networkOfferingConserveMode = false; //conserve mode of IP in VPC is always off, so hardcode it as false
+			}			
+        } else { //from VPC section            
             ipObj.networkOfferingHavingVpnService = false; //VPN is not supported in IP in VPC, so hardcode it as false
         }
     }
