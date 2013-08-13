@@ -16,6 +16,17 @@
 // under the License.
 package com.cloud.network.resource;
 
+import java.util.ArrayList;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
 import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.resource.config.autoscale.autoscalepolicy;
@@ -24,10 +35,31 @@ import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup_lbmonitor_binding;
-import com.citrix.netscaler.nitro.resource.config.gslb.*;
-import com.citrix.netscaler.nitro.resource.config.lb.*;
-import com.citrix.netscaler.nitro.resource.config.network.*;
-import com.citrix.netscaler.nitro.resource.config.ns.*;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbservice;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbservice_lbmonitor_binding;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbsite;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbsite_gslbservice_binding;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbvserver;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbvserver_domain_binding;
+import com.citrix.netscaler.nitro.resource.config.gslb.gslbvserver_gslbservice_binding;
+import com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable;
+import com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable_metric_binding;
+import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor;
+import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_metric_binding;
+import com.citrix.netscaler.nitro.resource.config.lb.lbvserver;
+import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding;
+import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_servicegroup_binding;
+import com.citrix.netscaler.nitro.resource.config.network.Interface;
+import com.citrix.netscaler.nitro.resource.config.network.inat;
+import com.citrix.netscaler.nitro.resource.config.network.rnat;
+import com.citrix.netscaler.nitro.resource.config.network.vlan;
+import com.citrix.netscaler.nitro.resource.config.network.vlan_interface_binding;
+import com.citrix.netscaler.nitro.resource.config.network.vlan_nsip_binding;
+import com.citrix.netscaler.nitro.resource.config.ns.nsconfig;
+import com.citrix.netscaler.nitro.resource.config.ns.nshardware;
+import com.citrix.netscaler.nitro.resource.config.ns.nsip;
+import com.citrix.netscaler.nitro.resource.config.ns.nstimer;
+import com.citrix.netscaler.nitro.resource.config.ns.nstimer_autoscalepolicy_binding;
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
@@ -35,12 +67,44 @@ import com.citrix.sdx.nitro.resource.config.device_profile;
 import com.citrix.sdx.nitro.resource.config.mps;
 import com.citrix.sdx.nitro.resource.config.ns;
 import com.citrix.sdx.nitro.resource.config.xen_vpx_image;
+import com.google.gson.Gson;
+
+import org.apache.cloudstack.api.ApiConstants;
+
 import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.*;
-import com.cloud.agent.api.routing.*;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
+import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
+import com.cloud.agent.api.MaintainAnswer;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.ReadyAnswer;
+import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
+import com.cloud.agent.api.routing.CreateLoadBalancerApplianceCommand;
+import com.cloud.agent.api.routing.DestroyLoadBalancerApplianceCommand;
+import com.cloud.agent.api.routing.GlobalLoadBalancerConfigAnswer;
+import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.HealthCheckLBConfigAnswer;
+import com.cloud.agent.api.routing.HealthCheckLBConfigCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SiteLoadBalancerConfig;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.LoadBalancerTO.*;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
+import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
+import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
+import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
+import com.cloud.agent.api.to.LoadBalancerTO.HealthCheckPolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -51,12 +115,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
-import com.google.gson.Gson;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
-
-import javax.naming.ConfigurationException;
-import java.util.*;
 
 class NitroError {
     static final int NS_RESOURCE_EXISTS = 273;
@@ -92,7 +150,7 @@ public class NetscalerResource implements ServerResource {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerResource.class);
     protected Gson _gson;
-    private String _objectNamePathSep = "-";
+    private final String _objectNamePathSep = "-";
 
     // interface to interact with VPX and MPX devices
     com.citrix.netscaler.nitro.service.nitro_service _netscalerService ;
@@ -2233,9 +2291,12 @@ public class NetscalerResource implements ServerResource {
                         }
                     }
                     // remove the server
-                    apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.delete(_netscalerService, server.get_name());
-                    if (apiCallResult.errorcode != 0) {
-                        throw new ExecutionException("Failed to remove server:" + server.get_name());
+                    // don't delete server which has no ip address (these servers are created by NS for autoscale
+                    if (server.get_ipaddress() != null) {
+                        apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.delete(_netscalerService, server.get_name());
+                        if (apiCallResult.errorcode != 0) {
+                            throw new ExecutionException("Failed to remove server:" + server.get_name());
+                        }
                     }
                 }
             }
