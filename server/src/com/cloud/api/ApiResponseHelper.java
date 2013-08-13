@@ -3349,27 +3349,30 @@ public class ApiResponseHelper implements ResponseGenerator {
 			//Snapshot Size
 			usageRecResponse.setSize(usageRecord.getSize());
 
-		} else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
-			//Load Balancer Policy ID
+        } else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
+            //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(lb.getUuid());
-		} else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
-			//Port Forwarding Rule ID
+            if(lb != null){
+                usageRecResponse.setUsageId(lb.getUuid());
+            }
+        } else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
+            //Port Forwarding Rule ID
             PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(pf.getUuid());
-
+            if(pf != null){
+                usageRecResponse.setUsageId(pf.getUuid());
+            }
 		} else if(usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING){
 			//Network Offering Id
 			NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
 			usageRecResponse.setOfferingId(netOff.getUuid());
 			//is Default
 			usageRecResponse.setDefault((usageRecord.getUsageId() == 1)? true:false);
-
-		} else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
-			//VPN User ID
+        } else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
+            //VPN User ID
             VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
+            if(vpnUser != null){
             usageRecResponse.setUsageId(vpnUser.getUuid());
-
+            }
 		} else if(usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP){
 			//Security Group Id
 			SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
