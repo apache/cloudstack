@@ -1139,6 +1139,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } catch (ConcurrentOperationException e) {
                 s_logger.debug("move volume failed", e);
                 throw new CloudRuntimeException("move volume failed", e);
+            } catch (StorageUnavailableException e) {
+                s_logger.debug("move volume failed", e);
+                throw new CloudRuntimeException("move volume failed", e);
             }
         }
 
@@ -1344,7 +1347,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (liveMigrateVolume) {
             newVol = liveMigrateVolume(vol, destPool);
         } else {
-            newVol = _volumeMgr.migrateVolume(vol, destPool);
+            try {
+                newVol = _volumeMgr.migrateVolume(vol, destPool);
+            } catch (StorageUnavailableException e) {
+               s_logger.debug("Failed to migrate volume", e);
+            }
         }
         return newVol;
     }
