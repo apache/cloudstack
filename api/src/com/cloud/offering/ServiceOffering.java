@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 /**
  * offered.
  */
-public interface ServiceOffering extends InfrastructureEntity, InternalIdentity, Identity {
+public interface ServiceOffering extends DiskOffering, InfrastructureEntity, InternalIdentity, Identity {
     public static final String consoleProxyDefaultOffUniqueName = "Cloud.com-ConsoleProxy";
     public static final String ssvmDefaultOffUniqueName = "Cloud.com-SecondaryStorage";
     public static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
@@ -37,20 +37,25 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
         shared
     }
 
+    @Override
     String getDisplayText();
 
+    @Override
     Date getCreated();
 
+    @Override
     String getTags();
 
     /**
      * @return user readable description
      */
+    @Override
     String getName();
 
     /**
      * @return is this a system service offering
      */
+    @Override
     boolean getSystemUse();
 
     /**
@@ -96,8 +101,10 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     /**
      * @return whether or not the service offering requires local storage
      */
+    @Override
     boolean getUseLocalStorage();
 
+    @Override
     Long getDomainId();
 
     /**

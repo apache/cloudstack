@@ -65,6 +65,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getMaxIops();
 
+    boolean isRecreatable();
+
     void setBytesReadRate(Long bytesReadRate);
 
     Long getBytesReadRate();
