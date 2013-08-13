@@ -3112,12 +3112,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
                     continue;
                 }
-                // from here, subnet overlaps
+                // from here, subnet overlaps               
                 if ( !vlanId.equals(vlan.getVlanTag()) ) {
-                    throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
-                            + " in zone " + zone.getName()
-                            + " has overlapped with the subnet. Please specify a different gateway/netmask.");
+                    boolean overlapped = false;
+                    if( network.getTrafficType() == TrafficType.Public ) {
+                        overlapped = true;
+                    } else {
+                        Long nwId = vlan.getNetworkId();
+                        if ( nwId != null ) {
+                            Network nw = _networkModel.getNetwork(nwId);
+                            if ( nw != null && nw.getTrafficType() == TrafficType.Public ) {
+                                overlapped = true;
+                            }
+                        }
+                        
+                    }
+                    if ( overlapped ) {
+                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+                                + " in zone " + zone.getName()
+                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
+                    }
                 }
+
                 if ( vlan.getNetworkId() != networkId) {
                     throw new InvalidParameterValueException("This subnet is overlapped with subnet in other network " + vlan.getNetworkId()
                             + " in zone " + zone.getName()
