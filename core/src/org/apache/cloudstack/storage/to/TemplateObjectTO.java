@@ -39,6 +39,7 @@ public class TemplateObjectTO implements DataTO {
     private String name;
     private String guestOsType;
     private Long size;
+    private Long physicalSize;
     private Hypervisor.HypervisorType hypervisorType;
 
     public TemplateObjectTO() {
@@ -198,6 +199,14 @@ public class TemplateObjectTO implements DataTO {
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    public Long getPhysicalSize() {
+        return physicalSize;
+    }
+
+    public void setPhysicalSize(Long physicalSize) {
+        this.physicalSize = physicalSize;
     }
 
     @Override
