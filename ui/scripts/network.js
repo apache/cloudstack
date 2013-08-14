@@ -2657,7 +2657,7 @@
                                         var havingLbService = false;
                                         var havingVpnService = false;
 
-                                        if ('networks' in args.context && args.context.networks[0].vpcid == null) { //a non-VPC network from Guest Network section
+                                        if (!('vpc' in args.context)) { //from Guest Network section
                                             var services = args.context.networks[0].service;
                                             if(services != null) {
                                             	for(var i = 0; i < services.length; i++) {                                    		
@@ -2672,7 +2672,8 @@
                                                         havingVpnService = true;                                                                            		
                                             	}
                                             }  
-                                        } else { //a VPC network from Guest Network section or from VPC section
+                                        } else { //from VPC section
+                                        	//a VPC network from Guest Network section or from VPC section
                                             // Firewall is not supported in IP from VPC section
                                             // (because ACL has already supported in tier from VPC section)
                                             havingFirewallService = false;
@@ -2692,29 +2693,25 @@
                                                     },
                                                     async: false,
                                                     success: function(json) {
-                                                        var networkObj = json.listnetworksresponse.network[0];
-                                                        $.ajax({
-                                                            url: createURL("listNetworkOfferings&id=" + networkObj.networkofferingid),
-                                                            async: false,
-                                                            success: function(json) {
-                                                                var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
-                                                                $(networkoffering.service).each(function() {
-                                                                    var thisService = this;
-                                                                    if (thisService.name == "PortForwarding")
-                                                                        havingPortForwardingService = true;
-                                                                    if (thisService.name == "Lb")
-                                                                        havingLbService = true;
-                                                                });
-                                                            }
-                                                        });
+                                                        var networkObj = json.listnetworksresponse.network[0];                                                    
+                                                        var services = networkObj.service;
+                                                        if(services != null) {
+                                                        	for(var i = 0; i < services.length; i++) {
+                                                        		if (services[i].name == "PortForwarding")
+                                                                    havingPortForwardingService = true;
+                                                                if (services[i].name == "Lb")
+                                                                    havingLbService = true;
+                                                        	}
+                                                        }                                                
                                                     }
                                                 });
                                             }
                                         }
+                                        
                                         if (args.context.networks[0].networkofferingconservemode == false) {
                                             /*
-                       (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
-                       */
+					                        (1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
+					                        */
                                             if (args.context.ipAddresses[0].issourcenat) {
                                                 if (havingFirewallService == false) { //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
                                                     disallowedActions.push("firewall");
@@ -2725,12 +2722,12 @@
                                             }
 
                                             /*
-                       (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
-                       1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-                       2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-                       3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-                       4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-                       */
+					                        (2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
+					                        1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+					                        2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+					                        3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+					                        4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+					                        */
                                             else { //args.context.ipAddresses[0].issourcenat == false
                                                 if (havingFirewallService == false)
                                                     disallowedActions.push("firewall");

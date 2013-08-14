@@ -1155,7 +1155,7 @@
                                 forloadbalancing: true
                             },
                             success: function(json) {
-                                var items = json.listpublicipaddressesresponse;
+                                var items = json.listpublicipaddressesresponse.publicipaddress;
                                 args.response.success({
                                     data: items
                                 });
