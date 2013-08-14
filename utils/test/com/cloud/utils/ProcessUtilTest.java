@@ -36,7 +36,7 @@ public class ProcessUtilTest {
 
     @Before
     public void setup() throws IOException {
-        pidFile = File.createTempFile("test", ".pid", new File("/var/run"));
+        pidFile = File.createTempFile("test", ".pid");
     }
 
     @After
