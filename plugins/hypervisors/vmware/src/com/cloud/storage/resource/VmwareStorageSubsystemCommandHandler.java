@@ -29,14 +29,16 @@ import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
-
+    private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
 
@@ -125,7 +127,17 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 newSnapshot.setPath(newSnapshot.getPath() + ".ova");
                 newSnapshot.setDataStore(cmd.getCacheTO().getDataStore());
                 CopyCommand newCmd = new CopyCommand(newSnapshot, destData, cmd.getWait(), cmd.executeInSequence());
-                return storageResource.defaultAction(newCmd);
+                Answer result = storageResource.defaultAction(newCmd);
+
+                //clean up data on staging area
+                try {
+                    newSnapshot.setPath(path);
+                    DeleteCommand deleteCommand = new DeleteCommand(newSnapshot);
+                    storageResource.defaultAction(deleteCommand);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to clean up staging area:", e);
+                }
+                return result;
             }
         }
 
