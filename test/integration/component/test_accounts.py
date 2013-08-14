@@ -665,12 +665,12 @@ class TestTemplateHierarchy(cloudstackTestCase):
         self.assertEqual(
                             isinstance(templates, list),
                             True,
-                            "Check List templates for a valid response"
+                            "Template response %s is not a list" % templates
                         )
         self.assertNotEqual(
                             len(templates),
                             0,
-                            "Check List Template response"
+                            "No templates found"
                             )
 
         for template in templates:
@@ -691,12 +691,12 @@ class TestTemplateHierarchy(cloudstackTestCase):
         self.assertEqual(
                             isinstance(templates, list),
                             True,
-                            "Check List templates for a valid response"
+                            "Template response %s is not a list" % templates
                         )
         self.assertNotEqual(
                             len(templates),
                             0,
-                            "Check List Service Offerings response"
+                            "No templates found"
                             )
 
         for template in templates:
