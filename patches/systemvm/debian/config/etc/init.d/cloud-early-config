@@ -724,6 +724,8 @@ setup_dnsmasq() {
       then
        echo "$ETH0_IP6 data-server" >> /etc/hosts
   fi
+   sed -i -e "/^dhcp-client-update/d" /etc/dnsmasq.conf
+   echo 'dhcp-client-update' >> /etc/dnsmasq.conf
 }
 
 setup_sshd(){
