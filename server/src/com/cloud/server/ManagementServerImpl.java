@@ -3254,6 +3254,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Account caller = UserContext.current().getCaller();
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
+        boolean KVMSnapshotEnabled = false;
         String supportELB = "false";
         List<NetworkVO> networks = _networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
@@ -3269,6 +3270,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         long diskOffMaxSize = Long.valueOf(_configDao.getValue(Config.CustomDiskOfferingMaxSize.key()));
+        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
         String userPublicTemplateEnabled = _configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), caller.getId());
 
@@ -3285,6 +3287,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
+        capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

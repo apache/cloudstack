@@ -46,6 +46,9 @@ public class CapabilitiesResponse extends BaseResponse {
             "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
 
+    @SerializedName("KVMsnapshotenabled") @Param(description = "true if snapshot is supported for KVM host, false otherwise")
+    private boolean KVMSnapshotEnabled;
+
     @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
     private Integer apiLimitInterval;
 
@@ -79,6 +82,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setDiskOffMaxSize(Long diskOffMaxSize) {
         this.diskOffMaxSize = diskOffMaxSize;
+    }
+
+    public void setKVMSnapshotEnabled(boolean KVMSnapshotEnabled) {
+        this.KVMSnapshotEnabled = KVMSnapshotEnabled;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {
