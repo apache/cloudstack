@@ -66,7 +66,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
         fixZoneUsingExternalDevices(conn);
-        updateSystemVms(conn);
+//        updateSystemVms(conn);
         fixForeignKeys(conn);
     }
 
