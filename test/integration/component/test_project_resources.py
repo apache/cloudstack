@@ -202,7 +202,7 @@ class TestOfferings(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created accounts, domains etc
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
