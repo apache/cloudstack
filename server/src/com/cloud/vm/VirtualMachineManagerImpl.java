@@ -2913,8 +2913,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
                     return null;
                 }
-            }finally{
-                if(!result){
+            } finally {
+                if (!result){
+                    s_logger.debug("Removing nic " + nic + " from vm " + vmProfile.getVirtualMachine()
+                            + " as nic plug failed on the backend");
                     _networkMgr.removeNic(vmProfile, _nicsDao.findById(nic.getId()));
                 }
             }

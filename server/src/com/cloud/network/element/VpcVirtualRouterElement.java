@@ -464,7 +464,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         } else {
             return true;
         }
-
     }
 
 

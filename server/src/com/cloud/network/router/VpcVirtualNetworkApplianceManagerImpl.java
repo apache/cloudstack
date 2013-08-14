@@ -295,23 +295,27 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return false;
         }
         
-        //Check if router is a part of the Guest network
-        if (!_networkModel.isVmPartOfNetwork(router.getId(), network.getId())) {
-            s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
-            return true;
-        }
-        
-        boolean result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null));
-        if (!result) {
-            s_logger.warn("Failed to destroy guest network config " + network + " on router " + router);
-            return false;
-        }
-        
-        result = result && _itMgr.removeVmFromNetwork(router, network, null);
-        
-        if (result) {
+        boolean result = true;
+        try {
+            //Check if router is a part of the Guest network
+            if (!_networkModel.isVmPartOfNetwork(router.getId(), network.getId())) {
+                s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
+                return result;
+            }
+            
+            result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null));
+            if (!result) {
+                s_logger.warn("Failed to destroy guest network config " + network + " on router " + router);
+                return false;
+            }
+            
+            result = result && _itMgr.removeVmFromNetwork(router, network, null);
+        } finally {
+            if (result) {
                 _routerDao.removeRouterFromGuestNetwork(router.getId(), network.getId());
             }
+        }
+        
         return result;
     }
     
