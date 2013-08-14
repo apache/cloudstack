@@ -737,13 +737,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             final String bucket = s3.getBucketName();
             File srcFile = _storage.getFile(templatePath);
+            // guard the case where templatePath does not have file extension, since we are not completely sure
+            // about hypervisor, so we check each extension
             if (!srcFile.exists()) {
                 srcFile = _storage.getFile(templatePath + ".qcow2");
                 if (!srcFile.exists()) {
-                    return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                    srcFile = _storage.getFile(templatePath + ".vhd");
+                    if (!srcFile.exists()) {
+                        srcFile = _storage.getFile(templatePath + ".ova");
+                        if (!srcFile.exists()) {
+                            return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                        }
+                    }
                 }
             }
-            ImageFormat format = this.getTemplateFormat(templatePath);
+            ImageFormat format = this.getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
             putFile(s3, srcFile, bucket, key);
 
@@ -1386,7 +1394,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM) {
-           return new ListTemplateAnswer(null, null);
+            return new ListTemplateAnswer(null, null);
         }
 
         DataStoreTO store = cmd.getDataStore();
