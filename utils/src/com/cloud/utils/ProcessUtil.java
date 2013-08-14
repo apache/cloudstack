@@ -54,7 +54,7 @@ public class ProcessUtil {
 				finputstream.close();
 				dir = props.getProperty("paths.pid");
 				if (dir == null) {
-					dir = "/var/run";
+					dir = pidDir==null?"/var/run":pidDir;
 				}
 			}
 		} catch (IOException e) {
