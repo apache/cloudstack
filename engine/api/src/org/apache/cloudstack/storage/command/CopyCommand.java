@@ -37,6 +37,7 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         this.destTO = destData;
         this.setWait(timeout);
         this.executeInSequence = executeInSequence; // default is to run in parallel, so false here
+/*        
         // special handling for vmware parallel vm deployment bug https://issues.apache.org/jira/browse/CLOUDSTACK-3568
         if (srcTO instanceof TemplateObjectTO && destTO instanceof VolumeObjectTO) {
             // create a volume wrapper vm from a template on primary storage
@@ -47,7 +48,7 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
                 this.executeInSequence = true;
             }
         }
-
+*/
     }
 
     public DataTO getDestTO() {

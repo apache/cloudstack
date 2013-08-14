@@ -62,16 +62,13 @@ public class VmwareContextPool {
 				return null;
 
 			if(l.size() > 0) {
-				if(s_logger.isTraceEnabled())
-					s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
-				
 				VmwareContext context = l.remove(0);
 				context.setPoolInfo(this, poolKey);
+				
+				if(s_logger.isTraceEnabled())
+					s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
 				return context;
 			}
-			
-			if(s_logger.isTraceEnabled())
-				s_logger.trace("No VmwareContext is available from the idle pool: " + poolKey + ", create a new one and current outstanding count is: " + VmwareContext.getOutstandingContextCount());
 			
 			// TODO, we need to control the maximum number of outstanding VmwareContext object in the future
 			return null;

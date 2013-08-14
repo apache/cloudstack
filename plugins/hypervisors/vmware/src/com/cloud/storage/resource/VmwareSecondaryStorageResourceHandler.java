@@ -59,7 +59,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     private final Gson _gson;
     private final StorageSubsystemCommandHandler storageSubsystemHandler;
     
-    private ThreadLocal<VmwareContext> currentContext = new ThreadLocal<VmwareContext>();
+    private static ThreadLocal<VmwareContext> currentContext = new ThreadLocal<VmwareContext>();
 
     /*
      * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
