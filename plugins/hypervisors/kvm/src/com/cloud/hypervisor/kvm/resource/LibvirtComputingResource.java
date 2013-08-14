@@ -1741,9 +1741,10 @@ ServerResource {
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         NicTO nic = cmd.getNic();
         String vmName = cmd.getVmName();
+        Domain vm = null;
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-            Domain vm = getDomain(conn, vmName);
+            vm = getDomain(conn, vmName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
             Integer nicnum = 0;
             for (InterfaceDef pluggedNic : pluggedNics) {
@@ -1763,6 +1764,14 @@ ServerResource {
             String msg = " Plug Nic failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new PlugNicAnswer(cmd, false, msg);
+        } finally {
+            if (vm != null) {
+                try {
+                    vm.free();
+                } catch (LibvirtException l) {
+                    s_logger.trace("Ignoring libvirt error.", l);
+                }
+            }
         }
     }
 
@@ -1770,9 +1779,10 @@ ServerResource {
         Connect conn;
         NicTO nic = cmd.getNic();
         String vmName = cmd.getVmName();
+        Domain vm = null;
         try {
             conn = LibvirtConnection.getConnectionByVmName(vmName);
-            Domain vm = getDomain(conn, vmName);
+            vm = getDomain(conn, vmName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
             for (InterfaceDef pluggedNic : pluggedNics) {
                 if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
@@ -1790,6 +1800,14 @@ ServerResource {
             String msg = " Unplug Nic failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new UnPlugNicAnswer(cmd, false, msg);
+        } finally {
+            if (vm != null) {
+                try {
+                    vm.free();
+                } catch (LibvirtException l) {
+                    s_logger.trace("Ignoring libvirt error.", l);
+                }
+            }
         }
     }
 
