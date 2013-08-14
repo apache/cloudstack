@@ -670,7 +670,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         try {
             StorageVol vol = this.getVolume(libvirtPool.getPool(), uuid);
-            deleteVol(libvirtPool, vol);
+            StoragePool virtPool = libvirtPool.getPool();
+            deleteVol(virtPool, vol);
             vol.free();
             return true;
         } catch (LibvirtException e) {
@@ -861,9 +862,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             conn = LibvirtConnection.getConnection();
             StorageVol vol = conn.storageVolLookupByPath(diskPath);
+            StoragePool pool = vol.storagePoolLookupByVolume();
             if(vol != null) {
                 s_logger.debug("requested delete disk " + diskPath);
-                vol.delete(0);
+                deleteVol(pool, vol);
             }
         } catch (LibvirtException e) {
             s_logger.debug("Libvirt error in attempting to find and delete patch disk:" + e.toString());
@@ -898,13 +900,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private void deleteVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
-        if ((! pool.getType().equals(StoragePoolType.NetworkFilesystem))
-                && (! pool.getType().equals(StoragePoolType.Filesystem))) {
+    private void deleteVol(StoragePool pool, StorageVol vol) throws LibvirtException {
+        Connect conn = LibvirtConnection.getConnection();
+        LibvirtStoragePoolDef spd = getStoragePoolDef(conn, pool);
+        if ((! spd.getPoolType().equals(LibvirtStoragePoolDef.poolType.NETFS))
+                && (! spd.getPoolType().equals(LibvirtStoragePoolDef.poolType.DIR))) {
             vol.delete(0);
             return;
         }
-        String lockFile = pool.getLocalPath() + File.separator + _lockfile;
+        String lockFile = spd.getTargetPath() + File.separator + _lockfile;
         s_logger.debug("Attempting to lock pool " + pool.getName() + " with file " + lockFile);
         if (lock(lockFile, ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM)) {
             try {
