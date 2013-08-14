@@ -318,6 +318,7 @@ public class TemplateServiceImpl implements TemplateService {
                     } else {
                         tmpltStore.setDownloadPercent(100);
                         tmpltStore.setDownloadState(Status.DOWNLOADED);
+                        tmpltStore.setState(ObjectInDataStoreStateMachine.State.Ready);
                         tmpltStore.setInstallPath(tmpltInfo.getInstallPath());
                         tmpltStore.setSize(tmpltInfo.getSize());
                         tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
