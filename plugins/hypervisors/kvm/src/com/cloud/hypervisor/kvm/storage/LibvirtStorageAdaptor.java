@@ -414,7 +414,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
             disk.setSize(vol.getInfo().allocation);
             disk.setVirtualSize(vol.getInfo().capacity);
-            if (voldef.getFormat() == null) {
+
+            /**
+             * libvirt returns format = 'unknow', so we have to force
+             * the format to RAW for RBD storage volumes
+             */
+            if (pool.getType() == StoragePoolType.RBD) {
+                disk.setFormat(PhysicalDiskFormat.RAW);
+            } else if (voldef.getFormat() == null) {
                 File diskDir = new File(disk.getPath());
                 if (diskDir.exists() && diskDir.isDirectory()) {
                     disk.setFormat(PhysicalDiskFormat.DIR);
@@ -423,8 +430,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 } else {
                     disk.setFormat(pool.getDefaultFormat());
                 }
-            } else if (pool.getType() == StoragePoolType.RBD) {
-                disk.setFormat(PhysicalDiskFormat.RAW);
             } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.QCOW2) {
                 disk.setFormat(PhysicalDiskFormat.QCOW2);
             } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.RAW) {
