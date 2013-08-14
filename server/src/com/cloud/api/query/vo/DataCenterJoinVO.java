@@ -114,6 +114,9 @@ public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name = "affinity_group_uuid")
     private String affinityGroupUuid;
 
+    @Column(name = "account_id")
+    private long accountId;
+
 
     public DataCenterJoinVO() {
     }
@@ -314,5 +317,13 @@ public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Id
 
     public String getAffinityGroupUuid() {
         return affinityGroupUuid;
+    }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
     }
 }

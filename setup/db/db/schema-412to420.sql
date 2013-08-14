@@ -2348,6 +2348,7 @@ CREATE VIEW `cloud`.`data_center_view` AS
         domain.name domain_name,
         domain.path domain_path,
 		dedicated_resources.affinity_group_id,
+		dedicated_resources.account_id,
 		affinity_group.uuid affinity_group_uuid
     from
         `cloud`.`data_center`

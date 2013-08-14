@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
@@ -53,6 +55,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject ProjectManager _projectMgr;
     @Inject ProjectAccountDao _projecAccountDao;
     @Inject NetworkModel _networkMgr;
+    @Inject
+    private DedicatedResourceDao _dedicatedDao;
     
     protected DomainChecker() {
         super();
@@ -238,6 +242,18 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			//if account is normal user
 			//check if account's domain is a child of zone's domain
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                // if zone is dedicated to an account check that the accountId
+                // matches.
+                DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
+                if (dedicatedZone != null) {
+                    if (dedicatedZone.getAccountId() != null) {
+                        if (dedicatedZone.getAccountId() == account.getId()) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
                 if (account.getDomainId() == zone.getDomainId()) {
 					return true; //zone and account at exact node
                 } else {
