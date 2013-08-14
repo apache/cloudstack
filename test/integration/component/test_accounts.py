@@ -1510,13 +1510,17 @@ class TestDomainForceRemove(cloudstackTestCase):
         try:
             domain.delete(self.apiclient, cleanup=True)
         except Exception as e:
-            self.fail("Failed to delete domain: %s" % e)
+            self.debug("Waiting for account.cleanup.interval" +
+                " to cleanup any remaining resouces")
+            # Sleep 3*account.gc to ensure that all resources are deleted
+            wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*3)
+            with self.assertRaises(cloudstackAPIException):
+                Domain.list(
+                        self.apiclient,
+                        id=domain.id,
+                        listall=True
+                        )
 
-        self.debug("Waiting for account.cleanup.interval" +
-                   " to cleanup any remaining resouces")
-
-        # Sleep 2*account.gc to ensure that all resources are deleted
-        wait_for_cleanup(self.apiclient, ["account.cleanup.interval"]*2)
         self.debug("Checking if the resources in domain are deleted")
         with self.assertRaises(cloudstackAPIException):
             Account.list(
