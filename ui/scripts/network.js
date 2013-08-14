@@ -3237,43 +3237,6 @@
                                             }
                                         },
                                         multipleAdd: true,
-
-                                        /*
-                                        fieldPreFilter: function(args) {
-                                            var hiddenFields = [];
-                                            if ('vpc' in args.context) { //from VPC section
-                                                hiddenFields.push('autoScale'); //autoScale is not supported in VPC
-                                            } else { //from Guest Network section
-                                                $.ajax({
-                                                    url: createURL('listNetworkOfferings'),
-                                                    data: {
-                                                        id: args.context.networks[0].networkofferingid
-                                                    },
-                                                    async: false,
-                                                    success: function(json) {
-                                                        var serviceArray = json.listnetworkofferingsresponse.networkoffering[0].service;
-                                                        var lbProviderArrayIncludesNetscaler = false;
-                                                        for (var i = 0; i < serviceArray.length; i++) {
-                                                            if (serviceArray[i].name == "Lb") {
-                                                                var providerArray = serviceArray[i].provider;
-                                                                for (var k = 0; k < providerArray.length; k++) {
-                                                                    if (providerArray[k].name == "Netscaler") {
-                                                                        lbProviderArrayIncludesNetscaler = true;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                                break;
-                                                            }
-                                                        }
-                                                        if (lbProviderArrayIncludesNetscaler == false) {
-                                                            hiddenFields.push('autoScale'); //autoScale is not supported in a network that is not using Netscaler provider for LB service (CS-16459)
-                                                        }
-                                                    }
-                                                });
-                                            }
-                                            return hiddenFields; // Returns fields to be hidden
-                                        },
-                                        */
                                         
                                         fields: {
                                             'name': {
