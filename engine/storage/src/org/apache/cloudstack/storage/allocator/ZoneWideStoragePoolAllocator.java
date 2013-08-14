@@ -17,10 +17,13 @@
 package org.apache.cloudstack.storage.allocator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -100,5 +103,36 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
         }
         return suitablePools;
+    }
+    @Override
+    protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools,
+                                                              Account account) {
+        if (account == null) {
+            return pools;
+        }
+        long dcId = plan.getDataCenterId();
+
+        List<Long> poolIdsByVolCount = _volumeDao.listZoneWidePoolIdsByVolumeCount(dcId,
+                account.getAccountId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("List of pools in ascending order of number of volumes for account id: "
+                    + account.getAccountId() + " is: " + poolIdsByVolCount);
+        }
+
+        // now filter the given list of Pools by this ordered list
+        Map<Long, StoragePool> poolMap = new HashMap<Long, StoragePool>();
+        for (StoragePool pool : pools) {
+            poolMap.put(pool.getId(), pool);
+        }
+        List<Long> matchingPoolIds = new ArrayList<Long>(poolMap.keySet());
+
+        poolIdsByVolCount.retainAll(matchingPoolIds);
+
+        List<StoragePool> reorderedPools = new ArrayList<StoragePool>();
+        for (Long id : poolIdsByVolCount) {
+            reorderedPools.add(poolMap.get(id));
+        }
+
+        return reorderedPools;
     }
 }
