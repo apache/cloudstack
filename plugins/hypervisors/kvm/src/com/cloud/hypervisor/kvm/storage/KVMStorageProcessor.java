@@ -563,12 +563,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         String srcSnapshotDir = srcPath.substring(0, index);
         String srcFileName = srcPath.substring(index + 1);
         KVMStoragePool srcStorePool = null;
+        File srcFile = null;
         try {
             srcStorePool = storagePoolMgr.getStoragePoolByURI(srcStore.getUrl() + File.separator + srcSnapshotDir);
             if (srcStorePool == null) {
                 return new CopyCmdAnswer("Can't get store:" + srcStore.getUrl());
             }
-            File srcFile = new File(srcStorePool.getLocalPath() + File.separator + srcFileName);
+            srcFile = new File(srcStorePool.getLocalPath() + File.separator + srcFileName);
             if (!srcFile.exists()) {
                 return new CopyCmdAnswer("Can't find src file: " + srcPath);
             }
@@ -582,8 +583,15 @@ public class KVMStorageProcessor implements StorageProcessor {
             newSnapshot.setPath(destPath);
             return new CopyCmdAnswer(newSnapshot);
         } finally {
-            if (srcStorePool != null) {
-                srcStorePool.delete();
+            try {
+                if (srcFile != null) {
+                    srcFile.delete();
+                }
+                if (srcStorePool != null) {
+                    srcStorePool.delete();
+                }
+            } catch(Exception e) {
+                s_logger.debug("Failed to clean up:", e);
             }
         }
     }
