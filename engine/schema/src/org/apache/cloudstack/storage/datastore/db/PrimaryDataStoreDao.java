@@ -42,19 +42,16 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     /**
      * Set capacity of storage pool in bytes
      * @param id pool id.
-     * @param capacity capacity in bytes
+     * @param capacityBytes capacity in bytes
      */
-    void updateCapacity(long id, long capacity);
+    void updateCapacityBytes(long id, long capacityBytes);
 
     /**
-     * Set available bytes of storage pool in bytes
-     *
-     * @param id
-     *            pool id.
-     * @param available
-     *            available capacity in bytes
+     * Set iops capacity of storage pool
+     * @param id pool id.
+     * @param capacityIops iops capacity
      */
-    void updateAvailable(long id, long available);
+    void updateCapacityIops(long id, long capacityIops);
 
     StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details);
 

@@ -733,6 +733,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        Map<String, String> updatedDetails = new HashMap<String, String>();
+
         if (tags != null) {
             Map<String, String> existingDetails = _storagePoolDetailsDao.getDetails(id);
             Set<String> existingKeys = existingDetails.keySet();
@@ -767,10 +769,46 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 details.put(existingKeyToKeep, existingValueToKeep);
             }
 
-            _storagePoolDao.updateDetails(id, details);
+            updatedDetails.putAll(details);
         }
 
-        return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+        Long updatedCapacityBytes = null;
+        Long capacityBytes = cmd.getCapacityBytes();
+
+        if (capacityBytes != null) {
+            if (capacityBytes > pool.getCapacityBytes()) {
+                updatedCapacityBytes = capacityBytes;
+            }
+            else if (capacityBytes < pool.getCapacityBytes()) {
+                throw new CloudRuntimeException("The value of 'Capacity bytes' cannot be reduced in this version.");
+            }
+        }
+
+        Long updatedCapacityIops = null;
+        Long capacityIops = cmd.getCapacityIops();
+
+        if (capacityIops != null) {
+            if (capacityIops > pool.getCapacityIops()) {
+                updatedCapacityIops = capacityIops;
+            }
+            else if (capacityIops < pool.getCapacityIops()) {
+                throw new CloudRuntimeException("The value of 'Capacity IOPS' cannot be reduced in this version.");
+            }
+        }
+
+        if (updatedDetails.size() > 0) {
+            _storagePoolDao.updateDetails(id, updatedDetails);
+        }
+
+        if (updatedCapacityBytes != null) {
+            _storagePoolDao.updateCapacityBytes(id, capacityBytes);
+        }
+
+        if (updatedCapacityIops != null) {
+            _storagePoolDao.updateCapacityIops(id, capacityIops);
+        }
+
+        return (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 
     @Override

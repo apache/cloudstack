@@ -140,18 +140,17 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public void updateAvailable(long id, long available) {
+    public void updateCapacityBytes(long id, long capacityBytes) {
         StoragePoolVO pool = createForUpdate(id);
-        pool.setUsedBytes(available);
+        pool.setCapacityBytes(capacityBytes);
         update(id, pool);
     }
 
     @Override
-    public void updateCapacity(long id, long capacity) {
+    public void updateCapacityIops(long id, long capacityIops) {
         StoragePoolVO pool = createForUpdate(id);
-        pool.setCapacityBytes(capacity);
+        pool.setCapacityIops(capacityIops);
         update(id, pool);
-
     }
 
     @Override
