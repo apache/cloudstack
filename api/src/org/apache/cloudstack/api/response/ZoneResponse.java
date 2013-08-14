@@ -99,6 +99,10 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED) @Param(description="true if local storage offering enabled, false otherwise")
     private boolean localStorageEnabled;
 
+    @SerializedName(ApiConstants.AFFINITY_GROUP_ID)
+    @Param(description = "the UUID of the affinity group associated, null for public zones")
+    private String affinityGroupId;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -198,4 +202,8 @@ public class ZoneResponse extends BaseResponse {
 	public void setIp6Dns2(String ip6Dns2) {
 		this.ip6Dns2 = ip6Dns2;
 	}
+
+    public void setAffinityGroupId(String affinityGroupId) {
+        this.affinityGroupId = affinityGroupId;
+    }
 }
