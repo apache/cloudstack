@@ -18,11 +18,11 @@
 package com.cloud.vm;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.StorageUnavailableException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -49,7 +48,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -113,6 +111,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
@@ -125,13 +124,11 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -153,6 +150,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -177,7 +175,6 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
-import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -325,9 +322,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     @DB
-    public void allocate(String vmInstanceName, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan plan,
-            HypervisorType hyperType) throws InsufficientCapacityException {
+    public void allocate(String vmInstanceName,
+        VirtualMachineTemplate template,
+        ServiceOffering serviceOffering,
+        Pair<? extends DiskOffering, Long> rootDiskOffering,
+        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
+        LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks,
+        DeploymentPlan plan,
+        HypervisorType hyperType) throws InsufficientCapacityException {
 
         VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
         Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
@@ -343,7 +345,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
         vm = _vmDao.persist(vm);
 
-        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, serviceOffering, null, params);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, serviceOffering, null, null);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -353,13 +355,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         try {
-            _networkMgr.allocate(vmProfile, networks);
+            _networkMgr.allocate(vmProfile, auxiliaryNetworks);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
         }
 
         if (dataDiskOfferings == null) {
-            dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
+            dataDiskOfferings = new LinkedHashMap<DiskOffering, Long>(0);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -374,8 +376,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
         }
 
-        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, template, owner);
+        for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferings.entrySet()) {
+            volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.getKey(), offering.getValue(), vm, template, owner);
         }
 
         txn.commit();
@@ -385,9 +387,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void allocate(String vmInstanceName, VMTemplateVO template, ServiceOfferingVO serviceOffering, List<Pair<NetworkVO, NicProfile>> networks, DeploymentPlan plan,
-            HypervisorType hyperType) throws InsufficientCapacityException {
-        allocate(vmInstanceName, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, null, plan, hyperType);
+    public void allocate(String vmInstanceName,
+        VirtualMachineTemplate template,
+        ServiceOffering serviceOffering,
+        LinkedHashMap<? extends Network, ? extends NicProfile> networks,
+        DeploymentPlan plan,
+        HypervisorType hyperType) throws InsufficientCapacityException {
+        allocate(vmInstanceName, template, serviceOffering, new Pair<DiskOffering, Long>(serviceOffering, null), null, networks, plan, hyperType);
     }
 
     private VirtualMachineGuru getVmGuru(VirtualMachine vm) {
@@ -457,7 +463,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (finalizeExpungeCommands != null && finalizeExpungeCommands.size() > 0) {
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
             if (hostId != null) {
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 for (Command command : finalizeExpungeCommands) {
                     cmds.addCommand(command);
                 }
@@ -867,7 +873,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
-                    cmds = new Commands(OnError.Stop);
+                    cmds = new Commands(Command.OnError.Stop);
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), _mgmtServer.getExecuteInSequence()));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
@@ -1005,7 +1011,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return false;
             }
 
-            guru.finalizeStop(profile, (StopAnswer)answer);
+            guru.finalizeStop(profile, answer);
         } catch (AgentUnavailableException e) {
             if (!force) {
                 return false;
@@ -1282,7 +1288,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException {
+    public boolean stateTransitTo(VirtualMachine vm1, VirtualMachine.Event e, Long hostId) throws NoTransitionException {
+        VMInstanceVO vm = (VMInstanceVO)vm1;
         // if there are active vm snapshots task, state change is not allowed
         if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
             s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
@@ -1906,7 +1913,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         try {
 
-            Commands cmds = new Commands(OnError.Stop);
+            Commands cmds = new Commands(Command.OnError.Stop);
             cmds.addCommand(new RebootCommand(vm.getInstanceName()));
             _agentMgr.send(host.getId(), cmds);
 
@@ -1930,7 +1937,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {
-        Commands commands = new Commands(OnError.Continue);
+        Commands commands = new Commands(Command.OnError.Continue);
 
         Map<Long, AgentVmInfo> infos = convertToInfos(startup);
 
@@ -1990,7 +1997,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Commands deltaHostSync(long hostId, Map<String, State> newStates) {
         Map<Long, AgentVmInfo> states = convertDeltaToInfos(newStates);
-        Commands commands = new Commands(OnError.Continue);
+        Commands commands = new Commands(Command.OnError.Continue);
 
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
             AgentVmInfo info = entry.getValue();
@@ -2462,7 +2469,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             profile.addNic(nicProfile);
         }
 
-        Commands cmds = new Commands(OnError.Stop);
+        Commands cmds = new Commands(Command.OnError.Stop);
         s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
 
         if (vmGuru.finalizeCommandsOnStart(cmds, profile)) {
@@ -2824,7 +2831,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
@@ -3196,7 +3203,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType());
 
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
@@ -3226,7 +3233,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (router.getState() == State.Running) {
             try {
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
@@ -3254,8 +3261,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
+    public VMInstanceVO reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
             ConcurrentOperationException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         long newServiceofferingId = vm.getServiceOfferingId();
         ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceofferingId);

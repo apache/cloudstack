@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.orchestration;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,8 +42,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.DiskOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -165,11 +168,11 @@ public class CloudOrchestrator implements OrchestrationService {
 
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
 
-        List<Pair<NetworkVO, NicProfile>> networkIpMap = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        LinkedHashMap<NetworkVO, NicProfile> networkIpMap = new LinkedHashMap<NetworkVO, NicProfile>();
         for (String uuid : networkNicMap.keySet()) {
             NetworkVO network = _networkDao.findByUuid(uuid);
             if(network != null){
-                networkIpMap.add(new Pair<NetworkVO, NicProfile>(network, networkNicMap.get(uuid)));
+                networkIpMap.put(network, networkNicMap.get(uuid));
             }
         }
 
@@ -186,7 +189,7 @@ public class CloudOrchestrator implements OrchestrationService {
 		// Else, a disk offering is optional, and if present will be used to create the data disk
 
     	Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
-		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
+        LinkedHashMap<DiskOfferingVO, Long> dataDiskOfferings = new LinkedHashMap<DiskOfferingVO, Long>();
 
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
@@ -206,12 +209,19 @@ public class CloudOrchestrator implements OrchestrationService {
     			}
                 _volumeMgr.validateVolumeSizeRange(size * 1024 * 1024 * 1024);
     		}
-    		dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
+            dataDiskOfferings.put(diskOffering, size);
 		}
 
 
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null, plan, hypervisorType);
+        _itMgr.allocate(vm.getInstanceName(),
+ _templateDao.findById(new Long(templateId)),
+            offering,
+            rootDiskOffering,
+            dataDiskOfferings,
+            networkIpMap,
+            plan,
+            hypervisorType);
 
         return vmEntity;
     }
@@ -228,11 +238,11 @@ public class CloudOrchestrator implements OrchestrationService {
     	VMInstanceVO vm = _vmDao.findByUuid(id);
 
 
-		Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
+		Pair<DiskOffering, Long> rootDiskOffering = new Pair<DiskOffering, Long>(null, null);
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
 
-		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
+        LinkedHashMap<DiskOffering, Long> dataDiskOfferings = new LinkedHashMap<DiskOffering, Long>();
 		Long diskOfferingId = vm.getDiskOfferingId();
 		if (diskOfferingId == null) {
 			throw new InvalidParameterValueException(
@@ -254,17 +264,17 @@ public class CloudOrchestrator implements OrchestrationService {
 		rootDiskOffering.first(diskOffering);
 		rootDiskOffering.second(size);
 
-        List<Pair<NetworkVO, NicProfile>> networkIpMap = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        LinkedHashMap<Network, NicProfile> networkIpMap = new LinkedHashMap<Network, NicProfile>();
         for (String uuid : networkNicMap.keySet()) {
             NetworkVO network = _networkDao.findByUuid(uuid);
             if(network != null){
-                networkIpMap.add(new Pair<NetworkVO, NicProfile>(network, networkNicMap.get(uuid)));
+                networkIpMap.put(network, networkNicMap.get(uuid));
             }
         }
 
 		HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null, plan, hypervisorType);
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, plan, hypervisorType);
 
         return vmEntity;
     }

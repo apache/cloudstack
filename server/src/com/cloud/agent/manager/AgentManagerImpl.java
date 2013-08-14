@@ -366,7 +366,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
-        Commands cmds = new Commands(OnError.Stop);
+        Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(cmd);
         send(hostId, cmds, cmd.getWait());
         Answer[] answers = cmds.getAnswers();

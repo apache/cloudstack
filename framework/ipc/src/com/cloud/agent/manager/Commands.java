@@ -20,15 +20,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.Command.OnError;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Commands implements Iterable<Command> {
     OnError _handler;
-    private ArrayList<String> _ids = new ArrayList<String>();
-    private ArrayList<Command> _cmds = new ArrayList<Command>();
+    private final ArrayList<String> _ids = new ArrayList<String>();
+    private final ArrayList<Command> _cmds = new ArrayList<Command>();
     private Answer[] _answers;
     
     public Commands(OnError handler) {
@@ -126,7 +126,7 @@ public class Commands implements Iterable<Command> {
     }
     
     /**
-     * @return For Commands with handler OnError.Continue, one command succeeding is successful.  If not, all commands must succeed to be successful. 
+     * @return For Commands with handler OnError.Continue, one command succeeding is successful.  If not, all commands must succeed to be successful.
      */
     public boolean isSuccessful() {
         if (_answers == null) {

@@ -81,7 +81,6 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.DiskTO;
@@ -1302,7 +1301,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     // #3 scale the vm now
                     _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
                     vmInstance = _vmInstanceDao.findById(vmId);
-                    vmInstance = _itMgr.reConfigureVm(vmInstance, currentServiceOffering, existingHostHasCapacity);
+                    _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, existingHostHasCapacity);
                     success = true;
                     return success;
                 }catch(InsufficientCapacityException e ){
@@ -3210,7 +3209,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
         VirtualMachine vm = profile.getVirtualMachine();
         // release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
@@ -4549,11 +4548,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+            LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>();
             NicProfile profile = new NicProfile();
             profile.setDefaultNic(true);
-            networks.add(new Pair<NetworkVO, NicProfile>(networkList.get(0),
-                    profile));
+            networks.put(networkList.get(0), profile);
 
             VirtualMachine vmi = _itMgr.findById(vm.getId());
             VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
@@ -4677,7 +4675,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 // add the new nics
-                List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+                LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>();
                 int toggle = 0;
                 for (NetworkVO appNet : applicableNetworks) {
                     NicProfile defaultNic = new NicProfile();
@@ -4685,8 +4683,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         defaultNic.setDefaultNic(true);
                         toggle++;
                     }
-                    networks.add(new Pair<NetworkVO, NicProfile>(appNet,
-                            defaultNic));
+                    networks.put(appNet, defaultNic);
                 }
                 VirtualMachine vmi = _itMgr.findById(vm.getId());
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);

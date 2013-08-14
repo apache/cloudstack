@@ -878,7 +878,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     private Answer[] sendRebalanceCommand(long peer, long agentId, long currentOwnerId, long futureOwnerId, Event event) {
         TransferAgentCommand transfer = new TransferAgentCommand(agentId, currentOwnerId, futureOwnerId, event);
-        Commands commands = new Commands(OnError.Stop);
+        Commands commands = new Commands(Command.OnError.Stop);
         commands.addCommand(transfer);
 
         Command[] cmds = commands.toCommands();
@@ -1233,7 +1233,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     public Answer[] sendToAgent(Long hostId, Command[] cmds, boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException {
-        Commands commands = new Commands(stopOnError ? OnError.Stop : OnError.Continue);
+        Commands commands = new Commands(stopOnError ? Command.OnError.Stop : Command.OnError.Continue);
         for (Command cmd : cmds) {
             commands.addCommand(cmd);
         }

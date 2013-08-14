@@ -17,6 +17,7 @@
 package com.cloud.vpc;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -738,7 +739,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public void allocate(VirtualMachineProfile vm, List<Pair<NetworkVO, NicProfile>> networks)
+    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks)
             throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         

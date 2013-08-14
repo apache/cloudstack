@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
@@ -49,7 +49,7 @@ public interface VirtualMachineGuru {
     
     boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile);
     
-    void finalizeStop(VirtualMachineProfile profile, StopAnswer answer);
+    void finalizeStop(VirtualMachineProfile profile, Answer answer);
     
     void finalizeExpunge(VirtualMachine vm);
     

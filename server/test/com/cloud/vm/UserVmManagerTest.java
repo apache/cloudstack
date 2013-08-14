@@ -449,7 +449,7 @@ public class UserVmManagerTest {
 
         //when(ApiDBUtils.getCpuOverprovisioningFactor()).thenReturn(3f);
         when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(),  anyBoolean())).thenReturn(false);
-        when(_itMgr.reConfigureVm(_vmInstance, so1, false)).thenReturn(_vmInstance);
+        when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so1, false)).thenReturn(_vmInstance);
 
         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), anyLong());
 

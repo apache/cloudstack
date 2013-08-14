@@ -279,7 +279,7 @@ public class VirtualMachineManagerImplTest {
                 newServiceOffering.getLimitCpuUse());
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
-        _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);
+        _vmMgr.reConfigureVm(_vmInstance.getUuid(), getSvcoffering(256), false);
 
     }
 

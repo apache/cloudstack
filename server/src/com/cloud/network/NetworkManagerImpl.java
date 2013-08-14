@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -37,9 +38,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.NicIpAlias;
-import com.cloud.vm.dao.NicIpAliasDao;
-import com.cloud.vm.dao.NicIpAliasVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
@@ -48,9 +49,6 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -199,6 +197,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
+import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -209,6 +208,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -723,7 +724,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     
 
-    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
+    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
@@ -1535,7 +1536,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, 
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name,
             String displayText, boolean isDefault)
             throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null, true);
@@ -1543,7 +1544,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan 
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan
             plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
             ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException {
 
@@ -1635,7 +1636,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public void allocate(VirtualMachineProfile vm, List<Pair<NetworkVO, NicProfile>> networks)
+    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks)
             throws InsufficientCapacityException, ConcurrentOperationException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1648,9 +1649,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         List<NicProfile> nics = new ArrayList<NicProfile>(networks.size());
         NicProfile defaultNic = null;
 
-        for (Pair<NetworkVO, NicProfile> network : networks) {
-            NetworkVO config = network.first();
-            NicProfile requested = network.second();
+        for (Map.Entry<? extends Network, ? extends NicProfile> network : networks.entrySet()) {
+            Network config = network.getKey();
+            NicProfile requested = network.getValue();
 
             Boolean isDefaultNic = false;
             if (vm != null && (requested != null && requested.isDefaultNic())) {
@@ -1742,7 +1743,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         vo = _nicDao.persist(vo);
     
         Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
-        NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, 
+        NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate,
                 _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(),
                 network));
 
@@ -2138,7 +2139,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
             updateNic(nic, network.getId(), 1);
         } else {
-            profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+            profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(),
                         networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
             nic.setState(Nic.State.Reserved);
@@ -2168,7 +2169,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, 
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
                     _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             if(guru instanceof NetworkMigrationResponder){
                 if(!((NetworkMigrationResponder) guru).prepareMigration(profile, network, vm, dest, context)){
@@ -2493,7 +2494,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             // if zone is basic, only Shared network offerings w/o source nat service are allowed
-            if (!(ntwkOff.getGuestType() == GuestType.Shared && 
+            if (!(ntwkOff.getGuestType() == GuestType.Shared &&
                     !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
                 throw new InvalidParameterValueException("For zone of type " + NetworkType.Basic + " only offerings of " +
                         "guestType " + GuestType.Shared + " with disabled " + Service.SourceNat.getName()
@@ -2651,7 +2652,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // limitation, remove after we introduce support for multiple ip ranges
         // with different Cidrs for the same Shared network
         boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getTrafficType() == TrafficType.Guest
-                && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated 
+                && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated
                 && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)));
         if (cidr == null && ip6Cidr == null  && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" +
@@ -2824,7 +2825,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     s_logger.debug("Lock is released for network " + network + " as a part of network shutdown");
                 }
             }
-        } 
+        }
     }
 
     @Override
@@ -2904,7 +2905,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             s_logger.debug("The network id=" + networkId + " has active Nics, but shouldn't.");
             // at this point we have already determined that there are no active user vms in network
             // if the op_networks table shows active nics, it's a bug in releasing nics updating op_networks
-            _networksDao.changeActiveNicsBy(networkId, (-1 * nicCount)); 
+            _networksDao.changeActiveNicsBy(networkId, (-1 * nicCount));
         }
 
         //In Basic zone, make sure that there are no non-removed console proxies and SSVMs using the network
@@ -3813,16 +3814,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (dc.getNetworkType() == NetworkType.Basic) {
             List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
             NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());
-            Pair<NetworkVO, NicProfile> profile = new Pair<NetworkVO, NicProfile>(network, null);
-            List<Pair<NetworkVO, NicProfile>> profiles = new ArrayList<Pair<NetworkVO, NicProfile>>();
-            profiles.add(profile);
+            LinkedHashMap<Network, NicProfile> profiles = new LinkedHashMap<Network, NicProfile>();
+            profiles.put(network, null);
 
             Transaction txn = Transaction.currentTxn();
             txn.start();
 
             try {
-                this.cleanupNics(vm);
-                this.allocate(vm, profiles);
+                cleanupNics(vm);
+                allocate(vm, profiles);
             } finally {
                 txn.commit();
             }
@@ -4252,7 +4252,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) 
+    public IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp)
             throws InsufficientAddressCapacityException {
         Network guestNetwork = _networksDao.findById(networkId);
         NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
@@ -4374,7 +4374,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 	@Override
     public boolean setupDns(Network network, Provider provider) {
         boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, provider );
-        boolean dhcpProvided =_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, 
+        boolean dhcpProvided =_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp,
                 provider);
 
         boolean setupDns = dnsProvided || dhcpProvided;
@@ -4409,7 +4409,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 
                 VirtualMachine vm = vmProfile.getVirtualMachine();
                 DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-                Host host = _hostDao.findById(vm.getHostId()); 
+                Host host = _hostDao.findById(vm.getHostId());
                 DeployDestination dest = new DeployDestination(dc, null, null, host);
                 
                 NicProfile nic = getNicProfileForVm(network, requested, vm);
@@ -4418,14 +4418,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
                     int deviceId = _nicDao.countNics(vm.getId());
                     
-                    nic = allocateNic(requested, network, false, 
+                    nic = allocateNic(requested, network, false,
                             deviceId, vmProfile).first();
                     
                     if (nic == null) {
                         throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
                     }
                     
-                    s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network); 
+                    s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
                 }
                 
                 //2) prepare nic
@@ -4450,7 +4450,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
     
                 NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(),
                         networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
@@ -4512,7 +4512,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             //support more than one LB providers only
             s_logger.error("Found " + providers.size() + " " + service.getName() + " providers for network!" + network.getId());
             return null;
-        } 
+        }
         
         for (Provider provider : providers) {
             NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
@@ -4554,8 +4554,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
                 
         assert lbElement != null;
-        assert lbElement instanceof LoadBalancingServiceProvider; 
-        return (LoadBalancingServiceProvider)lbElement;        
+        assert lbElement instanceof LoadBalancingServiceProvider;
+        return (LoadBalancingServiceProvider)lbElement;
     }
     
 
@@ -4612,7 +4612,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         @Override
     public NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType) {
-            NicVO nic = new NicVO(null, null, network.getId(), null); 
+            NicVO nic = new NicVO(null, null, network.getId(), null);
             nic.setIp4Address(ip4Address);
         nic.setIp6Address(ip6Address);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);

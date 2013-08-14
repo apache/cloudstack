@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +51,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -68,7 +68,6 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -492,7 +491,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 // for basic zone, send vm data/password information only to the router in the same pod
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 NicVO nicVo = _nicDao.findById(nic.getId());
                 createPasswordCommand(router, updatedProfile, nicVo, cmds);
                 return sendCommandsToRouter(router, cmds);
@@ -511,7 +510,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 // for basic zone, send vm data/password information only to the router in the same pod
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 NicVO nicVo = _nicDao.findById(nic.getId());
                 VMTemplateVO template = _templateDao.findByIdIncludingRemoved(updatedProfile.getTemplateId());
                 if(template != null && template.getEnablePassword()) {
@@ -532,7 +531,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 // for basic zone, send vm data/password information only to the router in the same pod
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 NicVO nicVo = _nicDao.findById(nic.getId());
                 createVmDataCommand(router, vm, nicVo, null, cmds);
                 return sendCommandsToRouter(router, cmds);
@@ -1538,7 +1537,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 int count = routerCount - routers.size();
                 DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
-                List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
+                    LinkedHashMap<Network, NicProfile> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
                         new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                     //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
                     DomainRouterVO router = deployRouter(owner, destination, plan, params, isRedundant, vrProvider, offeringId,
@@ -1581,11 +1580,22 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
  
 
-    protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
-            boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
-            Long vpcId, List<Pair<NetworkVO, NicProfile>> networks, boolean startRouter, List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException,
-            InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
-            StorageUnavailableException, ResourceUnavailableException {
+    protected DomainRouterVO deployRouter(Account owner,
+        DeployDestination dest,
+        DeploymentPlan plan,
+        Map<Param, Object> params,
+        boolean isRedundant,
+        VirtualRouterProvider vrProvider,
+        long svcOffId,
+        Long vpcId,
+        LinkedHashMap<Network, NicProfile> networks,
+        boolean startRouter,
+        List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException,
+        InsufficientAddressCapacityException,
+        InsufficientServerCapacityException,
+        InsufficientCapacityException,
+        StorageUnavailableException,
+        ResourceUnavailableException {
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
@@ -1726,7 +1736,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return hypervisors;
     }
 
-    protected List<Pair<NetworkVO, NicProfile>> createRouterNetworks(Account owner, boolean isRedundant,
+    protected LinkedHashMap<Network, NicProfile> createRouterNetworks(Account owner,
+        boolean isRedundant,
             DeploymentPlan plan, Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
 
@@ -1737,7 +1748,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
         
         //Form networks
-        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
+        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
         
         //1) Guest network
         boolean hasGuestNetwork = false;
@@ -1794,7 +1805,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 gatewayNic.setDefaultNic(true);
             }
             
-            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
+            networks.put(guestNetwork, gatewayNic);
             hasGuestNetwork = true;
         }
 
@@ -1803,7 +1814,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
         NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+        networks.put(controlConfig, null);
         
         
         //3) Public network
@@ -1832,7 +1843,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
-            networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
+            networks.put(publicNetworks.get(0), defaultNic);
         }
 
         return networks;
@@ -2621,7 +2632,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
         if (answer != null) {
             VirtualMachine vm = profile.getVirtualMachine();
             DomainRouterVO domR = _routerDao.findById(vm.getId());
@@ -2659,7 +2670,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         + router.getState(), DataCenter.class, network.getDataCenterId());
             }
 
-            Commands cmds = new Commands(OnError.Stop);
+            Commands cmds = new Commands(Command.OnError.Stop);
             createApplyVpnCommands(vpn, router, cmds);
 
             try {
@@ -2703,7 +2714,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         boolean result = true;
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                Commands cmds = new Commands(OnError.Continue);
+                Commands cmds = new Commands(Command.OnError.Continue);
                 IpAddress ip = _networkModel.getIp(vpn.getServerAddressId());
 
                 RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(),
@@ -2826,7 +2837,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 _nicIpAliasDao.persist(alias);
                 List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
                 ipaliasTo.add(new IpAliasTO(routerAliasIp, alias.getNetmask(), alias.getAliasCount().toString()));
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 createIpAlias(router, ipaliasTo, alias.getNetworkId(), cmds);
                 //also add the required configuration to the dnsmasq for supporting dhcp and dns on the new ip.
                 configDnsMasq(router, network, cmds);
@@ -2861,7 +2872,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         router.getState(), DataCenter.class, network.getDataCenterId());
             }
 
-            Commands cmds = new Commands(OnError.Continue);
+            Commands cmds = new Commands(Command.OnError.Continue);
             List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.revoked);
             s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
             List<IpAliasTO> revokedIpAliasTOs = new ArrayList<IpAliasTO>();
@@ -2916,7 +2927,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 //for basic zone, send dhcp/dns information to all routers in the basic network only when _dnsBasicZoneUpdates is set to "all" value
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 if (!(isZoneBasic && router.getPodIdToDeployIn().longValue() != podId.longValue() && _dnsBasicZoneUpdates.equalsIgnoreCase("pod"))) {
                     NicVO nicVo = _nicDao.findById(nic.getId());
                     createDhcpEntryCommand(router, vm, nicVo, cmds);
@@ -2991,7 +3002,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 //for basic zone, send vm data/password information only to the router in the same pod
-                Commands cmds = new Commands(OnError.Stop);
+                Commands cmds = new Commands(Command.OnError.Stop);
                 if (!(isZoneBasic && router.getPodIdToDeployIn().longValue() != podId.longValue())) {
                     NicVO nicVo = _nicDao.findById(nic.getId());
                     createPasswordCommand(router, updatedProfile, nicVo, cmds);
@@ -3021,7 +3032,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         router.getState(), DataCenter.class, network.getDataCenterId());
             }
 
-            Commands cmds = new Commands(OnError.Continue);
+            Commands cmds = new Commands(Command.OnError.Continue);
             List<VpnUser> addUsers = new ArrayList<VpnUser>();
             List<VpnUser> removeUsers = new ArrayList<VpnUser>();
             for (VpnUser user : users) {
@@ -3581,7 +3592,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return applyRules(network, routers, "ip association", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
-                Commands cmds = new Commands(OnError.Continue);
+                Commands cmds = new Commands(Command.OnError.Continue);
                 createAssociateIPCommands(router, ipAddress, cmds, 0);
                 return sendCommandsToRouter(router, cmds);
             }
@@ -3651,19 +3662,19 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendLBRules(VirtualRouter router, List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createApplyLoadBalancingRulesCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
     }
 
     protected boolean sendPortForwardingRules(VirtualRouter router, List<PortForwardingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createApplyPortForwardingRulesCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
     }
 
     protected boolean sendStaticNatRules(VirtualRouter router, List<StaticNatRule> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createApplyStaticNatRulesCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
     }
@@ -3724,7 +3735,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
 
     protected boolean sendFirewallRules(VirtualRouter router, List<FirewallRule> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createFirewallRulesCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
     }
@@ -3840,7 +3851,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
 
     protected boolean applyStaticNat(VirtualRouter router, List<? extends StaticNat> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createApplyStaticNatCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
     }

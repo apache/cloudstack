@@ -25,7 +25,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
@@ -52,7 +51,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 
     VirtualMachine.Type _type;
 
-    public VirtualMachineProfileImpl(VirtualMachine vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<Param, Object> params) {
+    public VirtualMachineProfileImpl(VirtualMachine vm, VirtualMachineTemplate template, ServiceOffering offering, Account owner, Map<Param, Object> params) {
         _vm = vm;
         _template = template;
         _offering = offering;

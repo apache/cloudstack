@@ -26,8 +26,9 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.Command.OnError;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
@@ -213,7 +214,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             String userData = uservm.getUserData();
             String sshPublicKey = uservm.getDetail("SSH.PublicKey");
 
-            Commands cmds = new Commands(OnError.Continue);
+            Commands cmds = new Commands(Command.OnError.Continue);
             if (password != null && nic.isDefaultNic()) {
                 final String encodedPassword = PasswordGenerator.rot13(password);
                 SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getHostName(), _networkMgr.getExecuteInSeqNtwkElmtCmd());

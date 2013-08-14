@@ -34,10 +34,6 @@ import com.cloud.utils.component.Manager;
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager extends Manager {
-    public enum OnError {
-        Continue, Stop
-    }
-
     public enum TapAgentsAction {
         Add,
         Del,

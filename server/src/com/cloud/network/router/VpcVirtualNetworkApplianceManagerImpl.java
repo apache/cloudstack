@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -30,13 +31,12 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
@@ -318,7 +318,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
         
-        List<Pair<NetworkVO, NicProfile>> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp),
+        LinkedHashMap<Network, NicProfile> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp),
                 vpcId);
         DomainRouterVO router =
                 super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks, true,
@@ -334,7 +334,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() == State.Running) {
             SetupGuestNetworkCommand setupCmd = createSetupGuestNetworkCommand(router, add, guestNic);
 
-            Commands cmds = new Commands(OnError.Stop);
+            Commands cmds = new Commands(Command.OnError.Stop);
             cmds.addCommand("setupguestnetwork", setupCmd);
             sendCommandsToRouter(router, cmds);
             
@@ -508,7 +508,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
 
-        Commands netUsagecmds = new Commands(OnError.Continue);
+        Commands netUsagecmds = new Commands(Command.OnError.Continue);
         VpcVO vpc = _vpcDao.findById(router.getVpcId());
          
         //2) Plug the nics
@@ -561,7 +561,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         boolean result = applyRules(network, routers, "vpc ip association", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
-                Commands cmds = new Commands(OnError.Continue);
+                Commands cmds = new Commands(Command.OnError.Continue);
                 Map<String, String> vlanMacAddress = new HashMap<String, String>();
                 List<PublicIpAddress> ipsToSend = new ArrayList<PublicIpAddress>();
                 for (PublicIpAddress ipAddr : ipAddress) {
@@ -655,7 +655,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     
     protected boolean sendNetworkACLs(VirtualRouter router, List<? extends NetworkACLItem> rules, long guestNetworkId, boolean isPrivateGateway)
             throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createNetworkACLsCommands(rules, router, cmds, guestNetworkId, isPrivateGateway);
         return sendCommandsToRouter(router, cmds);
     }
@@ -938,7 +938,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             
             List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
             privateIps.add(ip);
-            Commands cmds = new Commands(OnError.Stop);
+            Commands cmds = new Commands(Command.OnError.Stop);
             createVpcAssociatePrivateIPCommands(router, privateIps, cmds, add);
             
             if (sendCommandsToRouter(router, cmds)) {
@@ -1034,7 +1034,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     
     protected boolean sendStaticRoutes(List<StaticRouteProfile> staticRoutes, DomainRouterVO router)
             throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createStaticRouteCommands(staticRoutes, router, cmds);
         return sendCommandsToRouter(router, cmds);
     }
@@ -1076,7 +1076,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     protected boolean applySite2SiteVpn(boolean isCreate, VirtualRouter router, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createSite2SiteVpnCfgCommands(conn, isCreate, router, cmds);
         return sendCommandsToRouter(router, cmds);
     }
@@ -1152,11 +1152,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     
-    protected List<Pair<NetworkVO, NicProfile>> createVpcRouterNetworks(Account owner, boolean isRedundant,
+    protected LinkedHashMap<Network, NicProfile>
+        createVpcRouterNetworks(Account owner, boolean isRedundant,
             DeploymentPlan plan, Pair<Boolean, PublicIp> sourceNatIp, long vpcId) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
 
-        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(4);
+        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(4);
         
         TreeSet<String> publicVlans = new TreeSet<String>();
         publicVlans.add(sourceNatIp.second().getVlanTag());
@@ -1170,7 +1171,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (PrivateGateway privateGateway : privateGateways) {
                 NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
                 Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
-                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+                networks.put(privateNetwork, privateNic);
             }
         }
         
@@ -1179,7 +1180,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         for (Network guestNetwork : guestNetworks) {
             if (guestNetwork.getState() == Network.State.Implemented) {
                 NicProfile guestNic = createGuestNicProfileForVpcRouter(guestNetwork);
-                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
+                networks.put(guestNetwork, guestNic);
             }
         }
         
@@ -1201,7 +1202,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
                 NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
                 List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
-                networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), publicNic));
+                networks.put(publicNetworks.get(0), publicNic);
                 publicVlans.add(publicIp.getVlanTag());
             }
         }
@@ -1321,7 +1322,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     @Override
-    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
         super.finalizeStop(profile, answer);
         //Mark VPN connections as Disconnected
         DomainRouterVO router = _routerDao.findById(profile.getId());

@@ -17,7 +17,7 @@
 package com.cloud.vm;
 
 import java.net.URI;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.cloud.agent.api.to.NicTO;
@@ -33,13 +33,11 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -49,22 +47,39 @@ import com.cloud.utils.fsm.NoTransitionException;
  */
 public interface VirtualMachineManager extends Manager {
 
+    /**
+     * Allocates a new virtual machine instance in the CloudStack DB.  This
+     * orchestrates the creation of all virtual resources needed in CloudStack
+     * DB to bring up a VM.
+     * 
+     * @param vmInstanceName Instance name of the VM.  This name uniquely
+     *        a VM in CloudStack's deploy environment.  The caller gets to
+     *        define this VM but it must be unqiue for all of CloudStack.
+     * @param template The template this VM is based on.
+     * @param serviceOffering The service offering that specifies the offering this VM should provide.
+     * @param defaultNetwork The default network for the VM.
+     * @param rootDiskOffering For created VMs not based on templates, root disk offering specifies the root disk.
+     * @param dataDiskOfferings Data disks to attach to the VM.
+     * @param auxiliaryNetworks additional networks to attach the VMs to.
+     * @param plan How to deploy the VM.
+     * @param hyperType Hypervisor type
+     * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
+     */
     void allocate(String vmInstanceName,
-            VMTemplateVO template,
-            ServiceOfferingVO serviceOffering,
-            Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
-            List<Pair<NetworkVO, NicProfile>> networks,
-            Map<VirtualMachineProfile.Param, Object> params,
-            DeploymentPlan plan,
-            HypervisorType hyperType) throws InsufficientCapacityException;
+        VirtualMachineTemplate template,
+        ServiceOffering serviceOffering,
+        Pair<? extends DiskOffering, Long> rootDiskOffering,
+        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
+        LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks,
+        DeploymentPlan plan,
+        HypervisorType hyperType) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName,
-            VMTemplateVO template,
-            ServiceOfferingVO serviceOffering,
-            List<Pair<NetworkVO, NicProfile>> networkProfiles,
-            DeploymentPlan plan,
-            HypervisorType hyperType) throws InsufficientCapacityException;
+        VirtualMachineTemplate template,
+        ServiceOffering serviceOffering,
+        LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles,
+        DeploymentPlan plan,
+        HypervisorType hyperType) throws InsufficientCapacityException;
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
@@ -76,7 +91,7 @@ public interface VirtualMachineManager extends Manager {
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
 
-    boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
+    boolean stateTransitTo(VirtualMachine vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
     void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException;
@@ -146,7 +161,7 @@ public interface VirtualMachineManager extends Manager {
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException
      */
-    boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param vm
@@ -173,7 +188,7 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
 
-    VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
+    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
 
     void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException;
