@@ -67,10 +67,10 @@
                 $('.overlay').remove();
 
                 return $formContainer.dialog({
-                    dialogClass: args.form.bigSize ? 'create-form big' : 'create-form',
+                    dialogClass: 'create-form',
                     closeOnEscape: false,
                     draggable: false,
-                    width: args.form.bigSize ? 800 : 400,
+                    width: 400,
                     title: _l(args.form.title),
                     open: function() {
                         if (args.form.preFilter) {
