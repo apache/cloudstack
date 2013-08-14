@@ -1723,20 +1723,13 @@
                                                                     });
                                                                 }
                                                             });
-                                                            $.ajax({
-                                                                url: createURL("listNetworkOfferings&id=" + selectedGuestNetworkObj.networkofferingid), //include currently selected network offeirng to dropdown
-                                                                dataType: "json",
-                                                                async: false,
-                                                                success: function(json) {
-                                                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                                                                    $(networkOfferingObjs).each(function() {
-                                                                        items.push({
-                                                                            id: this.id,
-                                                                            description: this.displaytext
-                                                                        });
-                                                                    });
-                                                                }
-                                                            });
+                                                                                                                        
+                                                            //include currently selected network offeirng to dropdown
+                                                            items.push({
+                                                                id: selectedGuestNetworkObj.networkofferingid,
+                                                                description: selectedGuestNetworkObj.networkofferingdisplaytext
+                                                            });                                                             
+                                                            
                                                             args.response.success({
                                                                 data: items
                                                             });
