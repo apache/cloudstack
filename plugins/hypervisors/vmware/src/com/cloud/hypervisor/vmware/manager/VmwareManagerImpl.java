@@ -1162,9 +1162,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Check if zone with specified id exists
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "Can't find zone by the id specified.");
-            throw ex;
+            throw new InvalidParameterValueException("Can't find zone by the id specified.");
+        }
+        // Check if zone is legacy zone
+        if (isLegacyZone(zoneId)) {
+            throw new InvalidParameterValueException("The specified zone is legacy zone. Adding VMware datacenter to legacy zone is not supported.");
+        } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("The specified zone is not legacy zone.");
+            }
         }
     }
 
