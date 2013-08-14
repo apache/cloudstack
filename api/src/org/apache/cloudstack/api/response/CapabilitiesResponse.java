@@ -46,9 +46,11 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
             "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
-
     @SerializedName("regionsecondaryenabled") @Param(description = "true if region wide secondary is enabled, false otherwise")
     private boolean regionSecondaryEnabled;
+
+    @SerializedName("kvmsnapshotenabled") @Param(description = "true if snapshot is supported for KVM host, false otherwise")
+    private boolean KVMSnapshotEnabled;
 
     @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
     private Integer apiLimitInterval;
@@ -87,6 +89,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setRegionSecondaryEnabled(boolean regionSecondaryEnabled){
         this.regionSecondaryEnabled = regionSecondaryEnabled;
+    }
+
+    public void setKVMSnapshotEnabled(boolean KVMSnapshotEnabled) {
+        this.KVMSnapshotEnabled = KVMSnapshotEnabled;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {
