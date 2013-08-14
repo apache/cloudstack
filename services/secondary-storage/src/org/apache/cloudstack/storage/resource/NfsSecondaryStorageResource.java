@@ -382,6 +382,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplate.setPath(destData.getPath() + File.separator + templateName);
             newTemplate.setFormat(ImageFormat.VHD);
             newTemplate.setSize(prop.getSize());
+            newTemplate.setPhysicalSize(prop.getPhysicalSize());
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
             s_logger.debug("Failed to create template from snapshot: " + e.toString());
@@ -444,6 +445,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 newTemplate.setPath(destData.getPath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension());
                 newTemplate.setFormat(ImageFormat.QCOW2);
                 newTemplate.setSize(prop.getSize());
+                newTemplate.setPhysicalSize(prop.getPhysicalSize());
                 return new CopyCmdAnswer(newTemplate);
             } catch (ConfigurationException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
