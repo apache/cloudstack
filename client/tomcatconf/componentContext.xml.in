@@ -223,7 +223,6 @@
           <ref bean="LocalStoragePoolAllocator"/>
           <ref bean="clusterScopeStoragePoolAllocator"/>
           <ref bean="zoneWideStoragePoolAllocator"/>
-          <ref bean="garbageCollectingStoragePoolAllocator"/>
       </list>
     </property>
   </bean>
