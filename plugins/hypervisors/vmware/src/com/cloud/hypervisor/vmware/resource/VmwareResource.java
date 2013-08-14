@@ -374,7 +374,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
-    protected ThreadLocal<VmwareContext> _serviceContext = new ThreadLocal<VmwareContext>();
+    protected static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
     protected String _hostName;
 
     protected HashMap<String, State> _vms = new HashMap<String, State>(71);
@@ -5522,90 +5522,95 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        HashMap<String, State> newStates = sync();
-        if (newStates == null) {
-            return null;
-        }
-
-        try {
-            // take the chance to do left-over dummy VM cleanup from previous run
-            VmwareContext context = getServiceContext();
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
-            VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            if(hyperHost.isHyperHostConnected()) {
-                mgr.gcLeftOverVMs(context);
-
-                if(_recycleHungWorker) {
-                    s_logger.info("Scan hung worker VM to recycle");
-
-                    // GC worker that has been running for too long
-                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
-                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime"});
-                    if(ocs != null) {
-                        for(ObjectContent oc : ocs) {
-                            List<DynamicProperty> props = oc.getPropSet();
-                            if(props != null) {
-                                String vmName = null;
-                                String internalName = null;
-                                boolean template = false;
-                                VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
-                                GregorianCalendar bootTime = null;
-
-                                for(DynamicProperty prop : props) {
-                                    if (prop.getName().equals("name"))
-                                        vmName = prop.getVal().toString();
-                                    else if(prop.getName().equals("config.template"))
-                                        template = (Boolean)prop.getVal();
-                                    else if(prop.getName().equals("runtime.powerState"))
-                                        powerState = (VirtualMachinePowerState)prop.getVal();
-                                    else if(prop.getName().equals("runtime.bootTime"))
-                                        bootTime = (GregorianCalendar)prop.getVal();
-                                }
-
-                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
-                                // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-                                internalName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
-
-                                String name = null;
-                                if (internalName != null) {
-                                    name = internalName;
-                                } else {
-                                    name = vmName;
-                                }
-                                if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
-                                    boolean recycle = false;
-
-                                    // recycle stopped worker VM and VM that has been running for too long (hard-coded 10 hours for now)
-                                    if(powerState == VirtualMachinePowerState.POWERED_OFF)
-                                        recycle = true;
-                                    else if(bootTime != null && (new Date().getTime() - bootTime.getTimeInMillis() > 10*3600*1000))
-                                        recycle = true;
-
-                                    if(recycle) {
-                                        s_logger.info("Recycle pending worker VM: " + name);
-
-                                        vmMo.powerOff();
-                                        vmMo.destroy();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                s_logger.error("Host is no longer connected.");
-                return null;
-            }
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-                return null;
-            }
-        }
-
-        return new PingRoutingCommand(getType(), id, newStates);
+    	try {
+	        HashMap<String, State> newStates = sync();
+	        if (newStates == null) {
+	            return null;
+	        }
+	
+	        try {
+	            // take the chance to do left-over dummy VM cleanup from previous run
+	            VmwareContext context = getServiceContext();
+	            VmwareHypervisorHost hyperHost = getHyperHost(context);
+	            VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+	
+	            if(hyperHost.isHyperHostConnected()) {
+	                mgr.gcLeftOverVMs(context);
+	
+	                if(_recycleHungWorker) {
+	                    s_logger.info("Scan hung worker VM to recycle");
+	
+	                    // GC worker that has been running for too long
+	                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
+	                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime"});
+	                    if(ocs != null) {
+	                        for(ObjectContent oc : ocs) {
+	                            List<DynamicProperty> props = oc.getPropSet();
+	                            if(props != null) {
+	                                String vmName = null;
+	                                String internalName = null;
+	                                boolean template = false;
+	                                VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
+	                                GregorianCalendar bootTime = null;
+	
+	                                for(DynamicProperty prop : props) {
+	                                    if (prop.getName().equals("name"))
+	                                        vmName = prop.getVal().toString();
+	                                    else if(prop.getName().equals("config.template"))
+	                                        template = (Boolean)prop.getVal();
+	                                    else if(prop.getName().equals("runtime.powerState"))
+	                                        powerState = (VirtualMachinePowerState)prop.getVal();
+	                                    else if(prop.getName().equals("runtime.bootTime"))
+	                                        bootTime = (GregorianCalendar)prop.getVal();
+	                                }
+	
+	                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+	                                // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
+	                                internalName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+	
+	                                String name = null;
+	                                if (internalName != null) {
+	                                    name = internalName;
+	                                } else {
+	                                    name = vmName;
+	                                }
+	                                if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+	                                    boolean recycle = false;
+	
+	                                    // recycle stopped worker VM and VM that has been running for too long (hard-coded 10 hours for now)
+	                                    if(powerState == VirtualMachinePowerState.POWERED_OFF)
+	                                        recycle = true;
+	                                    else if(bootTime != null && (new Date().getTime() - bootTime.getTimeInMillis() > 10*3600*1000))
+	                                        recycle = true;
+	
+	                                    if(recycle) {
+	                                        s_logger.info("Recycle pending worker VM: " + name);
+	
+	                                        vmMo.powerOff();
+	                                        vmMo.destroy();
+	                                    }
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            } else {
+	                s_logger.error("Host is no longer connected.");
+	                return null;
+	            }
+	        } catch (Throwable e) {
+	            if (e instanceof RemoteException) {
+	                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+	                invalidateServiceContext();
+	                return null;
+	            }
+	        }
+	
+	        return new PingRoutingCommand(getType(), id, newStates);
+        
+    	} finally {
+    		recycleServiceContext();
+    	}
     }
 
     @Override
@@ -5615,50 +5620,54 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public StartupCommand[] initialize() {
-        String hostApiVersion = "4.1";
-        VmwareContext context = getServiceContext();
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
-            assert(hyperHost instanceof HostMO);
-            if(!((HostMO)hyperHost).isHyperHostConnected()) {
-                s_logger.info("Host " + hyperHost.getHyperHostName() + " is not in connected state");
-                return null;
-            }
-            
-            ((HostMO)hyperHost).enableVncOnHostFirewall();
-
-            AboutInfo aboutInfo = ((HostMO)hyperHost).getHostAboutInfo();
-            hostApiVersion = aboutInfo.getApiVersion();
-
-        } catch (Exception e) {
-            String msg = "VmwareResource intialize() failed due to : " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
-            invalidateServiceContext();
-            return null;
-        }
-
-        StartupRoutingCommand cmd = new StartupRoutingCommand();
-        fillHostInfo(cmd);
-
-        Map<String, State> changes = null;
-        synchronized (_vms) {
-            _vms.clear();
-            changes = sync();
-        }
-
-        cmd.setHypervisorType(HypervisorType.VMware);
-        cmd.setStateChanges(changes);
-        cmd.setCluster(_cluster);
-        cmd.setHypervisorVersion(hostApiVersion);
-
-        List<StartupStorageCommand> storageCmds = initializeLocalStorage();
-        StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];
-        answerCmds[0] = cmd;
-        for (int i = 0; i < storageCmds.size(); i++) {
-            answerCmds[i + 1] = storageCmds.get(i);
-        }
-
-        return answerCmds;
+    	try {
+	        String hostApiVersion = "4.1";
+	        VmwareContext context = getServiceContext();
+	        try {
+	            VmwareHypervisorHost hyperHost = getHyperHost(context);
+	            assert(hyperHost instanceof HostMO);
+	            if(!((HostMO)hyperHost).isHyperHostConnected()) {
+	                s_logger.info("Host " + hyperHost.getHyperHostName() + " is not in connected state");
+	                return null;
+	            }
+	            
+	            ((HostMO)hyperHost).enableVncOnHostFirewall();
+	
+	            AboutInfo aboutInfo = ((HostMO)hyperHost).getHostAboutInfo();
+	            hostApiVersion = aboutInfo.getApiVersion();
+	
+	        } catch (Exception e) {
+	            String msg = "VmwareResource intialize() failed due to : " + VmwareHelper.getExceptionMessage(e);
+	            s_logger.error(msg);
+	            invalidateServiceContext();
+	            return null;
+	        }
+	
+	        StartupRoutingCommand cmd = new StartupRoutingCommand();
+	        fillHostInfo(cmd);
+	
+	        Map<String, State> changes = null;
+	        synchronized (_vms) {
+	            _vms.clear();
+	            changes = sync();
+	        }
+	
+	        cmd.setHypervisorType(HypervisorType.VMware);
+	        cmd.setStateChanges(changes);
+	        cmd.setCluster(_cluster);
+	        cmd.setHypervisorVersion(hostApiVersion);
+	
+	        List<StartupStorageCommand> storageCmds = initializeLocalStorage();
+	        StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];
+	        answerCmds[0] = cmd;
+	        for (int i = 0; i < storageCmds.size(); i++) {
+	            answerCmds[i + 1] = storageCmds.get(i);
+	        }
+	
+	        return answerCmds;
+    	} finally {
+    		recycleServiceContext();
+    	}
     }
 
     private List<StartupStorageCommand> initializeLocalStorage() {
@@ -6312,114 +6321,120 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        _url = (String) params.get("url");
-        _username = (String) params.get("username");
-        _password = (String) params.get("password");
-        _dcId = (String) params.get("zone");
-        _pod = (String) params.get("pod");
-        _cluster = (String) params.get("cluster");
-
-        _guid = (String) params.get("guid");
-        String[] tokens = _guid.split("@");
-        _vCenterAddress = tokens[1];
-        _morHyperHost = new ManagedObjectReference();
-        String[] hostTokens = tokens[0].split(":");
-        _morHyperHost.setType(hostTokens[0]);
-        _morHyperHost.setValue(hostTokens[1]);
-
-        _guestTrafficInfo = (VmwareTrafficLabel) params.get("guestTrafficInfo");
-        _publicTrafficInfo = (VmwareTrafficLabel) params.get("publicTrafficInfo");
-        VmwareContext context = getServiceContext();
-        volMgr = ComponentContext.inject(VolumeOrchestrator.class);
-        try {
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            mgr.setupResourceStartupParams(params);
-
-            CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
-            cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
-            if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch ||
-                    _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
-                cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
-            }
-            cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
-            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
-            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
-
-            VmwareHypervisorHost hostMo = this.getHyperHost(context);
-            _hostName = hostMo.getHyperHostName();
-
-            Map<String, String> vsmCredentials;
-            if (_guestTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch ||
-                    _publicTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
-                vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
-                if (vsmCredentials != null) {
-                    s_logger.info("Stocking credentials while configuring resource.");
-                    context.registerStockObject("vsmcredentials", vsmCredentials);
-                }
-                _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-            }
-
-        } catch (Exception e) {
-            s_logger.error("Unexpected Exception ", e);
-        }
-
-        if(_privateNetworkVSwitchName == null) {
-            _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
-        }
-
-        String value = (String) params.get("vmware.reserve.cpu");
-        if(value != null && value.equalsIgnoreCase("true"))
-            _reserveCpu = true;
-
-        value = (String) params.get("vmware.recycle.hung.wokervm");
-        if(value != null && value.equalsIgnoreCase("true"))
-            _recycleHungWorker = true;
-
-        value = (String) params.get("vmware.reserve.mem");
-        if(value != null && value.equalsIgnoreCase("true"))
-            _reserveMem = true;
-
-        value = (String)params.get("vmware.root.disk.controller");
-        if(value != null && value.equalsIgnoreCase("scsi"))
-            _rootDiskController = DiskControllerType.scsi;
-        else
-            _rootDiskController = DiskControllerType.ide;
-
-        Integer intObj = (Integer) params.get("ports.per.dvportgroup");
-        if (intObj != null)
-            _portsPerDvPortGroup = intObj.intValue();
-
-        s_logger.info("VmwareResource network configuration info." +
-                " private traffic over vSwitch: " + _privateNetworkVSwitchName + ", public traffic over " +
-                _publicTrafficInfo.getVirtualSwitchType() + " : " + _publicTrafficInfo.getVirtualSwitchName() +
-                ", guest traffic over " + _guestTrafficInfo.getVirtualSwitchType() + " : " +
-                _guestTrafficInfo.getVirtualSwitchName());
-
-        value = params.get("vmware.create.full.clone").toString();
-        if (value != null && value.equalsIgnoreCase("true")) {
-            _fullCloneFlag = true;
-        } else {
-            _fullCloneFlag = false;
-        }
-
-        value = params.get("vm.instancename.flag").toString();
-        if (value != null && value.equalsIgnoreCase("true")) {
-            _instanceNameFlag = true;
-        } else {
-            _instanceNameFlag = false;
-        }
-
-        value = (String)params.get("scripts.timeout");
-        int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
-        VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr,
-                timeout, this, _shutdown_waitMs, null
-                );
-        storageHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
-
-        return true;
+    	try {
+	        _name = name;
+	
+	        _url = (String) params.get("url");
+	        _username = (String) params.get("username");
+	        _password = (String) params.get("password");
+	        _dcId = (String) params.get("zone");
+	        _pod = (String) params.get("pod");
+	        _cluster = (String) params.get("cluster");
+	
+	        _guid = (String) params.get("guid");
+	        String[] tokens = _guid.split("@");
+	        _vCenterAddress = tokens[1];
+	        _morHyperHost = new ManagedObjectReference();
+	        String[] hostTokens = tokens[0].split(":");
+	        _morHyperHost.setType(hostTokens[0]);
+	        _morHyperHost.setValue(hostTokens[1]);
+	
+	        _guestTrafficInfo = (VmwareTrafficLabel) params.get("guestTrafficInfo");
+	        _publicTrafficInfo = (VmwareTrafficLabel) params.get("publicTrafficInfo");
+	        VmwareContext context = getServiceContext();
+	        
+	        // TODO ??? this is an invalid usage pattern. need to fix the reference to VolumeManagerImp here at resource file
+	        // volMgr = ComponentContext.inject(VolumeManagerImpl.class);
+	        try {
+	            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+	            mgr.setupResourceStartupParams(params);
+	
+	            CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
+	            cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
+	            if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch ||
+	                    _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+	                cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
+	            }
+	            cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
+	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
+	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
+	
+	            VmwareHypervisorHost hostMo = this.getHyperHost(context);
+	            _hostName = hostMo.getHyperHostName();
+	
+	            Map<String, String> vsmCredentials;
+	            if (_guestTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch ||
+	                    _publicTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
+	                vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
+	                if (vsmCredentials != null) {
+	                    s_logger.info("Stocking credentials while configuring resource.");
+	                    context.registerStockObject("vsmcredentials", vsmCredentials);
+	                }
+	                _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+	            }
+	
+	        } catch (Exception e) {
+	            s_logger.error("Unexpected Exception ", e);
+	        }
+	
+	        if(_privateNetworkVSwitchName == null) {
+	            _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
+	        }
+	
+	        String value = (String) params.get("vmware.reserve.cpu");
+	        if(value != null && value.equalsIgnoreCase("true"))
+	            _reserveCpu = true;
+	
+	        value = (String) params.get("vmware.recycle.hung.wokervm");
+	        if(value != null && value.equalsIgnoreCase("true"))
+	            _recycleHungWorker = true;
+	
+	        value = (String) params.get("vmware.reserve.mem");
+	        if(value != null && value.equalsIgnoreCase("true"))
+	            _reserveMem = true;
+	
+	        value = (String)params.get("vmware.root.disk.controller");
+	        if(value != null && value.equalsIgnoreCase("scsi"))
+	            _rootDiskController = DiskControllerType.scsi;
+	        else
+	            _rootDiskController = DiskControllerType.ide;
+	
+	        Integer intObj = (Integer) params.get("ports.per.dvportgroup");
+	        if (intObj != null)
+	            _portsPerDvPortGroup = intObj.intValue();
+	
+	        s_logger.info("VmwareResource network configuration info." +
+	                " private traffic over vSwitch: " + _privateNetworkVSwitchName + ", public traffic over " +
+	                _publicTrafficInfo.getVirtualSwitchType() + " : " + _publicTrafficInfo.getVirtualSwitchName() +
+	                ", guest traffic over " + _guestTrafficInfo.getVirtualSwitchType() + " : " +
+	                _guestTrafficInfo.getVirtualSwitchName());
+	
+	        value = params.get("vmware.create.full.clone").toString();
+	        if (value != null && value.equalsIgnoreCase("true")) {
+	            _fullCloneFlag = true;
+	        } else {
+	            _fullCloneFlag = false;
+	        }
+	
+	        value = params.get("vm.instancename.flag").toString();
+	        if (value != null && value.equalsIgnoreCase("true")) {
+	            _instanceNameFlag = true;
+	        } else {
+	            _instanceNameFlag = false;
+	        }
+	
+	        value = (String)params.get("scripts.timeout");
+	        int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
+	        VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+	        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr,
+	                timeout, this, _shutdown_waitMs, null
+	                );
+	        storageHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
+	
+	        return true;
+    	} finally {
+    		recycleServiceContext();
+    	}
     }
 
     @Override
@@ -6451,13 +6466,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public VmwareContext getServiceContext(Command cmd) {
-    	if(_serviceContext.get() != null)
-    		return _serviceContext.get();
+    	if(s_serviceContext.get() != null)
+    		return s_serviceContext.get();
     	
     	VmwareContext context = null;
         try {
             context = VmwareContextFactory.getContext(_vCenterAddress, _username, _password);
-            _serviceContext.set(context);
+            s_serviceContext.set(context);
         } catch (Exception e) {
             s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);
             throw new CloudRuntimeException("Unable to connect to vSphere server: " + _vCenterAddress);
@@ -6467,16 +6482,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public void invalidateServiceContext(VmwareContext context) {
-    	assert(_serviceContext.get() == context);
+    	assert(s_serviceContext.get() == context);
     	
-    	_serviceContext.set(null);
+    	s_serviceContext.set(null);
     	if(context != null)
     		context.close();
     }
 
-	private void recycleServiceContext() {
-		VmwareContext context = _serviceContext.get();
-		_serviceContext.set(null);
+	private static void recycleServiceContext() {
+		VmwareContext context = s_serviceContext.get();
+		s_serviceContext.set(null);
 		
 		if(context != null) {
 			assert(context.getPool() != null);

@@ -77,6 +77,22 @@ public class VmwareClient {
             return;
         }
     }
+    
+    static {
+    	try {
+			trustAllHttpsCertificates();
+	        HostnameVerifier hv = new HostnameVerifier() {
+	            @Override
+	            public boolean verify(String urlHostName, SSLSession session) {
+	                return true;
+	            }
+	        };
+	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
+	        
+        	vimService = new VimService();
+		} catch (Exception e) {
+		}   	
+    }
 
     private static void trustAllHttpsCertificates() throws Exception {
         // Create a trust manager that does not validate certificate chains:
@@ -93,7 +109,7 @@ public class VmwareClient {
     private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
     private ManagedObjectReference propCollectorRef;
     private ManagedObjectReference rootRef;
-    private VimService vimService;
+    private static VimService vimService;
     private VimPortType vimPort;
     private ServiceContent serviceContent;
     private String serviceCookie;
@@ -102,7 +118,6 @@ public class VmwareClient {
     private boolean isConnected = false;
 
     public VmwareClient(String name) {
-
     }
 
     /**
@@ -112,20 +127,9 @@ public class VmwareClient {
      *             the exception
      */
     public void connect(String url, String userName, String password) throws Exception {
-
-        HostnameVerifier hv = new HostnameVerifier() {
-            @Override
-            public boolean verify(String urlHostName, SSLSession session) {
-                return true;
-            }
-        };
-        trustAllHttpsCertificates();
-        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-
         SVC_INST_REF.setType(SVC_INST_NAME);
         SVC_INST_REF.setValue(SVC_INST_NAME);
 
-        vimService = new VimService();
         vimPort = vimService.getVimPort();
         Map<String, Object> ctxt = ((BindingProvider) vimPort).getRequestContext();
 

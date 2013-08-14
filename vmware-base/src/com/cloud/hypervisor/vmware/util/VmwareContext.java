@@ -79,6 +79,14 @@ public class VmwareContext {
 			javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
 			sc.init(null, trustAllCerts, null);
 			javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+		    HostnameVerifier hv = new HostnameVerifier() {
+		    	@Override
+	            public boolean verify(String urlHostName, SSLSession session) {
+		    		return true;
+		        }
+		    };
+		    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 		} catch (Exception e) {
 			s_logger.error("Unexpected exception ", e);
 		}
@@ -91,6 +99,8 @@ public class VmwareContext {
 		_serverAddress = address;
 		
 		registerOutstandingContext();
+		if(s_logger.isInfoEnabled())
+			s_logger.info("New VmwareContext object, current outstanding count: " + getOutstandingContextCount());
 	}
 
 	public void registerStockObject(String name, Object obj) {
@@ -569,14 +579,6 @@ public class VmwareContext {
 		    s_logger.error("No cookie is found in vmware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
 		}
-	    HostnameVerifier hv = new HostnameVerifier() {
-	    	@Override
-            public boolean verify(String urlHostName, SSLSession session) {
-	    		return true;
-	        }
-	    };
-
-	    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 	    URL url = new URL(urlString);
 	    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 
@@ -590,14 +592,6 @@ public class VmwareContext {
 	}
 
 	public HttpURLConnection getRawHTTPConnection(String urlString) throws Exception {
-	    HostnameVerifier hv = new HostnameVerifier() {
-	    	@Override
-            public boolean verify(String urlHostName, SSLSession session) {
-	    		return true;
-	        }
-	    };
-
-	    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 	    URL url = new URL(urlString);
 	    return (HttpURLConnection)url.openConnection();
 	}
