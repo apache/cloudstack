@@ -1564,35 +1564,66 @@ ServerResource {
             String path = vol.getPath();
             String type = getResizeScriptType(pool, vol);
 
-            if (type == null) {
-                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '"
-                                + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
-            } else if (type.equals("QCOW2") && shrinkOk) {
-                return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+            /**
+             * RBD volumes can't be resized via a Bash script or via libvirt
+             *
+             * libvirt-java doesn't implemented resizing volumes, so we have to do this manually
+             *
+             * Future fix would be to hand this over to libvirt
+             */
+            if (pool.getType() == StoragePoolType.RBD) {
+                try {
+                    Rados r = new Rados(pool.getAuthUserName());
+                    r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+                    r.confSet("key", pool.getAuthSecret());
+                    r.connect();
+                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                    IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                    Rbd rbd = new Rbd(io);
+                    RbdImage image = rbd.open(vol.getName());
+
+                    s_logger.debug("Resizing RBD volume " + vol.getName() +  " to " + newSize + " bytes"); 
+                    image.resize(newSize);
+                    rbd.close(image);
+
+                    r.ioCtxDestroy(io);
+                    s_logger.debug("Succesfully resized RBD volume " + vol.getName() +  " to " + newSize + " bytes"); 
+                } catch (RadosException e) {
+                    return new ResizeVolumeAnswer(cmd, false, e.toString());
+                } catch (RbdException e) {
+                    return new ResizeVolumeAnswer(cmd, false, e.toString());
+                }
+            } else {
+                if (type == null) {
+                    return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '"
+                                    + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+                } else if (type.equals("QCOW2") && shrinkOk) {
+                    return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+                }
+
+                s_logger.debug("got to the stage where we execute the volume resize, params:"
+                            + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
+                final Script resizecmd = new Script(_resizeVolumePath,
+                            _cmdsTimeout, s_logger);
+                resizecmd.add("-s",String.valueOf(newSize));
+                resizecmd.add("-c",String.valueOf(currentSize));
+                resizecmd.add("-p",path);
+                resizecmd.add("-t",type);
+                resizecmd.add("-r",String.valueOf(shrinkOk));
+                resizecmd.add("-v",vmInstanceName);
+                String result = resizecmd.execute();
+
+                if (result != null) {
+                    return new ResizeVolumeAnswer(cmd, false, result);
+                }
             }
 
-            s_logger.debug("got to the stage where we execute the volume resize, params:"
-                           + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
-            final Script resizecmd = new Script(_resizeVolumePath,
-                        _cmdsTimeout, s_logger);
-            resizecmd.add("-s",String.valueOf(newSize));
-            resizecmd.add("-c",String.valueOf(currentSize));
-            resizecmd.add("-p",path);
-            resizecmd.add("-t",type);
-            resizecmd.add("-r",String.valueOf(shrinkOk));
-            resizecmd.add("-v",vmInstanceName);
-            String result = resizecmd.execute();
-
-            if (result == null) {
-
-                /* fetch new size as seen from libvirt, don't want to assume anything */
-                pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
-                long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
-                s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
-                return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
-            }
-
-            return new ResizeVolumeAnswer(cmd, false, result);
+            /* fetch new size as seen from libvirt, don't want to assume anything */
+            pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
+            long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
+            s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
+            return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
         } catch (CloudRuntimeException e) {
             String error = "failed to resize volume: " + e;
             s_logger.debug(error);
