@@ -3325,32 +3325,30 @@
                 },
 
                 tabFilter: function(args) {
-                    var networkOfferingHavingELB = false;
-                    $.ajax({
-                        url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {
-                            var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
-                            $(networkoffering.service).each(function() {
-                                var thisService = this;
-                                if (thisService.name == "Lb") {
-                                    $(thisService.capability).each(function() {
-                                        if (this.name == "ElasticLb" && this.value == "true") {
-                                            networkOfferingHavingELB = true;
-                                            return false; //break $.each() loop
-                                        }
-                                    });
-                                    return false; //break $.each() loop
-                                }
-                            });
-                        }
-                    });
-
-                    var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
-
-                    if (networkOfferingHavingELB == false)
+                	var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
+                	
+                	var networkOfferingHavingELB = false;                                       
+                    var services = args.context.networks[0].service;
+                    if(services != null) {
+                    	for(var i = 0; i < services.length; i++) {                    		
+                    		if (services[i].name == "Lb") {
+                    			var capabilities = services[i].capability;
+                    			if(capabilities != null) {
+                    				for(var k = 0; k < capabilities.length; k++) {
+                    					if(capabilities[k].name == "ElasticLb") {
+                    						networkOfferingHavingELB = true;
+                    						break;                    					
+                    					}
+                    				}
+                    			}  
+                                break;
+                            }                    		
+                    	}
+                    }   
+                    if (networkOfferingHavingELB == false) {
                         hiddenTabs.push("addloadBalancer");
+                    }
+                    
                     return hiddenTabs;
                 },
 
