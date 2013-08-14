@@ -202,7 +202,9 @@ public class TemplateObject implements TemplateInfo {
                     templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
                     if (this.getDataStore().getRole() == DataStoreRole.Image) {
                         VMTemplateVO templateVO = this.imageDao.findById(this.getId());
-                        templateVO.setFormat(newTemplate.getFormat());
+                        if (newTemplate.getFormat() != null) {
+                            templateVO.setFormat(newTemplate.getFormat());
+                        }
                         templateVO.setSize(newTemplate.getSize());
                         this.imageDao.update(templateVO.getId(), templateVO);
                     }
