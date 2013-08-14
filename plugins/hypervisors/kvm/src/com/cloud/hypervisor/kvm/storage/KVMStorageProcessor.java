@@ -352,8 +352,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageUrl + File.separator + volumeDir
                            );
+            if (!srcVolumeName.endsWith(".qcow2")) {
+                srcVolumeName = srcVolumeName + ".qcow2";
+            }
             KVMPhysicalDisk volume = secondaryStoragePool
-                    .getPhysicalDisk(srcVolumeName + ".qcow2");
+                    .getPhysicalDisk(srcVolumeName);
             storagePoolMgr.copyPhysicalDisk(volume, volumeName,
                     primaryPool);
             VolumeObjectTO newVol = new VolumeObjectTO();
@@ -414,7 +417,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             storagePoolMgr.copyPhysicalDisk(volume,
                     destVolumeName,secondaryStoragePool);
             VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(destVolumePath + File.separator + volumeName);
+            newVol.setPath(destVolumePath + File.separator + destVolumeName);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());

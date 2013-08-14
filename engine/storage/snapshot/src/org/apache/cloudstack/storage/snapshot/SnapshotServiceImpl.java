@@ -211,7 +211,8 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             result = future.get();
             if (result.isFailed()) {
-                s_logger.debug("Failed to create snapshot:" + result.getResult());
+                snapshot.processEvent(Snapshot.Event.OperationFailed);
+                snapshot.processEvent(Event.OperationFailed);
                 throw new CloudRuntimeException(result.getResult());
             }
             return result;
@@ -221,8 +222,10 @@ public class SnapshotServiceImpl implements SnapshotService {
         } catch (ExecutionException e) {
             s_logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to create snapshot", e);
+            throw new CloudRuntimeException("Failed to create snapshot", e);
         }
-
     }
 
     // if a snapshot has parent snapshot, the new snapshot should be stored in
