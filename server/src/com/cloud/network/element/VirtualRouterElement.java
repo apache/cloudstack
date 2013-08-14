@@ -28,10 +28,10 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -50,7 +50,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -87,7 +86,6 @@ import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -99,22 +97,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 import com.google.gson.Gson;
-
-import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
 		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
@@ -390,7 +372,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
+                s_logger.debug("Virtual router elemnt doesn't need to apply lb rules on the backend; virtual " +
                 		"router doesn't exist in the network " + network.getId());
                 return true;
             }
