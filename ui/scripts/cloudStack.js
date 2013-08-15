@@ -168,6 +168,11 @@
                             expires: 1
                         });
 
+                        g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
+                        $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
+                            expires: 1
+                        });                        
+                        
                         if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                             g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                             $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
@@ -332,6 +337,11 @@
                                     expires: 1
                                 });
 
+                                g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
+                                $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
+                                    expires: 1
+                                });   
+                                
                                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                                     g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                                     $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
@@ -432,6 +442,7 @@
                         g_timezoneoffset = null;
                         g_timezone = null;
                         g_supportELB = null;
+                        g_KVMsnapshotenabled = null;
                         g_loginCmdText = null;
 
                         $.cookie('JSESSIONID', null);
