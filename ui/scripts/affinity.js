@@ -194,6 +194,7 @@
                                 success: function(json) {
                                     var item = json.listaffinitygroupsresponse.affinitygroup[0];
                                     args.response.success({
+                                    	actionFilter: affinitygroupActionfilter,
                                         data: item
                                     });
                                 }
@@ -204,4 +205,14 @@
             }
         }
     };
+       
+    var affinitygroupActionfilter = function(args) {
+        var jsonObj = args.context.item;
+        var allowedActions = [];       
+        if (jsonObj.type != 'ExplicitDedication' || isAdmin()) {
+            allowedActions.push("remove");            
+        }    
+        return allowedActions;
+    }
+       
 })(cloudStack);
