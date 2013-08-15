@@ -1865,8 +1865,12 @@
         }
 
         if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
-            allowedActions.push("takeSnapshot");
-            allowedActions.push("recurringSnapshot");
+        	if(jsonObj.hypervisor != 'KVM' 
+        		|| (jsonObj.hypervisor == 'KVM' && g_KVMsnapshotenabled == true) ) {
+	            allowedActions.push("takeSnapshot");
+	            allowedActions.push("recurringSnapshot");
+        	}            
+            
             if (jsonObj.type == "DATADISK") {
                 allowedActions.push("resize");
             }
