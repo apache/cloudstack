@@ -489,6 +489,32 @@ class TestListAffinityGroups(cloudstackTestCase):
 
         self.aff_grp[0].delete(self.api_client)
 
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_07_list_all_vms_in_aff_grp(self):
+        """
+           List affinity group should list all for a vms associated with that group
+        """
+
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+
+        vm, hostid = self.create_vm_in_aff_grps([self.aff_grp[0].name])
+        list_aff_grps = AffinityGroup.list(self.api_client, id=self.aff_grp[0].id)
+
+        self.assertEqual(list_aff_grps[0].name, self.aff_grp[0].name,
+                         "Listing Affinity Group by id failed")
+
+        self.assertEqual(list_aff_grps[0].virtualmachineIds[0], vm.id,
+        "List affinity group response.virtualmachineIds for group: %s doesn't contain hostid : %s associated with the group"
+            %(self.aff_grp[0].name, vm.id)
+            )
+
+
+        vm.delete(self.api_client)
+        #Wait for expunge interval to cleanup VM
+        wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
+
+        self.aff_grp[0].delete(self.api_client)
+
 class TestDeleteAffinityGroups(cloudstackTestCase):
 
     @classmethod
@@ -715,6 +741,42 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         #Cleanup
         aff_0.delete(self.api_client)
         aff_1.delete(userapiclient)
+
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_08_delete_aff_grp_by_id(self):
+        """
+            Delete Affinity Group by id.
+        """
+
+        aff_grp_1 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        aff_grp_2 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+
+        aff_grp_1.delete(self.api_client)
+        aff_grp_2.delete(self.api_client)
+
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_09_delete_aff_grp_root_admin(self):
+        """
+            Root admin should be able to delete affinity group of other users
+        """
+
+        self.user1 = Account.create(self.api_client,
+                                       self.services["new_account"])
+
+        self.cleanup.append(self.user1)
+        user1apiclient = self.testClient.createUserApiClient(
+                                        UserName=self.user1.name,
+                                        DomainName=self.user1.domain,
+                                        acctType=0)
+
+        aff_grp = self.create_aff_grp(api_client=user1apiclient,
+                            aff_grp=self.services["host_anti_affinity"])
+
+        list_aff_grps = AffinityGroup.list(self.api_client)
+        self.assertNotEqual(list_aff_grps, [], "Admin not able to list Affinity "
+                         "Groups of users")
+
+        aff_grp.delete(self.api_client)
 
 class TestUpdateVMAffinityGroups(cloudstackTestCase):
 
@@ -1504,3 +1566,130 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         self.assertNotEqual(list_aff_grps, [], "Admin not able to list Affinity "
                          "Groups of users")
         aff_grp.delete(userapiclient)
+
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_04_list_all_admin_aff_grp(self):
+        """
+            List Affinity Groups belonging to admin user
+        """
+
+        aff_grp1 = self.create_aff_grp(api_client=self.api_client,
+                            aff_grp=self.services["host_anti_affinity"])
+        aff_grp2 = self.create_aff_grp(api_client=self.api_client,
+                            aff_grp=self.services["host_anti_affinity"])
+
+        list_aff_grps = AffinityGroup.list(self.api_client)
+
+        self.assertNotEqual(list_aff_grps, [], "Admin not able to list Affinity "
+                         "Groups belonging to him")
+        grp_names = [aff_grp1.name, aff_grp2.name]
+        list_names = []
+        for grp in list_aff_grps:
+            list_names.append(grp.name)
+
+        for name in grp_names:
+            self.assertTrue(name in list_names,
+                        "Listing affinity groups belonging to Admin didn't return group %s" %(name))
+
+        aff_grp1.delete(self.api_client)
+        aff_grp2.delete(self.api_client)
+
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_05_list_all_users_aff_grp(self):
+        """
+            List Affinity Groups belonging to regular user passing account id and domain id
+        """
+
+        self.user1 = Account.create(self.api_client,
+                                       self.services["new_account"])
+
+        self.cleanup.append(self.user1)
+        userapiclient = self.testClient.createUserApiClient(
+                                        UserName=self.user1.name,
+                                        DomainName=self.user1.domain,
+                                        acctType=0)
+
+        aff_grp1 = self.create_aff_grp(api_client=userapiclient,
+                            aff_grp=self.services["host_anti_affinity"])
+        aff_grp2 = self.create_aff_grp(api_client=userapiclient,
+                            aff_grp=self.services["host_anti_affinity"])
+
+        list_aff_grps = AffinityGroup.list(self.api_client, accountId=self.user1.id, domainId=self.user1.domainid)
+
+        self.assertNotEqual(list_aff_grps, [], "Admin not able to list Affinity "
+                         "Groups of users")
+        grp_names = [aff_grp1.name, aff_grp2.name]
+        list_names = []
+        for grp in list_aff_grps:
+            list_names.append(grp.name)
+
+        for name in grp_names:
+            self.assertTrue(name in list_names,
+                        "Missing Group %s from listing" %(name))
+
+        aff_grp1.delete(self.api_client)
+        aff_grp2.delete(self.api_client)
+
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_06_list_all_users_aff_grp_by_id(self):
+        """
+            List Affinity Groups belonging to regular user passing group id
+        """
+
+        self.user1 = Account.create(self.api_client,
+                                       self.services["new_account"])
+
+        self.cleanup.append(self.user1)
+        userapiclient = self.testClient.createUserApiClient(
+                                        UserName=self.user1.name,
+                                        DomainName=self.user1.domain,
+                                        acctType=0)
+
+        aff_grp = self.create_aff_grp(api_client=userapiclient,
+                            aff_grp=self.services["host_anti_affinity"])
+
+        list_aff_grps = AffinityGroup.list(userapiclient)
+        aff_grp_by_id = AffinityGroup.list(self.api_client, id=list_aff_grps[0].id)
+
+        self.assertNotEqual(aff_grp_by_id, [], "Admin not able to list Affinity "
+                         "Groups of users")
+        self.assertEqual(len(aff_grp_by_id), 1, "%s affinity groups listed by admin with id %s. Expected 1"
+                                                %(len(aff_grp_by_id), list_aff_grps[0].id))
+        self.assertEqual(aff_grp_by_id[0].name, aff_grp.name,
+                "Incorrect name returned when listing user affinity groups as admin by id Expected : %s Got: %s"
+                %(aff_grp.name, aff_grp_by_id[0].name )
+            )
+
+        aff_grp.delete(self.api_client)
+
+    @attr(tags=["simulator", "basic", "advanced"])
+    def test_07_delete_aff_grp_of_other_user(self):
+        """
+            Delete Affinity Group belonging to regular user
+        """
+
+        self.user1 = Account.create(self.api_client,
+                                       self.services["new_account"])
+
+        self.cleanup.append(self.user1)
+        userapiclient = self.testClient.createUserApiClient(
+                                        UserName=self.user1.name,
+                                        DomainName=self.user1.domain,
+                                        acctType=0)
+
+        aff_grp = self.create_aff_grp(api_client=userapiclient,
+                            aff_grp=self.services["host_anti_affinity"])
+
+        list_aff_grps = AffinityGroup.list(userapiclient)
+        aff_grp_by_id = AffinityGroup.list(self.api_client, id=list_aff_grps[0].id)
+
+        self.assertNotEqual(aff_grp_by_id, [], "Admin not able to list Affinity "
+                         "Groups of users")
+        self.assertEqual(len(aff_grp_by_id), 1, "%s affinity groups listed by admin with id %s. Expected 1"
+                                                %(len(aff_grp_by_id), list_aff_grps[0].id))
+        self.assertEqual(aff_grp_by_id[0].name, aff_grp.name,
+                "Incorrect name returned when listing user affinity groups as admin by id Expected : %s Got: %s"
+                %(aff_grp.name, aff_grp_by_id[0].name )
+            )
+
+        aff_grp.delete(self.api_client)
