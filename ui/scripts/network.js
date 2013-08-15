@@ -377,63 +377,76 @@
                                         },
                                         dependsOn: 'zoneId',
                                         docID: 'helpGuestNetworkNetworkOffering',
-                                        select: function(args) {
-                                            $.ajax({
-                                                url: createURL('listVPCs'),
-                                                data: {
-                                                    listAll: true
-                                                },
-                                                success: function(json) {
-                                                    var items = json.listvpcsresponse.vpc;
-                                                    var baseUrl = 'listNetworkOfferings&zoneid=' + args.zoneId;
-                                                    var listUrl;
-                                                    var data = {
-                                                        guestiptype: 'Isolated',
-                                                        supportedServices: 'SourceNat',
-                                                        state: 'Enabled',
-                                                    };
-
-                                                    if (items != null && items.length > 0)
-                                                        listUrl = baseUrl;
-                                                    else
-                                                        listUrl = baseUrl + '&forVpc=false';
-
-                                                    if (args.context.vpc) {
-                                                        data.forVpc = true;
+                                        select: function(args) {   
+                                            var data = {
+                                            	zoneid: args.zoneId,
+                                                guestiptype: 'Isolated',
+                                                supportedServices: 'SourceNat',
+                                                state: 'Enabled',
+                                            };
+                                           
+                                            if ('vpc' in args.context) { //from VPC section                                            	
+                                            	$.extend(data, {
+                                            		forVpc: true
+                                            	});
+                                            }
+                                            else { //from guest network section
+                                            	var vpcs;
+                                            	$.ajax({
+                                                    url: createURL('listVPCs'),
+                                                    data: {
+                                                        listAll: true
+                                                    },
+                                                    async: false,
+                                                    success: function(json) {                                                    	
+                                                    	vpcs = json.listvpcsresponse.vpc;                                                     	
                                                     }
+                                                });                                            	
+                                                if (vpcs == null || vpcs.length == 0) { //if there is no VPC in the system
+                                                	$.extend(data, {
+                                                		forVpc: false
+                                                	});
+                                                }
+                                            }
 
-                                                    $.ajax({
-                                                        url: createURL(listUrl),
-                                                        data: data,
-                                                        success: function(json) {
-                                                            networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                                                            args.$select.change(function() {
-                                                                var $vlan = args.$select.closest('form').find('[rel=vlan]');
-                                                                var networkOffering = $.grep(
-                                                                    networkOfferingObjs, function(netoffer) {
-                                                                        return netoffer.id == args.$select.val();
-                                                                    }
-                                                                )[0];
+                                            if(!isAdmin()) { //normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true 
+                                            	$.extend(data, {
+                                            		specifyvlan: false
+                                            	});
+                                            }
+                                            
+                                            $.ajax({
+                                                url: createURL('listNetworkOfferings'),
+                                                data: data,
+                                                success: function(json) {
+                                                    networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                                    args.$select.change(function() {
+                                                        var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                                        var networkOffering = $.grep(
+                                                            networkOfferingObjs, function(netoffer) {
+                                                                return netoffer.id == args.$select.val();
+                                                            }
+                                                        )[0];
 
-                                                                if (networkOffering.specifyvlan) {
-                                                                    $vlan.css('display', 'inline-block');
-                                                                } else {
-                                                                    $vlan.hide();
-                                                                }
-                                                            });
-
-                                                            args.response.success({
-                                                                data: $.map(networkOfferingObjs, function(zone) {
-                                                                    return {
-                                                                        id: zone.id,
-                                                                        description: zone.name
-                                                                    };
-                                                                })
-                                                            });
+                                                        if (networkOffering.specifyvlan) {
+                                                            $vlan.css('display', 'inline-block');
+                                                        } else {
+                                                            $vlan.hide();
                                                         }
+                                                    });
+
+                                                    args.response.success({
+                                                        data: $.map(networkOfferingObjs, function(zone) {
+                                                            return {
+                                                                id: zone.id,
+                                                                description: zone.name
+                                                            };
+                                                        })
                                                     });
                                                 }
                                             });
+                                            //???
+                                            
                                         }
                                     },
 
