@@ -198,7 +198,9 @@ public class TemplateObject implements TemplateInfo {
                     templateStoreRef.setDownloadPercent(100);
                     templateStoreRef.setDownloadState(Status.DOWNLOADED);
                     templateStoreRef.setSize(newTemplate.getSize());
-                    templateStoreRef.setPhysicalSize(newTemplate.getPhysicalSize());
+                    if (newTemplate.getPhysicalSize() != null) {
+                        templateStoreRef.setPhysicalSize(newTemplate.getPhysicalSize());
+                    }
                     templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
                     if (this.getDataStore().getRole() == DataStoreRole.Image) {
                         VMTemplateVO templateVO = this.imageDao.findById(this.getId());

@@ -1239,20 +1239,29 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO) dstore;
-            String snapshotPath = obj.getPath();
-            if (snapshotPath.startsWith(File.separator)) {
-                snapshotPath = snapshotPath.substring(1);
-            }
-            int index = snapshotPath.lastIndexOf("/");
-            String snapshotName = snapshotPath.substring(index + 1);
-            snapshotPath = snapshotPath.substring(0, index);
-
             String parent = getRootDir(nfs.getUrl());
             if (!parent.endsWith(File.separator)) {
                 parent += File.separator;
             }
+            String snapshotPath = obj.getPath();
+            if (snapshotPath.startsWith(File.separator)) {
+                snapshotPath = snapshotPath.substring(1);
+            }
+            // check if the passed snapshot path is a directory or not. For ImageCache, path is stored as a directory instead of
+            // snapshot file name. If so, since backupSnapshot process has already deleted snapshot in cache, so we just do nothing
+            // and return true.
+            String fullSnapPath = parent + snapshotPath;
+            File snapDir = new File(fullSnapPath);
+            if (snapDir.exists() && snapDir.isDirectory()) {
+                s_logger.debug("snapshot path " + snapshotPath + " is a directory, already deleted during backup snapshot, so no need to delete");
+                return new Answer(cmd, true, null);
+            }
+            // passed snapshot path is a snapshot file path, then get snapshot directory first
+            int index = snapshotPath.lastIndexOf("/");
+            String snapshotName = snapshotPath.substring(index + 1);
+            snapshotPath = snapshotPath.substring(0, index);
             String absoluteSnapshotPath = parent + snapshotPath;
-            // check if directory exists
+            // check if snapshot directory exists
             File snapshotDir = new File(absoluteSnapshotPath);
             String details = null;
             if (!snapshotDir.exists()) {
