@@ -579,15 +579,14 @@
                             required: false
                         }
                     },
-                    ispublic: {
-                        //isReverse: true,
+                    isdedicated: {                        
                         isBoolean: true,
-                        label: 'Dedicate',
-                        isChecked: false //checked by default (public zone)
+                        label: 'Dedicated',
+                        isChecked: false 
                     },
                     domain: {
                         label: 'label.domain',
-                        dependsOn: 'ispublic',
+                        dependsOn: 'isdedicated',
                         isHidden: true,
                         select: function(args) {
                             $.ajax({
@@ -612,10 +611,10 @@
                         }
                     },
 
-                    accountId: {
+                    account: {
                         label: 'Account',
                         isHidden: true,
-                        dependsOn: 'ispublic',
+                        dependsOn: 'isdedicated',
                         //docID:'helpAccountForDedication',
                         validation: {
                             required: false
@@ -2083,57 +2082,41 @@
                     if (internaldns2 != null && internaldns2.length > 0)
                         array1.push("&internaldns2=" + todb(internaldns2));
 
-                    if (args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
-                        //	if(args.data.zone.ispublic != null){ //public checkbox in zone wizard is unchecked
-                        //		array1.push("&domainid=" + args.data.zone.domain);
-
-                        // }
-                    }
-
                     if (args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
                         array1.push("&domain=" + todb(args.data.zone.networkdomain));
-
-                    var dedicatedZoneId = null;
 
                     $.ajax({
                         url: createURL("createZone" + array1.join("")),
                         dataType: "json",
                         async: false,
-                        success: function(json) {
+                        success: function(json) {                        	
+                            if (args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
+                                if(args.data.zone.isdedicated == 'on'){ //dedicated checkbox in zone wizard is checked    
+                            	    message(dictionary['message.dedicate.zone']);                            	    
+                            	    var data = {
+                            	    	zoneid: json.createzoneresponse.zone.id	
+                            	    };    
+                                    if (args.data.zone.domain != null) 
+                                    	$.extend(data, {
+                                    		domainid: args.data.zone.domain
+                                    	});  
+                                    if (args.data.zone.account != "") 
+                                    	$.extend(data, {
+                                    		account: args.data.zone.account
+                                    	});   
+                                    $.ajax({
+                                        url: createURL('dedicateZone'),
+                                        data: data,
+                                        success: function(json) {}
+                                    });                                    
+                                }
+                            }                        	                       	
+                        	
                             stepFns.addPhysicalNetworks({
                                 data: $.extend(args.data, {
                                     returnedZone: json.createzoneresponse.zone
                                 })
                             });
-
-                            // dedicatedZoneId = json.createzoneresponse.zone.id;
-                            // //EXPLICIT ZONE DEDICATION
-                            // if (args.data.pluginFrom == null && args.data.zone.ispublic != null) {
-                            //     var array2 = [];
-                            //     if (args.data.zone.domain != null)
-                            //         array2.push("&domainid=" + args.data.zone.domain);
-                            //     if (args.data.zone.accountId != "")
-                            //         array2.push("&account=" + todb(args.data.zone.accountId));
-
-                            //     if (dedicatedZoneId != null) {
-                            //         $.ajax({
-                            //             url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
-                            //             dataType: "json",
-                            //             success: function(json) {
-                            //                 var dedicatedObj = json.dedicatezoneresponse.jobid;
-                            //                 //args.response.success({ data: $.extend(item, dedicatedObj)});
-
-                            //             },
-
-                            //             error: function(json) {
-
-                            //                 args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                            //             }
-                            //         });
-
-                            //     }
-                            // }
-
                         },
                         error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4047,21 +4030,10 @@
                 },
 
                 addSecondaryStorage: function(args) {
-
-                    var dedicatedZone = (args.data.pluginFrom == null && args.data.zone.ispublic != null);
-
                 	if (args.data.secondaryStorage.provider == '') {
-
-                        if (dedicatedZone) {
-                            stepFns.dedicateZone({
-                                data: args.data
-                            });
-                        } else {
-                            complete({
-                                data: args.data
-                            })
-                        }
-
+                        complete({
+                            data: args.data
+                        });                        
                         return; //skip addSecondaryStorage if provider dropdown is blank
                 	}
                 	
@@ -4090,21 +4062,11 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                
-                                if (dedicatedZone) {
-                                    stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
-                                } else {
-                                    complete({
-                                        data: $.extend(args.data, {
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
-                                    });
-                                }
-
+                                });
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4151,21 +4113,12 @@
                         $.ajax({
                             url: createURL('addImageStore'),
                             data: data,
-                            success: function(json) {
-                                if (dedicatedZone) {
-                                    stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
+                            success: function(json) {                               
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
-                                } else {
-                                    complete({
-                                        data: $.extend(args.data, {
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
-                                    });
-                                }
-                                
+                                });
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4228,20 +4181,12 @@
                         $.ajax({
                             url: createURL('addImageStore'),
                             data: data,
-                            success: function(json) {
-                                if (dedicatedZone) {
-                                    stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
+                            success: function(json) {                               
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
-                                } else {
-                                    complete({
-                                        data: $.extend(args.data, {
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
-                                    });
-                                }
+                                });                                
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4252,62 +4197,7 @@
                             }
                         });
                     }
-                },
-                dedicateZone: function(args) {
-
-                    if(args.data.pluginFrom == null && args.data.zone.ispublic != null) {
-                        var dedicatedZoneId = args.data.returnedZone.id;
-                	    message(dictionary['message.dedicate.zone']);
-
-                        var array2 = [];
-                        if (args.data.zone.domain != null)
-                            array2.push("&domainid=" + args.data.zone.domain);
-                        if (args.data.zone.accountId != "")
-                            array2.push("&account=" + todb(args.data.zone.accountId));
-
-                        if (dedicatedZoneId != null) {
-                            $.ajax({
-                                url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
-                                dataType: "json",
-                                success: function(json) {
-                                    var jobId = json.dedicatezoneresponse.jobid;
-                                    var dedicatedZoneIntervalId = setInterval(function() {
-                                        $.ajax({
-                                            url: createURL("queryAsyncJobResult&jobid=" + jobId),
-                                            dataType: "json",
-                                            success: function(json) {
-                                                if (json.queryasyncjobresultresponse.jobstatus == 0) { // not complete
-                                                    return;
-                                                } else {
-                                                    clearInterval(dedicatedZoneIntervalId);
-                                                    if(json.queryasyncjobresultresponse.jobstatus == 1) { // successed
-                                                        complete({
-                                                            data: $.extend(args.data, {
-                                                                returnedDedicateZone: json.queryasyncjobresultresponse.jobresult
-                                                            })
-                                                        });
-                                                    } else if(json.queryasyncjobresultresponse.jobstatus == 2) { // failed
-                                                        error('addZone', json.queryasyncjobresultresponse.jobresult.errortext, {
-                                                            fn: 'dedicateZone',
-                                                            args: args
-                                                        })
-                                                    }
-                                                }
-                                                
-                                            }
-                                        });
-                                    }, g_queryAsyncJobResultInterval);
-                                }
-                            });
-
-                        }
-                    } else {
-                        complete({
-                            data: args.data
-                        });
-                    }
-                    
-                }
+                }                
             };
 
             var complete = function(args) {
