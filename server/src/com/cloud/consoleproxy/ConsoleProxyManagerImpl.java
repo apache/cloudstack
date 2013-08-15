@@ -155,7 +155,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
 public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager,
-        VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -558,7 +558,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null
             // as sooner or later, Starting/Migrating state will be transited to Running and Stopping will be transited
-// to
+            // to
             // Stopped to allow
             // Starting of it
             s_logger.warn("Console proxy is not in correct state to be started: " + proxy.getState());
@@ -661,7 +661,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
         template = _templateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
         if (template == null) {
-             throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, template);
@@ -707,18 +707,18 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
             defaultNetwork = networks.get(0);
         } else {
-        TrafficType defaultTrafficType = TrafficType.Public;
-        if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-            defaultTrafficType = TrafficType.Guest;
-        }
-        List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
+            TrafficType defaultTrafficType = TrafficType.Public;
+            if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
+                defaultTrafficType = TrafficType.Guest;
+            }
+            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
 
             // api should never allow this situation to happen
-        if (defaultNetworks.size() != 1) {
+            if (defaultNetworks.size() != 1) {
                 throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type "
-                      + defaultTrafficType + " when expect to find 1");
+                        + defaultTrafficType + " when expect to find 1");
             }
-             defaultNetwork = defaultNetworks.get(0);
+            defaultNetwork = defaultNetworks.get(0);
         }
 
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
@@ -951,7 +951,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
-            TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
+            if (template == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("System vm template is not ready at data center " + dataCenterId + ", wait until it is ready to launch console proxy vm");
+                }
+                return false;
+            }
+            TemplateDataStoreVO templateHostRef = this._vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
                     Status.DOWNLOADED);
 
             if (templateHostRef != null) {
@@ -1282,8 +1288,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key());
         if (cpvmSrvcOffIdStr != null) {
             DiskOffering diskOffering = _diskOfferingDao.findByUuid(cpvmSrvcOffIdStr);
-            if (diskOffering == null)
+            if (diskOffering == null) {
                 diskOffering = _diskOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
+            }
             if (diskOffering != null) {
                 _serviceOffering = _offeringDao.findById(diskOffering.getId());
             } else {
@@ -1517,7 +1524,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Override
     public void onScanStart() {
         // to reduce possible number of DB queries for capacity scan, we run following aggregated queries in preparation
-// stage
+        // stage
         _zoneHostInfoMap = getZoneHostInfo();
 
         _zoneProxyCountMap = new HashMap<Long, ConsoleProxyLoadInfo>();
