@@ -312,6 +312,8 @@ public class TemplateServiceImpl implements TemplateService {
                                     + "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
                             s_logger.warn(msg);
                         } else {
+                            s_logger.info("Removing template_store_ref entry for corrupted template " + tmplt.getName());
+                            _vmTemplateStoreDao.remove(tmpltStore.getId());
                             toBeDownloaded.add(tmplt);
                         }
 
