@@ -292,15 +292,19 @@ public class VolumeServiceImpl implements VolumeService {
         CommandResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
         VolumeApiResult apiResult = new VolumeApiResult(vo);
-        if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed);
-            if (canVolumeBeRemoved(vo.getId())) {
-                s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
-                volDao.remove(vo.getId());
+        try {
+            if (result.isSuccess()) {
+                vo.processEvent(Event.OperationSuccessed);
+                if (canVolumeBeRemoved(vo.getId())) {
+                    s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
+                    volDao.remove(vo.getId());
+                }
+            } else {
+                vo.processEvent(Event.OperationFailed);
+                apiResult.setResult(result.getResult());
             }
-        } else {
-            vo.processEvent(Event.OperationFailed);
-            apiResult.setResult(result.getResult());
+        } catch (Exception e) {
+           s_logger.debug("ignore delete volume status update failure, it will be picked up by storage clean up thread later", e);
         }
         context.getFuture().complete(apiResult);
         return null;
