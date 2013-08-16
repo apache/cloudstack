@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -107,6 +108,7 @@ public class UserVmManagerTest {
     @Mock VolumeVO _volumeMock;
     @Mock List<VolumeVO> _rootVols;
     @Mock Account _accountMock2;
+    @Mock ServiceOfferingDao _offeringDao;
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
@@ -122,6 +124,7 @@ public class UserVmManagerTest {
         _userVmMgr._userDao = _userDao;
         _userVmMgr._accountMgr = _accountMgr;
         _userVmMgr._configMgr = _configMgr;
+        _userVmMgr._offeringDao= _offeringDao;
         _userVmMgr._capacityMgr = _capacityMgr;
         _userVmMgr._scaleRetry = 2;
 
@@ -356,7 +359,7 @@ public class UserVmManagerTest {
         ServiceOffering so2 =  getSvcoffering(256);
 
         when(_configMgr.getServiceOffering(anyLong())).thenReturn(so1);
-        when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
+        when(_offeringDao.findByIdIncludingRemoved(anyLong())).thenReturn((ServiceOfferingVO) so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
