@@ -131,6 +131,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -1448,8 +1449,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
-            s_logger.info("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
-            throw new CloudRuntimeException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
             // This scenario is valid only if all the volumes of VM being migrated are on zone wide storage pools
             boolean vmOnZoneWideStoragePool = true;
             List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
