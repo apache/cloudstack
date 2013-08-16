@@ -91,6 +91,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
         this.hypervisorResource = resource;
     }
 
+    public void setBaseMountPointOnHost(String baseMountPointOnHost) {
+        BaseMountPointOnHost = baseMountPointOnHost;
+    }
+
     @Override
     public AttachAnswer attachIso(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
