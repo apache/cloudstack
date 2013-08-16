@@ -24,8 +24,8 @@
 <section id="shared-networks">
   <title>Shared Networks</title>
   <para>A shared network can be accessed by virtual machines that belong to many different accounts.
-    Network Isolation on shared networks is accomplished using techniques such as security groups
-    (supported only in basic zones).</para>
+    Network Isolation on shared networks is accomplished by using techniques such as security
+    groups, which is supported only in Basic zones in &PRODUCT; 3.0.3 and later versions.</para>
   <itemizedlist>
     <listitem>
       <para>Shared Networks are created by the administrator</para>
@@ -42,6 +42,10 @@
     </listitem>
     <listitem>
       <para>Public Network is a shared network that is not shown to the end users</para>
+    </listitem>
+    <listitem>
+      <para>Source NAT per zone is not supported in Shared Networks when the service provider is
+        virtual router. However, Source NAT per account is supported in this case.</para>
     </listitem>
   </itemizedlist>
   <para>For information, see <xref linkend="creating-shared-network"/>.</para>
