@@ -657,6 +657,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             VirtualDisk disk = vdisk.first();
             long oldSize = disk.getCapacityInKB();
+            if (newSize <= oldSize && useWorkerVm == true) {
+                deleteWorkerVm(vmMo, vmdkDataStorePath);
+            }
             if (newSize < oldSize){
                 throw new Exception("VMware doesn't support shrinking volume from larger size: " + oldSize+ " MB to a smaller size: " + newSize + " MB");
             } else if(newSize == oldSize){
@@ -671,20 +674,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
             if (!vmMo.configureVm(vmConfigSpec)) {
                 if (useWorkerVm == true) {
-                    vmMo.detachDisk(vmdkDataStorePath, false);
-                    vmMo.destroy();
+                    deleteWorkerVm(vmMo, vmdkDataStorePath);
                 }
                 throw new Exception("Failed to configure VM to resize disk. vmName: " + vmName);
             }
             if (useWorkerVm == true) {
-                vmMo.detachDisk(vmdkDataStorePath, false);
-                vmMo.destroy();
+                deleteWorkerVm(vmMo, vmdkDataStorePath);
             }
             return new ResizeVolumeAnswer(cmd, true, "success", newSize*1024);
         } catch (Exception e) {
             s_logger.error("Unable to resize volume",e);
             String error = "failed to resize volume:"  +e;
             return new ResizeVolumeAnswer(cmd, false, error );
+        }
+    }
+
+    private void deleteWorkerVm(VirtualMachineMO vmMo, String vmdkDataStorePath) {
+        try {
+            if (vmMo != null) {
+                s_logger.info("Delete worker VM " + vmMo.getVmName());
+                vmMo.detachDisk(vmdkDataStorePath, false);
+                vmMo.destroy();
+            }
+        } catch (Exception e) {
+            s_logger.error("Unable to destroy worker vm", e);
         }
     }
 
