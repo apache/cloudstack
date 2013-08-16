@@ -316,7 +316,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw e;
             }
         } finally {
-            s_accessLogger.info(StringUtils.cleanString(sb.toString()));
+            s_accessLogger.info(sb.toString());
             CallContext.unregister();
         }
     }
@@ -524,7 +524,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
                 return getBaseAsyncCreateResponse(jobId, (BaseAsyncCreateCmd)asyncCmd, objUuid);
             } else {
-            SerializationContext.current().setUuidTranslation(true);
+                SerializationContext.current().setUuidTranslation(true);
                 return getBaseAsyncResponse(jobId, asyncCmd);
             }
         } else {
@@ -581,8 +581,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     continue;
                 }
                 String instanceUuid = ApiDBUtils.findJobInstanceUuid(job);
-                    objectJobMap.put(instanceUuid, job);
-                }
+                objectJobMap.put(instanceUuid, job);
+            }
 
             for (ResponseObject response : responses) {
                 if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
