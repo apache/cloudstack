@@ -213,7 +213,7 @@ under the License.
         <para>###</para>
       </section>
       <section id="autoscale">
-        <title>Autoscale</title>
+        <title/>
         <para>###</para>
       </section>
       <section id="api-throttling">
@@ -456,43 +456,6 @@ under the License.
               </entry>
             </row>
             <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1824"
-                    >CLOUDSTACK-1824</ulink></para></entry>
-              <entry><para>Service CloudStack-Management is being displayed as cloud-management
-                  service </para>
-                <para>Many scripts and text entries have references to cloud-management rather than
-                  cloudstack-management due to the changeover between 4.0 and 4.2 to rename
-                  services. This is a minor issue and should be corrected by 4.2.</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1824"
-                    >CLOUDSTACK-1824</ulink></para></entry>
-              <entry><para>Service CloudStack-Management is being displayed as cloud-management
-                  service</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1510"
-                    >CLOUDSTACK-1510</ulink></para>
-              </entry>
-              <entry>
-                <para>NPE when primary storage is added with wrong path</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1428"
-                    >CLOUDSTACK-1428</ulink></para>
-              </entry>
-              <entry>
-                <para>[UI] Instance which are created without display name are not visible when
-                  added to LB</para>
-              </entry>
-            </row>
-            <row>
               <entry>
                 <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1306"
                     >CLOUDSTACK-1306</ulink></para>
@@ -557,15 +520,6 @@ under the License.
               </entry>
               <entry>
                 <para>Creation of compute offering allow combination of local storage + HA</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-282"
-                    >CLOUDSTACK-282</ulink></para>
-              </entry>
-              <entry>
-                <para>Virtual Routers do not properly resolve DNS SRV Records</para>
               </entry>
             </row>
             <row>
@@ -637,7 +591,7 @@ under the License.
     <para>If you run into any issues during upgrades, please feel free to ask questions on
       users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
     <section id="upgrade-from-4.0-to-4.1">
-      <title>Upgrade from 4.0.x to 4.2.0</title>
+      <title>Upgrade from 4.x.x to 4.2.0</title>
       <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.2.0.</para>
       <para>Any steps that are hypervisor-specific will be called out with a note.</para>
       <warning>
@@ -645,9 +599,9 @@ under the License.
         <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x
           releases. If you've compiled your own packages, you'll notice that the package names and
           the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
-        <para>However, this <emphasis>does</emphasis> mean that the procedure is not as simple as an
-            <command>apt-get upgrade</command> or <command>yum update</command>, so please follow
-          this section carefully.</para>
+        <para>However, this does mean that the procedure is not as simple as an <command>apt-get
+            upgrade</command> or <command>yum update</command>, so please follow this section
+          carefully.</para>
       </warning>
       <para>We recommend reading through this section once or twice before beginning your upgrade
         procedure, and working through it on a test system before working on a production
@@ -693,8 +647,8 @@ under the License.
         </listitem>
         <listitem>
           <para>After upgrading to 4.2, API clients are expected to send plain text passwords for
-            login and user creation, instead of MD5 hash. Incase, api client changes are not
-            acceptable, following changes are to be made for backward compatibility:</para>
+            login and user creation, instead of MD5 hash. If API client changes are not acceptable,
+            following changes are to be made for backward compatibility:</para>
           <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
             authenticator (1st entry in the userAuthenticators adapter list is default)</para>
           <programlisting language="XML">
@@ -804,7 +758,8 @@ service cloudstack-agent restart
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
-                the KVM agent. (No changes should be necessary for hosts that are running VMware or
+                the KVM agent. </para>
+              <para>(No changes should be necessary for hosts that are running VMware or
                 Xen.)</para>
               <para>Start by opening <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any
                 systems that have &PRODUCT; packages installed.</para>
@@ -816,7 +771,7 @@ baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
 enabled=1
 gpgcheck=0
                             </programlisting>
-              <para>If you are using the community provided package repository, change the baseurl
+              <para>If you are using the community provided package repository, change the base url
                 to http://cloudstack.apt-get.eu/rhel/4.2/</para>
               <para>If you're using your own package repository, change this line to read as
                 appropriate for your 4.2.0 repository.</para>
@@ -838,6 +793,19 @@ gpgcheck=0
                   <filename>environment.properties</filename> from
                   <filename>/etc/cloud/agent</filename> to
                   <filename>/etc/cloudstack/agent</filename>.</para>
+            </listitem>
+            <listitem>
+              <para>For CentOS 5.5, perform the following:</para>
+              <orderedlist>
+                <listitem>
+                  <para>Run the following command:</para>
+                  <programlisting>rpm -Uvh http://download.cloud.com/support/jsvc/jakarta-commons-daemon-jsvc-1.0.1-8.9.el6.x86_64.rpm</programlisting>
+                </listitem>
+                <listitem>
+                  <para>Upgrade the Usage server.</para>
+                  <programlisting>sudo yum upgrade cloud-usage</programlisting>
+                </listitem>
+              </orderedlist>
             </listitem>
             <listitem>
               <para>Verify that the file
