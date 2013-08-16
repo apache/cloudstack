@@ -116,19 +116,21 @@ public class Upgrade412to420 implements DbUpgrade {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         PreparedStatement pstmtUpdate = null;
+        PreparedStatement pstmt3 = null;
+        ResultSet rs3 = null;
+
 
         try {
-            pstmt = conn.prepareStatement("SELECT `id`, `domain_id` FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL");
-            rs = pstmt.executeQuery();
 
-            while (rs.next()) {
-                long zoneId = rs.getLong(1);
-                long domainId = rs.getLong(2);
-                long affinityGroupId;
+            pstmt3 = conn.prepareStatement("SELECT distinct(`domain_id`) FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL AND removed IS NULL");
+            rs3 = pstmt3.executeQuery();
+
+            while (rs3.next()) {
+                long domainId = rs3.getLong(1);
+                long affinityGroupId = 0;
 
                 // create or find an affinity group for this domain of type
                 // 'ExplicitDedication'
-
                 PreparedStatement pstmt2 = null;
                 ResultSet rs2 = null;
                 pstmt2 = conn
@@ -138,7 +140,6 @@ public class Upgrade412to420 implements DbUpgrade {
                 if (rs2.next()) {
                     // group exists, use it
                     affinityGroupId = rs2.getLong(1);
-                    dedicateZone(conn, zoneId, domainId, affinityGroupId);
                 } else {
                     // create new group
                     rs2.close();
@@ -149,7 +150,6 @@ public class Upgrade412to420 implements DbUpgrade {
                     rs2 = pstmt2.executeQuery();
                     String domainName = "";
                     if (rs2.next()) {
-                        // group exists, use it
                         domainName = rs2.getString(1);
                     }
                     rs2.close();
@@ -175,11 +175,20 @@ public class Upgrade412to420 implements DbUpgrade {
                     rs2 = pstmt2.executeQuery();
                     if (rs2.next()) {
                         affinityGroupId = rs2.getLong(1);
-                        dedicateZone(conn, zoneId, domainId, affinityGroupId);
                     }
                 }
+
                 rs2.close();
                 pstmt2.close();
+
+                pstmt = conn.prepareStatement("SELECT `id` FROM `cloud`.`data_center` WHERE `domain_id` = ? AND removed IS NULL");
+                pstmt.setLong(1, domainId);
+                rs = pstmt.executeQuery();
+
+                while (rs.next()) {
+                    long zoneId = rs.getLong(1);
+                    dedicateZone(conn, zoneId, domainId, affinityGroupId);
+                }
             }
 
         } catch (SQLException e) {
@@ -200,6 +209,18 @@ public class Upgrade412to420 implements DbUpgrade {
             if (pstmt != null) {
                 try {
                     pstmt.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (rs3 != null) {
+                try {
+                    rs3.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (pstmt3 != null) {
+                try {
+                    pstmt3.close();
                 } catch (SQLException e) {
                 }
             }
