@@ -633,15 +633,21 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 	        }
         }else {
         	Transaction txn = Transaction.currentTxn();
-            CapacityState capacityState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId())) == AllocationState.Disabled ?
-            							  CapacityState.Disabled : CapacityState.Enabled;
         	txn.start();
         	CapacityVO capacity = new CapacityVO(host.getId(),
                     host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedMemory,
                     host.getTotalMemory(),
                     CapacityVO.CAPACITY_TYPE_MEMORY);
             capacity.setReservedCapacity(reservedMemory);
-            capacity.setCapacityState(capacityState);
+            CapacityState capacityState = CapacityState.Enabled;
+            if (host.getClusterId() != null) {
+                ClusterVO clusterOfHost = ApiDBUtils.findClusterById(host.getClusterId());
+                if (clusterOfHost != null) {
+                    capacityState = _configMgr.findClusterAllocationState(clusterOfHost) == AllocationState.Disabled ? CapacityState.Disabled
+                            : CapacityState.Enabled;
+                    capacity.setCapacityState(capacityState);
+                }
+            }
             _capacityDao.persist(capacity);
 
             capacity = new CapacityVO(
