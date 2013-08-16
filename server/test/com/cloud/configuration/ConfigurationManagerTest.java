@@ -107,6 +107,7 @@ public class ConfigurationManagerTest {
         configurationMgr._publicIpAddressDao = _publicIpAddressDao;
         configurationMgr._zoneDao = _zoneDao;
         configurationMgr._firewallDao = _firewallDao;
+        configurationMgr._ipAddrMgr = _ipAddrMgr;
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);

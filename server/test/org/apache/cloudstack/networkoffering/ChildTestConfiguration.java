@@ -62,6 +62,7 @@ import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
@@ -306,6 +307,11 @@ public class ChildTestConfiguration {
     @Bean
     public NetworkManager networkManager() {
         return Mockito.mock(NetworkManager.class);
+    }
+
+    @Bean
+    public IpAddressManager ipAddressManager() {
+        return Mockito.mock(IpAddressManager.class);
     }
 
     @Bean
