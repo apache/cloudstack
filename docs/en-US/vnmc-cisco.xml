@@ -313,15 +313,15 @@
     </orderedlist>
   </section>
   <section id="reuse-asa">
-    <title>Reusing ASA 1000v Appliance for new Guest Networks</title>
+    <title>Reusing ASA 1000v Appliance in new Guest Networks</title>
     <para>You can reuse an ASA 1000v appliance in a new guest network after the necessary cleanup.
       Typically, ASA 1000v is cleaned up when the logical edge firewall is cleaned up in VNMC. If
       this cleanup does not happen, you need to reset the appliance to its factory settings for use
       in new guest networks. As part of this, enable SSH on the appliance and store the SSH
-      credentials by registering on &PRODUCT; .</para>
+      credentials by registering on VNMC.</para>
     <orderedlist>
       <listitem>
-        <para>Open a command line prompt on the ASA appliance</para>
+        <para>Open a command line on the ASA appliance:</para>
         <orderedlist>
           <listitem>
             <para>Run the following:</para>
@@ -340,7 +340,7 @@
         </orderedlist>
       </listitem>
       <listitem>
-        <para>Register the ASA 1000v appliance again with the VNMC:</para>
+        <para>Register the ASA 1000v appliance with the VNMC:</para>
         <programlisting>ASA1000V(config)# vnmc policy-agent
 ASA1000V(config-vnmc-policy-agent)# registration host vnmc_ip_address
 ASA1000V(config-vnmc-policy-agent)# shared-secret key where key is the shared secret for authentication of the ASA 1000V connection to the Cisco VNMC</programlisting>
