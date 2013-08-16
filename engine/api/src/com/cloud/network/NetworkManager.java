@@ -33,7 +33,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
@@ -41,13 +40,11 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
@@ -57,22 +54,20 @@ import com.cloud.vm.VirtualMachineProfile;
  * NetworkManager manages the network for the different end users.
  * 
  */
-public interface NetworkManager  {
+public interface NetworkManager {
 
+    List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+        throws ConcurrentOperationException;
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
-            throws ConcurrentOperationException;
-
-    List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException;
+    List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText,
+        boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException;
 
     void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
     void prepare(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException;
+        ResourceUnavailableException;
 
-    void release(VirtualMachineProfile vmProfile, boolean forced) throws
-			ConcurrentOperationException, ResourceUnavailableException;
+    void release(VirtualMachineProfile vmProfile, boolean forced) throws ConcurrentOperationException, ResourceUnavailableException;
 
     void cleanupNics(VirtualMachineProfile vm);
 
@@ -80,8 +75,8 @@ public interface NetworkManager  {
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 
-    Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException;
+    Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * prepares vm nic change for migration
@@ -116,17 +111,16 @@ public interface NetworkManager  {
 
     boolean destroyNetwork(long networkId, ReservationContext context);
 
-    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr,
-                               String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
-                               long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
-                               Boolean displayNetworkEnabled, String isolatedPvlan)
-                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
+        Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
+        Boolean displayNetworkEnabled, String isolatedPvlan) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
     UserDataServiceProvider getSSHKeyResetProvider(Network network);
 
-    boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException;
 
     boolean reallocate(VirtualMachineProfile vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
 
@@ -141,10 +135,8 @@ public interface NetworkManager  {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    Pair<NicProfile,Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId,
-            VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException;
-
+    Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId, VirtualMachineProfile vm)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param vmProfile
@@ -159,17 +151,15 @@ public interface NetworkManager  {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest,
-            ReservationContext context, long nicId, NetworkVO network) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
-
+    NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        ResourceUnavailableException;
 
     /**
      * @param vm
      * @param nic TODO
      */
     void removeNic(VirtualMachineProfile vm, Nic nic);
-
 
     /**
      * @param network
@@ -178,16 +168,13 @@ public interface NetworkManager  {
      */
     boolean setupDns(Network network, Provider provider);
 
-
     /**
      * @param vmProfile
      * @param nic TODO
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    void releaseNic(VirtualMachineProfile vmProfile, Nic nic)
-            throws ConcurrentOperationException, ResourceUnavailableException;
-
+    void releaseNic(VirtualMachineProfile vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param network
@@ -203,9 +190,8 @@ public interface NetworkManager  {
      * @throws ResourceUnavailableException
      */
     NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
-
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        ResourceUnavailableException;
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
@@ -213,28 +199,21 @@ public interface NetworkManager  {
      * @return
      */
     int getNetworkLockTimeout();
-    
 
-    boolean restartNetwork(Long networkId, Account callerAccount,
-            User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException;
 
+    boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network);
 
-    boolean shutdownNetworkElementsAndResources(ReservationContext context,
-            boolean b, NetworkVO network);
+    void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering findById) throws ConcurrentOperationException,
+        InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
 
-
-	void implementNetworkElementsAndResources(DeployDestination dest,
-			ReservationContext context, NetworkVO network,
-			NetworkOfferingVO findById) throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
-
-
-	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
-			Long physicalNetworkId);
+    Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);
 
     List<Provider> getProvidersForServiceInNetwork(Network network, Service service);
 
     StaticNatServiceProvider getStaticNatProviderForNetwork(Network network);
-    
+
     boolean isNetworkInlineMode(Network network);
 
     LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network, Scheme lbScheme);
@@ -242,9 +221,10 @@ public interface NetworkManager  {
     boolean isSecondaryIpSetForNic(long nicId);
 
     List<? extends Nic> listVmNics(Long vmId, Long nicId);
-    
-    NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
+
+    Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
-    void removeDhcpServiceInSubnet(NicVO nic);
+
+    void removeDhcpServiceInSubnet(Nic nic);
 }

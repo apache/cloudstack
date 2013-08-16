@@ -611,7 +611,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name,
+    public List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name,
             String displayText, boolean isDefault)
             throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null, true);
@@ -619,7 +619,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan
+    public List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan
             plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
             ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException {
 
@@ -1024,7 +1024,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     public void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context,
-                                                      NetworkVO network, NetworkOfferingVO offering)
+ Network network, NetworkOffering offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
 
         // Associate a source NAT IP (if one isn't already associated with the network) if this is a
@@ -1093,7 +1093,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     // This method re-programs the rules/ips for existing network
-    protected boolean reprogramNetworkRules(long networkId, Account caller, NetworkVO network) throws ResourceUnavailableException {
+    protected boolean reprogramNetworkRules(long networkId, Account caller, Network network) throws ResourceUnavailableException {
         boolean success = true;
         // associate all ip addresses
         if (!_ipAddrMgr.applyIpAssociations(network, false)) {
@@ -1176,7 +1176,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return success;
     }
 
-    protected boolean prepareElement(NetworkElement element, NetworkVO network,
+    protected boolean prepareElement(NetworkElement element, Network network,
             NicProfile profile, VirtualMachineProfile vmProfile,
             DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -1257,7 +1257,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination
-            dest, ReservationContext context, long nicId, NetworkVO network)
+ dest, ReservationContext context, long nicId, Network network)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         
@@ -1553,7 +1553,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @DB
     @Override
-    public void removeDhcpServiceInSubnet(NicVO nic) {
+    public void removeDhcpServiceInSubnet(Nic nic) {
         Network network = _networksDao.findById(nic.getNetworkId());
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         try {
@@ -1869,8 +1869,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         	}
         }
         
-        List<NetworkVO> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId,
-                aclType, subdomainAccess, vpcId, isDisplayNetworkEnabled);
+        List<? extends Network> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccess, vpcId,
+            isDisplayNetworkEnabled);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
@@ -1988,7 +1988,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, NetworkVO network) {
+    public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, Network network) {
         // 1) Cleanup all the rules for the network. If it fails, just log the failure and proceed with shutting down
         // the elements
         boolean cleanupResult = true;
