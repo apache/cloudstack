@@ -1248,7 +1248,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Don't allow to scale when (Any of the new values less than current values) OR (All current and new values are same)
         if( (newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu)
                 ||  ( newSpeed == currentSpeed && newMemory == currentMemory && newCpu == currentCpu)){
-            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
+            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering(speed="+ newSpeed + ",cpu=" + newCpu + ",memory=," + newMemory + ")" +
+                    " should have at least one value(cpu/ram) greater than old value and no resource value less than older(speed="+ currentSpeed + ",cpu=" + currentCpu + ",memory=," + currentMemory + ")");
         }
 
         // Check resource limits
