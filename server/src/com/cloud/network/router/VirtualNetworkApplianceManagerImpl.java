@@ -134,6 +134,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -359,6 +360,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     NetworkService _networkSvc;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     
     int _routerRamSize;
@@ -1530,7 +1533,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             PublicIp sourceNatIp = null;
             if (publicNetwork) {
-                sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+                    sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
             }
 
                 // 3) deploy virtual router(s)
@@ -1791,7 +1794,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (setupPublicNetwork) {
                 if (isRedundant) {
-                    gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
+                    gatewayNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
                 } else {
                     gatewayNic.setIp4Address(guestNetwork.getGateway());
                 }
@@ -2817,10 +2820,24 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                             vlanDbIdList.add(vlan.getId());
                         }
                         if (dc.getNetworkType() == NetworkType.Basic) {
-                        routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(),
+                                vm.getPodIdToDeployIn(),
+                                caller,
+                                Vlan.VlanType.DirectAttached,
+                                vlanDbIdList,
+                                nic.getNetworkId(),
+                                null,
+                                false);
                         }
                         else {
-                            routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                            routerPublicIP = _ipAddrMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(),
+                                null,
+                                caller,
+                                Vlan.VlanType.DirectAttached,
+                                vlanDbIdList,
+                                nic.getNetworkId(),
+                                null,
+                                false);
                         }
 
                         routerAliasIp = routerPublicIP.getAddress().addr();

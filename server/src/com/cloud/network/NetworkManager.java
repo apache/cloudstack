@@ -22,9 +22,6 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -36,17 +33,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
@@ -65,37 +58,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * 
  */
 public interface NetworkManager  {
-    /**
-     * Assigns a new public ip address.
-     * 
-     * @param dcId
-     * @param podId
-     *            TODO
-     * @param owner
-     * @param type
-     * @param networkId
-     * @param requestedIp
-     *            TODO
-     * @param allocatedBy
-     *            TODO
-     * @return
-     * @throws InsufficientAddressCapacityException
-     */
 
-    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp,
-            boolean isSystem) throws InsufficientAddressCapacityException;
-
-
-    /**
-     * Do all of the work of releasing public ip addresses. Note that if this method fails, there can be side effects.
-     * 
-     * @param userId
-     * @param caller
-     *            TODO
-     * @param IpAddress
-     * @return true if it did; false if it didn't
-     */
-    public boolean disassociatePublicIpAddress(long id, long userId, Account caller);
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException;
@@ -116,8 +79,6 @@ public interface NetworkManager  {
     void expungeNics(VirtualMachineProfile vm);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
-
-    boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException;
 
     Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException;
@@ -161,61 +122,13 @@ public interface NetworkManager  {
                                Boolean displayNetworkEnabled, String isolatedPvlan)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
-    /**
-     * @throws ResourceAllocationException TODO
-     * @throws InsufficientCapacityException
-     *             Associates an ip address list to an account. The list of ip addresses are all addresses associated
-     *             with the
-     *             given vlan id.
-     * @param userId
-     * @param accountId
-     * @param zoneId
-     * @param vlanId
-     * @throws InsufficientAddressCapacityException
-     * @throws
-     */
-    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network guestNetwork) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException, ResourceAllocationException;
-
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
     UserDataServiceProvider getSSHKeyResetProvider(Network network);
 
-    boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
-    
-    boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException;
-
     boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    IPAddressVO markIpAsUnavailable(long addrId);
-
-    public String acquireGuestIpAddress(Network network, String requestedIp);
-
-    boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException;
-
     boolean reallocate(VirtualMachineProfile vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
-
-    IpAddress assignSystemIp(long networkId, Account owner,
-            boolean forElasticLb, boolean forElasticIp)
-            throws InsufficientAddressCapacityException;
-
-    boolean handleSystemIpRelease(IpAddress ip);
-
-    void allocateDirectIp(NicProfile nic, DataCenter dc,
-            VirtualMachineProfile vm,
-            Network network, String requestedIpv4, String requestedIpv6)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException;
-
-    /**
-     * @param owner
-     * @param guestNetwork
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws InsufficientAddressCapacityException
-     */
-    PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException;
-
 
     /**
      * @param requested
@@ -259,30 +172,6 @@ public interface NetworkManager  {
 
 
     /**
-     * @param ipAddrId
-     * @param networkId
-     * @param releaseOnFailure TODO
-     */
-    IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
-        InsufficientAddressCapacityException, ConcurrentOperationException;
-
-    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
-            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
-
-    boolean releasePortableIpAddress(long addrId);
-
-    IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
-            InsufficientAddressCapacityException, ConcurrentOperationException;
-
-    IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException,
-            InsufficientAddressCapacityException, ConcurrentOperationException;
-
-    boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId);
-
-    void transferPortableIP(long ipAddrId, long currentNetworkId, long newNetworkId)  throws ResourceAllocationException, ResourceUnavailableException,
-            InsufficientAddressCapacityException, ConcurrentOperationException;;
-
-    /**
      * @param network
      * @param provider
      * @return
@@ -318,24 +207,6 @@ public interface NetworkManager  {
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
 
-    /**
-     * @param addr
-     */
-    void markPublicIpAsAllocated(IPAddressVO addr);
-
-
-    /**
-     * @param owner
-     * @param guestNtwkId
-     * @param vpcId
-     * @param dcId
-     * @param isSourceNat
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws InsufficientAddressCapacityException
-     */
-    PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException;
-
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
     /**
@@ -357,9 +228,6 @@ public interface NetworkManager  {
 			NetworkOfferingVO findById) throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
 
 
-	IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId,
-			DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
-
 	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
 			Long physicalNetworkId);
 
@@ -369,23 +237,14 @@ public interface NetworkManager  {
     
     boolean isNetworkInlineMode(Network network);
 
-    int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
-
     LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network, Scheme lbScheme);
 
     boolean isSecondaryIpSetForNic(long nicId);
 
-    public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException;
-
     List<? extends Nic> listVmNics(Long vmId, Long nicId);
     
-    String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account caller, String requestedIp) throws InsufficientAddressCapacityException;
-
     NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
-
-    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
-
     void removeDhcpServiceInSubnet(NicVO nic);
 }

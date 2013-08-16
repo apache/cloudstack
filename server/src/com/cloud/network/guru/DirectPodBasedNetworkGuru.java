@@ -40,6 +40,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.AddressFormat;
@@ -75,6 +76,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     PodVlanMapDao _podVlanDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
@@ -137,7 +140,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                     txn.start();
                     
                     //release the old ip here
-                    _networkMgr.markIpAsUnavailable(ipVO.getId());
+                    _ipAddrMgr.markIpAsUnavailable(ipVO.getId());
                     _ipAddressDao.unassignIpAddress(ipVO.getId());
                     
                     txn.commit();
@@ -149,7 +152,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         }
         
         if (getNewIp) {
-            //we don't set reservationStrategy to Create because we need this method to be called again for the case when vm fails to deploy in Pod1, and we try to redeploy it in Pod2 
+            //we don't set reservationStrategy to Create because we need this method to be called again for the case when vm fails to deploy in Pod1, and we try to redeploy it in Pod2
             getIp(nic, dest.getPod(), vm, network);
         }
         
@@ -183,7 +186,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             }
             
             if (ip == null) {
-                ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
+                ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
             }
             
             nic.setIp4Address(ip.getAddress().toString());

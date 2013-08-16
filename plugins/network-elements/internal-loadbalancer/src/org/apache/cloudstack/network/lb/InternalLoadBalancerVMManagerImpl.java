@@ -61,6 +61,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -130,6 +131,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     private String _mgmtCidr;
     private long _internalLbVmOfferingId = 0L;
     
+    @Inject
+    IpAddressManager _ipAddrMgr;
     @Inject VirtualMachineManager _itMgr;
     @Inject DomainRouterDao _internalLbVmDao;
     @Inject ConfigurationDao _configDao;
@@ -661,7 +664,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             if (guestIp != null) {
                 guestNic.setIp4Address(guestIp.addr());
             } else {
-                guestNic.setIp4Address(_ntwkMgr.acquireGuestIpAddress(guestNetwork, null));
+                guestNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
             }
             guestNic.setGateway(guestNetwork.getGateway());
             guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());

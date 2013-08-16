@@ -28,10 +28,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,8 +62,8 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
@@ -81,15 +81,15 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.cisco.CiscoAsa1000vDevice;
@@ -107,6 +107,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.resource.CiscoVnmcResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.TrafficType;
@@ -125,7 +126,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -146,6 +146,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     NetworkManager _networkMgr;
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
@@ -262,7 +264,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     private boolean associateAsaWithLogicalEdgeFirewall(long vlanId,
             String asaMgmtIp, long hostId) {
-        AssociateAsaWithLogicalEdgeFirewallCommand cmd = 
+        AssociateAsaWithLogicalEdgeFirewallCommand cmd =
                 new AssociateAsaWithLogicalEdgeFirewallCommand(vlanId, asaMgmtIp);
         Answer answer = _agentMgr.easySend(hostId, cmd);
         return answer.getResult();
@@ -336,7 +338,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
             _hostDao.loadDetails(ciscoVnmcHost);
             Account owner = context.getAccount();
-            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+            PublicIp sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
             String vlan = network.getBroadcastUri().getHost();
             long vlanId = Long.parseLong(vlan);
 
@@ -362,14 +364,14 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 try {
                     Account caller = CallContext.current().getCallingAccount();
                     long callerUserId = CallContext.current().getCallingUserId();
-                    outsideIp = _networkMgr.allocateIp(owner, false, caller, callerUserId, zone);
+                    outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone);
                 } catch (ResourceAllocationException e) {
                     s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
                     return false;
                 }
 
                 try {
-                    outsideIp = _networkMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
+                    outsideIp = _ipAddrMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
                 } catch (ResourceAllocationException e) {
                     s_logger.error("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details " + e);
                     return false;

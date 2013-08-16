@@ -82,6 +82,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
@@ -247,6 +248,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserAuthenticator> _userAuthenticators;
     List<UserAuthenticator> _userPasswordEncoders;
+
+    protected IpAddressManager _ipAddrMgr;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -696,7 +699,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                    if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                    if (!_ipAddrMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
                     s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
                     accountCleanupNeeded = true;
                     }
@@ -740,7 +743,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<? extends IpAddress> portableIpsToRelease = _ipAddressDao.listByAccount(accountId);
             for (IpAddress ip : portableIpsToRelease) {
                 s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                _networkMgr.releasePortableIpAddress(ip.getId());
+                _ipAddrMgr.releasePortableIpAddress(ip.getId());
             }
             //release dedication if any
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByAccountId(accountId);

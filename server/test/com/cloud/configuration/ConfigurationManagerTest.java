@@ -52,6 +52,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -88,6 +89,8 @@ public class ConfigurationManagerTest {
     @Mock IPAddressDao _publicIpAddressDao;
     @Mock DataCenterDao _zoneDao;
     @Mock FirewallRulesDao _firewallDao;
+    @Mock
+    IpAddressManager _ipAddrMgr;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway","vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -368,7 +371,7 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._firewallDao.countRulesByIpId(anyLong())).thenReturn(0L);
 
-        when(configurationMgr._networkMgr.disassociatePublicIpAddress(anyLong(), anyLong(), any(Account.class))).thenReturn(true);
+        when(configurationMgr._ipAddrMgr.disassociatePublicIpAddress(anyLong(), anyLong(), any(Account.class))).thenReturn(true);
 
         when(configurationMgr._vlanDao.releaseFromLockTable(anyLong())).thenReturn(true);
 

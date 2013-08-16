@@ -75,6 +75,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -163,6 +164,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     protected ClusterDao _clusterDao;
     @Inject
     DataCenterDao _dcDao = null;
+    @Inject
+    IpAddressManager _ipAddrMgr;
     @Inject
     protected NetworkDao _networkDao;
     @Inject
@@ -585,7 +588,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        PublicIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
+        PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
         IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
         _ipAddressDao.update(ipvo.getId(), ipvo);
@@ -600,7 +603,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null);
         _ipAddressDao.update(ipvo.getId(), ipvo);
-       _networkMgr.disassociatePublicIpAddress(ipId, userId, caller);
+        _ipAddrMgr.disassociatePublicIpAddress(ipId, userId, caller);
        _ipAddressDao.unassignIpAddress(ipId);
     }
 

@@ -18,6 +18,13 @@
  */
 package com.cloud.network.guru;
 
+import java.net.URI;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.deploy.DeployDestination;
@@ -25,25 +32,26 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.*;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.vm.*;
-import org.apache.log4j.Logger;
-import java.net.URI;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
@@ -54,6 +62,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     NetworkModel _networkModel;
     @Inject
     AccountDao _accountDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     // Don't need to change traffic type stuff, public is fine
 
@@ -78,10 +88,11 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         super();
     }
 
+    @Override
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
+            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
             nic.setIp4Address(ip.getAddress().toString());
 
             nic.setGateway(ip.getGateway());
@@ -201,7 +212,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
             Transaction txn = Transaction.currentTxn();
             txn.start();
 
-            _networkMgr.markIpAsUnavailable(ip.getId());
+            _ipAddrMgr.markIpAsUnavailable(ip.getId());
             _ipAddressDao.unassignIpAddress(ip.getId());
 
             txn.commit();

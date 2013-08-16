@@ -21,10 +21,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.event.ActionEventUtils;
-
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
@@ -35,10 +31,12 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
@@ -46,6 +44,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -60,7 +60,6 @@ import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
@@ -76,6 +75,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     PortForwardingRulesDao _pfRulesDao;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
 
     public ExternalGuestNetworkGuru() {
@@ -83,6 +84,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         _isolationMethods = new IsolationMethod[] { IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN };
     }
 
+    @Override
     protected boolean canHandle(NetworkOffering offering,
             final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source
@@ -98,7 +100,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                     + NetworkType.Advanced);
             return false;
         }
-    }    
+    }
     
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
@@ -278,7 +280,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             nic.setGateway(config.getGateway());
 
             if (nic.getIp4Address() == null) {
-                String guestIp = _networkMgr.acquireGuestIpAddress(config, null);
+                String guestIp = _ipAddrMgr.acquireGuestIpAddress(config, null);
                 if (guestIp == null) {
                     throw new InsufficientVirtualNetworkCapcityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());
                 }
