@@ -517,7 +517,6 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
@@ -1110,7 +1109,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
-        boolean zoneWideStoragePool = false;
+        boolean allZoneWideStoragePools = false;
         if (canMigrateWithStorage) {
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null,
                     null, null, null, null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
@@ -1125,9 +1124,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     iterator.remove();
                 } else {
                     if (srcHost.getHypervisorType() == HypervisorType.VMware || srcHost.getHypervisorType() == HypervisorType.KVM) {
-                        zoneWideStoragePool = checkForZoneWideStoragePool(volumePools);
+                        allZoneWideStoragePools = checkIfAllZoneWideStoragePools(volumePools);
                     }
-                    if ((!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) && !zoneWideStoragePool) {
+                    if ((!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) && !allZoneWideStoragePools) {
                         requiresStorageMotion.put(host, true);
                     }
                 }
@@ -1189,20 +1188,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 suitableHosts, requiresStorageMotion);
     }
 
-    private boolean checkForZoneWideStoragePool(Map<Volume, List<StoragePool>> volumePools) {
-        boolean zoneWideStoragePool = false;
+    private boolean checkIfAllZoneWideStoragePools(Map<Volume, List<StoragePool>> volumePools) {
+        boolean allZoneWideStoragePools = true;
         Collection<List<StoragePool>> pools = volumePools.values();
         List<StoragePool> aggregatePoolList = new ArrayList<StoragePool>();
         for (Iterator<List<StoragePool>> volumePoolsIter = pools.iterator(); volumePoolsIter.hasNext();) {
             aggregatePoolList.addAll(volumePoolsIter.next());
         }
         for (StoragePool pool : aggregatePoolList) {
-            if (null == pool.getClusterId()) {
-                zoneWideStoragePool = true;
+            if (null != pool.getClusterId()) {
+                allZoneWideStoragePools = false;
                 break;
             }
         }
-        return zoneWideStoragePool;
+        return allZoneWideStoragePools;
     }
 
     private Map<Volume, List<StoragePool>> findSuitablePoolsForVolumes(VirtualMachineProfile<VMInstanceVO> vmProfile,
