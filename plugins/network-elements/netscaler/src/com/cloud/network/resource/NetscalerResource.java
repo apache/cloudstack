@@ -552,7 +552,8 @@ public class NetscalerResource implements ServerResource {
                 String nsMonitorName = generateNSMonitorName(srcIp, srcPort);
                 if(loadBalancer.isAutoScaleVmGroupTO()) {
                     applyAutoScaleConfig(loadBalancer);
-                    return new Answer(cmd);
+                   // Continue to process all the rules.
+                    continue;
                 }
                 boolean hasMonitor = false;
                 boolean deleteMonitor = false;
