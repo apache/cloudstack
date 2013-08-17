@@ -47,7 +47,6 @@
   <bean id="LocalStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator"/>
   <bean id="clusterScopeStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.ClusterScopeStoragePoolAllocator" />
   <bean id="zoneWideStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.ZoneWideStoragePoolAllocator" />
-  <bean id="garbageCollectingStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.GarbageCollectingStoragePoolAllocator"/>
   <bean id="dataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl" />
   <bean id="ancientDataMotionStrategy" class="org.apache.cloudstack.storage.motion.AncientDataMotionStrategy" />
   <bean id="storageCacheManagerImpl" class="org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl"  />
@@ -62,7 +61,6 @@
   <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
   <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
   <bean id="templateDataFactoryImpl" class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
-  <bean id="imageDataManagerImpl" class="org.apache.cloudstack.storage.image.manager.ImageDataManagerImpl" />
   <bean id="imageStoreHelper" class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
   <bean id="imageFormatHelper" class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
   <bean id="templateServiceImpl" class="org.apache.cloudstack.storage.image.TemplateServiceImpl" />
@@ -82,7 +80,6 @@
   <bean id="cloudStackImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl" />
   <bean id="s3ImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl" />
   <bean id="swiftImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl" />
-  <bean id="simulatorImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl" />
   <bean id="BAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
   <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
   <bean id="AccountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
