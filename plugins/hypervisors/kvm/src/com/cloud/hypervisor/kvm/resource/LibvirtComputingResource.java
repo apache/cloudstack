@@ -3382,23 +3382,25 @@ ServerResource {
         cmd.setModel(_guestCpuModel);
         vm.addComp(cmd);
 
-        CpuTuneDef ctd = new CpuTuneDef();
-        /**
-            A 4.0.X/4.1.X management server doesn't send the correct JSON
-            command for getMinSpeed, it only sends a 'speed' field.
+        if (_hypervisorLibvirtVersion >= 9000) {
+            CpuTuneDef ctd = new CpuTuneDef();
+            /**
+             A 4.0.X/4.1.X management server doesn't send the correct JSON
+             command for getMinSpeed, it only sends a 'speed' field.
 
-            So if getMinSpeed() returns null we fall back to getSpeed().
+             So if getMinSpeed() returns null we fall back to getSpeed().
 
-            This way a >4.1 agent can work communicate a <=4.1 management server
+             This way a >4.1 agent can work communicate a <=4.1 management server
 
-            This change is due to the overcommit feature in 4.2
-        */
-        if (vmTO.getMinSpeed() != null) {
-            ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
-        } else {
-            ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
+             This change is due to the overcommit feature in 4.2
+             */
+            if (vmTO.getMinSpeed() != null) {
+                ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
+            } else {
+                ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
+            }
+            vm.addComp(ctd);
         }
-        vm.addComp(ctd);
 
         FeaturesDef features = new FeaturesDef();
         features.addFeatures("pae");
