@@ -37,7 +37,6 @@ public class LibvirtComputingResourceTest {
 
     String _hyperVisorType = "kvm";
     Random _random = new Random();
-
     /**
         This test tests if the Agent can handle a vmSpec coming
         from a <=4.1 management server.
@@ -102,14 +101,13 @@ public class LibvirtComputingResourceTest {
         vmStr += "<boot dev='cdrom'/>\n";
         vmStr += "<boot dev='hd'/>\n";
         vmStr += "</os>\n";
-        vmStr += "<cputune>\n";
-        vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
-        vmStr += "</cputune>\n";
+        //vmStr += "<cputune>\n";
+        //vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
+        //vmStr += "</cputune>\n";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
         vmStr += "</domain>\n";
-
         assertEquals(vmStr, vm.toString());
     }
 
@@ -178,9 +176,9 @@ public class LibvirtComputingResourceTest {
         vmStr += "<boot dev='cdrom'/>\n";
         vmStr += "<boot dev='hd'/>\n";
         vmStr += "</os>\n";
-        vmStr += "<cputune>\n";
-        vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
-        vmStr += "</cputune>\n";
+        //vmStr += "<cputune>\n";
+        //vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
+        //vmStr += "</cputune>\n";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
