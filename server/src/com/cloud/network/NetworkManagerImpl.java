@@ -918,6 +918,19 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return to;
     }
 
+    boolean isNetworkImplemented(NetworkVO network) {
+        Network.State state = network.getState();
+        if (state == Network.State.Implemented || state == Network.State.Implementing) {
+            return true;
+        } else if (state == Network.State.Setup) {
+            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+            if (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) || (zone.getNetworkType() == NetworkType.Basic)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     @DB
     public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
@@ -926,7 +939,16 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
-        NetworkVO network = _networksDao.acquireInLockTable(networkId, _networkLockTimeout);
+        NetworkVO network = _networksDao.findById(networkId);
+        NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+        if (isNetworkImplemented(network)) {
+            s_logger.debug("Network id=" + networkId + " is already implemented");
+            implemented.set(guru, network);
+            return implemented;
+        }
+
+        // Acquire lock only when network needs to be implemented
+        network = _networksDao.acquireInLockTable(networkId, _networkLockTimeout);
         if (network == null) {
             // see NetworkVO.java
             ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
@@ -939,21 +961,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         try {
-            NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-            Network.State state = network.getState();
-            if (state == Network.State.Implemented || state == Network.State.Implementing) {
+            if (isNetworkImplemented(network)) {
                 s_logger.debug("Network id=" + networkId + " is already implemented");
                 implemented.set(guru, network);
                 return implemented;
-            }
-
-            if (state == Network.State.Setup) {
-                DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-                if (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) || (zone.getNetworkType() == NetworkType.Basic)) {
-                    s_logger.debug("Network id=" + networkId + " is already implemented");
-                    implemented.set(guru, network);
-                    return implemented;
-                }
             }
 
             if (s_logger.isDebugEnabled()) {
@@ -1940,7 +1951,17 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @DB
     public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
         boolean result = false;
-        NetworkVO network = null;
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network.getState() == Network.State.Allocated) {
+            s_logger.debug("Network is already shutdown: " + network);
+            return true;
+        }
+
+        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
+            s_logger.debug("Network is not implemented: " + network);
+            return false;
+        }
+
         try {
             //do global lock for the network
             network = _networksDao.acquireInLockTable(networkId, getNetworkLockTimeout());
@@ -1951,12 +1972,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Lock is acquired for network " + network + " as a part of network shutdown");
             }
-            
+
             if (network.getState() == Network.State.Allocated) {
                 s_logger.debug("Network is already shutdown: " + network);
                 return true;
             }
-            
+
             if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
                 s_logger.debug("Network is not implemented: " + network);
                 return false;
@@ -1974,7 +1995,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
             }
 
-            
             boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
 
             Transaction txn = Transaction.currentTxn();
