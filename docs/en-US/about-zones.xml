@@ -32,6 +32,7 @@
     <para>A zone consists of:</para>
     <itemizedlist>
         <listitem><para>One or more pods. Each pod contains one or more clusters of hosts and one or more primary storage servers.</para></listitem>
+        <listitem><para>A zone may contain one or more primary storage servers, which are shared by all the pods in the zone.</para></listitem>
         <listitem><para>Secondary storage, which is shared by all the pods in the zone.</para></listitem>
     </itemizedlist>
     <mediaobject>
@@ -45,10 +46,11 @@
     <para>Hosts in the same zone are directly accessible to each other without having to go through a firewall. Hosts in different zones can access each other through statically configured VPN tunnels.</para>
     <para>For each zone, the administrator must decide the following.</para>
     <itemizedlist>
-        <listitem><para>How many pods to place in a zone.</para></listitem>
+        <listitem><para>How many pods to place in each zone.</para></listitem>
         <listitem><para>How many clusters to place in each pod.</para></listitem>
         <listitem><para>How many hosts to place in each cluster.</para></listitem>
-        <listitem><para>How many primary storage servers to place in each cluster and total capacity for the storage servers.</para></listitem>
+        <listitem><para>(Optional) How many primary storage servers to place in each zone and total capacity for these storage servers.</para></listitem>
+        <listitem><para>How many primary storage servers to place in each cluster and total capacity for these storage servers.</para></listitem>
         <listitem><para>How much secondary storage to deploy in a zone.</para></listitem>
     </itemizedlist>
     <para>When you add a new zone using the &PRODUCT; UI, you will be prompted to configure the zone’s physical network
