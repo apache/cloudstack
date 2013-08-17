@@ -1258,7 +1258,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
                             String swiftPath = container + File.separator + destSnapshotName;
                             finalPath = swiftPath;
                         } finally {
-                            deleteSnapshotBackup(conn, localMountPoint, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                            try {
+                                deleteSnapshotBackup(conn, localMountPoint, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                            } catch (Exception e) {
+                                s_logger.debug("Failed to delete snapshot on cache storages" ,e);
+                            }
                         }
 
                     } else if (destStore instanceof S3TO) {
@@ -1268,7 +1272,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
                                 throw new CloudRuntimeException("S3 upload of snapshots " + snapshotBackupUuid + " failed");
                             }
                         } finally {
-                            deleteSnapshotBackup(conn, localMountPoint, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                            try {
+                                deleteSnapshotBackup(conn, localMountPoint, folder, secondaryStorageMountPath, snapshotBackupUuid);
+                            } catch (Exception e) {
+                                s_logger.debug("Failed to delete snapshot on cache storages" ,e);
+                            }
                         }
                         // finalPath = folder + File.separator + snapshotBackupUuid;
                     } else {
