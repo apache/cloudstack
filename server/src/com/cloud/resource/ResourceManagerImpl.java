@@ -875,6 +875,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Delete the associated entries in host ref table
         _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
 
+        // Make sure any VMs that were marked as being on this host are cleaned up
+        List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+        for (VMInstanceVO vm : vms) {
+            // this is how VirtualMachineManagerImpl does it when it syncs VM states
+            vm.setState(State.Stopped);
+            vm.setHostId(null);
+            _vmDao.persist(vm);
+        }
+
         // For pool ids you got, delete local storage host entries in pool table
         // where
         for (StoragePoolHostVO pool : pools) {
