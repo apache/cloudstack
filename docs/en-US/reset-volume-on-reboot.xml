@@ -27,6 +27,6 @@
     for desktops that should not retain state. The IP address of the VM will not change due to this
     operation.</para>
   <para><emphasis role="bold">To enable root disk reset on VM reboot:</emphasis></para>
-  <para>When creating a new service offering, set the parameter Volatile VM to True. VMs created
-    from this service offering will have their disks reset upon reboot. </para>
+  <para>When creating a new service offering, set the parameter isVolatile to True. VMs created from
+    this service offering will have their disks reset upon reboot. See <xref linkend="creating-compute-offerings"/>.</para>
 </section>
