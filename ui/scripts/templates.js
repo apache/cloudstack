@@ -1660,9 +1660,12 @@
         } else {
             allowedActions.push("edit");
 
-            if (havingSwift == false && havingS3 == false)
+            //Swift and S3 are region-wide secondary storage
+            //if (havingSwift == false && havingS3 == false)
+			if (havingSwift == false && jsonObj.zoneid != null) { //"jsonObj.zoneid == null" means it is registered on region-wide S3 => global to all zones 
                 allowedActions.push("copyTemplate");
-
+            }
+			
             //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
         }
 
@@ -1697,8 +1700,10 @@
         } else {
             allowedActions.push("edit");
 
-            if (havingSwift == false)
+			//Swift and S3 are region-wide secondary storage
+            if (havingSwift == false && jsonObj.zoneid != null) { //"jsonObj.zoneid == null" means it is registered on region-wide S3 => global to all zones 
                 allowedActions.push("copyISO");
+			}
         }
 
         // "Create VM"
