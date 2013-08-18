@@ -59,6 +59,35 @@ def wait_for_cleanup(apiclient, configs=None):
         time.sleep(int(config_desc.value))
     return
 
+def add_netscaler(apiclient, zoneid, services=None):
+    """ Adds Netscaler device and enables NS provider"""
+
+    cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
+    cmd.zoneid = zoneid
+    physical_networks = apiclient.listPhysicalNetworks(cmd)
+    if isinstance(physical_networks, list):
+       physical_network = physical_networks[0]
+
+    netscaler = NetScaler.add(
+                    apiclient,
+                    services["netscaler"],
+                    physicalnetworkid=physical_network.id
+                    )
+
+    cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+    cmd.name = 'Netscaler'
+    cmd.physicalnetworkid=physical_network.id
+    nw_service_providers = apiclient.listNetworkServiceProviders(cmd)
+
+    if isinstance(nw_service_providers, list):
+        netscaler_provider = nw_service_providers[0]
+    if netscaler_provider.state != 'Enabled':
+      cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+      cmd.id = netscaler_provider.id
+      cmd.state =  'Enabled'
+      response = apiclient.updateNetworkServiceProvider(cmd)
+
+    return netscaler
 
 def get_domain(apiclient, services=None):
     "Returns a default domain"
