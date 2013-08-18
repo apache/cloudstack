@@ -108,10 +108,8 @@ public class VmwareClient {
 
     private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
     private ManagedObjectReference propCollectorRef;
-    private ManagedObjectReference rootRef;
     private static VimService vimService;
     private VimPortType vimPort;
-    private ServiceContent serviceContent;
     private String serviceCookie;
     private final String SVC_INST_NAME = "ServiceInstance";
 
@@ -139,7 +137,7 @@ public class VmwareClient {
         ctxt.put("com.sun.xml.internal.ws.request.timeout", 600000);
         ctxt.put("com.sun.xml.internal.ws.connect.timeout", 600000);
 
-        serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
+        ServiceContent serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
         Map<String, List<String>> headers = (Map<String, List<String>>) ((BindingProvider) vimPort)
@@ -155,7 +153,6 @@ public class VmwareClient {
         isConnected = true;
 
         propCollectorRef = serviceContent.getPropertyCollector();
-        rootRef = serviceContent.getRootFolder();
     }
 
     /**
@@ -165,7 +162,7 @@ public class VmwareClient {
      */
     public void disconnect() throws Exception {
         if (isConnected) {
-            vimPort.logout(serviceContent.getSessionManager());
+            vimPort.logout(getServiceContent().getSessionManager());
         }
         isConnected = false;
     }
@@ -181,7 +178,12 @@ public class VmwareClient {
      * @return Service instance content
      */
     public ServiceContent getServiceContent() {
-        return serviceContent;
+    	
+        try {
+			return vimPort.retrieveServiceContent(SVC_INST_REF);
+		} catch (RuntimeFaultFaultMsg e) {
+		}
+        return null;
     }
 
     /**
@@ -202,7 +204,7 @@ public class VmwareClient {
      * @return Root folder
      */
     public ManagedObjectReference getRootFolder() {
-        return rootRef;
+        return getServiceContent().getRootFolder();
     }
 
     /**
