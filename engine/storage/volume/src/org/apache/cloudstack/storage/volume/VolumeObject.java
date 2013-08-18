@@ -335,7 +335,11 @@ public class VolumeObject implements VolumeInfo {
             return this.volumeVO.getPath();
         } else {
             DataObjectInStore objInStore = this.objectInStoreMgr.findObject(this, dataStore);
-            return objInStore.getInstallPath();
+            if (objInStore != null) {
+                return objInStore.getInstallPath();
+            } else {
+                return null;
+            }
         }
     }
 
