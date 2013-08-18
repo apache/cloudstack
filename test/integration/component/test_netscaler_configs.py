@@ -1239,21 +1239,21 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
         self.network_3 = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account_3.account.name,
-                            domainid=self.account_3.account.domainid,
+                            accountid=self.account_3.name,
+                            domainid=self.account_3.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
         self.debug("Created network with ID: %s" % self.network_3.id)
 
-        self.debug("Deploying VM in account: %s" % self.account_3.account.name)
+        self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
             virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account_3.account.name,
-                                  domainid=self.account_3.account.domainid,
+                                  accountid=self.account_3.name,
+                                  domainid=self.account_3.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_3.id)]
                                   )
@@ -1513,21 +1513,21 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
         self.network_3 = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account_3.account.name,
-                            domainid=self.account_3.account.domainid,
+                            accountid=self.account_3.name,
+                            domainid=self.account_3.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
         self.debug("Created network with ID: %s" % self.network_3.id)
 
-        self.debug("Deploying VM in account: %s" % self.account_3.account.name)
+        self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
             virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account_3.account.name,
-                                  domainid=self.account_3.account.domainid,
+                                  accountid=self.account_3.name,
+                                  domainid=self.account_3.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_3.id)]
                                   )
