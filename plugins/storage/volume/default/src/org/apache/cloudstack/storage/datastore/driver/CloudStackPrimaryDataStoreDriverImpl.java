@@ -105,9 +105,18 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         String errMsg = null;
         Answer answer = null;
+        CreateCmdResult result = new CreateCmdResult(null, null);
         if (data.getType() == DataObjectType.VOLUME) {
             try {
                 answer = createVolume((VolumeInfo) data);
+                if ((answer == null) || (!answer.getResult())) {
+                    result.setSuccess(false);
+                    if (answer != null) {
+                        result.setResult(answer.getDetails());
+                    }
+                } else {
+                    result.setAnswer(answer);
+                }
             } catch (StorageUnavailableException e) {
                 s_logger.debug("failed to create volume", e);
                 errMsg = e.toString();
@@ -116,7 +125,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 errMsg = e.toString();
             }
         }
-        CreateCmdResult result = new CreateCmdResult(null, answer);
         if (errMsg != null) {
             result.setResult(errMsg);
         }
