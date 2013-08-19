@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.storage.resource;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
@@ -44,6 +40,10 @@ public class VmwareSecondaryStorageContextFactory {
 		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
 		assert(context != null);
+		
+		context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+		s_pool.registerOutstandingContext(context);
+		
 		return context;
 	}
 	
@@ -54,8 +54,6 @@ public class VmwareSecondaryStorageContextFactory {
 		}
 		
 		if(context != null) {
-			context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
-			
 			context.registerStockObject("username", vCenterUserName);
 			context.registerStockObject("password", vCenterPassword);
 		}

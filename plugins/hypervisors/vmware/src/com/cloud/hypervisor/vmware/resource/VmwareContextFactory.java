@@ -67,6 +67,9 @@ public class VmwareContextFactory {
 		context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());
 		context.registerStockObject("manageportgroup", s_vmwareMgr.getManagementPortGroupName());
 
+		context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+		s_pool.registerOutstandingContext(context);
+		
 		return context;
 	}
 	
@@ -76,8 +79,6 @@ public class VmwareContextFactory {
 			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
 		
 		if(context != null) {
-			context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
-			
 			context.registerStockObject(VmwareManager.CONTEXT_STOCK_NAME, s_vmwareMgr);
 
 			context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());
