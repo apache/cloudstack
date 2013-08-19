@@ -245,6 +245,12 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     s_logger.warn("Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
                     return true;
                 }
+            } else if (dataObj.getType() == DataObjectType.SNAPSHOT) {
+                SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
+                if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                    snapshotDataStoreDao.remove(destSnapshotStore.getId());
+                }
+                return true;
             }
         } else {
             // Image store
