@@ -2575,10 +2575,10 @@
                                     },
                                     associatednetworkid: {
                                         label: 'label.associated.network.id'
-                                    },
-                                    networkname: {
-                                        label: 'label.associated.network'
-                                    },
+                                    },                                    
+                                    associatednetworkname: {
+                                        label: 'label.network.name'
+                                    },   
                                     state: {
                                         label: 'label.state'
                                     },
@@ -2645,9 +2645,7 @@
 
                                             args.response.success({
                                                 actionFilter: actionFilters.ipAddress,
-                                                data: $.extend(ipObj, {
-                                                    networkname: network ? network.name : ''
-                                                })
+                                                data: ipObj
                                             });
                                         },
                                         error: function(data) {
