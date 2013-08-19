@@ -80,6 +80,7 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreManager;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
@@ -554,7 +555,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
-        LinkedHashMap<NetworkVO, NicProfile> networks = new LinkedHashMap<NetworkVO, NicProfile>(offerings.size() + 1);
+        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);

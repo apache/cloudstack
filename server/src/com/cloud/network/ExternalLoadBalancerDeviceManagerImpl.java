@@ -742,13 +742,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     };
     
     private class MappingNic {
-        private NicVO nic;
+        private Nic nic;
         private MappingState state;
 
-        public NicVO getNic() {
+        public Nic getNic() {
             return nic;
     }
-        public void setNic(NicVO nic) {
+
+        public void setNic(Nic nic) {
             this.nic = nic;
         }
         public MappingState getState() {
@@ -762,7 +763,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     private MappingNic getLoadBalancingIpNic(DataCenterVO zone, Network network, long sourceIpId, boolean revoked, String existedGuestIp) throws ResourceUnavailableException {
         String srcIp = _networkModel.getIp(sourceIpId).getAddress().addr();
         InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(srcIp);
-        NicVO loadBalancingIpNic = null;
+        Nic loadBalancingIpNic = null;
         MappingNic nic = new MappingNic();
         nic.setState(MappingState.Unchanged);
         if (!revoked) {
@@ -879,7 +880,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 long ipId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
                 MappingNic nic = getLoadBalancingIpNic(zone, network, ipId, revoked, null);
                 mappingStates.add(nic.getState());
-                NicVO loadBalancingIpNic = nic.getNic();
+                Nic loadBalancingIpNic = nic.getNic();
                 if (loadBalancingIpNic == null) {
                 	continue;
                 }
@@ -1161,7 +1162,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 long sourceIpId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
                 MappingNic nic = getLoadBalancingIpNic(zone, network, sourceIpId, revoked, null);
                 mappingStates.add(nic.getState());
-                NicVO loadBalancingIpNic = nic.getNic();
+                Nic loadBalancingIpNic = nic.getNic();
                 if (loadBalancingIpNic == null) {
                     continue;
                 }

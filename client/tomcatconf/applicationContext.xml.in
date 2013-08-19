@@ -741,10 +741,6 @@
   </bean>
 
   <bean id="ipAddressManagerImpl" class="com.cloud.network.IpAddressManagerImpl" >
-    <property name="NetworkGurus" value="#{networkGurus.Adapters}" />
-    <property name="NetworkElements" value="#{networkElements.Adapters}" />
-    <property name="IpDeployers" value="#{ipDeployers.Adapters}" />
-    <property name="DhcpProviders" value="#{dhcpProviders.Adapters}" />
   </bean>
   <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
     <property name="NetworkElements" value="#{networkElements.Adapters}" />

@@ -82,6 +82,7 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreDao;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.keystore.KeystoreVO;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
@@ -721,7 +722,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         }
 
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
-        LinkedHashMap<NetworkVO, NicProfile> networks = new LinkedHashMap<NetworkVO, NicProfile>(offerings.size() + 1);
+        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
@@ -956,7 +957,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 }
                 return false;
             }
-            TemplateDataStoreVO templateHostRef = this._vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
+            TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
                     Status.DOWNLOADED);
 
             if (templateHostRef != null) {

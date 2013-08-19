@@ -94,7 +94,6 @@ import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -133,6 +132,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -157,7 +157,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class IpAddressManagerImpl implements IpAddressManager {
+public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager {
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
 
     @Inject
@@ -268,6 +268,7 @@ public class IpAddressManagerImpl implements IpAddressManager {
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
 
+    @Override
     public boolean configure(String name, Map<String, Object> params) {
         // populate providers
         Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
@@ -1576,7 +1577,7 @@ public class IpAddressManagerImpl implements IpAddressManager {
             ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, callerAccount);
             s_logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
             try {
-                Pair<NetworkGuru, NetworkVO> implementedNetwork = _networkMgr.implementNetwork(guestNetwork.getId(), dest, context);
+                Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(guestNetwork.getId(), dest, context);
                 if (implementedNetwork.first() == null) {
                     s_logger.warn("Failed to implement the network " + guestNetwork);
                 }

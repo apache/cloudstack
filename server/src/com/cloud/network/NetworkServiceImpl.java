@@ -1324,7 +1324,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 Journal journal = new Journal.LogJournal("Implementing " + network, s_logger);
                 ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, caller);
                 s_logger.debug("Implementing network " + network + " as a part of network provision for persistent network");
-                Pair<NetworkGuru, NetworkVO> implementedNetwork = _networkMgr.implementNetwork(network.getId(), dest, context);
+                Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(network.getId(), dest, context);
                 if (implementedNetwork.first() == null) {
                     s_logger.warn("Failed to provision the network " + network);
                 }

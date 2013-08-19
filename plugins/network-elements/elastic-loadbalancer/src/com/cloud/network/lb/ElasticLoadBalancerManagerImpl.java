@@ -491,13 +491,13 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
  
                 List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
                 NetworkOffering controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+                Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
-                LinkedHashMap<NetworkVO, NicProfile> networks = new LinkedHashMap<NetworkVO, NicProfile>(2);
+                LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(2);
                 NicProfile guestNic = new NicProfile();
                 guestNic.setDefaultNic(true);
                 networks.put(controlConfig, null);
-                networks.put((NetworkVO)guestNetwork, guestNic);
+                networks.put(guestNetwork, guestNic);
 
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 

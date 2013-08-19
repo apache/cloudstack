@@ -68,7 +68,6 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -879,7 +878,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest,
-            ReservationContext context, long nicId, NetworkVO network)
+ ReservationContext context, long nicId, Network network)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
@@ -971,7 +970,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#shutdownNetworkElementsAndResources(com.cloud.vm.ReservationContext, boolean, com.cloud.network.NetworkVO)
      */
     @Override
-    public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, NetworkVO network) {
+    public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -985,7 +984,8 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context,
-            NetworkVO network, NetworkOfferingVO findById) throws ConcurrentOperationException,
+ Network network, NetworkOffering findById)
+        throws ConcurrentOperationException,
             InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         
@@ -1103,7 +1103,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public void removeDhcpServiceInSubnet(NicVO nic) {
+    public void removeDhcpServiceInSubnet(Nic nic) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

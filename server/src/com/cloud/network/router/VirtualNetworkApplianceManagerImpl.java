@@ -1816,7 +1816,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         s_logger.debug("Adding nic for Virtual Router in Control network ");
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
-        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+        Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
         networks.put(controlConfig, null);
         
         
@@ -1838,7 +1838,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 defaultNic.setDeviceId(2);
             }
             NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+            List<? extends Network> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             String publicIp = defaultNic.getIp4Address();
             // We want to use the identical MAC address for RvR on public interface if possible
             NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
