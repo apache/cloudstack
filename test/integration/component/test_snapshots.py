@@ -134,7 +134,7 @@ class TestSnapshots(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["disk_offering"]
                                     )
-        template = get_template(
+        cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
@@ -146,7 +146,7 @@ class TestSnapshots(cloudstackTestCase):
 
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id
 
-        cls.services["templates"]["ostypeid"] = template.ostypeid
+        cls.services["templates"]["ostypeid"] = cls.template.ostypeid
         cls.services["zoneid"] = cls.zone.id
         cls.services["diskoffering"] = cls.disk_offering.id
 
@@ -167,7 +167,7 @@ class TestSnapshots(cloudstackTestCase):
                     VirtualMachine.create(
                                 cls.api_client,
                                 cls.services["server_with_disk"],
-                                templateid=template.id,
+                                templateid=cls.template.id,
                                 accountid=cls.account.name,
                                 domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
@@ -177,7 +177,7 @@ class TestSnapshots(cloudstackTestCase):
                     VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["server_without_disk"],
-                                    templateid=template.id,
+                                    templateid=cls.template.id,
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
@@ -244,6 +244,7 @@ class TestSnapshots(cloudstackTestCase):
                     self.services["paths"]["mount_dir"]
                     ),
                 "cd %s" % self.services["paths"]["mount_dir"],
+                "ls -Rt",
                 "ls %s" % (
                     snapshotPath
                     ),
@@ -265,8 +266,7 @@ class TestSnapshots(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for management server: %s - %s" %
                       (self.config.mgtSvr[0].mgtSvrIp, e))
-        res = str(snapshots)
-        return res.count(snapshot_id) == 1
+        return snapshots.count(snapshot_id) == 1
 
     @classmethod
     def tearDownClass(cls):
@@ -667,7 +667,7 @@ class TestSnapshots(cloudstackTestCase):
                                       self.services["volume"]["diskdevice"],
                                       self.services["paths"]["mount_dir"]
                                       ),
-                    "pushd %s" % self.services["mount_dir"],
+                    "pushd %s" % self.services["paths"]["mount_dir"],
                     "mkdir -p %s/{%s,%s} " % (
                                                 self.services["sub_dir"],
                                                 self.services["sub_lvl_dir1"],
@@ -924,7 +924,7 @@ class TestSnapshots(cloudstackTestCase):
                 )
         # Unmount the volume
         cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
+                    "umount %s" % (self.services["paths"]["mount_dir"]),
                 ]
         try:
             for c in cmds:
@@ -1051,6 +1051,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                     self.services["paths"]["mount_dir"]
                     ),
                 "cd %s" % self.services["paths"]["mount_dir"],
+                "ls -Rt",
                 "ls %s" % (
                     snapshotPath
                     ),
@@ -1072,8 +1073,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for management server: %s - %s" %
                       (self.services["mgmt_server"]["ipaddress"], e))
-        res = str(snapshots)
-        return res.count(snapshot_id) == 1
+        return snapshots.count(snapshot_id) == 1
 
     @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns"])
