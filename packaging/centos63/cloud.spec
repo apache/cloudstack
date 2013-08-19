@@ -104,6 +104,7 @@ Obsoletes: cloud-deps < 4.1.0
 Obsoletes: cloud-python < 4.1.0
 Obsoletes: cloud-setup < 4.1.0
 Obsoletes: cloud-cli < 4.1.0
+Obsoletes: cloud-daemonize < 4.1.0
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -129,7 +130,6 @@ Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-agent-libs < 4.1.0
 Obsoletes: cloud-test < 4.1.0
-Obsoletes: cloud-daemonize < 4.1.0
 Group: System Environment/Libraries
 %description agent
 The CloudStack agent for KVM hypervisors
@@ -415,13 +415,11 @@ if [ -f $oldserverxml ] || [ -L $oldserverxml ]; then
     if stat -c %N $oldserverxml| grep -q server-ssl ; then
         if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
-        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at
-        echo %{_sysconfdir}/%{name}/management
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
     else
         if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
-        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at
-        echo %{_sysconfdir}/%{name}/management
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
 
     fi
 else
@@ -435,13 +433,11 @@ if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
     if stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
         if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
-        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at
-        echo %{_sysconfdir}/%{name}/management
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
     else
         if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
-        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at
-        echo %{_sysconfdir}/%{name}/management
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
     fi
 else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
