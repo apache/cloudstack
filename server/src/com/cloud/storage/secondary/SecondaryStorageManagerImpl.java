@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -81,7 +82,6 @@ import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
@@ -186,7 +186,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    protected NetworkManager _networkMgr;
+    protected NetworkOrchestrationService _networkMgr;
     @Inject
     protected NetworkModel _networkModel;
     @Inject

@@ -33,6 +33,8 @@ import javax.naming.ConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AssociateAsaWithLogicalEdgeFirewallCommand;
@@ -64,7 +66,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -91,7 +92,7 @@ public class CiscoVnmcElementTest {
 
     CiscoVnmcElement _element = new CiscoVnmcElement();
     AgentManager _agentMgr = mock(AgentManager.class);
-    NetworkManager _networkMgr = mock(NetworkManager.class);
+    NetworkOrchestrationService _networkMgr = mock(NetworkOrchestrationService.class);
     NetworkModel _networkModel = mock(NetworkModel.class);
     HostDao _hostDao = mock(HostDao.class);
     NetworkServiceMapDao _ntwkSrvcDao = mock(NetworkServiceMapDao.class);

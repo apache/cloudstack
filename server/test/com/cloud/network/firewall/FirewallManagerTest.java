@@ -38,10 +38,11 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
@@ -113,7 +114,7 @@ public class FirewallManagerTest {
         ruleList.add(rule);
         FirewallManagerImpl firewallMgr = (FirewallManagerImpl)_firewallMgr;
 
-        NetworkManager netMgr = mock(NetworkManager.class);
+        NetworkOrchestrationService netMgr = mock(NetworkOrchestrationService.class);
         IpAddressManager addrMgr = mock(IpAddressManager.class);
         firewallMgr._networkMgr = netMgr;
 

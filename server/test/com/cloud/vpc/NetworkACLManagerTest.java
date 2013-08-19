@@ -42,11 +42,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -165,8 +165,8 @@ public class NetworkACLManagerTest extends TestCase{
         }
 
         @Bean
-        public NetworkManager networkManager() {
-            return Mockito.mock(NetworkManager.class);
+        public NetworkOrchestrationService networkManager() {
+            return Mockito.mock(NetworkOrchestrationService.class);
         }
 
         @Bean

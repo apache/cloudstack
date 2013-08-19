@@ -19,8 +19,11 @@ package com.cloud.network.guru;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -43,7 +46,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -67,7 +69,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 	DataCenterDao dcdao = mock(DataCenterDao.class);
 	NetworkOfferingServiceMapDao nosd = mock(NetworkOfferingServiceMapDao.class);
 	AgentManager agentmgr = mock (AgentManager.class);
-	NetworkManager netmgr = mock (NetworkManager.class);
+	NetworkOrchestrationService netmgr = mock (NetworkOrchestrationService.class);
 	NetworkModel netmodel = mock (NetworkModel.class);
 
 	HostDao hostdao = mock (HostDao.class);

@@ -40,6 +40,7 @@ import org.springframework.core.type.filter.TypeFilter;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
@@ -73,7 +74,6 @@ import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6AddressManager;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkManager;
@@ -314,8 +314,8 @@ public class ChildTestConfiguration {
     }
 
     @Bean
-    public NetworkManager networkManager() {
-        return Mockito.mock(NetworkManager.class);
+    public NetworkOrchestrationService networkManager() {
+        return Mockito.mock(NetworkOrchestrationService.class);
     }
 
     @Bean

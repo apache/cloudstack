@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -122,7 +123,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Inject NetworkServiceMapDao _ntwkSrvcProviderDao;
     @Inject DataCenterDao _dcDao;
     @Inject NetworkModel _networkModel;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkOrchestrationService _networkMgr;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject NicDao _nicDao;
     @Inject AgentManager _agentMgr;

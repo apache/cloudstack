@@ -28,12 +28,12 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
@@ -91,8 +91,8 @@ import com.cloud.utils.net.NetUtils;
             }
             
             @Bean
-            public NetworkManager networkManager() {
-                return Mockito.mock(NetworkManager.class);
+            public NetworkOrchestrationService networkManager() {
+                return Mockito.mock(NetworkOrchestrationService.class);
             }
             
             @Bean

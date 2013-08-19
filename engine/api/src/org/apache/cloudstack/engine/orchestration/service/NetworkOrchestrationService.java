@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package org.apache.cloudstack.engine.orchestration.service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +31,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkProfile;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.element.DhcpServiceProvider;
@@ -54,7 +57,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * NetworkManager manages the network for the different end users.
  * 
  */
-public interface NetworkManager {
+public interface NetworkOrchestrationService {
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;

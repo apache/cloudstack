@@ -21,13 +21,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.server.ManagementServer;
@@ -111,7 +111,7 @@ public enum Config {
 
 	SecurityGroupDefaultAdding("Network", ManagementServer.class, Boolean.class, "network.securitygroups.defaultadding", "true", "If true, the user VM would be added to the default security group by default", null),
 
-	GuestOSNeedGatewayOnNonDefaultNetwork("Network", NetworkManager.class, String.class, "network.dhcp.nondefaultnetwork.setgateway.guestos", "Windows", "The guest OS's name start with this fields would result in DHCP server response gateway information even when the network it's on is not default network. Names are separated by comma.", null),
+	GuestOSNeedGatewayOnNonDefaultNetwork("Network", NetworkOrchestrationService.class, String.class, "network.dhcp.nondefaultnetwork.setgateway.guestos", "Windows", "The guest OS's name start with this fields would result in DHCP server response gateway information even when the network it's on is not default network. Names are separated by comma.", null),
 
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
@@ -165,18 +165,18 @@ public enum Config {
 	InvestigateRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "investigate.retry.interval", "60", "Time (in seconds) between VM pings when agent is disconnected", null),
 	MigrateRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "migrate.retry.interval", "120", "Time (in seconds) between migration retries", null),
     ClusterDeltaSyncInterval("Advanced", AgentManager.class, Integer.class, "sync.interval", "60", "Cluster Delta sync interval in seconds", null),
-	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ), "Default CPU speed (MHz) for router VM.", null),
+	RouterCpuMHz("Advanced", NetworkOrchestrationService.class, Integer.class, "router.cpu.mhz", String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ), "Default CPU speed (MHz) for router VM.", null),
 	RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time (in seconds) between retries to restart a vm", null),
-	RouterStatsInterval("Advanced", NetworkManager.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
-	ExternalNetworkStatsInterval("Advanced", NetworkManager.class, Integer.class, "external.network.stats.interval", "300", "Interval (in seconds) to report external network statistics.", null),
-	RouterCheckInterval("Advanced", NetworkManager.class, Integer.class, "router.check.interval", "30", "Interval (in seconds) to report redundant router status.", null),
-	RouterCheckPoolSize("Advanced", NetworkManager.class, Integer.class, "router.check.poolsize", "10", "Numbers of threads using to check redundant router status.", null),
-    RouterTemplateXen("Advanced", NetworkManager.class, String.class, "router.template.xen", "SystemVM Template (XenServer)", "Name of the default router template on Xenserver.", null, ConfigurationParameterScope.zone.toString()),
-    RouterTemplateKVM("Advanced", NetworkManager.class, String.class, "router.template.kvm", "SystemVM Template (KVM)", "Name of the default router template on KVM.", null, ConfigurationParameterScope.zone.toString()),
-    RouterTemplateVmware("Advanced", NetworkManager.class, String.class, "router.template.vmware", "SystemVM Template (vSphere)", "Name of the default router template on Vmware.", null, ConfigurationParameterScope.zone.toString()),
-    RouterTemplateHyperv("Advanced", NetworkManager.class, String.class, "router.template.hyperv", "SystemVM Template (HyperV)", "Name of the default router template on Hyperv.", null, ConfigurationParameterScope.zone.toString()),
-    RouterTemplateLXC("Advanced", NetworkManager.class, String.class, "router.template.lxc", "SystemVM Template (LXC)", "Name of the default router template on LXC.", null, ConfigurationParameterScope.zone.toString()),
-    RouterExtraPublicNics("Advanced", NetworkManager.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
+	RouterStatsInterval("Advanced", NetworkOrchestrationService.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
+	ExternalNetworkStatsInterval("Advanced", NetworkOrchestrationService.class, Integer.class, "external.network.stats.interval", "300", "Interval (in seconds) to report external network statistics.", null),
+	RouterCheckInterval("Advanced", NetworkOrchestrationService.class, Integer.class, "router.check.interval", "30", "Interval (in seconds) to report redundant router status.", null),
+	RouterCheckPoolSize("Advanced", NetworkOrchestrationService.class, Integer.class, "router.check.poolsize", "10", "Numbers of threads using to check redundant router status.", null),
+    RouterTemplateXen("Advanced", NetworkOrchestrationService.class, String.class, "router.template.xen", "SystemVM Template (XenServer)", "Name of the default router template on Xenserver.", null, ConfigurationParameterScope.zone.toString()),
+    RouterTemplateKVM("Advanced", NetworkOrchestrationService.class, String.class, "router.template.kvm", "SystemVM Template (KVM)", "Name of the default router template on KVM.", null, ConfigurationParameterScope.zone.toString()),
+    RouterTemplateVmware("Advanced", NetworkOrchestrationService.class, String.class, "router.template.vmware", "SystemVM Template (vSphere)", "Name of the default router template on Vmware.", null, ConfigurationParameterScope.zone.toString()),
+    RouterTemplateHyperv("Advanced", NetworkOrchestrationService.class, String.class, "router.template.hyperv", "SystemVM Template (HyperV)", "Name of the default router template on Hyperv.", null, ConfigurationParameterScope.zone.toString()),
+    RouterTemplateLXC("Advanced", NetworkOrchestrationService.class, String.class, "router.template.lxc", "SystemVM Template (LXC)", "Name of the default router template on LXC.", null, ConfigurationParameterScope.zone.toString()),
+    RouterExtraPublicNics("Advanced", NetworkOrchestrationService.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
 	StartRetry("Advanced", AgentManager.class, Integer.class, "start.retry", "10", "Number of times to retry create and start commands", null),
     EnableDynamicallyScaleVm("Advanced", ManagementServer.class, Boolean.class, "enable.dynamic.scale.vm", "false", "Enables/Diables dynamically scaling a vm", null, ConfigurationParameterScope.zone.toString()),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
@@ -272,7 +272,7 @@ public enum Config {
     XenStorageNetwork1("Hidden", ManagementServer.class, String.class, "xen.storage.network.device1", null, "Specify when there are storage networks", null),
     XenStorageNetwork2("Hidden", ManagementServer.class, String.class, "xen.storage.network.device2", null, "Specify when there are storage networks", null),
     XenPrivateNetwork("Hidden", ManagementServer.class, String.class, "xen.private.network.device", null, "Specify when the private network name is different", null),
-    NetworkGuestCidrLimit("Network", NetworkManager.class, Integer.class, "network.guest.cidr.limit", "22", "size limit for guest cidr; can't be less than this value", null),
+    NetworkGuestCidrLimit("Network", NetworkOrchestrationService.class, Integer.class, "network.guest.cidr.limit", "22", "size limit for guest cidr; can't be less than this value", null),
     XenSetupMultipath("Advanced", ManagementServer.class, String.class, "xen.setup.multipath", "false", "Setup the host to do multipath", null),
     XenBondStorageNic("Advanced", ManagementServer.class, String.class, "xen.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
     XenHeartBeatInterval("Advanced", ManagementServer.class, Integer.class, "xen.heartbeat.interval", "60", "heartbeat to use when implementing XenServer Self Fencing", null),
@@ -326,7 +326,7 @@ public enum Config {
 	HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
 	EncryptionKey("Hidden", ManagementServer.class, String.class, "security.encryption.key", null, "base64 encoded key data", null),
 	EncryptionIV("Hidden", ManagementServer.class, String.class, "security.encryption.iv", null, "base64 encoded IV data", null),
-	RouterRamSize("Hidden", NetworkManager.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM (in MB).", null),
+	RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM (in MB).", null),
 
 	VmOpWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.op.wait.interval", "120", "Time (in seconds) to wait before checking if a previous operation has succeeded", null),
 	VmOpLockStateRetry("Advanced", ManagementServer.class, Integer.class, "vm.op.lock.state.retry", "5", "Times to retry locking the state of a VM for operations", "-1 means try forever"),
@@ -354,10 +354,10 @@ public enum Config {
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
 
 	//disabling lb as cluster sync does not work with distributed cluster
-	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
-	UseExternalDnsServers("Advanced", NetworkManager.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use external dns1 and dns2", null, ConfigurationParameterScope.zone.toString()),
+	SubDomainNetworkAccess("Advanced", NetworkOrchestrationService.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
+	UseExternalDnsServers("Advanced", NetworkOrchestrationService.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use external dns1 and dns2", null, ConfigurationParameterScope.zone.toString()),
 	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do URL encoding for the api response, false by default", null),
-	DnsBasicZoneUpdates("Advanced", NetworkManager.class, String.class, "network.dns.basiczone.updates", "all", "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod", "all,pod"),
+	DnsBasicZoneUpdates("Advanced", NetworkOrchestrationService.class, String.class, "network.dns.basiczone.updates", "all", "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod", "all,pod"),
 
 	ClusterMessageTimeOutSeconds("Advanced", ManagementServer.class, Integer.class, "cluster.message.timeout.seconds", "300", "Time (in seconds) to wait before a inter-management server message post times out.", null),
 	AgentLoadThreshold("Advanced", ManagementServer.class, Float.class, "agent.load.threshold", "0.7", "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening", null),
@@ -441,7 +441,7 @@ public enum Config {
     InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, String.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
     ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side." +
     		" If set to false, these commands become asynchronous. Default value is false.", null),
-    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." +
+    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkOrchestrationService.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." +
             " If set to false, these commands become asynchronous. Default value is false.", null),
 
 	UCSSyncBladeInterval("Advanced", ManagementServer.class, Integer.class, "ucs.sync.blade.interval", "3600", "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", null);
@@ -569,7 +569,7 @@ public enum Config {
             return "HighAvailabilityManager";
         } else if (_componentClass == StoragePoolAllocator.class) {
             return "StorageAllocator";
-        } else if (_componentClass == NetworkManager.class) {
+        } else if (_componentClass == NetworkOrchestrationService.class) {
             return "NetworkManager";
         } else if (_componentClass == StorageManager.class) {
             return "StorageManager";

@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.utils.component.AdapterBase;
@@ -40,7 +42,7 @@ import com.cloud.utils.component.AdapterBase;
 //@ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
 public class NetworkManagerTest {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerTest.class);
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkOrchestrationService _networkMgr;
 
     @Test
     public void testInjected() {

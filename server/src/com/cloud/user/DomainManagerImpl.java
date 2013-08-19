@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.region.RegionManager;
 
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -48,7 +49,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
@@ -98,7 +98,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Inject
     private DedicatedResourceDao _dedicatedDao;
     @Inject
-    private NetworkManager _networkMgr;
+    private NetworkOrchestrationService _networkMgr;
     @Inject
     private NetworkDomainDao _networkDomainDao;
 

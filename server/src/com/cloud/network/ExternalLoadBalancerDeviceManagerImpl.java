@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -138,7 +139,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Inject
     NetworkModel _networkModel;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkOrchestrationService _networkMgr;
     @Inject
     InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject

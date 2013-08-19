@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.element;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.dao.SspCredentialDao;
 import org.apache.cloudstack.network.dao.SspCredentialVO;
@@ -34,7 +35,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -57,7 +57,7 @@ public class SspElementTest {
         _element._configDao = mock(ConfigurationDao.class);
         _element._dcDao = mock(DataCenterDao.class);
         _element._hostDao = mock(HostDao.class);
-        _element._networkMgr = mock(NetworkManager.class);
+        _element._networkMgr = mock(NetworkOrchestrationService.class);
         _element._networkModel = mock(NetworkModel.class);
         _element._nicDao = mock(NicDao.class);
         _element._physicalNetworkDao = mock(PhysicalNetworkDao.class);

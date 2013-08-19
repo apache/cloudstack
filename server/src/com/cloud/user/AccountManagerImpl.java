@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
@@ -84,7 +85,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -186,7 +186,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private SecurityGroupManager _networkGroupMgr;
     @Inject
-    private NetworkManager _networkMgr;
+    private NetworkOrchestrationService _networkMgr;
     @Inject
     private SnapshotManager _snapMgr;
     @Inject

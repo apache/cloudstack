@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
@@ -45,7 +46,6 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -86,7 +86,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject FirewallRulesDao _firewallDao;
     @Inject ResourceTagDao _resourceTagDao;
-    @Inject NetworkManager _ntwkMgr;
+    @Inject NetworkOrchestrationService _ntwkMgr;
     @Inject
     IpAddressManager _ipAddrMgr;
     

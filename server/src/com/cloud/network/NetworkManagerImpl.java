@@ -40,6 +40,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIpDao;
 
@@ -194,8 +195,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Local(value = { NetworkManager.class})
-public class NetworkManagerImpl extends ManagerBase implements NetworkManager, Listener {
+@Local(value = { NetworkOrchestrationService.class})
+public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrationService, Listener {
     static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);
     @Inject
     EntityManager _entityMgr;

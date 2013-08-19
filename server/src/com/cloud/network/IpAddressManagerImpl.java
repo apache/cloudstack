@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -161,7 +162,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
 
     @Inject
-    NetworkManager _networkMgr = null;
+    NetworkOrchestrationService _networkMgr = null;
     @Inject
     EntityManager _entityMgr = null;
     @Inject

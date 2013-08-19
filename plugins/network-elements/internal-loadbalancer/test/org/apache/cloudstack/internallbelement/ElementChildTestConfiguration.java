@@ -28,6 +28,7 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.apache.cloudstack.test.utils.SpringUtils;
@@ -35,7 +36,6 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -79,8 +79,8 @@ public class ElementChildTestConfiguration {
         
         
         @Bean
-        public NetworkManager networkManager() {
-            return Mockito.mock(NetworkManager.class);
+        public NetworkOrchestrationService networkManager() {
+            return Mockito.mock(NetworkOrchestrationService.class);
         }
 
         @Bean

@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.lf5.viewer.configure.ConfigurationManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -38,30 +39,13 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.MigrateWithStorageAnswer;
-import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
-import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
-import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
-import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
-import com.cloud.agent.api.MigrateWithStorageSendAnswer;
-import com.cloud.agent.api.MigrateWithStorageSendCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.ScaleVmAnswer;
-import com.cloud.agent.api.ScaleVmCommand;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -76,10 +60,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.network.NetworkManager;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
@@ -92,7 +73,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -105,7 +85,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public class VirtualMachineManagerImplTest {
 
@@ -183,7 +162,7 @@ public class VirtualMachineManagerImplTest {
     @Mock
     StoragePoolHostDao _poolHostDao;
     @Mock
-    NetworkManager _networkMgr;
+    NetworkOrchestrationService _networkMgr;
     @Mock
     HypervisorGuruManager _hvGuruMgr;
     @Mock

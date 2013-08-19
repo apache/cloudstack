@@ -28,6 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
@@ -44,7 +46,6 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.IpAddress;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -69,7 +70,7 @@ import static org.mockito.Mockito.*;
 public class NiciraNvpElementTest {
 
     NiciraNvpElement _element = new NiciraNvpElement();
-    NetworkManager _networkManager = mock(NetworkManager.class);
+    NetworkOrchestrationService _networkManager = mock(NetworkOrchestrationService.class);
     NetworkModel _networkModel = mock(NetworkModel.class);
     NetworkServiceMapDao _ntwkSrvcDao = mock(NetworkServiceMapDao.class);
     AgentManager _agentManager = mock(AgentManager.class);

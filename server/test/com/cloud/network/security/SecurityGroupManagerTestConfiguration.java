@@ -19,6 +19,7 @@ package com.cloud.network.security;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
@@ -48,7 +49,6 @@ import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupManagerTestConfiguration.Library;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
@@ -127,8 +127,8 @@ public class SecurityGroupManagerTestConfiguration {
     }
 
     @Bean
-    public NetworkManager networkManager(){
-        return Mockito.mock(NetworkManager.class);
+    public NetworkOrchestrationService networkManager(){
+        return Mockito.mock(NetworkOrchestrationService.class);
     }
 
     @Bean

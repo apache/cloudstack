@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
@@ -65,7 +66,6 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -144,7 +144,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     @Inject NicDao _nicDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkDao _networkDao;
-    @Inject NetworkManager _ntwkMgr;
+    @Inject NetworkOrchestrationService _ntwkMgr;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject NetworkOfferingDao _networkOfferingDao;

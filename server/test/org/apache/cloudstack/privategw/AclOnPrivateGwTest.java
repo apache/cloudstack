@@ -20,7 +20,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.*;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.*;
@@ -40,6 +39,7 @@ import junit.framework.Assert;
 
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
@@ -168,8 +168,8 @@ public class AclOnPrivateGwTest {
         }
 
         @Bean
-        public NetworkManager networkManager () {
-            return Mockito.mock(NetworkManager.class);
+        public NetworkOrchestrationService networkManager () {
+            return Mockito.mock(NetworkOrchestrationService.class);
         }
 
 

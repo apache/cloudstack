@@ -42,6 +42,7 @@ import org.mockito.MockitoAnnotations;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
@@ -53,7 +54,6 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -82,7 +82,7 @@ public class ConfigurationManagerTest {
     @Mock AccountManager _accountMgr;
     @Mock ProjectManager _projectMgr;
     @Mock ResourceLimitService _resourceLimitMgr;
-    @Mock NetworkManager _networkMgr;
+    @Mock NetworkOrchestrationService _networkMgr;
     @Mock AccountDao _accountDao;
     @Mock VlanDao _vlanDao;
     @Mock AccountVlanMapDao _accountVlanMapDao;

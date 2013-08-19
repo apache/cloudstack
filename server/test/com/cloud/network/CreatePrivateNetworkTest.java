@@ -36,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -80,7 +81,7 @@ public class CreatePrivateNetworkTest {
     @Mock
     NetworkDao _networkDao;
     @Mock
-    NetworkManager _networkMgr;
+    NetworkOrchestrationService _networkMgr;
     @Mock
     PrivateIpDao _privateIpDao;
 
