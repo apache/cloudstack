@@ -367,9 +367,8 @@ public class TemplateServiceImpl implements TemplateService {
 
                 }
             } else {
+                s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId + ", may request download based on available hypervisor types");
                 if (tmpltStore != null) {
-                    s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId
-                            + ", may request download based on available hypervisor types");
                     s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
                     // remove those leftover entries
                     _vmTemplateStoreDao.remove(tmpltStore.getId());
@@ -393,20 +392,19 @@ public class TemplateServiceImpl implements TemplateService {
             // download.
             for (VMTemplateVO tmplt : toBeDownloaded) {
                 if (tmplt.getUrl() == null) { // If url is null we can't
-                    // initiate the download
+                    s_logger.info("Skip downloading template " + tmplt.getUniqueName() + " since no url is specified.");
                     continue;
                 }
 
-                // if this is private template, skip
-                if (!tmplt.isPublicTemplate() && !tmplt.isFeatured()) {
-                    continue;
-                }
                 if (availHypers.contains(tmplt.getHypervisorType())) {
                     s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store "
                             + store.getName());
                     associateTemplateToZone(tmplt.getId(), zoneId);
                     TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmpl, store, null);
+                } else {
+                    s_logger.info("Skip downloading template " + tmplt.getUniqueName() + " since current data center does not have hypervisor "
+                            + tmplt.getHypervisorType().toString());
                 }
             }
         }
