@@ -1266,7 +1266,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
         } catch (Exception e) {
-            s_logger.debug("Take snapshot: " + volume.getId() + " failed: " + e.toString());
+            s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
         } finally {
             if (snapshot != null) {
                 vol.stateTransit(Volume.Event.OperationSucceeded);

@@ -213,19 +213,11 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             result = future.get();
-            if (result.isFailed()) {
-                snapshot.processEvent(Snapshot.Event.OperationFailed);
-                snapshot.processEvent(Event.OperationFailed);
-                throw new CloudRuntimeException(result.getResult());
-            }
             return result;
         } catch (InterruptedException e) {
             s_logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
         } catch (ExecutionException e) {
-            s_logger.debug("Failed to create snapshot", e);
-            throw new CloudRuntimeException("Failed to create snapshot", e);
-        } catch (NoTransitionException e) {
             s_logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
