@@ -529,6 +529,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(templateFolder + File.separator + templateName + ".qcow2");
             newTemplate.setSize(info.virtualSize);
+            newTemplate.setPhysicalSize(info.size);
             newTemplate.setFormat(ImageFormat.QCOW2);
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
