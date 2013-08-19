@@ -259,16 +259,8 @@ class TestStorageMotion(cloudstackTestCase):
                               self.apiclient,
                               id=volume.id
                               )
-            self.assertEqual(
-                         isinstance(pools, list),
-                         True,
-                         "Check list storage pools response for valid list"
-                        )
-            self.assertNotEqual(
-                        pools,
-                        None,
-                        "Check if pools  exists in ListStoragePools"
-                        )
+            if not pools or pools is None:
+                self.skipTest("No suitable storage pools found for volume migration.Skipping")
 
             pool = pools[0]
             self.debug("Migrating Volume-ID: %s to Pool: %s" % (
