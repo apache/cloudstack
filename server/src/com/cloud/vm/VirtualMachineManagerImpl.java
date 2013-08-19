@@ -36,9 +36,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.network.dao.IPAddressDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -86,6 +89,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -107,6 +111,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
@@ -120,6 +125,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
@@ -177,13 +183,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
@@ -1641,6 +1640,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     volumeToPool.remove(volume);
                 }
             } else {
+                // Not attempting to find a suitable pool on target host, If current pool is accessible at target host.
+                if (_poolHostDao.findByPoolHost(currentPool.getId(), host.getId()) != null) {
+                    s_logger.warn("Volume " + volume.getName() + " will not be migrated as it's current storage pool is accessible on host " + host.getName());
+                    continue;
+                }
                 // Find a suitable pool for the volume. Call the storage pool allocator to find the list of pools.
                 DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
                 DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(),
@@ -1729,7 +1733,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // a vm and not migrating a vm with storage.
         if (volumeToPool.isEmpty()) {
             throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost +
-                    " to destination host " + destHost + " doesn't involve migrating the volumes.");
+                    " to destination host " + destHost + " doesn't involve migrating the volumes. Please use migrateVirtualMachine API.");
         }
 
         short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
