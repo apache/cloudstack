@@ -26,13 +26,8 @@ import javax.naming.ConfigurationException;
 import java.util.HashMap;
 
 public class KVMStorageProcessorTest {
-    KVMStorageProcessor processor;
-    LibvirtComputingResource resource;
     @Before
     public void setUp() throws ConfigurationException {
-        System.setProperty("paths.script", "/devel/asf-master");
-        resource = new LibvirtComputingResource();
-        resource.configure("testResource", new HashMap<String, Object>());
     }
     @Test
     public void testCloneVolumeFromBaseTemplate() throws Exception {
