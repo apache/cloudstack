@@ -427,6 +427,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             throw new CloudRuntimeException("Unable to configure simulator because of " + ex.getMessage(), ex);
         } finally {
             txn.close();
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
         }
         return true;
     }
