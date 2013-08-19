@@ -1267,10 +1267,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         if (result.endsWith(".vmdk")){ // get rid of vmdk file extension
             result = result.substring(0, result.length() - (".vmdk").length());
         }
+        if(result.contains("/"))
+            result = result.substring(result.indexOf ("/") + 1,result.length()); // remove VM name path
+        if(result.contains("ROOT") && result.split("-").length > 1)
+            return "ROOT";
         if(result.split("-").length == 1) // e.g 4da6dcbd412c47b59f96c7ff6dbd7216.vmdk
             return result;
-        if(result.split("-").length > 2) // e.g ROOT-5-4.vmdk, ROOT-5-4-000001.vmdk
-            return result.split("-")[0] + "-" + result.split("-")[1];
         if(result.split("-").length == 2) // e.g 4da6dcbd412c47b59f96c7ff6dbd7216-000001.vmdk
             return result.split("-")[0];
         else
@@ -1324,6 +1326,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         if (vmdkName.endsWith(".vmdk")){
                             vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
                         }
+                        if(vmdkName.contains("/"))
+                            vmdkName = vmdkName.substring(vmdkName.indexOf ("/") + 1,vmdkName.length()); 
                         String baseName = extractSnapshotBaseFileName(vmdkName);
                         mapNewDisk.put(baseName, vmdkName);
                     }
@@ -1372,7 +1376,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             if(vmMo == null)
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             if (vmMo == null) {
-                String msg = "Unable to find VM for RevertToVMSnapshotCommand";
+                String msg = "Unable to find VM for DeleteVMSnapshotCommand";
                 s_logger.debug(msg);
                 return new DeleteVMSnapshotAnswer(cmd, false, msg);
             } else {
@@ -1396,6 +1400,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         if (vmdkName.endsWith(".vmdk")) {
                             vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
                         }
+                        if(vmdkName.contains("/"))
+                            vmdkName = vmdkName.substring(vmdkName.indexOf ("/") + 1,vmdkName.length());
                         String baseName = extractSnapshotBaseFileName(vmdkName);
                         mapNewDisk.put(baseName, vmdkName);
                     }
@@ -1474,16 +1480,16 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                             if (vmdkName.endsWith(".vmdk")) {
                                 vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
                             }
-                            String[] s = vmdkName.split("-");
-                            mapNewDisk.put(s[0], vmdkName);
+                            if(vmdkName.contains("/"))
+                                vmdkName = vmdkName.substring(vmdkName.indexOf ("/") + 1,vmdkName.length());                            
+                            String baseName = extractSnapshotBaseFileName(vmdkName);
+                            mapNewDisk.put(baseName, vmdkName);
                         }
                     }
-                    String key = null;
                     for (VolumeTO volumeTo : listVolumeTo) {
-                        String parentUUID = volumeTo.getPath();
-                        String[] s = parentUUID.split("-");
-                        key = s[0];
-                        volumeTo.setPath(mapNewDisk.get(key));
+                        String baseName = extractSnapshotBaseFileName(volumeTo.getPath());
+                        String newPath = mapNewDisk.get(baseName);
+                        volumeTo.setPath(newPath);
                     }
                     if (!snapshotMemory) {
                         vmState = VirtualMachine.State.Stopped;
