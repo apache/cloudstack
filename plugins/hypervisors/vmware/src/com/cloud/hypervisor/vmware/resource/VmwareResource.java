@@ -3723,9 +3723,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // find VM through datacenter (VM is not at the target host yet)
             VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist in VMware datacenter";
-                s_logger.error(msg);
-                throw new Exception(msg);
+                s_logger.info("VM " + vmName + " was not found in the cluster of host " + hyperHost.getHyperHostName() + ". Looking for the VM in datacenter.");
+                ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), dcMor);
+                vmMo = dcMo.findVm(vmName);
+                if (vmMo == null) {
+                    String msg = "VM " + vmName + " does not exist in VMware datacenter";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
             }
 
             NicTO[] nics = vm.getNics();
