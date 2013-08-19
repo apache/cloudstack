@@ -190,7 +190,6 @@ class Services:
         }
 
 
-@unittest.skip("skipped - Test case need to enable after fixing the issues")
 class TestVMLifeCycleVPC(cloudstackTestCase):
 
     @classmethod
@@ -864,6 +863,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                          )
         return
 
+@unittest.skip("skipped - The setup of shared network is wrong, need to be fixed ")
 class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     @classmethod
