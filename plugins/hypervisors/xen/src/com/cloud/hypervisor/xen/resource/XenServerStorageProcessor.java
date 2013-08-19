@@ -1391,6 +1391,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             newTemplate.setPath(installPath);
             newTemplate.setFormat(ImageFormat.VHD);
             newTemplate.setSize(virtualSize);
+            newTemplate.setPhysicalSize(physicalSize);
             CopyCmdAnswer answer = new CopyCmdAnswer(newTemplate);
             return answer;
         } catch (Exception e) {
