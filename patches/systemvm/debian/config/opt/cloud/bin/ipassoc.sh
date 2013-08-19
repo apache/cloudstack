@@ -332,6 +332,14 @@ enable_rpsrfs() {
      fi
 }
 
+
+check_for_iface_numof_ips () {
+     ip addr show $ethDev | grep 'inet '
+     return $?
+}
+
+
+
 #set -x
 sflag=0
 lflag=
@@ -358,7 +366,7 @@ then
     if_keep_state=1
 fi
 
-while getopts 'sfADna:l:c:g:' OPTION
+while getopts 'sfADdna:l:c:g:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -382,6 +390,8 @@ do
   		;;
   n)   nflag=1
         ;;
+  d)   dflag=1
+        ;;
   ?)	usage
                 unlock_exit 2 $lock $locked
 		;;
@@ -401,6 +411,12 @@ then
     unlock_exit 2 $lock $locked
 fi
 
+ if [ "$Dflag" == "1" ] && [ "$dflag" == "1" ]
+ then
+   check_for_iface_numof_ips
+   unlock_exit $? $lock $locked
+
+ fi
 
 if [ "$Aflag" == "1" ] && [ "$nflag" == "1" ]
 then

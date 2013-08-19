@@ -1002,6 +1002,41 @@ public class VirtualRoutingResource implements Manager {
 
         return routerProxy("ipassoc.sh", privateIpAddress, args);
     }
+
+    public String checkPublicIpsCount(final String vmName,
+                                        final String privateIpAddress, final String publicIpAddress,
+                                        final boolean firstIP, final boolean sourceNat,
+                                        final String vlanId, final String vlanGateway,
+                                        final String vlanNetmask, final String vifMacAddress, int nicNum, boolean newNic){
+
+        String args = "";
+        args += "-D";
+
+        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+        if (sourceNat) {
+            args +=" -s";
+        }
+        if (firstIP) {
+            args += " -f";
+        }
+        args += " -l ";
+        args += publicIpAddress + "/" + cidrSize;
+
+        String publicNic = "eth" + nicNum;
+        args += " -c ";
+        args += publicNic;
+
+        args +=" -g ";
+        args += vlanGateway;
+
+        if (newNic) {
+            args += " -n";
+        }
+        args += " -d";
+
+        return routerProxy("ipassoc.sh", privateIpAddress, args);
+
+    }
     
     private void deleteBridge(String brName) {
         Script cmd = new Script("/bin/sh", _timeout);

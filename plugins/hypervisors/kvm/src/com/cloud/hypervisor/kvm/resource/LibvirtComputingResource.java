@@ -1722,6 +1722,25 @@ ServerResource {
     	return new Answer(cmd, true, result);
     }
 
+    private void vifHotUnPlug (Connect conn, String vmName, String vlanId,
+                               String macAddr) throws InternalErrorException, LibvirtException {
+
+        Domain vm = null;
+        conn = LibvirtConnection.getConnectionByVmName(vmName);
+        vm = getDomain(conn, vmName);
+        List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
+        for (InterfaceDef pluggedNic : pluggedNics) {
+            if (pluggedNic.getMacAddress().equalsIgnoreCase(macAddr)) {
+                vm.detachDevice(pluggedNic.toString());
+                // We don't know which "traffic type" is associated with
+                // each interface at this point, so inform all vif drivers
+                for (VifDriver vifDriver : getAllVifDrivers()) {
+                    vifDriver.unplug(pluggedNic);
+                }
+            }
+        }
+    }
+
     private void VifHotPlug(Connect conn, String vmName, String vlanId,
             String macAddr) throws InternalErrorException, LibvirtException {
         NicTO nicTO = new NicTO();
@@ -2043,6 +2062,20 @@ ServerResource {
                 } else {
                     results[i++] = ip.getPublicIp() + " - success";
                     ;
+
+                    if (!ip.isAdd()) {
+                        result = _virtRouterResource.checkPublicIpsCount(routerName,
+                                routerIp, ip.getPublicIp(), ip.isFirstIP(),
+                                ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(),
+                                ip.getVlanNetmask(), ip.getVifMacAddress(), nicNum, newNic);
+
+                        if (result != null) {
+                            // There are no ips on the vm so delete the vif
+                            networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                            vifHotUnPlug(conn, routerName, ip.getVlanId(),
+                                    ip.getVifMacAddress());
+                        }
+                    }
                 }
             }
             return new IpAssocAnswer(cmd, results);

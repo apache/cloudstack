@@ -2352,6 +2352,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
             }
 
+            if (!add) {
+                args += " -d";
+                String zeroIpsRes = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (zeroIpsRes == null || zeroIpsRes.isEmpty()) {
+                    //There are no ip address set on the interface. So unplug the interface
+                    // If it is not unplugged then the interface is not resuable.
+                    removeVif = true;
+                }
+            }
+
+
+
             if (removeVif) {
                 network = correctVif.getNetwork(conn);
 
