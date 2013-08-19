@@ -2525,8 +2525,9 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
 
-        self.debug("Migrating VM-ID: %s to Host: %s" % (
+        self.debug("Migrating VM-ID: %s on Host: %s to Host: %s" % (
                                                         self.vm_1.id,
+                                                        self.vm_1.hostid,
                                                         host.id
                                                         ))
 
