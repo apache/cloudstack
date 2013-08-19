@@ -773,6 +773,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             newTemplate.setPath(result.first());
             newTemplate.setFormat(ImageFormat.OVA);
             newTemplate.setSize(result.third());
+            newTemplate.setPhysicalSize(result.second());
             return new CopyCmdAnswer(newTemplate);
 
         } catch (Throwable e) {
@@ -969,6 +970,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
+            newTemplate.setPhysicalSize(result.second());
             newTemplate.setSize(result.third());
             newTemplate.setFormat(ImageFormat.OVA);
             return new CopyCmdAnswer(newTemplate);
