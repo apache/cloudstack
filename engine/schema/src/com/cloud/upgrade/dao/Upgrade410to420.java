@@ -43,6 +43,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -78,6 +79,7 @@ public class Upgrade410to420 implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
         persistLegacyZones(conn);
+        persistVswitchConfiguration(conn);
         createPlaceHolderNics(conn);
         updateRemoteAccessVpn(conn);
         updateSystemVmTemplates(conn);
@@ -110,6 +112,154 @@ public class Upgrade410to420 implements DbUpgrade {
         encryptSite2SitePSK(conn);
         migrateDatafromIsoIdInVolumesTable(conn);
         setRAWformatForRBDVolumes(conn);
+    }
+
+    private void persistVswitchConfiguration(Connection conn) {
+        PreparedStatement clustersQuery = null;
+        ResultSet clusters = null;
+        Long clusterId;
+        String clusterHypervisorType;
+        final String NEXUS_GLOBAL_CONFIG_PARAM_NAME = "vmware.use.nexus.vswitch";
+        final String DVS_GLOBAL_CONFIG_PARAM_NAME = "vmware.use.dvswitch";
+        final String VSWITCH_GLOBAL_CONFIG_PARAM_CATEGORY = "Network";
+        final String VMWARE_STANDARD_VSWITCH = "vmwaresvs";
+        final String NEXUS_1000V_DVSWITCH = "nexusdvs";
+        String paramValStr;
+        boolean readGlobalConfigParam = false;
+        boolean nexusEnabled = false;
+        String publicVswitchType = VMWARE_STANDARD_VSWITCH;
+        String guestVswitchType = VMWARE_STANDARD_VSWITCH;
+        Map<Long, List<Pair<String, String>>> detailsMap = new HashMap<Long, List<Pair<String, String>>>();
+        List<Pair<String, String>> detailsList;
+
+        try {
+            clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");
+            clusters = clustersQuery.executeQuery();
+            while(clusters.next()) {
+                clusterHypervisorType = clusters.getString("hypervisor_type");
+                clusterId = clusters.getLong("id");
+                if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
+                    if (!readGlobalConfigParam) {
+                        paramValStr = getConfigurationParameter(conn, VSWITCH_GLOBAL_CONFIG_PARAM_CATEGORY, NEXUS_GLOBAL_CONFIG_PARAM_NAME);
+                        if(paramValStr.equalsIgnoreCase("true")) {
+                            nexusEnabled = true;
+                        }
+                    }
+                    if (nexusEnabled) {
+                        publicVswitchType = NEXUS_1000V_DVSWITCH;
+                        guestVswitchType = NEXUS_1000V_DVSWITCH;
+                    }
+                    detailsList = new ArrayList<Pair<String, String>>();
+                    detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, guestVswitchType));
+                    detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, publicVswitchType));
+                    detailsMap.put(clusterId, detailsList);
+
+                    updateClusterDetails(conn, detailsMap);
+                    s_logger.debug("Persist vSwitch Configuration: Successfully persisted vswitch configuration for cluster " + clusterId);
+                } else {
+                    s_logger.debug("Persist vSwitch Configuration: Ignoring cluster " + clusterId + " with hypervisor type " + clusterHypervisorType);
+                    continue;
+                }
+            } // End cluster iteration
+
+            if (nexusEnabled) {
+                // If Nexus global parameter is true, then set DVS configuration parameter to true. TODOS: Document that this mandates that MS need to be restarted.
+                setConfigurationParameter(conn, VSWITCH_GLOBAL_CONFIG_PARAM_CATEGORY, DVS_GLOBAL_CONFIG_PARAM_NAME, "true");
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to persist vswitch configuration of VMware clusters." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (clusters != null) {
+                    clusters.close();
+                }
+                if (clustersQuery != null) {
+                    clustersQuery.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void updateClusterDetails(Connection conn, Map<Long, List<Pair<String, String>>> detailsMap) {
+        PreparedStatement clusterDetailsInsert = null;
+        // Insert cluster details into cloud.cluster_details table for existing VMware clusters
+        // Input parameter detailMap is a map of clusterId and list of key value pairs for that cluster
+        Long clusterId;
+        String key;
+        String val;
+        List<Pair<String, String>> keyValues;
+        try {
+            Iterator<Long> clusterIt = detailsMap.keySet().iterator();
+            while (clusterIt.hasNext()) {
+                clusterId = clusterIt.next();
+                keyValues = detailsMap.get(clusterId);
+                for (Pair<String, String> keyValuePair : keyValues) {
+                    clusterDetailsInsert = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value) VALUES (?, ?, ?)");
+                    key = keyValuePair.first();
+                    val = keyValuePair.second();
+                    clusterDetailsInsert.setLong(1, clusterId);
+                    clusterDetailsInsert.setString(2, key);
+                    clusterDetailsInsert.setString(3, val);
+                    clusterDetailsInsert.executeUpdate();
+                }
+                s_logger.debug("Inserted vswitch configuration details into cloud.cluster_details for cluster with id " + clusterId + ".");
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable insert cluster details into cloud.cluster_details table.", e);
+        } finally {
+            try {
+                if (clusterDetailsInsert != null) {
+                    clusterDetailsInsert.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private String getConfigurationParameter(Connection conn, String category, String paramName) {
+        ResultSet rs = null;
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("select value from `cloud`.`configuration` where category='" + category + "' and value is not NULL and name = '" + paramName + "';");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                return rs.getString("value");
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable read global configuration parameter " + paramName + ". ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        return "false";
+    }
+
+    private void setConfigurationParameter(Connection conn, String category, String paramName, String paramVal) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = '" + paramVal + "' WHERE name = '" + paramName + "';");
+            s_logger.debug("Updating global configuration parameter " + paramName + " with value " + paramVal + ". Update SQL statement is " + pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to set global configuration parameter " + paramName + " to " + paramVal + ". ", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
     }
 
     private void fixBaremetalForeignKeys(Connection conn) {
@@ -570,7 +720,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
         try {
             // update the existing vmware traffic labels
-            pstmt = conn.prepareStatement("select name,value from `cloud`.`configuration` where category='Hidden' and value is not NULL and name REGEXP 'vmware\\.*\\.vswitch';");
+            pstmt = conn.prepareStatement("select name,value from `cloud`.`configuration` where category='Hidden' and value is not NULL and name REGEXP 'vmware*.vswitch';");
             rsParams = pstmt.executeQuery();
             while (rsParams.next()) {
                 trafficTypeVswitchParam = rsParams.getString("name");
@@ -583,11 +733,11 @@ public class Upgrade410to420 implements DbUpgrade {
                 } else if (trafficTypeVswitchParam.equals("vmware.guest.vswitch")) {
                     trafficType = "Guest";
                 }
-                s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
                 pstmt = conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" + trafficType + "';");
                 rsLabel = pstmt.executeQuery();
                 newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
                 pstmt = conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = " + newLabel + " where traffic_type = '" + trafficType + "' and vmware_network_label is not NULL;");
+                s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {
@@ -634,12 +784,13 @@ public class Upgrade410to420 implements DbUpgrade {
         String value;
 
         try {
-            clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");
             pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 zoneId = rs.getLong("id");
+                clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL AND data_center_id=?");
+                clustersQuery.setLong(1, zoneId);
                 legacyZone = false;
                 ignoreZone = true;
                 count = 0L;
