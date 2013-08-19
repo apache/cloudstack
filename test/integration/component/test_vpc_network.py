@@ -2138,12 +2138,10 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
-        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.account = Account.create(
@@ -2169,7 +2167,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                             cls.services["network_offering"],
                                             conservemode=False
                                             )
-        cls._cleanup.append(cls.nw_off)
         # Enable Network offering
         cls.nw_off.update(cls.api_client, state='Enabled')
 
