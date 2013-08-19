@@ -31,6 +31,8 @@ public class VmwareContextPool {
     private static final long DEFAULT_CHECK_INTERVAL = 10000;
     private static final int DEFAULT_IDLE_QUEUE_LENGTH = 128;
 	
+    private List<VmwareContext> _outstandingRegistry = new ArrayList<VmwareContext>();
+    
 	private Map<String, List<VmwareContext>> _pool;
 	private int _maxIdleQueueLength = DEFAULT_IDLE_QUEUE_LENGTH;
 	private long _idleCheckIntervalMs = DEFAULT_CHECK_INTERVAL;
@@ -54,9 +56,23 @@ public class VmwareContextPool {
 		_timer.scheduleAtFixedRate(getTimerTask(), _idleCheckIntervalMs, _idleCheckIntervalMs);
 	}
 	
+	public void registerOutstandingContext(VmwareContext context) {
+		assert(context != null);
+		synchronized(this) {
+			_outstandingRegistry.add(context);
+		}
+	}
+	
+	public void unregisterOutstandingContext(VmwareContext context) {
+		assert(context != null);
+		synchronized(this) {
+			_outstandingRegistry.remove(context);
+		}
+	}
+	
 	public VmwareContext getContext(String vCenterAddress, String vCenterUserName) {
 		String poolKey = composePoolKey(vCenterAddress, vCenterUserName);
-		synchronized(_pool) {
+		synchronized(this) {
 			List<VmwareContext> l = _pool.get(poolKey);
 			if(l == null)
 				return null;
@@ -78,7 +94,7 @@ public class VmwareContextPool {
 	public void returnContext(VmwareContext context) {
 		assert(context.getPool() == this);
 		assert(context.getPoolKey() != null);
-		synchronized(_pool) {
+		synchronized(this) {
 			List<VmwareContext> l = _pool.get(context.getPoolKey());
 			if(l == null) {
 				l = new ArrayList<VmwareContext>();
@@ -100,8 +116,23 @@ public class VmwareContextPool {
 		}
 	}
 	
+	private TimerTask getTimerTask() {
+		return new TimerTask() {
+			@Override
+			public void run() {
+				try {
+					// doIdleCheck();
+					
+					doKeepAlive();
+				} catch (Throwable e) {
+					s_logger.error("Unexpected exception", e);
+				}
+			}
+		};
+	}
+	
 	private void getIdleCheckContexts(List<VmwareContext> l, int batchSize) {
-		synchronized(_pool) {
+		synchronized(this) {
 			for(Map.Entry<String, List<VmwareContext>> entry : _pool.entrySet()) {
 				if(entry.getValue() != null) {
 					int count = 0;
@@ -116,19 +147,6 @@ public class VmwareContextPool {
 		}
 	}
 	
-	private TimerTask getTimerTask() {
-		return new TimerTask() {
-			@Override
-			public void run() {
-				try {
-					doIdleCheck();
-				} catch (Throwable e) {
-					s_logger.error("Unexpected exception", e);
-				}
-			}
-		};
-	}
-	
 	private void doIdleCheck() {
 		List<VmwareContext> l = new ArrayList<VmwareContext>();
 		int batchSize = (int)(_idleCheckIntervalMs / 1000);	// calculate batch size at 1 request/sec rate
@@ -141,6 +159,34 @@ public class VmwareContextPool {
 				if(s_logger.isTraceEnabled())
 					s_logger.trace("Recyle context after idle check");
 				returnContext(context);
+			} catch(Throwable e) {
+				s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
+				context.close();
+			}
+		}
+	}
+	
+	private void getKeepAliveCheckContexts(List<VmwareContext> l, int batchSize) {
+		synchronized(this) {
+			int size = Math.min(_outstandingRegistry.size(), batchSize);
+			while(size > 0) {
+				VmwareContext context = _outstandingRegistry.remove(0);
+				l.add(context);
+				
+				_outstandingRegistry.add(context);
+				size--;
+			}
+		}
+	}
+	
+	private void doKeepAlive() {
+		List<VmwareContext> l = new ArrayList<VmwareContext>();
+		int batchSize = (int)(_idleCheckIntervalMs / 1000);	// calculate batch size at 1 request/sec rate
+		getKeepAliveCheckContexts(l, batchSize);
+		
+		for(VmwareContext context : l) {
+			try {
+				context.idleCheck();
 			} catch(Throwable e) {
 				s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
 				context.close();
