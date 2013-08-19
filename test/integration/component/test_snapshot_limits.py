@@ -252,6 +252,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                     self.services["paths"]["mount_dir"]
                     ),
                 "cd %s" % self.services["paths"]["mount_dir"],
+                "ls -Rt",
                 "ls %s" % (
                     snapshotPath
                     ),
@@ -273,8 +274,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH failed for management server: %s - %s" %
                       (self.config.mgtSvr[0].mgtSvrIp, e))
-        res = str(snapshots)
-        return res.count(snapshot_id) == 1
+        return snapshots.count(snapshot_id) == 1
 
     @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns"])
