@@ -29,16 +29,13 @@
       <para>Download the script file cloud-set-guest-password:</para>
       <itemizedlist>
         <listitem>
-          <para>Linux: <ulink url="
-				http://cloudstack.org/dl/cloud-set-guest-password
-				"/>
+          <para>Linux: <ulink
+              url="http://download.cloud.com/templates/4.2/bindir/cloud-set-guest-password.in"/>
           </para>
         </listitem>
         <listitem>
           <para>Windows: <ulink
-              url="
-				http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download
-				"
+              url="http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download"
             />
           </para>
         </listitem>
@@ -46,7 +43,8 @@
     </listitem>
     <listitem>
       <para>Copy this file to /etc/init.d.</para>
-      <para>On some Linux distributions, copy the file to /etc/rc.d/init.d.</para>
+      <para>On some Linux distributions, copy the file to
+        <filename>/etc/rc.d/init.d</filename>.</para>
     </listitem>
     <listitem>
       <para>Run the following command to make the script executable:</para>
@@ -57,7 +55,8 @@
       <para>On Fedora, CentOS/RHEL, and Debian, run:</para>
       <programlisting>chkconfig --add cloud-set-guest-password</programlisting>
       <para condition="community">On Ubuntu with VMware tools, link the script file to the
-        /etc/network/if-up and /etc/network/if-down folders, and run the script:</para>
+          <filename>/etc/network/if-up</filename> and <filename>/etc/network/if-down</filename>
+        folders, and run the script:</para>
       <programlisting condition="community">#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-up/cloud-set-guest-password
 #ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-down/cloud-set-guest-password</programlisting>
       <para condition="community">If you are using Ubuntu 11.04, start by creating a directory
