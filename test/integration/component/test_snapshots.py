@@ -511,7 +511,7 @@ class TestSnapshots(cloudstackTestCase):
                                             new_virtual_machine.id
                                             ))
 
-        self.new_virtual_machine.attach_volume(
+        new_virtual_machine.attach_volume(
                                            self.apiclient,
                                            volume_from_snapshot
                                            )
