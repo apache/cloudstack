@@ -23,7 +23,7 @@ while read i
 do
     if [ "$i" == "eth2" ]
     then
-        ifdown $i
+        ifdown $i --force
         ifup $i
     else
         ifconfig $i down
