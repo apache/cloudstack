@@ -1677,10 +1677,8 @@
             //do nothing
         } else {
             allowedActions.push("edit");
-
-            //Swift and S3 are region-wide secondary storage
-            //if (havingSwift == false && havingS3 == false)
-			if (havingSwift == false && jsonObj.zoneid != null) { //"jsonObj.zoneid == null" means it is registered on region-wide S3 => global to all zones 
+            
+            if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyTemplate");
             }
 			
@@ -1718,8 +1716,7 @@
         } else {
             allowedActions.push("edit");
 
-			//Swift and S3 are region-wide secondary storage
-            if (havingSwift == false && jsonObj.zoneid != null) { //"jsonObj.zoneid == null" means it is registered on region-wide S3 => global to all zones 
+            if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyISO");
 			}
         }
