@@ -22,22 +22,513 @@ under the License.
   <xi:include href="Book_Info_Release_Notes_4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="Preface.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <chapter id="welcome-4.1">
-    <title>Welcome to &PRODUCT; 4.1</title>
-    <para>Welcome to the 4.1.0 release of &PRODUCT;, the first major release from the Apache
-      CloudStack project since its graduation from the Apache Incubator.</para>
+    <title>Welcome to &PRODUCT; 4.2</title>
+    <para>Welcome to the 4.2.0 release of &PRODUCT;, the second major release from the Apache
+      CloudStack project since its graduation from the Apache Incubator. &PRODUCT; 4.2 includes more
+      than 50 new features and enhancements. The focus of the release is on three major
+      areas:</para>
+    <itemizedlist>
+      <listitem>
+        <para>Improved support for both legacy-style and cloud-style workloads</para>
+      </listitem>
+      <listitem>
+        <para>New third-party plug-in architecture</para>
+      </listitem>
+      <listitem>
+        <para>Networking enhancements</para>
+      </listitem>
+    </itemizedlist>
+    <para>In addition to these major new areas of functionality, &PRODUCT; 4.2 provides many
+      additional enhancements in a variety of product areas. All of the new features are summarized
+      later in this Release Note.</para>
     <para>This document contains information specific to this release of &PRODUCT;, including
       upgrade instructions from prior releases, new features added to &PRODUCT;, API changes, and
       issues fixed in the release. For installation instructions, please see the <ulink
-        url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Installation_Guide/index.html"
+        url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.0/html/Installation_Guide/index.html"
         >Installation Guide</ulink>. For usage and administration instructions, please see the
         <ulink
-        url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.1.0/html/Admin_Guide/index.html"
+        url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.0/html/Admin_Guide/index.html"
         >&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API
       will find instruction in the <ulink
         url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html"
         >&PRODUCT; API Developer's Guide</ulink></para>
     <para>If you find any errors or problems in this guide, please see <xref linkend="feedback"/>.
       We hope you enjoy working with &PRODUCT;!</para>
+  </chapter>
+  <chapter id="version-4.2">
+    <title>Version 4.2.0</title>
+    <section id="what-new-in-4.2">
+      <title>What’s New in 4.2</title>
+      <para>Apache CloudStack 4.2.0 includes many new features. This section covers the most
+      prominent new features and changes.</para>
+      <section id="windows-8">
+        <title>Windows 8 and Windows Server as VM Guest OS</title>
+        <para>Supported on XenServer, VMware, and KVM.</para>
+        <para>Windows 8 and Windows Server 2012 can now be used as OS types on guest virtual
+          machines. The OS would be made available the same as any other, by uploading an ISO or a
+          template. The instructions for uploading ISOs and templates are given in the
+          Administrator's Guide.</para>
+        <note>
+          <para><emphasis role="bold">Limitation:</emphasis> When used with VMware hosts, this
+            feature works only for the following versions: vSphere ESXi 5.1 and ESXi 5.0 Patch
+            4.</para>
+        </note>
+      </section>
+      <section id="portable-ip">
+        <title>Portable IPs</title>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3236"
+            >CLOUDSTACK-3236</ulink>:Portable IPs in &PRODUCT; are nothing but elastic IPs that can
+          be transferred across geographically separated zones. As an administrator, you can
+          provision a pool of portable IPs at region level and are available for user consumption.
+          The users can acquire portable IPs if admin has provisioned portable public IPs at the
+          region level they are part of. These IPs can be used for any service within an advanced
+          zone. You can also use portable IPs for EIP service in Basic zones. Additionally, a
+          portable IP can be transferred from one network to another network.</para>
+      </section>
+      <section id="ntier-apps">
+        <title>N-Tier Applications</title>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-770"
+            >CLOUDSTACK-770</ulink>:In &PRODUCT; 3.0.6, a functionality was added to allow users to
+          create a multi-tier application connected to a single instance of a Virtual Router that
+          supports inter-VLAN routing. Such a multi-tier application is called a virtual private
+          cloud (VPC). Users were also able to connect their multi-tier applications to a private
+          Gateway or a Site-to-Site VPN tunnel and route certain traffic to those gateways. For
+          &PRODUCT; 4.2, additional features are implemented to enhance VPC applications.</para>
+        <itemizedlist>
+          <listitem>
+            <para>Internal Load Balancing between VPC tiers</para>
+          </listitem>
+          <listitem>
+            <para>Source NAT and ACL support on private gateways</para>
+          </listitem>
+          <listitem>
+            <para>Multiple private gateway support</para>
+          </listitem>
+          <listitem>
+            <para>Support for ACL deny rules</para>
+          </listitem>
+          <listitem>
+            <para>ACL support on all layer 4 protocols</para>
+          </listitem>
+          <listitem>
+            <para>Support up to 8 VPN Gateways</para>
+          </listitem>
+          <listitem>
+            <para>Support for blacklisting routes</para>
+          </listitem>
+          <listitem>
+            <para>NetScaler support for VPC load balancing</para>
+          </listitem>
+          <listitem>
+            <para>Support for KVM hypervisor</para>
+          </listitem>
+          <listitem>
+            <para>Support for the ability to simultaneously deploy an instance on a VPC Tier and one
+              or more Shared Networks</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="vnmc-cisco">
+        <title>Cisco VNMC Support</title>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-742"
+            >CLOUDSTACK-742</ulink>:&PRODUCT; supports Cisco Virtual Network Management Center
+          (VNMC) on Cisco Nexus 1000v dvSwich-enabled VMware hypervisors. &PRODUCT; supports Cisco
+          ASA 1000v as an external Firewall provider when integrated with Cisco VNMC. </para>
+        <para>When Cisco VNMC is integrated with ASA 1000v Cloud Firewall and Cisco Nexus 1000v
+          dvSwitch in &PRODUCT; you will be able to: </para>
+        <itemizedlist>
+          <listitem>
+            <para>Configure Cisco ASA 1000v Firewalls</para>
+          </listitem>
+          <listitem>
+            <para>Create and apply security profiles that contain ACL policy sets for both ingress
+              and egress traffic, connection timeout, NAT policy sets, and TCP intercept</para>
+          </listitem>
+        </itemizedlist>
+        <para>Consider the following use cases before using this feature:</para>
+        <itemizedlist>
+          <listitem>
+            <para>A Cloud administrator adds VNMC as a network element by using the admin API
+              addCiscoVnmcResource after specifying the credentials</para>
+          </listitem>
+          <listitem>
+            <para>A Cloud administrator adds ASA 1000v appliances by using the admin API
+              addCiscoAsa1000vResource. You can configure one per guest network.</para>
+          </listitem>
+          <listitem>
+            <para>A Cloud administrator creates an Isolated guest network offering by using ASA
+              1000v as the service provider for Firewall, Source NAT, Port Forwarding, and Static
+              NAT. </para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="vmware-vswitch">
+        <title>VMware vNetwork Distributed vSwitch</title>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-772"
+            >CLOUDSTACK-772</ulink>:&PRODUCT; 4.2 supports VMware vSphere Distributed Switch (VDS)
+          for virtual network configuration in a VMware vSphere environment. Each vCenter server
+          instance can support up to 128 VDSs and each VDS can manage up to 500 VMware hosts.</para>
+        <section id="about-dvswitch">
+          <title>About VMware Distributed Virtual Switch</title>
+          <para>VMware VDS is an aggregation of host-level virtual switches on a VMware vCenter
+            server. VDS abstracts the configuration of individual virtual switches that span across
+            a large number of hosts, and enables centralized provisioning, administration, and
+            monitoring for your entire datacenter from a centralized interface. VDS is controlled as
+            a single distributed switch at the datacenter level. So there needed a component to
+            ensure that the network configurations on the source and the destination virtual switch
+            are consistent and will allow the VM to operate without breaking connectivity or network
+            policies. Particularly during migration of VM across hosts, the sync up among peers need
+            to be taken care. However in case of distributed vSwitch during VMotion, the vCenter
+            server, would update the vSwitch modules on the hosts in cluster accordingly.</para>
+        </section>
+        <section id="enable-dvswitch">
+          <title>Enabling Virtual Distributed Switch in &PRODUCT;</title>
+          <para>To make a &PRODUCT; deployment VDS enabled, set the vmware.use.dvswitch parameter to
+            true by using the Global Settings page in the &PRODUCT; UI and restart the Management
+            Server. Unless you enable the vmware.use.dvswitch parameter, you cannot see any UI
+            options specific to VDS, and &PRODUCT; ignores the VDS-specific parameters specified in
+            the AddCluster API call. Additionally, &PRODUCT; uses VDS for virtual network
+            infrastructure if the value of vmware.use.dvswitch parameter is true and the value of
+            vmware.use.nexus.dvswitch parameter is false.</para>
+          <para>&PRODUCT; supports configuring virtual networks in a deployment with a mix of
+            Virtual Distributed Switch, Standard Virtual Switch and Nexus 1000v Virtual Switch.
+          </para>
+        </section>
+      </section>
+      <section id="health-check">
+        <title>Health Checks for Load Balanced Instances</title>
+        <note>
+          <para>CLOUDSTACK-4243: This feature is supported only on NetScaler version 10.0 and
+            beyond. The Nitro API is not compatible with NetScaler 9.3 and therefore this version is
+            not supported for this feature.</para>
+        </note>
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-816"
+            >CLOUDSTACK-816</ulink>:(NetScaler load balancer only) A load balancer rule distributes
+          requests among a pool of services (a service in this context means an application running
+          on a virtual machine). When creating a load balancer rule, you can specify a health check
+          which will ensure that the rule forwards requests only to services that are healthy
+          (running and available). This is in addition to specifying the stickiness policy,
+          algorithm, and other load balancer rule options. You can configure one health check policy
+          per load balancer rule.</para>
+        <para>When a health check is in effect, the load balancer will stop forwarding requests to
+          any resources that it has found to be unhealthy. If the resource later becomes available
+          again, the periodic health check (periodicity is configurable) will discover it and the
+          resource will once again be added to the pool of resources that can receive requests from
+          the load balancer.</para>
+        <para>You can delete or modify existing health check policies.</para>
+        <para>To configure how often the health check is performed by default, use the global
+          configuration setting healthcheck.update.interval. This default applies to all the health
+          check policies in the cloud. You can override this value for an individual health check
+          policy.</para>
+      </section>
+    </section>
+    <section id="issues-fixed-4.2">
+      <title>Issues Fixed in 4.2.0</title>
+      <para>Apache CloudStack uses <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK"
+          >Jira</ulink> to track its issues. All new features and bugs for 4.2.0 have been tracked
+        in Jira, and have a standard naming convention of "CLOUDSTACK-NNNN" where "NNNN" is the
+        issue number.</para>
+      <para>This section includes a summary of known issues against 4.0.0 that were fixed in 4.2.0.
+        Approximately 470 bugs were resolved or closed in the 4.2.0 cycle.</para>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <colspec colwidth="1*" colname="1" colnum="1"/>
+          <colspec colwidth="2*" colname="2" colnum="2"/>
+          <thead>
+            <row>
+              <entry>
+                <para>Defect</para>
+              </entry>
+              <entry>
+                <para>Description</para>
+              </entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para/>
+              </entry>
+              <entry>
+                <para/>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+    <section id="known-issues-4.1">
+      <title>Known Issues in 4.2.0</title>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <colspec colwidth="1*" colname="1" colnum="1"/>
+          <colspec colwidth="2*" colname="2" colnum="2"/>
+          <thead>
+            <row>
+              <entry>
+                <para>Issue ID</para>
+              </entry>
+              <entry>
+                <para>Description</para>
+              </entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
+                    >CLOUDSTACK-2709</ulink></para></entry>
+              <entry>
+                <para>Egress rules are are not supported on shared networks. </para>
+              </entry>
+            </row>
+            <row>
+              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747"
+                    >CLOUDSTACK-1747</ulink></para></entry>
+              <entry><para>mvn deploydb only creates 4.0 DB, not 4.2</para>
+                <para>Due to tooling changes between 4.2 and 4.2, CloudStack's database is created
+                  using the 4.0 schema and updated to the 4.2 schema when the management server
+                  starts for the first time. It's OK to see the same schema if the management server
+                  has not started yet.</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1306"
+                    >CLOUDSTACK-1306</ulink></para>
+              </entry>
+              <entry>
+                <para>Better Error message when trying to deploy Vm by passing static Ipv4 addresses
+                  that are assigned to another VM/IP4 address is outside the iprange.</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1236"
+                    >CLOUDSTACK-1236</ulink></para>
+              </entry>
+              <entry>
+                <para>Warning while adding Xen 6.1 host [Unable to create local link network]</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-969"
+                    >CLOUDSTACK-969</ulink></para>
+              </entry>
+              <entry>
+                <para>api: zone response lists vlan in it as &quot;vlan range of zone&quot; but the
+                  vlan belongs to physical network</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-963"
+                    >CLOUDSTACK-963</ulink></para>
+              </entry>
+              <entry>
+                <para>[cloud.utils.AnnotationHelper] class java.lang.Stringdoes not have a Table
+                  annotation</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-458"
+                    >CLOUDSTACK-458</ulink></para>
+              </entry>
+              <entry>
+                <para>xen:snapshots:Storage gc fail to clean the failed snapshot images from
+                  secondarystorage</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-315"
+                    >CLOUDSTACK-315</ulink></para>
+              </entry>
+              <entry>
+                <para>Infrastructure view does not show capacity values</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-300"
+                    >CLOUDSTACK-300</ulink></para>
+              </entry>
+              <entry>
+                <para>Creation of compute offering allow combination of local storage + HA</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-276"
+                    >CLOUDSTACK-276</ulink></para>
+              </entry>
+              <entry>
+                <para>SSVM ID is exposed in the Error Message thrown by AddTrafficType API</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-270"
+                    >CLOUDSTACK-270</ulink></para>
+              </entry>
+              <entry>
+                <para>Ui should not ask for a vlan range if the physical network isolation type is
+                  not VLAN</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-245"
+                    >CLOUDSTACK-245</ulink></para>
+              </entry>
+              <entry>
+                <para>VPC ACLs are not stored and programmed consistently</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-231"
+                    >CLOUDSTACK-231</ulink></para>
+              </entry>
+              <entry>
+                <para>Tag creation using special charecters</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-124"
+                    >CLOUDSTACK-124</ulink></para>
+              </entry>
+              <entry>
+                <para>NetworkGarbageCollector not cleaning up networks</para>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-62"
+                    >CLOUDSTACK-62</ulink></para>
+              </entry>
+              <entry>
+                <para>console proxy does not support any keymaps besides us, jp</para>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
   </chapter>
   <chapter id="version-4.1">
     <title>Version 4.1.0</title>
@@ -349,19 +840,6 @@ under the License.
             <command>api.throttling.interval</command>, and <command>api.throttling.max</command>
           configuration settings. Note that <command>api.throttling.enabled</command> is set to
             <emphasis>false</emphasis> by default.</para>
-      </section>
-      <section id="windows-8">
-        <title>Windows 8 and Windows Server as VM Guest OS</title>
-        <para>Supported on XenServer, VMware, and KVM.</para>
-        <para>Windows 8 and Windows Server 2012 can now be used as OS types on guest virtual
-          machines. The OS would be made available the same as any other, by uploading an ISO or a
-          template. The instructions for uploading ISOs and templates are given in the
-          Administrator's Guide.</para>
-        <note>
-          <para><emphasis role="bold">Limitation:</emphasis> When used with VMware hosts, this
-            feature works only for the following versions: vSphere ESXi 5.1 and ESXi 5.0 Patch
-            4.</para>
-        </note>
       </section>
       <section id="s3-backed-storage">
         <title>S3 Backed Secondary Storage</title>
@@ -4411,7 +4889,7 @@ under the License.
           <tbody>
             <row>
               <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
-                >CLOUDSTACK-2709</ulink></para></entry>
+                    >CLOUDSTACK-2709</ulink></para></entry>
               <entry>
                 <para>Egress rules are are not supported on shared networks. </para>
               </entry>
@@ -5606,8 +6084,8 @@ service cloudstack-agent start
               <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
             </listitem>
             <listitem id="kvm-agent-deb-22">
-              <para>On KVM hosts, you will need to manually install the <filename>cloudstack-agent</filename>
-                package:</para>
+              <para>On KVM hosts, you will need to manually install the
+                  <filename>cloudstack-agent</filename> package:</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
               <para>During the installation of <filename>cloudstack-agent</filename>, APT will copy
                 your <filename>agent.properties</filename>, <filename>log4j-cloud.xml</filename>,
