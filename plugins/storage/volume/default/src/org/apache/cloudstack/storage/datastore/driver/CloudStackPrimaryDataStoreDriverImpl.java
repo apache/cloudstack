@@ -36,7 +36,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.utils.db.DB;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -91,7 +90,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
         CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
         EndPoint ep = epSelector.select(volume);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if ( ep == null ){
+            String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else{
+            answer = ep.sendMessage(cmd);
+        }
         return answer;
     }
 
@@ -138,9 +144,15 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = epSelector.select(data);
-            Answer answer = ep.sendMessage(cmd);
-            if (answer != null && !answer.getResult()) {
-                result.setResult(answer.getDetails());
+            if ( ep == null ){
+                String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                result.setResult(errMsg);
+            } else {
+                Answer answer = ep.sendMessage(cmd);
+                if (answer != null && !answer.getResult()) {
+                    result.setResult(answer.getDetails());
+                }
             }
         } catch (Exception ex) {
             s_logger.debug("Unable to destoy volume" + data.getId(), ex);
@@ -166,7 +178,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = this.epSelector.select(snapshot);
-            Answer answer = ep.sendMessage(cmd);
+            Answer answer = null;
+            if ( ep == null ){
+                String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                answer = new Answer(cmd, false, errMsg);
+            } else{
+                answer = ep.sendMessage(cmd);
+            }
 
             result = new CreateCmdResult(null, answer);
             if (answer != null && !answer.getResult()) {
