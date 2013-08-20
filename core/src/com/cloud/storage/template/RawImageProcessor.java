@@ -68,4 +68,9 @@ public class RawImageProcessor extends AdapterBase implements Processor {
         return info;
 	}
 
+    @Override
+    public Long getVirtualSize(File file) {
+        return file.length();
+    }
+
 }

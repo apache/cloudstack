@@ -270,6 +270,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplTO.setPath(finalDownloadPath);
             newTemplTO.setName(finalFileName);
             newTemplTO.setSize(size);
+            newTemplTO.setPhysicalSize(size);
             newDestTO = newTemplTO;
         } else {
             VolumeObjectTO newVolTO = new VolumeObjectTO();
@@ -505,6 +506,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 TemplateObjectTO template = new TemplateObjectTO();
                 template.setPath(swiftPath);
                 template.setSize(templateFile.length());
+                template.setPhysicalSize(template.getSize());
                 SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
                 template.setFormat(snapshot.getVolume().getFormat());
                 return new CopyCmdAnswer(template);
@@ -718,6 +720,31 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
+    protected Long getVirtualSize(File file, ImageFormat format) {
+        Processor processor = null;
+        try {
+            if (format == null) {
+                return file.length();
+            } else if (format == ImageFormat.QCOW2) {
+                processor = new QCOW2Processor();
+            } else if (format == ImageFormat.OVA) {
+                processor = new VmdkProcessor();
+            } else if (format == ImageFormat.VHD) {
+                processor = new VhdProcessor();
+            }
+
+            if (processor == null) {
+                return file.length();
+            }
+
+            processor.configure("template processor", new HashMap<String, Object>());
+            return processor.getVirtualSize(file);
+        } catch (Exception e) {
+           s_logger.debug("Failed to get virtual size:" ,e);
+        }
+        return file.length();
+    }
+
     protected Answer copyFromNfsToS3(CopyCommand cmd) {
         final DataTO srcData = cmd.getSrcTO();
         final DataTO destData = cmd.getDestTO();
@@ -759,7 +786,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(key);
-                newTemplate.setSize(srcFile.length());
+                newTemplate.setSize(getVirtualSize(srcFile, format));
+                newTemplate.setPhysicalSize(srcFile.length());
                 newTemplate.setFormat(format);
                 retObj = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
