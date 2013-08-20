@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
@@ -23,6 +22,7 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
+import os
 
 
 class Services:
@@ -251,10 +251,8 @@ class TestSnapshotLimit(cloudstackTestCase):
                     path,
                     self.services["paths"]["mount_dir"]
                     ),
-                "cd %s" % self.services["paths"]["mount_dir"],
-                "ls -Rt",
                 "ls %s" % (
-                    snapshotPath
+                    os.path.join(self.services["paths"]["mount_dir"], snapshotPath)
                     ),
             ]
 

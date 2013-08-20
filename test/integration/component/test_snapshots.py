@@ -24,6 +24,7 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
+import os
 
 
 class Services:
@@ -243,10 +244,8 @@ class TestSnapshots(cloudstackTestCase):
                     path,
                     self.services["paths"]["mount_dir"]
                     ),
-                "cd %s" % self.services["paths"]["mount_dir"],
-                "ls -Rt",
                 "ls %s" % (
-                    snapshotPath
+                    os.path.join(self.services["paths"]["mount_dir"], snapshotPath)
                     ),
             ]
 
@@ -1050,10 +1049,8 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                     path,
                     self.services["paths"]["mount_dir"]
                     ),
-                "cd %s" % self.services["paths"]["mount_dir"],
-                "ls -Rt",
                 "ls %s" % (
-                    snapshotPath
+                    os.path.join(self.services["paths"]["mount_dir"], snapshotPath)
                     ),
             ]
 
