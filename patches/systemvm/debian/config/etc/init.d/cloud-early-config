@@ -484,7 +484,7 @@ disable_hvc() {
 
 enable_vpc_rpsrfs() {
     local enable=$1
-    if [ $eanble -eq 0]
+    if [ $enable -eq 0 ]
     then
         echo 0 > /etc/rpsrfsenable
     else
@@ -497,7 +497,7 @@ enable_vpc_rpsrfs() {
 enable_rpsrfs() {
   local enable=$1
 
-  if [ $eanble -eq 0]
+  if [ $enable -eq 0 ]
   then
       echo 0 > /etc/rpsrfsenable
       return 0
