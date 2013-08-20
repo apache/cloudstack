@@ -196,6 +196,7 @@ patch() {
 
 patch_log4j() {
 log_it "Updating log4j-cloud.xml"
+mkdir -p /usr/local/cloud/systemvm/conf
 cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
@@ -936,10 +937,6 @@ setup_router() {
 setup_vpcrouter() {
   log_it "Setting up VPC virtual router system vm"
 
-  if [ "$hyp" == "vmware" ]; then
-    setup_vmware_extra_nics
-  fi
-
   if [ -f /etc/hosts ]; then
     grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
   fi
@@ -984,6 +981,11 @@ EOF
      if [ "$hyp" == "vmware" ]
      then
          ip route add $MGMTNET via $LOCAL_GW dev eth0
+         
+          # a hacking way to activate vSwitch under VMware
+         ping -n -c 3 $LOCAL_GW &
+         sleep 3
+         pkill ping
      fi
   fi
 
