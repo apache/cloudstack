@@ -39,10 +39,13 @@
     the load balancer will stop forwarding requests to any resources that are found to be unhealthy.
     If the resource later becomes available again, the periodic health check
     will discover it, and the resource will once again be added to the pool of resources that can
-    receive requests from the load balancer.</para>
+    receive requests from the load balancer.
+    At any given time, the most recent result of the health check is displayed in the UI.
+    For any VM that is attached to a load balancer rule with a health check configured,
+    the state will be shown as UP or DOWN in the UI depending on the result of the most recent health check.</para>
   <para>You can delete or modify existing health check policies.</para>
   <para>To configure how often the health check is performed by default, use the global
-    configuration setting lbrule_health check_time_interval.
+    configuration setting healthcheck.update.interval (default value is 600 seconds).
     You can override this value for an individual health check policy.</para>
   <para>For details on how to set a health check policy using the UI, see <xref linkend="add-load-balancer-rule"/>.</para>
 </section>
