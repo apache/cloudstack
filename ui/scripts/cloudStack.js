@@ -207,40 +207,7 @@
                         return true;
                     }
                 });
-
-                if (userValid && isAdmin()) {
-                    $.ajax({
-                        url: createURL("listImageStores"),
-                        data: {
-                            provider: 'Swift'
-                        },
-                        async: false,
-                        success: function(json) {
-                            var items = json.listimagestoreresponse.imagestore;
-                            if (items != null && items.length > 0)
-                                havingSwift = true;
-                        }
-                    });
-                    if (havingSwift == false) {
-                        $.ajax({
-                            url: createURL("listImageStores"),
-                            data: {
-                                provider: 'S3'
-                            },
-                            async: false,
-                            success: function(json) {
-                                var items = json.listimagestoreresponse.imagestore;
-                                if (items != null && items.length > 0) {
-                                    havingS3 = true;
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    havingSwift = false;
-                    havingS3 = false;
-                }
-
+               
                 return userValid ? {
                     user: {
                         userid: g_userid,
@@ -387,40 +354,7 @@
                                 args.response.error();
                             }
                         });
-
-                        if (isAdmin()) {
-                            $.ajax({
-                                url: createURL("listImageStores"),
-                                data: {
-                                    provider: 'Swift'
-                                },
-                                async: false,
-                                success: function(json) {
-                                    var items = json.listimagestoreresponse.imagestore;
-                                    if (items != null && items.length > 0)
-                                        havingSwift = true;
-                                }
-                            });
-                            if (havingSwift = false) {
-                                $.ajax({
-                                    url: createURL("listImageStores"),
-                                    data: {
-                                        provider: 'S3'
-                                    },
-                                    async: false,
-                                    success: function(json) {
-                                        var items = json.listimagestoreresponse.imagestore;
-                                        if (items != null && items.length > 0) {
-                                            havingS3 = true;
-                                        }
-                                    }
-                                });
-                            }
-                        } else {
-                            havingSwift = false;
-                            havingS3 = false;
-                        }
-
+                       
                         // Get project configuration
                         // TEMPORARY -- replace w/ output of capability response, etc., once implemented
                         window.g_projectsInviteRequired = false;

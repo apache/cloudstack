@@ -5619,27 +5619,37 @@
                                     label: 'label.enable.swift',
                                     isHeader: true,
                                     addRow: false,
-                                    preFilter: function(args) {
-                                        var swiftEnabled = false;
-                                        $.ajax({
+                                    preFilter: function(args) {                                       
+                                    	var swiftEnableConfiguration = false;
+                                    	$.ajax({
                                             url: createURL('listConfigurations'),
                                             data: {
                                                 name: 'swift.enable'
                                             },
                                             async: false,
                                             success: function(json) {
-                                                swiftEnabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingSwift ?
-                                                    true : false;
-                                            },
-
-                                            error: function(json) {
-                                                cloudStack.dialog.notice({
-                                                    message: parseXMLHttpResponse(json)
-                                                });
+                                            	swiftEnableConfiguration = json.listconfigurationsresponse.configuration[0].value == 'true' ? true : false;
                                             }
                                         });
-
-                                        return swiftEnabled;
+                                    	
+                                    	var havingSwift = false;
+                                    	$.ajax({
+                                            url: createURL("listImageStores"),
+                                            data: {
+                                                provider: 'Swift'
+                                            },
+                                            async: false,
+                                            success: function(json) {
+                                                var items = json.listimagestoreresponse.imagestore;
+                                                if (items != null && items.length > 0)
+                                                    havingSwift = true;
+                                            }
+                                        });
+                                    	
+                                    	if(swiftEnableConfiguration == true && havingSwift == false)
+                                    		return true;
+                                    	else
+                                    		return false;     
                                     },
                                     messages: {
                                         notification: function(args) {
@@ -5675,8 +5685,7 @@
                                                 username: args.data.username,
                                                 key: args.data.key
                                             },
-                                            success: function(json) {
-                                                havingSwift = true;
+                                            success: function(json) {                                                
                                                 args.response.success();
 
                                                 cloudStack.dialog.notice({
@@ -5695,8 +5704,8 @@
                                     isHeader: true,
                                     addRow: false,
 
-                                    preFilter: function(args) {
-                                        var s3Enabled = false;
+                                    preFilter: function(args) {                                    	
+                                    	var s3EnableConfiguration = false;
                                         $.ajax({
                                             url: createURL('listConfigurations'),
                                             data: {
@@ -5704,17 +5713,29 @@
                                             },
                                             async: false,
                                             success: function(json) {
-                                                s3Enabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingS3 ?
-                                                    true : false;
-                                            },
-                                            error: function(json) {
-                                                cloudStack.dialog.notice({
-                                                    message: parseXMLHttpResponse(json)
-                                                });
+                                            	s3EnableConfiguration = json.listconfigurationsresponse.configuration[0].value == 'true' ? true : false;                                                
                                             }
                                         });
-
-                                        return s3Enabled;
+                                        
+                                    	var havingS3 = false;
+                                    	$.ajax({
+                                            url: createURL("listImageStores"),
+                                            data: {
+                                                provider: 'S3'
+                                            },
+                                            async: false,
+                                            success: function(json) {
+                                                var items = json.listimagestoreresponse.imagestore;
+                                                if (items != null && items.length > 0) {
+                                                    havingS3 = true;
+                                                }
+                                            }
+                                        });
+                                    	
+                                    	if(s3EnableConfiguration == true && havingS3 == false)
+                                    		return true;
+                                    	else
+                                    		return false;
                                     },
 
                                     messages: {
@@ -5778,8 +5799,7 @@
                                                 maxerrorretry: args.data.maxerrorretry,
                                                 sockettimeout: args.data.sockettimeout
                                             },
-                                            success: function(json) {
-                                                havingS3 = true;
+                                            success: function(json) {                                                
                                                 args.response.success();
 
                                                 cloudStack.dialog.notice({
@@ -14543,9 +14563,7 @@
                                             $.ajax({
                                                 url: createURL('addImageStore'),
                                                 data: data,
-                                                success: function(json) {
-                                                    havingS3 = true;
-                                                    
+                                                success: function(json) {                                                    
                                                     g_regionsecondaryenabled = true;
                                                 	
                                                     var item = json.addimagestoreresponse.imagestore;
@@ -14606,9 +14624,7 @@
                                             $.ajax({
                                                 url: createURL('addImageStore'),
                                                 data: data,
-                                                success: function(json) {
-                                                    havingSwift = true;
-                                                    
+                                                success: function(json) {                                                    
                                                     g_regionsecondaryenabled = true;
                                                 	
                                                     var item = json.addimagestoreresponse.imagestore;
