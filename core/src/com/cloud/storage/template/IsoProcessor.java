@@ -58,6 +58,11 @@ public class IsoProcessor extends AdapterBase implements Processor {
     }
 
     @Override
+    public Long getVirtualSize(File file) {
+       return file.length();
+    }
+
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
