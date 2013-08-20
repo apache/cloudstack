@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -183,7 +182,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Component
 @Local(value = { TemplateManager.class, TemplateApiService.class })
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);

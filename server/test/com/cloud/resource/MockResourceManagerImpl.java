@@ -19,7 +19,6 @@ package com.cloud.resource;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -36,10 +35,8 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
@@ -51,11 +48,8 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -426,16 +420,6 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      */
     @Override
     public List<HostVO> listHostsByNameLike(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceManager#findPod(com.cloud.template.VirtualMachineTemplate, com.cloud.service.ServiceOfferingVO, com.cloud.dc.DataCenterVO, long, java.util.Set)
-     */
-    @Override
-    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc,
-            long accountId, Set<Long> avoids) {
         // TODO Auto-generated method stub
         return null;
     }

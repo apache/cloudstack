@@ -303,7 +303,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     @DB
-    public boolean trash(Network network, NetworkOffering offering, Account owner) {
+    public boolean trash(Network network, NetworkOffering offering) {
         //Have to remove all placeholder nics
         List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkId(network.getId());
         Transaction txn = Transaction.currentTxn();

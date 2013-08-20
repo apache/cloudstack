@@ -29,7 +29,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -196,10 +195,9 @@ public interface NetworkGuru extends Adapter {
      *
      * @param network guest network being destroyed.
      * @param offering network offering the guest network was created with.
-     * @param owner owner of the network.
      * @return true if trash was successful; false if not.
      */
-    boolean trash(Network network, NetworkOffering offering, Account owner);
+    boolean trash(Network network, NetworkOffering offering);
 
     void updateNetworkProfile(NetworkProfile networkProfile);
 

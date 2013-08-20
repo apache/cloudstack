@@ -232,7 +232,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public boolean trash(Network config, NetworkOffering offering, Account owner) {
+    public boolean trash(Network config, NetworkOffering offering) {
         return true;
     }
 

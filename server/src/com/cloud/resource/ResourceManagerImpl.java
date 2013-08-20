@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -67,7 +66,6 @@ import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
-import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.Capacity;
@@ -79,13 +77,11 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
@@ -119,7 +115,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
@@ -136,11 +131,9 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -237,15 +230,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected StoragePoolHostDao _storagePoolHostDao;
 
-    protected List<PodAllocator> _podAllocators;
-
-    public List<PodAllocator> getPodAllocators() {
-        return _podAllocators;
-    }
-
-    public void setPodAllocators(List<PodAllocator> _podAllocators) {
-        this._podAllocators = _podAllocators;
-    }
 
     @Inject
     protected VMTemplateDao _templateDao;
@@ -2472,17 +2456,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return sc.list();
     }
 
-    @Override
-    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc, long accountId,
-            Set<Long> avoids) {
-        for (PodAllocator allocator : _podAllocators) {
-            final Pair<Pod, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
-            if (pod != null) {
-                return pod;
-            }
-        }
-        return null;
-    }
 
     @Override
     public HostStats getHostStatistics(long hostId) {

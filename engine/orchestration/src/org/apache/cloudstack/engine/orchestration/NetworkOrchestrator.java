@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package org.apache.cloudstack.engine.orchestration;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -37,28 +37,17 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.lf5.viewer.configure.ConfigurationManager;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.region.PortableIpDao;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckNetworkAnswer;
-import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -67,7 +56,6 @@ import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -76,7 +64,6 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
@@ -91,14 +78,23 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddress.State;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Event;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkMigrationResponder;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkSetupInfo;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
@@ -128,18 +124,13 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
@@ -149,13 +140,10 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -196,11 +184,11 @@ import com.cloud.vm.dao.VMInstanceDao;
  * NetworkManagerImpl implements NetworkManager.
  */
 @Local(value = { NetworkOrchestrationService.class})
-public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrationService, Listener {
-    static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);
-    @Inject
-    EntityManager _entityMgr;
+public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener {
+    static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
 
+    @Inject
+    EntityManager _entityMgr = null;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -209,10 +197,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
     IPAddressDao _ipAddressDao = null;
     @Inject
     AccountDao _accountDao = null;
-    @Inject
-    DomainDao _domainDao = null;
-    @Inject
-    UserDao _userDao = null;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -223,8 +207,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
     AccountManager _accountMgr;
     @Inject
     ConfigurationManager _configMgr;
-    @Inject
-    AccountVlanMapDao _accountVlanMapDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
@@ -317,8 +299,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
     HostDao _hostDao;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
-    @Inject
-    StorageNetworkManager _stnwMgr;
     @Inject
     VpcManager _vpcMgr;
     @Inject
@@ -612,7 +592,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
         return true;
     }
 
-    protected NetworkManagerImpl() {
+    protected NetworkOrchestrator() {
         setStateMachine();
     }
 
@@ -2103,7 +2083,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
     @Override
     @DB
     public boolean destroyNetwork(long networkId, ReservationContext context) {
-        Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
+        Account callerAccount = context.getAccount();
 
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
@@ -2194,11 +2174,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
                 s_logger.debug("Network id=" + networkId + " is destroyed successfully, cleaning up corresponding resources now.");
             }
             NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-            Account owner = _accountMgr.getAccount(network.getAccountId());
 
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            guru.trash(network, _networkOfferingDao.findById(network.getNetworkOfferingId()), owner);
+            guru.trash(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
 
             if (!deleteVlansInNetwork(network.getId(), context.getCaller().getId(), callerAccount)) {
                 success = false;
@@ -2223,7 +2202,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
                 NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                 boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, network.getAclType());
                 if (updateResourceCount) {
-                    _resourceLimitMgr.decrementResourceCount(owner.getId(), ResourceType.network);
+                    _resourceLimitMgr.decrementResourceCount(network.getAccountId(), ResourceType.network);
                 }
                 txn.commit();
             }
@@ -2266,6 +2245,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
     public class NetworkGarbageCollector implements Runnable {
         @Override
         public void run() {
+            ServerContexts.registerSystemContext();
             GlobalLock gcLock = GlobalLock.getInternLock("Network.GC.Lock");
             try {
                 if(gcLock.lock(3)) {
@@ -2277,6 +2257,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
                 }
             } finally {
                 gcLock.releaseRef();
+                ServerContexts.unregisterSystemContext();
             }
         }
         
@@ -2311,6 +2292,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
 
                 _lastNetworkIdsToFree = stillFree;
 
+                CallContext cctx = CallContext.current();
+
                 for (Long networkId : shutdownList) {
 
                     // If network is removed, unset gc flag for it
@@ -2320,8 +2303,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkOrchestrat
                     } else {
                         try {
 
-                            User caller = _accountMgr.getSystemUser();
-                            Account owner = _accountMgr.getAccount(_networksDao.findById(networkId).getAccountId());
+                            User caller = cctx.getCallingUser();
+                            Account owner = cctx.getCallingAccount();
 
                             ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
 

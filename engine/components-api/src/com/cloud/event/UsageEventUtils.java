@@ -17,28 +17,28 @@
 
 package com.cloud.event;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentContext;
-import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.dao.UsageEventDao;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.component.ComponentContext;
+
 public class UsageEventUtils {
 
     private static UsageEventDao _usageEventDao;
@@ -141,7 +141,7 @@ public class UsageEventUtils {
         if (account == null)
             return;
 
-        Event event = new Event(ManagementServer.Name, EventCategory.USAGE_EVENT.getName(), usageEventType,
+        Event event = new Event(Name, EventCategory.USAGE_EVENT.getName(), usageEventType,
                 resourceType, resourceUUID);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
@@ -162,4 +162,7 @@ public class UsageEventUtils {
             s_logger.warn("Failed to publish usage event on the the event bus.");
         }
     }
+
+    static final String Name = "management-server";
+
 }

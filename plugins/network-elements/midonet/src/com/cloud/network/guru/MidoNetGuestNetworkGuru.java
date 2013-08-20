@@ -170,10 +170,9 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public boolean trash(Network network, NetworkOffering offering,
-                         Account owner) {
+    public boolean trash(Network network, NetworkOffering offering) {
         s_logger.debug("trash called with network: " + network.toString());
 
-        return super.trash(network, offering, owner);
+        return super.trash(network, offering);
     }
 }

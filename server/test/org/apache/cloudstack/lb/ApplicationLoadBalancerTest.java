@@ -52,6 +52,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.user.AccountManager;
@@ -80,6 +81,8 @@ public class ApplicationLoadBalancerTest extends TestCase{
     @Inject AccountManager _accountMgr;
     @Inject FirewallRulesDao _firewallDao;
     @Inject UsageEventDao _usageEventDao;
+    @Inject
+    LoadBalancingRulesService _lbService;
 
     
     public static long existingLbId = 1L;
@@ -105,8 +108,8 @@ public class ApplicationLoadBalancerTest extends TestCase{
         Mockito.when(_lbDao.findById(2L)).thenReturn(null);
         
         //mockito for .deleteApplicationLoadBalancer tests
-        Mockito.when(_lbMgr.deleteLoadBalancerRule(existingLbId, true)).thenReturn(true);
-        Mockito.when(_lbMgr.deleteLoadBalancerRule(nonExistingLbId, true)).thenReturn(false);
+        Mockito.when(_lbService.deleteLoadBalancerRule(existingLbId, true)).thenReturn(true);
+        Mockito.when(_lbService.deleteLoadBalancerRule(nonExistingLbId, true)).thenReturn(false);
         
         //mockito for .createApplicationLoadBalancer tests
         NetworkVO guestNetwork = new NetworkVO(TrafficType.Guest, null, null, 1,

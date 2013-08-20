@@ -54,6 +54,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -89,6 +90,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     @Inject NetworkOrchestrationService _ntwkMgr;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    LoadBalancingRulesService _lbService;
     
     
     @Override
@@ -362,7 +365,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     
     @Override
     public boolean deleteApplicationLoadBalancer(long id) {
-        return _lbMgr.deleteLoadBalancerRule(id, true);
+        return _lbService.deleteLoadBalancerRule(id, true);
     }
 
     @Override

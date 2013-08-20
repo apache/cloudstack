@@ -18,10 +18,8 @@ package com.cloud.storage;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -48,7 +46,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -86,7 +83,6 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -140,7 +136,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -149,7 +144,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -692,62 +686,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId) throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        createdVolume = createVolumeFromSnapshot(volume, snapshot);
+        createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot);
 
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
                 createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
 
         return _volsDao.findById(createdVolume.getId());
-    }
-
-    @DB
-    protected VolumeInfo createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot) throws StorageUnavailableException {
-        Account account = _accountDao.findById(volume.getAccountId());
-
-        final HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
-        StoragePool pool = null;
-
-        Set<Long> podsToAvoid = new HashSet<Long>();
-        Pair<Pod, Long> pod = null;
-
-        DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
-        DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
-        DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
-
-        // Determine what pod to store the volume in
-        while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
-            podsToAvoid.add(pod.first().getId());
-            // Determine what storage pool to store the volume in
-            while ((pool = _volumeMgr.findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
-                break;
-            }
-        }
-
-        if (pool == null) {
-            String msg = "There are no available storage pools to store the volume in";
-            s_logger.info(msg);
-            throw new StorageUnavailableException(msg, -1);
-        }
-
-        VolumeInfo vol = volFactory.getVolume(volume.getId());
-        DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
-        SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-        AsyncCallFuture<VolumeApiResult> future = volService.createVolumeFromSnapshot(vol, store, snapInfo);
-        try {
-            VolumeApiResult result = future.get();
-            if (result.isFailed()) {
-                s_logger.debug("Failed to create volume from snapshot:" + result.getResult());
-                throw new CloudRuntimeException("Failed to create volume from snapshot:" + result.getResult());
-            }
-            return result.getVolume();
-        } catch (InterruptedException e) {
-            s_logger.debug("Failed to create volume from snapshot", e);
-            throw new CloudRuntimeException("Failed to create volume from snapshot", e);
-        } catch (ExecutionException e) {
-            s_logger.debug("Failed to create volume from snapshot", e);
-            throw new CloudRuntimeException("Failed to create volume from snapshot", e);
-        }
-
     }
 
     @Override

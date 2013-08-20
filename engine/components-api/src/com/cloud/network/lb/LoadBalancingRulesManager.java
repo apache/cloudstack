@@ -30,9 +30,9 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.user.Account;
 
-public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
+public interface LoadBalancingRulesManager {
 
-    LoadBalancer createPublicLoadBalancer(String xId, String name, String description, 
+    LoadBalancer createPublicLoadBalancer(String xId, String name, String description,
             int srcPort, int destPort, long sourceIpId, String protocol, String algorithm, boolean openFirewall, CallContext caller)
             throws NetworkRuleConflictException;
 

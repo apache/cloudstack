@@ -256,9 +256,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public boolean trash(Network network, NetworkOffering offering,
-            Account owner) {
-        return super.trash(network, offering, owner);
+    public boolean trash(Network network, NetworkOffering offering) {
+        return super.trash(network, offering);
     }
     
     

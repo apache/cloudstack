@@ -21,13 +21,11 @@ import java.util.List;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -37,7 +35,7 @@ import com.cloud.utils.Pair;
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
  */
-public interface TemplateManager extends TemplateApiService{
+public interface TemplateManager {
 
     /**
      * Prepares a template for vm creation for a certain storage pool.

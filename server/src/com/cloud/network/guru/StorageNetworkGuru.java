@@ -177,7 +177,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public boolean trash(Network network, NetworkOffering offering, Account owner) {
+	public boolean trash(Network network, NetworkOffering offering) {
 		// TODO Auto-generated method stub
 		return false;
 	}
