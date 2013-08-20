@@ -712,6 +712,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
+    protected boolean _executeInSequence;
 
     protected List<DeploymentPlanner> _planners;
 
@@ -795,6 +796,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
+        
+        _executeInSequence = Boolean.parseBoolean(_configDao.getValue(Config.ExecuteInSequence.key()));
 
         return true;
     }
@@ -3460,7 +3463,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean getExecuteInSequence() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return  _executeInSequence;
     }
 
     private static String getBase64EncodedRandomKey(int nBits) {
