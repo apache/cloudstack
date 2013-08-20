@@ -350,6 +350,19 @@ under the License.
           configuration settings. Note that <command>api.throttling.enabled</command> is set to
             <emphasis>false</emphasis> by default.</para>
       </section>
+      <section id="windows-8">
+        <title>Windows 8 and Windows Server as VM Guest OS</title>
+        <para>Supported on XenServer, VMware, and KVM.</para>
+        <para>Windows 8 and Windows Server 2012 can now be used as OS types on guest virtual
+          machines. The OS would be made available the same as any other, by uploading an ISO or a
+          template. The instructions for uploading ISOs and templates are given in the
+          Administrator's Guide.</para>
+        <note>
+          <para><emphasis role="bold">Limitation:</emphasis> When used with VMware hosts, this
+            feature works only for the following versions: vSphere ESXi 5.1 and ESXi 5.0 Patch
+            4.</para>
+        </note>
+      </section>
       <section id="s3-backed-storage">
         <title>S3 Backed Secondary Storage</title>
         <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-509"
