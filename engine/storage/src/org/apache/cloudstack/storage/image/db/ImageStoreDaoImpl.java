@@ -38,6 +38,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implements ImageStoreDao {
     private SearchBuilder<ImageStoreVO> nameSearch;
     private SearchBuilder<ImageStoreVO> providerSearch;
+    private SearchBuilder<ImageStoreVO> regionSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -50,8 +51,13 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
 
         providerSearch = createSearchBuilder();
         providerSearch.and("providerName", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
-        providerSearch.and("role", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
+        providerSearch.and("role", providerSearch.entity().getRole(), SearchCriteria.Op.EQ);
         providerSearch.done();
+
+        regionSearch = createSearchBuilder();
+        regionSearch.and("scope", regionSearch.entity().getScope(), SearchCriteria.Op.EQ);
+        regionSearch.and("role", regionSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        regionSearch.done();
 
         return true;
     }
@@ -83,6 +89,14 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         }
         // we should return all image stores if cross-zone scope is passed
         // (scopeId = null)
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ImageStoreVO> findRegionImageStores() {
+        SearchCriteria<ImageStoreVO> sc = regionSearch.create();
+        sc.setParameters("scope", ScopeType.REGION);
+        sc.setParameters("role", DataStoreRole.Image);
         return listBy(sc);
     }
 
