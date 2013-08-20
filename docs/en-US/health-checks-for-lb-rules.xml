@@ -24,7 +24,7 @@
 <section id="health-checks-for-lb-rules">
   <!-- CLOUDSTACK-443 -->
   <title>Health Checks for Load Balancer Rules</title>
-  <para>(NetScaler load balancer only)
+  <para>(NetScaler load balancer only; requires NetScaler version 10.0)
   </para>
   <para>Health checks are used in load-balanced applications to ensure that requests are forwarded
     only to running, available services.
