@@ -134,33 +134,42 @@
                                     zone: {
                                         label: 'label.zone',
                                         docID: 'helpRegisterTemplateZone',
-                                        select: function(args) {
-                                            $.ajax({
-                                                url: createURL("listZones&available=true"),
-                                                dataType: "json",
-                                                async: true,
-                                                success: function(json) {
-                                                    var zoneObjs = [];
-                                                    var items = json.listzonesresponse.zone;
-                                                    if (items != null) {
-                                                        for (var i = 0; i < items.length; i++) {
-                                                            zoneObjs.push({
-                                                                id: items[i].id,
-                                                                description: items[i].name
-                                                            });
-                                                        }
-                                                    }
-                                                    if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
-                                                        zoneObjs.unshift({
-                                                            id: -1,
-                                                            description: "All Zones"
-                                                        });
-                                                    }
-                                                    args.response.success({
-                                                        data: zoneObjs
-                                                    });
-                                                }
-                                            });
+                                        select: function(args) {                                        	
+                                        	if(g_regionsecondaryenabled == true) {
+                                        		args.response.success({
+                                                    data: [{
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    }]
+                                                });                                        		
+                                        	} else {                                        	
+	                                            $.ajax({
+	                                                url: createURL("listZones&available=true"),
+	                                                dataType: "json",
+	                                                async: true,
+	                                                success: function(json) {
+	                                                    var zoneObjs = [];
+	                                                    var items = json.listzonesresponse.zone;
+	                                                    if (items != null) {
+	                                                        for (var i = 0; i < items.length; i++) {
+	                                                            zoneObjs.push({
+	                                                                id: items[i].id,
+	                                                                description: items[i].name
+	                                                            });
+	                                                        }
+	                                                    }
+	                                                    if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
+	                                                        zoneObjs.unshift({
+	                                                            id: -1,
+	                                                            description: "All Zones"
+	                                                        });
+	                                                    }
+	                                                    args.response.success({
+	                                                        data: zoneObjs
+	                                                    });
+	                                                }
+	                                            });
+                                        	}
                                         }
                                     },
                                     hypervisor: {
@@ -1033,32 +1042,41 @@
                                         label: 'label.zone',
                                         docID: 'helpRegisterISOZone',
                                         select: function(args) {
-                                            $.ajax({
-                                                url: createURL("listZones&available=true"),
-                                                dataType: "json",
-                                                async: true,
-                                                success: function(json) {
-                                                    var zoneObjs = [];
-                                                    var items = json.listzonesresponse.zone;
-                                                    if (items != null) {
-                                                        for (var i = 0; i < items.length; i++) {
-                                                            zoneObjs.push({
-                                                                id: items[i].id,
-                                                                description: items[i].name
-                                                            });
-                                                        }
-                                                    }
-                                                    if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
-                                                        zoneObjs.unshift({
-                                                            id: -1,
-                                                            description: "All Zones"
-                                                        });
-                                                    }
-                                                    args.response.success({
-                                                        data: zoneObjs
-                                                    });
-                                                }
-                                            });
+                                        	if(g_regionsecondaryenabled == true) {
+                                        		args.response.success({
+                                                    data: [{
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    }]
+                                                });                                        		
+                                        	} else {                                               	
+	                                            $.ajax({
+	                                                url: createURL("listZones&available=true"),
+	                                                dataType: "json",
+	                                                async: true,
+	                                                success: function(json) {
+	                                                    var zoneObjs = [];
+	                                                    var items = json.listzonesresponse.zone;
+	                                                    if (items != null) {
+	                                                        for (var i = 0; i < items.length; i++) {
+	                                                            zoneObjs.push({
+	                                                                id: items[i].id,
+	                                                                description: items[i].name
+	                                                            });
+	                                                        }
+	                                                    }
+	                                                    if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
+	                                                        zoneObjs.unshift({
+	                                                            id: -1,
+	                                                            description: "All Zones"
+	                                                        });
+	                                                    }
+	                                                    args.response.success({
+	                                                        data: zoneObjs
+	                                                    });
+	                                                }
+	                                            });
+                                        	}
                                         }
                                     },
 

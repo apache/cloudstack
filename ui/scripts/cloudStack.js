@@ -172,7 +172,12 @@
                         $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
                             expires: 1
                         });                        
-                        
+                                               
+                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
+                        $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
+                            expires: 1
+                        }); 
+                                              
                         if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                             g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                             $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
@@ -342,6 +347,11 @@
                                     expires: 1
                                 });   
                                 
+                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
+                                $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
+                                    expires: 1
+                                }); 
+                                
                                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                                     g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                                     $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
@@ -443,6 +453,7 @@
                         g_timezone = null;
                         g_supportELB = null;
                         g_KVMsnapshotenabled = null;
+                        g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
 
                         $.cookie('JSESSIONID', null);
