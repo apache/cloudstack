@@ -53,6 +53,8 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
+        response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
+
         if (capabilities.containsKey("apiLimitInterval")) {
             response.setApiLimitInterval((Integer) capabilities.get("apiLimitInterval"));
         }

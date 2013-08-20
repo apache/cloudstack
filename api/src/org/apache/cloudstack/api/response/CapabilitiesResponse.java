@@ -49,6 +49,9 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName("KVMsnapshotenabled") @Param(description = "true if snapshot is supported for KVM host, false otherwise")
     private boolean KVMSnapshotEnabled;
 
+    @SerializedName("regionsecondaryenabled") @Param(description = "true if region wide secondary is enabled, false otherwise")
+    private boolean regionSecondaryEnabled;
+
     @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
     private Integer apiLimitInterval;
 
@@ -86,6 +89,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setKVMSnapshotEnabled(boolean KVMSnapshotEnabled) {
         this.KVMSnapshotEnabled = KVMSnapshotEnabled;
+    }
+
+    public void setRegionSecondaryEnabled(boolean regionSecondaryEnabled){
+        this.regionSecondaryEnabled = regionSecondaryEnabled;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {
