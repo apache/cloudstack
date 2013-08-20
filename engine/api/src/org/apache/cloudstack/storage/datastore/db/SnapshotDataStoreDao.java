@@ -40,4 +40,5 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> listDestroyed(long storeId);
+    List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
 }
