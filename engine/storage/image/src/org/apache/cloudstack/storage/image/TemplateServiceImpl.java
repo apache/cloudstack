@@ -240,6 +240,8 @@ public class TemplateServiceImpl implements TemplateService {
                 TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao
                         .findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                    associateTemplateToZone(template.getId(), dcId);
+                    s_logger.info("Downloading builtin template " + template.getUniqueName() + " to data center: " + dcId);
                     TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmplt, store, null);
                 }
