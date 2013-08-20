@@ -1042,6 +1042,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Error);
                     for (SnapshotVO snapshotVO : snapshots) {
                         try {
+                            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
+                            for(SnapshotDataStoreVO ref : storeRefs) {
+                                _snapshotStoreDao.expunge(ref.getId());
+                            }
                             _snapshotDao.expunge(snapshotVO.getId());
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy " + snapshotVO.getId(), e);

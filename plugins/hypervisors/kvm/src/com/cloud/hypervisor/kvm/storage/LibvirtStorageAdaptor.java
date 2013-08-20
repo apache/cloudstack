@@ -397,7 +397,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             return pool;
         } catch (LibvirtException e) {
-            throw new CloudRuntimeException(e.toString());
+            s_logger.debug("can't get storage pool",e);
+            throw new CloudRuntimeException(e.toString(), e);
         }
     }
 
