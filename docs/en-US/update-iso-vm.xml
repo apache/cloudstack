@@ -24,18 +24,24 @@
 <section id="update-iso-vm">
 	<!-- CLOUDSTACK-667 -->
 	<title>Changing a VM's Base Image</title>
-	<para>Every VM is created from a base image, which is a template or ISO which has been
-		created and stored in &PRODUCT;. Both cloud administrators and end users can create and
-		modify templates, ISOs, and VMs.</para>
-	<para>In &PRODUCT;, you can change an
-		existing VM's base image. For example, suppose there is a template based
-		on a particular operating system, and the OS vendor releases a software patch. The
-		administrator or user naturally wants to apply the patch and then make sure existing VMs
+	<para>Every VM is created from a base image, which is a template or ISO which has been created and
+		stored in &PRODUCT;. Both cloud administrators and end users can create and modify templates,
+		ISOs, and VMs.</para>
+	<para>In &PRODUCT;, you can change an existing VM's base image from one template to another,
+		or from one ISO to another. (You can not change from an ISO to a template, or from a
+		template to an ISO).</para>
+	<para>For example, suppose there is a
+		template based on a particular operating system, and the OS vendor releases a software patch.
+		The administrator or user naturally wants to apply the patch and then make sure existing VMs
 		start using it. Whether a software update is involved or not, it's also possible to simply
 		switch a VM from its current template to any other desired template.</para>
-	<para>To change a VM's base image, call the restoreVirtualMachine API command and pass in the virtual machine
-		ID and a new template ID. The template ID parameter may refer to either a template or an
-		ISO. When this call occurs, the VM's root disk is first destroyed, then a new root disk is
-		created from the source designated in the template ID parameter. The new root disk is
-		attached to the VM, and now the VM is based on the new template.</para>
+	<para>To change a VM's base image, call the restoreVirtualMachine API command and pass in the
+		virtual machine ID and a new template ID. The template ID parameter may refer to either a
+		template or an ISO, depending on which type of base image the VM was already using (it must
+		match the previous type of image). When this call occurs, the VM's root disk is first destroyed,
+		then a new root disk is created from the source designated in the template ID parameter. The new
+		root disk is attached to the VM, and now the VM is based on the new template.</para>
+	<para>You can also omit the template ID parameter from the restoreVirtualMachine call. In this
+		case, the VM's root disk is destroyed and recreated, but from the same template or ISO that was
+		already in use by the VM.</para>
 </section>
