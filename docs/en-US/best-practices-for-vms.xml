@@ -22,7 +22,10 @@
 -->
 
 <section id="best-practices-vm">
-	<title>Best Practices for Virtual Machines</title>
+    <title>Best Practices for Virtual Machines</title>
+    <para>For VMs to work as expected and provide excellent service, follow these guidelines.</para>
+    <section id="best-practices-vm-monitoring">
+    <title>Monitor VMs for Max Capacity</title>
 	<para>The &PRODUCT; administrator should monitor the total number of VM instances in each
         cluster, and disable allocation to the cluster if the total is approaching the maximum that
         the hypervisor can handle. Be sure to leave a safety margin to allow for the possibility of
@@ -36,4 +39,29 @@
         permit in the cluster is at most (N-1) * (per-host-limit). Once a cluster reaches this
         number of VMs, use the &PRODUCT; UI to disable allocation of more VMs to the
         cluster.</para>
+    </section>
+    <section id="best-practices-vm-tools">
+    <title>Install Required Tools and Drivers</title>
+        <para>Be sure the following are installed on each VM:</para>
+        <itemizedlist>
+                <listitem><para>For XenServer, install PV drivers and Xen tools on each VM.
+                    This will enable live migration and clean guest shutdown.
+                    Xen tools are required in order for dynamic CPU and RAM scaling to work.</para></listitem>
+                <listitem><para>For vSphere, install VMware Tools on each VM.
+                    This will enable console view to work properly.
+                    VMware Tools are required in order for dynamic CPU and RAM scaling to work.</para></listitem>
+        </itemizedlist>
+        <para>To be sure that Xen tools or VMware Tools is installed, use one of the following techniques:</para>
+        <itemizedlist>
+            <listitem><para>Create each VM from a template that already has the tools installed; or,</para></listitem>
+            <listitem><para>When registering a new template, the administrator or user can indicate whether tools are
+                                        installed on the template. This can be done through the UI
+                                        or using the updateTemplate API; or,</para></listitem>
+            <listitem><para>If a user deploys a virtual machine with a template that does not have
+                Xen tools or VMware Tools, and later installs the tools on the VM,
+                then the user can inform &PRODUCT; using the updateVirtualMachine API.
+                After installing the tools and updating the virtual machine, stop
+                and start the VM.</para></listitem>
+        </itemizedlist>           
+    </section>
 </section>
