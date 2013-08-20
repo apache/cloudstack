@@ -24,7 +24,7 @@
 
 <section id="snapshot-performance-vmware">
   <title>VMware Volume Snapshot Performance</title>
-  <para>When you take a snapshot of a data volume on VMware, &PRODUCT; uses an
+  <para>When you take a snapshot of a data or root volume on VMware, &PRODUCT; uses an
     efficient storage technique to improve performance.</para>
   <para>A snapshot is not immediately exported from vCenter to a mounted NFS
     share and packaged into an OVA file format. This operation would consume time and resources.
