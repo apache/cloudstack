@@ -4113,7 +4113,9 @@
                         $.ajax({
                             url: createURL('addImageStore'),
                             data: data,
-                            success: function(json) {                               
+                            success: function(json) {   
+                            	g_regionsecondaryenabled = true;
+                            	
                                 complete({
                                     data: $.extend(args.data, {
                                         returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
@@ -4181,7 +4183,9 @@
                         $.ajax({
                             url: createURL('addImageStore'),
                             data: data,
-                            success: function(json) {                               
+                            success: function(json) {  
+                            	g_regionsecondaryenabled = true;
+                            	
                                 complete({
                                     data: $.extend(args.data, {
                                         returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage

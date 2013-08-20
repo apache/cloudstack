@@ -14545,6 +14545,9 @@
                                                 data: data,
                                                 success: function(json) {
                                                     havingS3 = true;
+                                                    
+                                                    g_regionsecondaryenabled = true;
+                                                	
                                                     var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
@@ -14605,6 +14608,9 @@
                                                 data: data,
                                                 success: function(json) {
                                                     havingSwift = true;
+                                                    
+                                                    g_regionsecondaryenabled = true;
+                                                	
                                                     var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
