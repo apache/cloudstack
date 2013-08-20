@@ -123,7 +123,6 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -397,7 +396,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
-        
+
         return extract(caller, templateId, url, zoneId, mode, eventId, false);
     }
 
@@ -698,6 +697,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
+        if (template.isCrossZones()){
+            s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
+            return template;
+        }
+
         DataStore dstSecStore = getImageStore(destZoneId, templateId);
         if (dstSecStore != null) {
             s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() + " in zone " + destZoneId
@@ -708,10 +712,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
         if (srcSecStore == null) {
             throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
-        }
-        if (srcSecStore.getScope().getScopeType() == ScopeType.REGION) {
-            s_logger.debug("Template " + templateId + " is in region-wide secondary storage " + srcSecStore.getName() + " , don't need to copy");
-            return template;
         }
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
@@ -1266,7 +1266,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         _tmpltDao.update(template.getId(), updatedTemplate);
-        
+
         //when operation is add/remove, accountNames can not be null
         if (("add".equalsIgnoreCase(operation) || "remove".equalsIgnoreCase(operation)) && accountNames == null) {
             throw new InvalidParameterValueException("Operation " + operation + " requires accounts or projectIds to be passed in");

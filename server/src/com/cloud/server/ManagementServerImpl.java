@@ -431,6 +431,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigurationVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -675,6 +677,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     private ResourceTagDao _resourceTagDao;
+    @Inject
+    private ImageStoreDao _imgStoreDao;
 
     @Inject
     ProjectManager _projectMgr;
@@ -796,7 +800,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
-        
+
         _executeInSequence = Boolean.parseBoolean(_configDao.getValue(Config.ExecuteInSequence.key()));
 
         return true;
@@ -3256,6 +3260,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
+        // check if region-wide secondary storage is used
+        boolean regionSecondaryEnabled = false;
+        List<ImageStoreVO> imgStores = _imgStoreDao.findRegionImageStores();
+        if ( imgStores != null && imgStores.size() > 0){
+            regionSecondaryEnabled = true;
+        }
+
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities
         .put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
@@ -3264,6 +3275,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
+        capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
