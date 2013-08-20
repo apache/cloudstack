@@ -2205,7 +2205,8 @@ public class VirtualMachineMO extends BaseMO {
         if (apiVersion.compareTo("5.0") < 0) {
             return 1;
         }
-        return (Integer)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.numCoresPerSocket");
+        Integer coresPerSocket = (Integer) _context.getVimClient().getDynamicProperty(_mor, "config.hardware.numCoresPerSocket");
+        return coresPerSocket != null? coresPerSocket : 1;
     }
 
     public int getVirtualHardwareVersion() throws Exception {
