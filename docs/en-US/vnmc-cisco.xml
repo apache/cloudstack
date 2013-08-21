@@ -39,63 +39,107 @@
   </itemizedlist>
   <para>&PRODUCT; supports Cisco VNMC on Cisco Nexus 1000v dvSwich-enabled VMware
     hypervisors.</para>
-  <section id="notes-vnmc">
-    <title>Guidelines</title>
-    <itemizedlist>
-      <listitem><para>Cisco ASA 1000v firewall  is supported only in Isolated Guest Networks.</para></listitem>
-      <listitem>
-        <para>Cisco ASA 1000v firewall is not supported on VPC.</para>
-      </listitem>
-      <listitem><para>Cisco ASA 1000v firewall is not supported for load balancing.</para></listitem>
-      <listitem>
-        <para>When a guest network is created with Cisco VNMC firewall provider, an additional
-          public IP is acquired along with the Source NAT IP. The Source NAT IP is used for the
-          rules, whereas the additional IP is used to for the ASA outside interface. Ensure that
-          this additional public IP is not released. You can identify this IP as soon as the network
-          is in implemented state and before acquiring any further public IPs. The additional IP is
-          the one that is not marked as Source NAT. You can find the IP used for the ASA outside
-          interface by looking at the Cisco VNMC used in your guest network.</para>
-      </listitem>
-      <listitem>
-        <para>Use the public IP address range from a single subnet. You cannot add IP addresses from
-          different subnets.</para>
-      </listitem>
-      <listitem>
-        <para>Only one ASA instance per VLAN is allowed because multiple VLANS cannot be trunked to ASA ports. Therefore, you can use only one ASA instance in a guest network.</para>
-      </listitem>
-      <listitem>
-        <para>Supported only in Inline mode deployment with load balancer.</para>
-      </listitem>
-     
-      <listitem><para></para></listitem>
-    </itemizedlist>
-  </section>
   <section id="deploy-vnmc">
     <title>Using Cisco ASA 1000v Firewall, Cisco Nexus 1000v dvSwitch, and Cisco VNMC in a
       Deployment</title>
-    <section id="prereq-asa">
-      <title>Prerequisites</title>
+    <section id="notes-vnmc">
+      <title>Guidelines</title>
       <itemizedlist>
         <listitem>
-          <para>Ensure that Cisco ASA 1000v appliance is set up externally and then registered with
-            &PRODUCT; by using the admin API. Typically, you can create a pool of ASA 1000v
-            appliances and register them with &PRODUCT;.</para>
-          <para>Specify the following to set up a Cisco ASA 1000v instance:</para>
+          <para>Cisco ASA 1000v firewall is supported only in Isolated Guest Networks.</para>
+        </listitem>
+        <listitem>
+          <para>Cisco ASA 1000v firewall is not supported on VPC.</para>
+        </listitem>
+        <listitem>
+          <para>Cisco ASA 1000v firewall is not supported for load balancing.</para>
+        </listitem>
+        <listitem>
+          <para>When a guest network is created with Cisco VNMC firewall provider, an additional
+            public IP is acquired along with the Source NAT IP. The Source NAT IP is used for the
+            rules, whereas the additional IP is used to for the ASA outside interface. Ensure that
+            this additional public IP is not released. You can identify this IP as soon as the
+            network is in implemented state and before acquiring any further public IPs. The
+            additional IP is the one that is not marked as Source NAT. You can find the IP used for
+            the ASA outside interface by looking at the Cisco VNMC used in your guest
+            network.</para>
+        </listitem>
+        <listitem>
+          <para>Use the public IP address range from a single subnet. You cannot add IP addresses
+            from different subnets.</para>
+        </listitem>
+        <listitem>
+          <para>Only one ASA instance per VLAN is allowed because multiple VLANS cannot be trunked
+            to ASA ports. Therefore, you can use only one ASA instance in a guest network.</para>
+        </listitem>
+        <listitem>
+          <para>Only one Cisco VNMC per zone is allowed.</para>
+        </listitem>
+        <listitem>
+          <para>Supported only in Inline mode deployment with load balancer.</para>
+        </listitem>
+        <listitem>
+          <para>The ASA firewall rule is applicable to all the public IPs in the guest network.
+            Unlike the firewall rules created on virtual router, a rule created on the ASA device is
+            not tied to a specific public IP.</para>
+        </listitem>
+        <listitem>
+          <para>Supported version of Cisco Nexus 1000v dvSwitch is nexus-1000v.4.2.1.SV1.5.2b.bin and beyond.
+          </para>
+        </listitem>
+      </itemizedlist>
+    </section>
+    <section id="prereq-asa">
+      <title>Prerequisites</title>
+      <orderedlist>
+        <listitem>
+          <para>Configure Cisco Nexus 1000v dvSwitch in a vCenter environment.</para>
+          <para>Create Port profiles for both internal and external network interfaces on Cisco
+            Nexus 1000v dvSwitch. Note down the inside port profile, which needs to be provided
+            while adding the ASA appliance to &PRODUCT;.</para>
+          <para>For information on configuration, see <xref
+              linkend="vmware-vsphere-cluster-config-nexus-vswitch"/>.</para>
+        </listitem>
+        <listitem>
+          <para>Deploy and configure Cisco VNMC.</para>
+          <para>For more information, see <ulink
+              url="http://www.cisco.com/en/US/docs/switches/datacenter/vsg/sw/4_2_1_VSG_2_1_1/install_upgrade/guide/b_Cisco_VSG_for_VMware_vSphere_Rel_4_2_1_VSG_2_1_1_and_Cisco_VNMC_Rel_2_1_Installation_and_Upgrade_Guide_chapter_011.html"
+              >Installing Cisco Virtual Network Management Center</ulink> and <ulink
+              url="http://www.cisco.com/en/US/docs/unified_computing/vnmc/sw/1.2/VNMC_GUI_Configuration/b_VNMC_GUI_Configuration_Guide_1_2_chapter_010.html"
+              >Configuring Cisco Virtual Network Management Center</ulink>.</para>
+        </listitem>
+        <listitem>
+          <para>Register Cisco Nexus 1000v dvSwitch with Cisco VNMC.</para>
+          <para>For more information, see <ulink
+              url="http://www.cisco.com/en/US/docs/switches/datacenter/vsg/sw/4_2_1_VSG_1_2/vnmc_and_vsg_qi/guide/vnmc_vsg_install_5register.html#wp1064301"
+              >Registering a Cisco Nexus 1000V with Cisco VNMC</ulink>.</para>
+        </listitem>
+        <listitem>
+          <para>Create Inside and Outside port profiles in Cisco Nexus 1000v dvSwitch.</para>
+          <para>For more information, see <xref
+              linkend="vmware-vsphere-cluster-config-nexus-vswitch"/>.</para>
+        </listitem>
+        <listitem>
+          <para>Deploy and Cisco ASA 1000v appliance.</para>
+          <para>For more information, see <ulink
+              url="http://www.cisco.com/en/US/docs/security/asa/quick_start/asa1000V/setup_vnmc.html"
+              >Setting Up the ASA 1000V Using VNMC</ulink>.</para>
+          <para>Typically, you create a pool of ASA 1000v appliances and register them with
+            &PRODUCT;.</para>
+          <para>Specify the following while setting up a Cisco ASA 1000v instance:</para>
           <itemizedlist>
             <listitem>
-              <para>ESX host IP</para>
+              <para>VNMC host IP. </para>
             </listitem>
             <listitem>
-              <para>Standalone or HA mode</para>
+              <para>Ensure that you add ASA appliance in VNMC mode.</para>
             </listitem>
             <listitem>
               <para>Port profiles for the Management and HA network interfaces. This need to be
-                pre-created on Nexus dvSwitch switch.</para>
+                pre-created on Cisco Nexus 1000v dvSwitch.</para>
             </listitem>
             <listitem>
-              <para>Port profiles for both internal and external network interfaces. This need to be
-                pre-created on Nexus dvSwitch switch, and to be updated appropriately while
-                implementing guest networks.</para>
+              <para>Internal and external port profiles.</para>
             </listitem>
             <listitem>
               <para>The Management IP for Cisco ASA 1000v appliance. Specify the gateway such that
@@ -108,19 +152,13 @@
               <para>VNMC credentials</para>
             </listitem>
           </itemizedlist>
+        </listitem>
+        <listitem>
+          <para>Register Cisco ASA 1000v with VNMC.</para>
           <para>After Cisco ASA 1000v instance is powered on, register VNMC from the ASA
             console.</para>
         </listitem>
-        <listitem>
-          <para>Ensure that Cisco VNMC appliance is set up externally and then registered with
-            &PRODUCT; by using the admin API. A single VNMC instance manages multiple ASA1000v
-            appliances.</para>
-        </listitem>
-        <listitem>
-          <para>Ensure that Cisco Nexus 1000v appliance is set up and configured in &PRODUCT; when
-            adding VMware cluster.</para>
-        </listitem>
-      </itemizedlist>
+      </orderedlist>
     </section>
     <section id="how-to-asa">
       <title>Using Cisco ASA 1000v Services</title>
@@ -165,7 +203,7 @@
         <para>Choose the zone you want to work with.</para>
       </listitem>
       <listitem>
-        <para>Click the Network tab.</para>
+        <para>Click the Physical Network tab.</para>
       </listitem>
       <listitem>
         <para>In the Network Service Providers node of the diagram, click Configure. </para>
@@ -175,7 +213,7 @@
         <para>Click Cisco VNMC.</para>
       </listitem>
       <listitem>
-        <para>Click View VNMC Devices</para>
+        <para>Click View VNMC Devices.</para>
       </listitem>
       <listitem>
         <para>Click the Add VNMC Device and provide the following:</para>
@@ -213,7 +251,7 @@
         <para>Choose the zone you want to work with.</para>
       </listitem>
       <listitem>
-        <para>Click the Network tab.</para>
+        <para>Click the Physical Network tab.</para>
       </listitem>
       <listitem>
         <para>In the Network Service Providers node of the diagram, click Configure. </para>
@@ -229,15 +267,16 @@
         <para>Click the Add CiscoASA1000v Resource and provide the following:</para>
         <itemizedlist>
           <listitem>
-            <para>Host: The management IP address of the ASA 1000v instance. The IP address is used
-              to connect to ASA 1000V.</para>
+            <para><emphasis role="bold">Host</emphasis>: The management IP address of the ASA 1000v
+              instance. The IP address is used to connect to ASA 1000V.</para>
           </listitem>
           <listitem>
-            <para>Inside Port Profile: The Inside Port Profile configuration on Cisco Nexus1000v
-              dvSwitch.</para>
+            <para><emphasis role="bold">Inside Port Profile</emphasis>: The Inside Port Profile
+              configured on Cisco Nexus1000v dvSwitch.</para>
           </listitem>
           <listitem>
-            <para>Cluster: The VMware cluster to which you are adding the ASA 1000v instance.</para>
+            <para><emphasis role="bold">Cluster</emphasis>: The VMware cluster to which you are
+              adding the ASA 1000v instance.</para>
             <para>Ensure that the cluster is Cisco Nexus 1000v dvSwitch enabled.</para>
           </listitem>
         </itemizedlist>
