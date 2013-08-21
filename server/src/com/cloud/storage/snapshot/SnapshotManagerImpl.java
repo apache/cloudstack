@@ -126,6 +126,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -905,16 +906,25 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
 
 
-    private boolean hostSupportSnapsthot(HostVO host) {
+    private boolean hostSupportSnapsthotForVolume(HostVO host, VolumeInfo volume) {
 		if (host.getHypervisorType() != HypervisorType.KVM) {
 			return true;
 		}
 
-        //Turn off snapshot by default for KVM, unless it is set in the global flag
-        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
-        if (!snapshotEnabled) {
-             return false;
-        }
+        //Turn off snapshot by default for KVM if the volume attached to vm that is not in the Stopped/Destroyed state,
+		//unless it is set in the global flag
+		Long vmId = volume.getInstanceId();
+		if (vmId != null) {
+		    VMInstanceVO vm = _vmDao.findById(vmId);
+		    if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
+		        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
+	            if (!snapshotEnabled) {
+	                 s_logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
+	                 return false;
+	            }
+		    }
+		}
+        
 		// Determine host capabilities
 		String caps = host.getCapabilities();
 
@@ -953,7 +963,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
             if (hosts != null && !hosts.isEmpty()) {
                 HostVO host = hosts.get(0);
-                if (!hostSupportSnapsthot(host)) {
+                if (!hostSupportSnapsthotForVolume(host, volume)) {
                     throw new CloudRuntimeException("KVM Snapshot is not supported: " + host.getId());
                 }
             }
