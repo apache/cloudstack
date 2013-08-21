@@ -66,6 +66,7 @@ AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_servi
 UPDATE `cloud`.`configuration` SET description='Do URL encoding for the api response, false by default' WHERE name='encode.api.response';
 INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL);
 UPDATE `cloud`.`configuration` set description ='Uuid of the service offering used by console proxy; if NULL - system offering will be used' where name ='consoleproxy.service.offering';
+UPDATE `cloud`.`configuration` set value = '/var/cloudstack/mnt' where name = 'mount.parent';
 
 
 -- DB upgrade steps from 40-41
