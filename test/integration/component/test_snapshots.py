@@ -668,21 +668,21 @@ class TestSnapshots(cloudstackTestCase):
                                       ),
                     "pushd %s" % self.services["paths"]["mount_dir"],
                     "mkdir -p %s/{%s,%s} " % (
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["sub_lvl_dir2"]
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["sub_lvl_dir2"]
                                             ),
                     "echo %s > %s/%s/%s" % (
                                                random_data_0,
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["random_data"]
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["random_data"]
                                             ),
                     "echo %s > %s/%s/%s" % (
                                                 random_data_1,
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir2"],
-                                                self.services["random_data"]
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir2"],
+                                                self.services["paths"]["random_data"]
                                             ),
                     "sync",
                 ]
@@ -728,7 +728,7 @@ class TestSnapshots(cloudstackTestCase):
                         )
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s - %s" %
-                                (self.virtual_machine.ipaddress, e))
+                                (self.virtual_machine.ssh_ip, e))
 
         qresultset = self.dbclient.execute(
                         "select id from snapshots where uuid = '%s';" \
