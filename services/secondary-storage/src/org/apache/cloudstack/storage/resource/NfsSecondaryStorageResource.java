@@ -407,10 +407,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
             File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
             File destFile = getFile(destData.getPath(), destDataStore.getUrl());
+
+            ImageFormat srcFormat = srcData.getVolume().getFormat();
+
             // get snapshot file name
             String templateName = srcFile.getName();
-            // add kvm file extension for copied template name
-            String destFileFullPath = destFile.getAbsolutePath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension();
+            // add kvm file extension for copied template name    
+            String fileName = templateName + "." + srcFormat.getFileExtension();
+            String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
             s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
             try {
@@ -422,18 +426,30 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 BufferedWriter bufferWriter = new BufferedWriter(writer);
                 bufferWriter.write("uniquename=" + destData.getName());
                 bufferWriter.write("\n");
-                bufferWriter.write("filename=" + templateName + "." + ImageFormat.QCOW2.getFileExtension());
+                bufferWriter.write("filename=" + fileName);
                 bufferWriter.write("\n");
                 long size = this._storage.getSize(destFileFullPath);
                 bufferWriter.write("size=" + size);
                 bufferWriter.close();
                 writer.close();
-                // template post processing
-                QCOW2Processor processor = new QCOW2Processor();
+
+
+                /**
+                 * Snapshots might be in either QCOW2 or RAW image format
+                 *
+                 * For example RBD snapshots are in RAW format
+                 */
+                Processor processor = null;
+                if (srcFormat == ImageFormat.QCOW2) {
+                    processor = new QCOW2Processor();
+                } else if (srcFormat == ImageFormat.RAW) {
+                    processor = new RawImageProcessor();
+                }
+
                 Map<String, Object> params = new HashMap<String, Object>();
                 params.put(StorageLayer.InstanceConfigKey, _storage);
 
-                processor.configure("qcow2 processor", params);
+                processor.configure("template processor", params);
                 String destPath = destFile.getAbsolutePath();
 
                 FormatInfo info = processor.process(destPath, null, templateName);
@@ -441,17 +457,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 loc.create(1, true, srcFile.getName());
                 loc.addFormat(info);
                 loc.save();
+
                 TemplateProp prop = loc.getTemplateInfo();
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
-                newTemplate.setPath(destData.getPath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension());
-                newTemplate.setFormat(ImageFormat.QCOW2);
+                newTemplate.setPath(destData.getPath() + File.separator + fileName);
+                newTemplate.setFormat(srcFormat);
                 newTemplate.setSize(prop.getSize());
                 newTemplate.setPhysicalSize(prop.getPhysicalSize());
+
                 return new CopyCmdAnswer(newTemplate);
             } catch (ConfigurationException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
                 return new CopyCmdAnswer(e.toString());
             } catch (IOException e) {
+                s_logger.debug("Failed to create template:" + e.toString());
+                return new CopyCmdAnswer(e.toString());
+            } catch (InternalErrorException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
                 return new CopyCmdAnswer(e.toString());
             }
@@ -711,7 +732,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return ImageFormat.OVA;
             } else if (ext.equalsIgnoreCase("tar")) {
                 return ImageFormat.TAR;
-            } else if (ext.equalsIgnoreCase("img")) {
+            } else if (ext.equalsIgnoreCase("img") || ext.equalsIgnoreCase("raw")) {
                 return ImageFormat.RAW;
             }
         }
@@ -731,6 +752,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 processor = new VmdkProcessor();
             } else if (format == ImageFormat.VHD) {
                 processor = new VhdProcessor();
+            } else if (format == ImageFormat.RAW) {
+                processor = new RawImageProcessor();
             }
 
             if (processor == null) {
