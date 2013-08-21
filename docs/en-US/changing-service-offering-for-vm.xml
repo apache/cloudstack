@@ -85,11 +85,14 @@
 			to have the dynamic scaling capability,
 			update the VMs using the following steps:</para>
 		<orderedlist>
-			<listitem><para>Make sure the zone-level setting "dynamic scalable" is set to true.</para></listitem>
+			<listitem><para>Make sure the zone-level setting enable.dynamic.scale.vm is set to true.
+			    In the left navigation bar of the &PRODUCT; UI, click Infrastructure, then click Zones, click the zone you want, and click the Settings tab.</para></listitem>
 			<listitem><para>Install Xen tools (for XenServer hosts) or VMware Tools (for VMware hosts) on each VM
 				if they are not already installed.</para></listitem>
 			<listitem><para>Stop the VM.</para></listitem>
-			<listitem><para>Click the isDynamic Scaling checkbox.</para></listitem>
+			<listitem><para>Click the Edit button.</para></listitem>
+			<listitem><para>Click the Dynamically Scalable checkbox.</para></listitem>
+			<listitem><para>Click Apply.</para></listitem>
 			<listitem><para>Restart the VM.</para></listitem>
 		</orderedlist>
 	</section>
