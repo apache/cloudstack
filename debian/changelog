@@ -1,3 +1,9 @@
+cloudstack (4.1.2-0.0.snapshot) unstable; urgency=low
+
+  * Set release version to 4.1.2-0.0.snapshot
+
+ -- Hugo Trippaers <htrippaers@schubergphilis.com>  Wed, 21 Aug 2013 12:00:00 +0000
+
 cloudstack (4.1.1-0.0.snapshot) unstable; urgency=low
 
   * Set release version to 4.1.1-0.0.snapshot
