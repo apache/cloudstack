@@ -33,52 +33,41 @@
         policy sets for both ingress and egress traffic.</para>
     </listitem>
     <listitem>
-      <para>Use Cisco ASA 1000v firewalls to create and apply NAT policy sets.</para>
+      <para>Use Cisco ASA 1000v firewalls to create and apply Source NAT, Port Forwarding, and
+        Static NAT policy sets.</para>
     </listitem>
   </itemizedlist>
   <para>&PRODUCT; supports Cisco VNMC on Cisco Nexus 1000v dvSwich-enabled VMware
     hypervisors.</para>
-  <section id="usecase-vnmc">
-    <title>Use Cases</title>
-    <itemizedlist>
-      <listitem>
-        <para>A Cloud administrator adds VNMC as a network element by using the admin API
-          addCiscoVnmcResource after specifying the credentials</para>
-      </listitem>
-      <listitem>
-        <para>A Cloud administrator adds ASA 1000v appliances by using the admin API
-          addCiscoAsa1000vResource. .</para>
-      </listitem>
-      <listitem>
-        <para>A Cloud administrator creates an Isolated guest network offering by using ASA 1000v as
-          the service provider for Firewall, Source NAT, Port Forwarding, and Static NAT. </para>
-      </listitem>
-    </itemizedlist>
-  </section>
   <section id="notes-vnmc">
     <title>Guidelines</title>
     <itemizedlist>
+      <listitem><para>Cisco ASA 1000v firewall  is supported only in Isolated Guest Networks.</para></listitem>
       <listitem>
-       <para>When a guest network is created with Cisco VNMC firewall provider, an additional public
-          IP is acquired along with the Source NAT IP. The Source NAT IP is used for the rules,
-          whereas the additional IP is used to for the ASA outside interface. Ensure that this
-          additional public IP is not released. You can identify this IP as soon as the network is
-          in implemented state and before acquiring any further public IPs. The additional IP is the
-          one that is not marked as Source NAT. You can find the IP used for the ASA outside
+        <para>Cisco ASA 1000v firewall is not supported on VPC.</para>
+      </listitem>
+      <listitem><para>Cisco ASA 1000v firewall is not supported for load balancing.</para></listitem>
+      <listitem>
+        <para>When a guest network is created with Cisco VNMC firewall provider, an additional
+          public IP is acquired along with the Source NAT IP. The Source NAT IP is used for the
+          rules, whereas the additional IP is used to for the ASA outside interface. Ensure that
+          this additional public IP is not released. You can identify this IP as soon as the network
+          is in implemented state and before acquiring any further public IPs. The additional IP is
+          the one that is not marked as Source NAT. You can find the IP used for the ASA outside
           interface by looking at the Cisco VNMC used in your guest network.</para>
       </listitem>
       <listitem>
-        <para/>
+        <para>Use the public IP address range from a single subnet. You cannot add IP addresses from
+          different subnets.</para>
       </listitem>
       <listitem>
-        <para/>
+        <para>Only one ASA instance per VLAN is allowed because multiple VLANS cannot be trunked to ASA ports. Therefore, you can use only one ASA instance in a guest network.</para>
       </listitem>
       <listitem>
-        <para/>
+        <para>Supported only in Inline mode deployment with load balancer.</para>
       </listitem>
-      <listitem>
-        <para/>
-      </listitem>
+     
+      <listitem><para></para></listitem>
     </itemizedlist>
   </section>
   <section id="deploy-vnmc">
