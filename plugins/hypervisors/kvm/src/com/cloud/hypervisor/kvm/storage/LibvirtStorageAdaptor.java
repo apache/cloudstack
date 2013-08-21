@@ -1170,45 +1170,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     // However, we also need to fix the issues in CloudStack source code.
     // A file lock is used to prevent deleting a volume from a KVM storage pool when refresh it.
     private void refreshPool(StoragePool pool) throws LibvirtException {
-        Connect conn = LibvirtConnection.getConnection();
-        LibvirtStoragePoolDef spd = getStoragePoolDef(conn, pool);
-        if ((! spd.getPoolType().equals(LibvirtStoragePoolDef.poolType.NETFS))
-                && (! spd.getPoolType().equals(LibvirtStoragePoolDef.poolType.DIR))) {
-            pool.refresh(0);
-            return;
-        }
-        String lockFile = spd.getTargetPath() + File.separator + _lockfile;
-        s_logger.debug("Attempting to lock pool " + pool.getName() + " with file " + lockFile);
-        if (lock(lockFile, ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM)) {
-            try {
-                pool.refresh(0);
-            } finally {
-                s_logger.debug("Releasing the lock on pool " + pool.getName() + " with file " + lockFile);
-                unlock(lockFile);
-            }
-        } else {
-            throw new CloudRuntimeException("Can not get file lock to refresh the pool " + pool.getName());
-        }
+        pool.refresh(0);
+        return;
     }
 
     private void deleteVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
-        if ((! pool.getType().equals(StoragePoolType.NetworkFilesystem))
-                && (! pool.getType().equals(StoragePoolType.Filesystem))) {
-            vol.delete(0);
-            return;
-        }
-        String lockFile = pool.getLocalPath() + File.separator + _lockfile;
-        s_logger.debug("Attempting to lock pool " + pool.getName() + " with file " + lockFile);
-        if (lock(lockFile, ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM)) {
-            try {
-                vol.delete(0);
-            } finally {
-                s_logger.debug("Releasing the lock on pool " + pool.getName() + " with file " + lockFile);
-                unlock(lockFile);
-            }
-        } else {
-            throw new CloudRuntimeException("Can not get file lock to delete the volume " + vol.getName());
-        }
+        vol.delete(0);
     }
 
     private boolean lock(String path, int wait) {

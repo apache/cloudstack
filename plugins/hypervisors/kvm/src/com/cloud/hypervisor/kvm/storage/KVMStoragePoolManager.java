@@ -33,9 +33,35 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class KVMStoragePoolManager {
+    private class StoragePoolInformation {
+         String name;
+         String host;
+         int port;
+         String path;
+         String userInfo;
+         boolean type;
+        StoragePoolType poolType;
+
+
+        public  StoragePoolInformation(String name,
+                                       String host,
+                                       int port,
+                                       String path,
+                                       String userInfo,
+                                       StoragePoolType poolType,
+                                       boolean type) {
+            this.name = name;
+            this.host = host;
+            this.port = port;
+            this.path = path;
+            this.userInfo = userInfo;
+            this.type = type;
+            this.poolType = poolType;
+        }
+    }
     private StorageAdaptor _storageAdaptor;
     private KVMHAMonitor _haMonitor;
-    private final Map<String, Object> _storagePools = new ConcurrentHashMap<String, Object>();
+    private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
     private final Map<String, StorageAdaptor> _storageMapper = new HashMap<String, StorageAdaptor>();
 
     private StorageAdaptor getStorageAdaptor(StoragePoolType type) {
@@ -51,10 +77,10 @@ public class KVMStoragePoolManager {
         return adaptor;
     }
 
-    private void addStoragePool(String uuid) {
+    private void addStoragePool(String uuid, StoragePoolInformation pool) {
         synchronized (_storagePools) {
             if (!_storagePools.containsKey(uuid)) {
-                _storagePools.put(uuid, new Object());
+                _storagePools.put(uuid, pool);
             }
         }
     }
@@ -69,7 +95,16 @@ public class KVMStoragePoolManager {
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        return adaptor.getStoragePool(uuid);
+        KVMStoragePool pool = null;
+        try {
+            pool = adaptor.getStoragePool(uuid);
+        } catch(Exception e) {
+            StoragePoolInformation info = _storagePools.get(uuid);
+            if (info != null) {
+                pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.type);
+            }
+        }
+        return pool;
     }
 
     public KVMStoragePool getStoragePoolByURI(String uri) {
@@ -119,7 +154,8 @@ public class KVMStoragePoolManager {
                     PoolType.PrimaryStorage);
             _haMonitor.addStoragePool(nfspool);
         }
-        addStoragePool(pool.getUuid());
+        StoragePoolInformation info = new StoragePoolInformation(name, host, port, path, userInfo, type, primaryStorage);
+        addStoragePool(pool.getUuid(), info);
         return pool;
     }
 
