@@ -30,8 +30,8 @@ addVlan() {
 	local pif=$2
 	local vlanDev=$pif.$vlanId
 	local vlanBr=$3
-    
-    vconfig set_name_type DEV_PLUS_VID_NO_PAD	
+	
+	vconfig set_name_type DEV_PLUS_VID_NO_PAD	
 
 	if [ ! -d /sys/class/net/$vlanDev ]
 	then
@@ -39,17 +39,17 @@ addVlan() {
 		
 		if [ $? -gt 0 ]
 		then
-            # race condition that someone already creates the vlan 
+			# race condition that someone already creates the vlan 
 			if [ ! -d /sys/class/net/$vlanDev ]
-            then
-			    printf "Failed to create vlan $vlanId on pif: $pif."
-			    return 1
-            fi
+			then
+				printf "Failed to create vlan $vlanId on pif: $pif."
+				return 1
+			fi
 		fi
 	fi
 	
 	# is up?
-  	ifconfig |grep -w $vlanDev > /dev/null
+	ifconfig |grep -w $vlanDev > /dev/null
 	if [ $? -gt 0 ]
 	then
 		ifconfig $vlanDev up > /dev/null
@@ -67,7 +67,7 @@ addVlan() {
 				return 2
 			fi
 		fi
-
+		
 		brctl setfd $vlanBr 0
 	fi
 	
@@ -92,7 +92,7 @@ addVlan() {
 	then
 		ifconfig $vlanBr up
 	fi
-
+	
 	return 0
 }
 
@@ -100,7 +100,7 @@ deleteVlan() {
 	local vlanId=$1
 	local pif=$2
 	local vlanDev=$pif.$vlanId
-        local vlanBr=$3
+	local vlanBr=$3
 
 	vconfig rem $vlanDev > /dev/null
 	
@@ -142,12 +142,12 @@ do
   v)	vflag=1
 		vlanId="$OPTARG"
 		;;
-  p)    pflag=1
+  p)	pflag=1
 		pif="$OPTARG"
 		;;
-  b)    bflag=1
-                brName="$OPTARG"
-                ;;
+  b)	bflag=1
+		brName="$OPTARG"
+		;;
   ?)	usage
 		exit 2
 		;;
@@ -183,7 +183,7 @@ else
 	then
 		# Delete the vlan
 		deleteVlan $vlanId $pif $brName
-	
+		
 		# Always exit with success
 		exit 0
 	fi
