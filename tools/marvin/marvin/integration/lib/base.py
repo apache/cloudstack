@@ -269,7 +269,7 @@ class VirtualMachine:
                 cmd.securitygroupids = [basic_mode_security_group.id]
 
     @classmethod
-    def access_ssh_over_nat(cls, apiclient, services, virtual_machine):
+    def access_ssh_over_nat(cls, apiclient, services, virtual_machine, allow_egress=False):
         """
         Program NAT and PF rules to open up ssh access to deployed guest
         @return:
@@ -295,6 +295,13 @@ class VirtualMachine:
             services=services,
             ipaddressid=public_ip.ipaddress.id
         )
+        if allow_egress:
+            EgressFireWallRule.create(
+                apiclient=apiclient,
+                networkid=virtual_machine.nic[0].networkid,
+                protocol='All',
+                cidrlist='0.0.0.0/0'
+            )
         virtual_machine.ssh_ip = nat_rule.ipaddress
         virtual_machine.public_ip = nat_rule.ipaddress
 
@@ -339,6 +346,12 @@ class VirtualMachine:
             cmd.networkids = networkids
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
+        else:
+            # When no networkids are passed, network
+            # is created using the "defaultOfferingWithSourceNAT"
+            # which has an egress policy of DENY. But guests in tests
+            # need access to test network connectivity
+            allow_egress = True
 
         if templateid:
             cmd.templateid = templateid
@@ -394,7 +407,7 @@ class VirtualMachine:
 
         #program ssh access over NAT via PF
         if mode.lower() == 'advanced':
-            cls.access_ssh_over_nat(apiclient, services, virtual_machine)
+            cls.access_ssh_over_nat(apiclient, services, virtual_machine, allow_egress=allow_egress)
         elif mode.lower() == 'basic':
             virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
             virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
