@@ -2148,12 +2148,18 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             updateNic(nic, network.getId(), 1);
         }
 
+        List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (NetworkElement element : _networkElements) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
-            }
-            if(!prepareElement(element, network, profile, vmProfile, dest, context)) {
-                throw new InsufficientAddressCapacityException("unable to configure the dhcp service, due to insufficiant address capacity",Network.class, network.getId());
+            if (providersToImplement.contains(element.getProvider())) {
+                if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
+                }
+                if(!prepareElement(element, network, profile, vmProfile, dest, context)) {
+                    throw new InsufficientAddressCapacityException("unable to configure the dhcp service, due to insufficiant address capacity",Network.class, network.getId());
+                }
             }
         }
 
@@ -2215,10 +2221,16 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     s_logger.error("NetworkGuru "+guru+" prepareForMigration failed."); // XXX: Transaction error
                 }
             }
+            List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (NetworkElement element : _networkElements) {
-                if(element instanceof NetworkMigrationResponder){
-                    if(!((NetworkMigrationResponder) element).prepareMigration(profile, network, vm, dest, context)){
-                        s_logger.error("NetworkElement "+element+" prepareForMigration failed."); // XXX: Transaction error
+                if (providersToImplement.contains(element.getProvider())) {
+                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                    }
+                    if(element instanceof NetworkMigrationResponder){
+                        if(!((NetworkMigrationResponder) element).prepareMigration(profile, network, vm, dest, context)){
+                            s_logger.error("NetworkElement "+element+" prepareForMigration failed."); // XXX: Transaction error
+                        }
                     }
                 }
             }
@@ -2287,9 +2299,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if(guru instanceof NetworkMigrationResponder){
                 ((NetworkMigrationResponder) guru).commitMigration(nicSrc, network, src, src_context, dst_context);
             }
+            List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (NetworkElement element : _networkElements) {
-                if(element instanceof NetworkMigrationResponder){
-                    ((NetworkMigrationResponder) element).commitMigration(nicSrc, network, src, src_context, dst_context);
+                if (providersToImplement.contains(element.getProvider())) {
+                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                    }
+                    if(element instanceof NetworkMigrationResponder){
+                        ((NetworkMigrationResponder) element).commitMigration(nicSrc, network, src, src_context, dst_context);
+                    }
                 }
             }
             // update the reservation id
@@ -2313,9 +2331,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if(guru instanceof NetworkMigrationResponder){
                 ((NetworkMigrationResponder) guru).rollbackMigration(nicDst, network, dst, src_context, dst_context);
             }
+            List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (NetworkElement element : _networkElements) {
-                if(element instanceof NetworkMigrationResponder){
-                    ((NetworkMigrationResponder) element).rollbackMigration(nicDst, network, dst, src_context, dst_context);
+                if (providersToImplement.contains(element.getProvider())) {
+                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                    }
+                    if(element instanceof NetworkMigrationResponder){
+                        ((NetworkMigrationResponder) element).rollbackMigration(nicDst, network, dst, src_context, dst_context);
+                    }
                 }
             }
         }
@@ -2374,13 +2398,19 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 txn.commit();
 
                 // Perform release on network elements
+                List<Provider> providersToImplement = getNetworkProviders(network.getId());
                 for (NetworkElement element : _networkElements) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                    if (providersToImplement.contains(element.getProvider())) {
+                        if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                            throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                        }
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                        }
+                        //NOTE: Context appear to never be used in release method
+                        //implementations. Consider removing it from interface Element
+                        element.release(network, profile, vmProfile, null);
                     }
-                    //NOTE: Context appear to never be used in release method
-                    //implementations. Consider removing it from interface Element
-                    element.release(network, profile, vmProfile, null);
                 }
 
             } else {
@@ -2422,16 +2452,22 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
          * because the nic is now being removed.
          */
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
+            List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (NetworkElement element : _networkElements) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to release " + nic);
-                }
-                try {
-                    element.release(network, profile, vm, null);
-                } catch (ConcurrentOperationException ex) {
-                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
-                } catch (ResourceUnavailableException ex) {
-                    s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                if (providersToImplement.contains(element.getProvider())) {
+                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                    }
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                    }
+                    try {
+                        element.release(network, profile, vm, null);
+                    } catch (ConcurrentOperationException ex) {
+                        s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                    } catch (ResourceUnavailableException ex) {
+                        s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                    }
                 }
             }
         }
