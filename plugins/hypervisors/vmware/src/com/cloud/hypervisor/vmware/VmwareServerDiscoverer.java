@@ -136,7 +136,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
 			return null;
 		}
-
+        boolean failureInClusterDiscovery = true;
+        String vsmIp = "";
 		ClusterVO cluster = _clusterDao.findById(clusterId);
         if(cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
         	if(s_logger.isInfoEnabled())
@@ -308,7 +309,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
             }
-            String vsmIp = _urlParams.get("vsmipaddress");
+            vsmIp = _urlParams.get("vsmipaddress");
             String vsmUser = _urlParams.get("vsmusername");
             String vsmPassword = _urlParams.get("vsmpassword");
             String clusterName = cluster.getName();
@@ -428,7 +429,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			cluster.setGuid(UUID.nameUUIDFromBytes(
 					String.valueOf(clusterId).getBytes()).toString());
 			_clusterDao.update(clusterId, cluster);
-
+            // Flag cluster discovery success
+            failureInClusterDiscovery = false;
 			return resources;
 		} catch (DiscoveredWithErrorException e) {
 			throw e;
@@ -439,8 +441,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		} finally {
 			if (context != null)
 				context.close();
-            if (vsmInfo.first()) {
+            if (failureInClusterDiscovery && vsmInfo.first()) {
                 try {
+                    s_logger.debug("Deleting Nexus 1000v VSM " + vsmIp + " because cluster discovery and addition to zone has failed.");
                     _nexusElement.deleteCiscoNexusVSM(vsmInfo.second().longValue());
                 } catch(Exception e) {
                 }
