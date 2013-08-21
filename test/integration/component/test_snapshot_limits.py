@@ -245,7 +245,7 @@ class TestSnapshotLimit(cloudstackTestCase):
 
             cmds = [
                 "mkdir -p %s" % self.services["paths"]["mount_dir"],
-                "mount -t %s %s/%s %s" % (
+                "mount -t %s %s%s %s" % (
                     'nfs',
                     host,
                     path,
