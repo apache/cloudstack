@@ -1864,13 +1864,21 @@
             return ["remove"];
         }
 
-        if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
-        	if(jsonObj.hypervisor != 'KVM' 
-        		|| (jsonObj.hypervisor == 'KVM' && g_KVMsnapshotenabled == true) ) {
-	            allowedActions.push("takeSnapshot");
+        if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
+        	if (jsonObj.hypervisor == 'KVM') { 
+        		if (g_KVMsnapshotenabled == true) {
+        			allowedActions.push("takeSnapshot");
+    	            allowedActions.push("recurringSnapshot");
+        		} else {        			
+        			if(jsonObj.vmstate == 'Stopped') {
+        				allowedActions.push("takeSnapshot");
+        			}
+        		}
+        	} else {
+        		allowedActions.push("takeSnapshot");
 	            allowedActions.push("recurringSnapshot");
-        	}            
-            
+        	}
+        	            
             if (jsonObj.type == "DATADISK") {
                 allowedActions.push("resize");
             }
