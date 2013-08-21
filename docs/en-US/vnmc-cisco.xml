@@ -21,15 +21,19 @@
 <section id="vnmc-cisco">
   <title>External Guest Firewall Integration for Cisco VNMC (Optional)</title>
   <para>Cisco Virtual Network Management Center (VNMC) provides centralized multi-device and policy
-    management for Cisco Network Virtual Services. When Cisco VNMC is integrated with ASA 1000v
-    Cloud Firewall and Cisco Nexus 1000v dvSwitch in &PRODUCT; you will be able to: </para>
+    management for Cisco Network Virtual Services. You can integrate Cisco VNMC with &PRODUCT; to
+    leverage the firewall and NAT service offered by ASA 1000v Cloud Firewall. Use it in a Cisco
+    Nexus 1000v dvSwitch-enabled cluster in &PRODUCT;. In such a deployment, you will be able to: </para>
   <itemizedlist>
     <listitem>
-      <para>Configure Cisco ASA 1000v Firewalls</para>
+      <para>Configure Cisco ASA 1000v firewalls. You can configure one per guest network.</para>
     </listitem>
     <listitem>
-      <para>Create and apply security profiles that contain ACL policy sets for both ingress and
-        egress traffic, connection timeout, NAT policy sets, and TCP intercept</para>
+      <para>Use Cisco ASA 1000v firewalls to create and apply security profiles that contain ACL
+        policy sets for both ingress and egress traffic.</para>
+    </listitem>
+    <listitem>
+      <para>Use Cisco ASA 1000v firewalls to create and apply NAT policy sets.</para>
     </listitem>
   </itemizedlist>
   <para>&PRODUCT; supports Cisco VNMC on Cisco Nexus 1000v dvSwich-enabled VMware
@@ -43,11 +47,37 @@
       </listitem>
       <listitem>
         <para>A Cloud administrator adds ASA 1000v appliances by using the admin API
-          addCiscoAsa1000vResource. You can configure one per guest network.</para>
+          addCiscoAsa1000vResource. .</para>
       </listitem>
       <listitem>
         <para>A Cloud administrator creates an Isolated guest network offering by using ASA 1000v as
           the service provider for Firewall, Source NAT, Port Forwarding, and Static NAT. </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="notes-vnmc">
+    <title>Guidelines</title>
+    <itemizedlist>
+      <listitem>
+       <para>When a guest network is created with Cisco VNMC firewall provider, an additional public
+          IP is acquired along with the Source NAT IP. The Source NAT IP is used for the rules,
+          whereas the additional IP is used to for the ASA outside interface. Ensure that this
+          additional public IP is not released. You can identify this IP as soon as the network is
+          in implemented state and before acquiring any further public IPs. The additional IP is the
+          one that is not marked as Source NAT. You can find the IP used for the ASA outside
+          interface by looking at the Cisco VNMC used in your guest network.</para>
+      </listitem>
+      <listitem>
+        <para/>
+      </listitem>
+      <listitem>
+        <para/>
+      </listitem>
+      <listitem>
+        <para/>
+      </listitem>
+      <listitem>
+        <para/>
       </listitem>
     </itemizedlist>
   </section>
@@ -102,16 +132,6 @@
             adding VMware cluster.</para>
         </listitem>
       </itemizedlist>
-    </section>
-    <section id="notes-vnmc">
-      <title>Guidelines</title>
-      <para>When a guest network is created with Cisco VNMC firewall provider, an additional public
-        IP is acquired along with the Source NAT IP. The Source NAT IP is used for the ASA outside
-        interface, whereas the additional IP is used to workaround an ASA limitation. Ensure that
-        this additional public IP is not released. You can identify this IP as soon as the network
-        is in implemented state and before acquiring any further public IPs. The additional IP is
-        the one that is not marked as Source NAT. You can find the IP used for the ASA outside
-        interface by looking at the Cisco VNMC used in your guest network.</para>
     </section>
     <section id="how-to-asa">
       <title>Using Cisco ASA 1000v Services</title>
