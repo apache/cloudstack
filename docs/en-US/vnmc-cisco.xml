@@ -84,8 +84,10 @@
             not tied to a specific public IP.</para>
         </listitem>
         <listitem>
-          <para>Supported version of Cisco Nexus 1000v dvSwitch is nexus-1000v.4.2.1.SV1.5.2b.bin and beyond.
-          </para>
+          <para>Use a version of Cisco Nexus 1000v dvSwitch that support the vservice command. For
+            example: nexus-1000v.4.2.1.SV1.5.2b.bin</para>
+          <para>Cisco VNMC requires the vservice command to be available on the Nexus switch to
+            create a guest network in &PRODUCT;. </para>
         </listitem>
       </itemizedlist>
     </section>
