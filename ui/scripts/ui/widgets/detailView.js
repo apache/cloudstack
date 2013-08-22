@@ -70,6 +70,7 @@
                 action.notification : {};
             var messages = action.messages;
             var id = args.id;
+            var jsonObj = args.jsonObj;
             var context = $.extend(true, {},
                 args.context ? args.context : $detailView.data('view-args').context);
             var _custom = $detailView.data('_custom');
@@ -314,7 +315,8 @@
                         ref: {
                             id: id
                         },
-                        context: context
+                        context: context,
+                        jsonObj: jsonObj
                     });
                 } else if (action.listView) {
                     cloudStack.dialog.listView({
