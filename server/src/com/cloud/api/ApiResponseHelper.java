@@ -3149,7 +3149,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
         Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
         if (vpc != null) {
-            response.setVpcId(result.getUuid());
+            response.setVpcId(vpc.getUuid());
         }
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpngateway");
