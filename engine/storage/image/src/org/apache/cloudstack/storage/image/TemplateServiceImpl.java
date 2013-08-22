@@ -74,6 +74,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -403,6 +404,11 @@ public class TemplateServiceImpl implements TemplateService {
                         for (VMTemplateVO tmplt : toBeDownloaded) {
                             if (tmplt.getUrl() == null) { // If url is null we can't
                                 s_logger.info("Skip downloading template " + tmplt.getUniqueName() + " since no url is specified.");
+                                continue;
+                            }
+                            // if this is private template, skip sync to a new image store
+                            if (!tmplt.isPublicTemplate() && !tmplt.isFeatured() && tmplt.getTemplateType() != TemplateType.SYSTEM) {
+                                s_logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
                                 continue;
                             }
 
