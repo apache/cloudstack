@@ -11818,12 +11818,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .stop .icon,
-.removeVmwareDc .icon {
+.removeVmwareDc .icon,
+.release .icon {
   background-position: 0px -31px;
 }
 
 .stop:hover .icon,
-.removeVmwareDc:hover .icon {
+.removeVmwareDc:hover .icon,
+.release:hover .icon {
   background-position: 0px -613px;
 }
 
