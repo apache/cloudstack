@@ -68,6 +68,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeSearch.and("state", storeSearch.entity().getState(), SearchCriteria.Op.NEQ);
         storeSearch.done();
 
         destroyedSearch = createSearchBuilder();
@@ -147,6 +148,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("store_role", role);
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
         return listBy(sc);
     }
 
