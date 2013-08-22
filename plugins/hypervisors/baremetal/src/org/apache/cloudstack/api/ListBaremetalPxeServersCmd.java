@@ -22,15 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.baremetal.networkservice.BaremetalPxeManager;
@@ -41,10 +34,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-@APICommand(name="listBaremetalPxePingServer", description="list baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class)
-public class ListBaremetalPxePingServersCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListBaremetalPxePingServersCmd.class);
-    private static final String s_name = "listpingpxeserverresponse";
+@APICommand(name="listBaremetalPxeServers", description="list baremetal pxe server", responseObject = BaremetalPxeResponse.class)
+public class ListBaremetalPxeServersCmd extends BaseListCmd {
+    private static final Logger s_logger = Logger.getLogger(ListBaremetalPxeServersCmd.class);
+    private static final String s_name = "listbaremetalpxeserversresponse";
 
     @Inject
     BaremetalPxeManager _pxeMgr;
@@ -52,11 +45,8 @@ public class ListBaremetalPxePingServersCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Ping pxe server device ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Pxe server device ID")
     private Long id;
-    
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, description = "Pod ID where pxe server is in")
-    private Long podId;
 
     public Long getId() {
         return id;
@@ -64,14 +54,6 @@ public class ListBaremetalPxePingServersCmd extends BaseListCmd {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public void setPodId(Long podId) {
-        this.podId = podId;
     }
 
     @Override
@@ -82,9 +64,10 @@ public class ListBaremetalPxePingServersCmd extends BaseListCmd {
             List<BaremetalPxeResponse> pxeResponses = _pxeMgr.listPxeServers(this);
             response.setResponses(pxeResponses);
             response.setResponseName(getCommandName());
+            response.setObjectName("baremetalpxeservers");
             this.setResponseObject(response);
         } catch (Exception e) {
-            s_logger.debug("Exception happend while executing ListPingPxeServersCmd" ,e);
+            s_logger.debug("Exception happened while executing ListPingPxeServersCmd" ,e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
@@ -93,5 +76,4 @@ public class ListBaremetalPxePingServersCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-
 }

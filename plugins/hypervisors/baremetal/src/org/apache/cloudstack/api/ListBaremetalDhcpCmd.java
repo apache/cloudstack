@@ -43,7 +43,7 @@ import com.cloud.exception.ResourceUnavailableException;
 @APICommand(name="listBaremetalDhcp", description="list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class)
 public class ListBaremetalDhcpCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalDhcpCmd.class);
-    private static final String s_name = "listexternaldhcpresponse";
+    private static final String s_name = "listbaremetaldhcpresponse";
     @Inject BaremetalDhcpManager _dhcpMgr;
     
     // ///////////////////////////////////////////////////
@@ -51,9 +51,6 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "DHCP server device ID")
     private Long id;
-    
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, description = "Pod ID where pxe server is in")
-    private Long podId;
     
     @Parameter(name = ApiConstants.DHCP_SERVER_TYPE, type = CommandType.STRING, description = "Type of DHCP device")
     private String deviceType;
@@ -66,14 +63,6 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
         this.id = id;
     }
 
-    public Long getPodId() {
-        return podId;
-    }
-
-    public void setPodId(Long podId) {
-        this.podId = podId;
-    }
-    
     public String getDeviceType() {
         return deviceType;
     }
@@ -90,6 +79,7 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
             List<BaremetalDhcpResponse> dhcpResponses = _dhcpMgr.listBaremetalDhcps(this);
             response.setResponses(dhcpResponses);
             response.setResponseName(getCommandName());
+            response.setObjectName("baremetaldhcps");
             this.setResponseObject(response);
     	} catch (Exception e) {
     		s_logger.debug("Exception happend while executing ListBaremetalDhcpCmd");
