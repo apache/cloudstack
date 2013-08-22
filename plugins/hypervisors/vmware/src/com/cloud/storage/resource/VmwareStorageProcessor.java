@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.utils.exception.ExceptionUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -939,7 +938,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
-            writeMetaOvaForTemplate(installFullPath, backupSSUuid + File.separator + backupSSUuid + ".ovf", templateVMDKName, templateUniqueName, physicalSize);
+            writeMetaOvaForTemplate(installFullPath, backupSSUuid + ".ovf", templateVMDKName, templateUniqueName, physicalSize);
             return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
         } catch(Exception e) {
             // TODO, clean up left over files
