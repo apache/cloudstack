@@ -24,6 +24,7 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
+from marvin.integration.lib.utils import is_snapshot_on_nfs
 import os
 
 
@@ -174,98 +175,13 @@ class TestSnapshots(cloudstackTestCase):
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
-        cls.virtual_machine_without_disk = \
-                    VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server_without_disk"],
-                                    templateid=cls.template.id,
-                                    accountid=cls.account.name,
-                                    domainid=cls.account.domainid,
-                                    serviceofferingid=cls.service_offering.id,
-                                    mode=cls.services["mode"]
-                                    )
+
         cls._cleanup = [
                         cls.service_offering,
                         cls.disk_offering,
                         cls.account,
                         ]
         return
-
-    def is_snapshot_on_nfs(self, snapshot_id):
-        """
-        Checks whether a snapshot with id (not UUID) `snapshot_id` is present on the nfs storage
-
-        @param snapshot_id: id of the snapshot (not uuid)
-        @return: True if snapshot is found, False otherwise
-        """
-        secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
-        self.assertTrue(isinstance(secondaryStores, list), "Not a valid response for listImageStores")
-        self.assertNotEqual(len(secondaryStores), 0, "No image stores found in zone %s" % self.zone.id)
-        secondaryStore = secondaryStores[0]
-        if str(secondaryStore.providername).lower() != "nfs":
-            self.skipTest("TODO: %s test works only against nfs secondary storage" % self._testMethodName)
-
-        qresultset = self.dbclient.execute(
-            "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshot_id
-        )
-        self.assertEqual(
-            isinstance(qresultset, list),
-            True,
-            "Invalid db query response for snapshot %s" % snapshot_id
-        )
-        self.assertNotEqual(
-            len(qresultset),
-            0,
-            "No such snapshot %s found in the cloudstack db" % snapshot_id
-        )
-        snapshotPath = qresultset[0][0]
-        nfsurl = secondaryStore.url
-        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-        from urllib2 import urlparse
-        parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
-        host, path = parse_url.netloc, parse_url.path
-        # Sleep to ensure that snapshot is reflected in sec storage
-        time.sleep(self.services["sleep"])
-        snapshots = []
-        try:
-            # Login to Secondary storage VM to check snapshot present on sec disk
-            ssh_client = remoteSSHClient(
-                self.config.mgtSvr[0].mgtSvrIp,
-                22,
-                self.config.mgtSvr[0].user,
-                self.config.mgtSvr[0].passwd,
-            )
-
-            cmds = [
-                "mkdir -p %s" % self.services["paths"]["mount_dir"],
-                "mount -t %s %s%s %s" % (
-                    'nfs',
-                    host,
-                    path,
-                    self.services["paths"]["mount_dir"]
-                    ),
-                "ls %s" % (
-                    os.path.join(self.services["paths"]["mount_dir"], snapshotPath)
-                    ),
-            ]
-
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
-
-            snapshots.extend(result)
-            # Unmount the Sec Storage
-            cmds = [
-                "cd",
-                "umount %s" % (self.services["paths"]["mount_dir"]),
-            ]
-            for c in cmds:
-                ssh_client.execute(c)
-        except Exception as e:
-            self.fail("SSH failed for management server: %s - %s" %
-                      (self.config.mgtSvr[0].mgtSvrIp, e))
-        return snapshots.count(snapshot_id) == 1
 
     @classmethod
     def tearDownClass(cls):
@@ -352,7 +268,8 @@ class TestSnapshots(cloudstackTestCase):
                             'NULL',
                             "Check if backup_snap_id is not null"
                         )
-        self.assertTrue(self.is_snapshot_on_nfs(snapshot_uuid))
+       self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
+                                            self.services["paths"], self.zone.id, snapshot_uuid))
         return
 
     @attr(speed = "slow")
@@ -620,7 +537,8 @@ class TestSnapshots(cloudstackTestCase):
 
         qresult = qresultset[0]
         snapshotid = qresult[0]
-        self.assertFalse(self.is_snapshot_on_nfs(snapshotid))
+        self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
+                                            self.services["paths"], self.zone.id, snapshotid))
         return
 
     @attr(speed = "slow")
@@ -771,7 +689,7 @@ class TestSnapshots(cloudstackTestCase):
             cmds = [
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["rootdisk"],
+                                      self.services["volume"]["diskdevice"],
                                       self.services["paths"]["mount_dir"]
                                       ),
                     "mkdir -p %s/%s/{%s,%s} " % (
@@ -885,7 +803,7 @@ class TestSnapshots(cloudstackTestCase):
             cmds = [
                     "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["rootdisk"],
+                                      self.services["volume"]["diskdevice"],
                                       self.services["paths"]["mount_dir"]
                                       )
                ]
@@ -997,80 +915,6 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-
-    def is_snapshot_on_nfs(self, snapshot_id):
-        """
-        Checks whether a snapshot with id (not UUID) `snapshot_id` is present on the nfs storage
-
-        @param snapshot_id: id of the snapshot (not uuid)
-        @return: True if snapshot is found, False otherwise
-        """
-        secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
-        self.assertTrue(isinstance(secondaryStores, list), "Not a valid response for listImageStores")
-        self.assertNotEqual(len(secondaryStores), 0, "No image stores found in zone %s" % self.zone.id)
-        secondaryStore = secondaryStores[0]
-        if str(secondaryStore.providername).lower() != "nfs":
-            self.skipTest("TODO: %s test works only against nfs secondary storage" % self._testMethodName)
-
-        qresultset = self.dbclient.execute(
-            "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshot_id
-        )
-        self.assertEqual(
-            isinstance(qresultset, list),
-            True,
-            "Invalid db query response for snapshot %s" % snapshot_id
-        )
-        self.assertNotEqual(
-            len(qresultset),
-            0,
-            "No such snapshot %s found in the cloudstack db" % snapshot_id
-        )
-        snapshotPath = qresultset[0][0]
-        nfsurl = secondaryStore.url
-        # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-        from urllib2 import urlparse
-        parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
-        host, path = parse_url.netloc, parse_url.path
-        snapshots = []
-        try:
-            # Login to Secondary storage VM to check snapshot present on sec disk
-            ssh_client = remoteSSHClient(
-                self.config.mgtSvr[0].mgtSvrIp,
-                22,
-                self.config.mgtSvr[0].user,
-                self.config.mgtSvr[0].passwd,
-            )
-
-            cmds = [
-                "mkdir -p %s" % self.services["paths"]["mount_dir"],
-                "mount -t %s %s%s %s" % (
-                    'nfs',
-                    host,
-                    path,
-                    self.services["paths"]["mount_dir"]
-                    ),
-                "ls %s" % (
-                    os.path.join(self.services["paths"]["mount_dir"], snapshotPath)
-                    ),
-            ]
-
-            for c in cmds:
-                self.debug("command: %s" % c)
-                result = ssh_client.execute(c)
-                self.debug("Result: %s" % result)
-
-            snapshots.extend(result)
-            # Unmount the Sec Storage
-            cmds = [
-                "cd",
-                "umount %s" % (self.services["paths"]["mount_dir"]),
-            ]
-            for c in cmds:
-                ssh_client.execute(c)
-        except Exception as e:
-            self.fail("SSH failed for management server: %s - %s" %
-                      (self.services["mgmt_server"]["ipaddress"], e))
-        return snapshots.count(snapshot_id) == 1
 
     @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns"])
@@ -1217,7 +1061,8 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                         'Running',
                         "Check list VM response for Running state"
                     )
-        self.assertTrue(self.is_snapshot_on_nfs(snapshot_uuid))
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
+                                            self.services["paths"], self.zone.id, snapshot_uuid))
         return
 
 
