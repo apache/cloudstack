@@ -46,8 +46,14 @@
             var createLabel = _l(args.form.createLabel);
 
             // Description text
+            var formDesc;
+            if (typeof(args.form.desc) == 'function') {            	
+            	formDesc = args.form.desc(args);
+            } else { //typeof(args.form.desc) == 'string' or 'undefined'
+            	formDesc = args.form.desc;
+            }              
             $('<span>').addClass('message').prependTo($formContainer).html(
-                _l(args.form.desc)
+                _l(formDesc)
             );
 
             // Submit button
