@@ -285,6 +285,9 @@
             .appendTo(this);
         var context = args.context;
 
+        // Cleanup login
+        $('.login').remove();
+
         // Create pageElems
         $.each(pageElems, function(id, fn) {
             var $elem = $('<div>').attr({
