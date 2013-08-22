@@ -60,7 +60,7 @@
     </section>
     <section id="ext-lb-offering">
       <title>Creating a Network Offering for External LB</title>
-      <para>To have internal LB support on VPC, create a network offering as follows: </para>
+      <para>To have external LB support on VPC, create a network offering as follows: </para>
       <orderedlist>
         <listitem>
           <para>Log in to the &PRODUCT; UI as a user or admin.</para>
@@ -111,12 +111,16 @@
                 Indicate whether a VLAN should be specified when this offering is used.</para>
             </listitem>
             <listitem>
-              <para><emphasis role="bold">Supported Services</emphasis>: Select Load Balancer.
-                Select <code>InternalLbVM</code> from the provider list.</para>
+              <para><emphasis role="bold">Supported Services</emphasis>: Select Load Balancer. Use
+                Netscaler or VpcVirtualRouter.</para>
             </listitem>
             <listitem>
-              <para><emphasis role="bold">Load Balancer Type</emphasis>: Select external LB from the
-                drop-down. Use Netscaler</para>
+              <para><emphasis role="bold">Load Balancer Type</emphasis>: Select Public LB from the
+                drop-down.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">LB Isolation</emphasis>: Select Dedicated if Netscaler is
+                used as the external LB provider.</para>
             </listitem>
             <listitem>
               <para><emphasis role="bold">System Offering</emphasis>: Choose the system service
