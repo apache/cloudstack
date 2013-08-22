@@ -2000,7 +2000,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         boolean success = false;
         try {
             //unassign ip from the VPC router
-            success = _ntwkMgr.applyIpAssociations(_ntwkModel.getNetwork(networkId), true);
+            success = _ntwkMgr.applyIpAssociations(_ntwkModel.getNetwork(networkId), true, false);
         } catch (ResourceUnavailableException ex) {
             throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
                     " as a part of unassigning ip " + ipId + " from vpc", ex);
