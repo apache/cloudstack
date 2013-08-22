@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl;
 import org.apache.cloudstack.storage.datastore.type.DataStoreType;
@@ -33,6 +34,12 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
         CloudStackPrimaryDataStoreProviderImpl provider = Mockito.mock(CloudStackPrimaryDataStoreProviderImpl.class);
 
         return provider;
+    }
+
+    @Bean
+    public DataMotionStrategy dataMotionStrategy() {
+        DataMotionStrategy strategy = new MockStorageMotionStrategy();
+        return strategy;
     }
 
 }

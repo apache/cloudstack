@@ -29,6 +29,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.DB;
 import junit.framework.Assert;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -61,10 +62,17 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/fakeDriverTestContext.xml" })
-public class SnapshotTestWithFakeData {
+public class SnapshotTestWithFakeData  {
     @Inject
     SnapshotService snapshotService;
     @Inject
@@ -85,6 +93,7 @@ public class SnapshotTestWithFakeData {
     VolumeService volumeService;
     @Inject
     VolumeDataFactory volumeDataFactory;
+    VolumeInfo vol = null;
     FakePrimaryDataStoreDriver driver = new FakePrimaryDataStoreDriver();
 
     @Before
@@ -191,4 +200,32 @@ public class SnapshotTestWithFakeData {
         Assert.assertTrue(result == null);
     }
 
+    @Test
+    public void testConcurrentSnapshot() throws URISyntaxException, InterruptedException, ExecutionException {
+        DataStore store = createDataStore();
+        FakePrimaryDataStoreDriver dataStoreDriver = (FakePrimaryDataStoreDriver)store.getDriver();
+        dataStoreDriver.makeTakeSnapshotSucceed(true);
+        final VolumeInfo volumeInfo = createVolume(1L, store);
+        Assert.assertTrue(volumeInfo.getState() == Volume.State.Ready);
+        vol = volumeInfo;
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        boolean result = false;
+        Future<Boolean> future = null;
+        for(int i = 0; i < 1; i++) {
+           future =  pool.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    boolean r = false;
+                    try {
+                        SnapshotInfo newSnapshot = volumeService.takeSnapshot(vol);
+                        Assert.assertTrue(newSnapshot != null);
+                    } catch (Exception e) {
+                        r = false;
+                    }
+                    return true;
+                }
+            });
+        }
+        future.get();
+    }
 }
