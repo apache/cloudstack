@@ -6639,7 +6639,15 @@
                                                         label: 'label.change.service.offering',
                                                         createForm: {
                                                             title: 'label.change.service.offering',
-                                                            desc: 'Please read the dynamic scaling section in the admin guide before scaling up.', 
+                                                            desc: function(args) {
+                                                            	var description = '';                            	
+                                                            	var vmObj = args.jsonObj;     
+                                                            	//if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
+                                                            	if (vmObj.state == 'Running') {	
+                                                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                                            	}                             
+                                                                return description;                  	                
+                                                            },
                                                             fields: {
                                                                 serviceOfferingId: {
                                                                     label: 'label.compute.offering',
@@ -7606,7 +7614,15 @@
                                 label: 'label.change.service.offering',
                                 createForm: {
                                     title: 'label.change.service.offering',
-                                    desc: 'Please read the dynamic scaling section in the admin guide before scaling up.', 
+                                    desc: function(args) {
+                                    	var description = '';                            	
+                                    	var vmObj = args.jsonObj;     
+                                    	//if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
+                                    	if (vmObj.state == 'Running') {	
+                                    		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                    	}                             
+                                        return description;                  	                
+                                    },
                                     fields: {
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
@@ -8155,7 +8171,15 @@
                                 label: 'label.change.service.offering',
                                 createForm: {
                                     title: 'label.change.service.offering',
-                                    desc: 'Please read the dynamic scaling section in the admin guide before scaling up.', 
+                                    desc: function(args) {
+                                    	var description = '';                            	
+                                    	var vmObj = args.jsonObj;     
+                                    	//if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
+                                    	if (vmObj.state == 'Running') {	
+                                    		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                    	}                             
+                                        return description;                  	                
+                                    },
                                     fields: {
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
