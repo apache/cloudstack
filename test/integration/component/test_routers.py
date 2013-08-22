@@ -218,6 +218,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -274,6 +275,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -364,6 +366,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
