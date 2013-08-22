@@ -22,9 +22,11 @@
   <title>Configuring Network Access Control List</title>
   <para>Define Network Access Control List (ACL) on the VPC virtual router to control incoming
     (ingress) and outgoing (egress) traffic between the VPC tiers, and the tiers and Internet. By
-    default, all incoming and outgoing traffic to the guest networks is blocked. To open the ports,
-    you must create a new network ACL. The network ACLs can be created for the tiers only if the
-    NetworkACL service is supported.</para>
+    default, all incoming traffic to the guest networks is blocked and all outgoing traffic from
+    guest networks is allowed, once you add an ACL rule for outgoing traffic, then only outgoing
+    traffic specified in this ACL rule is allowed, the rest is blocked. To open the ports, you must
+    create a new network ACL. The network ACLs can be created for the tiers only if the NetworkACL
+    service is supported.</para>
   <section id="network-acl">
     <title>About Network ACL Lists</title>
     <para>In &PRODUCT; terminology, Network ACL is a group of Network ACL items. Network ACL items
@@ -35,8 +37,8 @@
       VPC tiers within a VPC. A Tier is associated with a Network ACL at all the times. Each tier
       can be associated with only one ACL.</para>
     <para>The default Network ACL is used when no ACL is associated. Default behavior is all the
-      incoming and outgoing traffic is blocked to the tiers. Default network ACL cannot be removed
-      or modified. Contents of the default Network ACL is:</para>
+      incoming traffic is blocked and outgoing traffic is allowed from the tiers. Default network
+      ACL cannot be removed or modified. Contents of the default Network ACL is:</para>
     <informaltable>
       <tgroup cols="5" align="left" colsep="1" rowsep="1">
         <colspec colnum="1" colname="c1" colwidth="31.5pt"/>
@@ -222,7 +224,7 @@
     </orderedlist>
   </section>
   <section id="create-acl-tier">
-    <title>Assigning a Custom ACL List to a Tier</title>
+    <title>Creating a Tier with Custom ACL List</title>
     <orderedlist>
       <listitem>
         <para>Create a VPC.</para>
