@@ -266,6 +266,12 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             }
         } else if (obj.getType() == DataObjectType.SNAPSHOT) {
             return objectInStoreMgr.create(obj, this);
+        } else if (obj.getType() == DataObjectType.VOLUME) {
+            VolumeVO vol = volumeDao.findById(obj.getId());
+            if (vol != null) {
+                vol.setPoolId(this.getId());
+                volumeDao.update(vol.getId(), vol);
+            }
         }
 
         return objectInStoreMgr.get(obj, this);
