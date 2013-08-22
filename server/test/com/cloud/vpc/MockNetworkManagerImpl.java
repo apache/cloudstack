@@ -920,7 +920,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#applyIpAssociations(com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyIpAssociations(Network network, boolean continueOnError, boolean reprogramNetworkRules) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

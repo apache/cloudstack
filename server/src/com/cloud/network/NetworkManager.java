@@ -181,7 +181,7 @@ public interface NetworkManager  {
 
     UserDataServiceProvider getSSHKeyResetProvider(Network network);
 
-    boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
+    boolean applyIpAssociations(Network network, boolean continueOnError, boolean reprogramNetworkRules) throws ResourceUnavailableException;
     
     boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException;
 
