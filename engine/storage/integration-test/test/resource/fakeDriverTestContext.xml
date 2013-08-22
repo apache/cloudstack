@@ -85,4 +85,6 @@
     <bean id="ServiceOfferingDetailsDao" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl" />
     <bean id='SnapshotManagerImpl' class='com.cloud.storage.snapshot.SnapshotManagerImpl'/>
     <bean id='SnapshotPolicyDao' class='com.cloud.storage.dao.SnapshotPolicyDaoImpl'/>
+    <bean id='SnapshotScheduleDao' class='com.cloud.storage.dao.SnapshotScheduleDaoImpl' />
+
 </beans>

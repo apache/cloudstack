@@ -18,6 +18,9 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
+import com.cloud.user.DomainManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl;
@@ -40,6 +43,16 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
     public DataMotionStrategy dataMotionStrategy() {
         DataMotionStrategy strategy = new MockStorageMotionStrategy();
         return strategy;
+    }
+
+    @Bean
+    public SnapshotScheduler SnapshotScheduler() {
+        return Mockito.mock(SnapshotScheduler.class);
+    }
+
+    @Bean
+    public DomainManager DomainManager() {
+        return Mockito.mock(DomainManager.class);
     }
 
 }
