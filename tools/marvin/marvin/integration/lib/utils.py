@@ -219,3 +219,79 @@ def xsplit(txt, seps):
     for sep in seps[1:]: # we skip seps[0] because that's the default separator
         txt = txt.replace(sep, default_sep)
     return [i.strip() for i in txt.split(default_sep)]
+
+def is_snapshot_on_nfs(api_client, db_client, config_mgtSvr,
+                        dir_paths, zone_id, snapshot_id):
+    """
+    Checks whether a snapshot with id (not UUID) `snapshot_id` is present on the nfs storage
+
+    @param snapshot_id: id of the snapshot (not uuid)
+    @return: True if snapshot is found, False otherwise
+    """
+
+    from base import ImageStore
+
+    secondaryStores = ImageStore.list(api_client, zoneid=zone_id)
+
+    assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
+    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zone_id
+
+    secondaryStore = secondaryStores[0]
+
+    if str(secondaryStore.providername).lower() != "nfs":
+        raise Exception("Test works only against nfs secondary storage")
+
+    qresultset = db_client.execute(
+        "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshot_id
+    )
+
+    assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshot_id
+
+    assert len(qresultset) != 0, "No such snapshot %s found in the cloudstack db" % snapshot_id
+
+    snapshotPath = qresultset[0][0]
+
+    nfsurl = secondaryStore.url
+    # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+    from urllib2 import urlparse
+    parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
+    host, path = parse_url.netloc, parse_url.path
+    snapshots = []
+
+    try:
+        # Login to Secondary storage VM to check snapshot present on sec disk
+        ssh_client = remoteSSHClient(
+            config_mgtSvr[0].mgtSvrIp,
+            22,
+            config_mgtSvr[0].user,
+            config_mgtSvr[0].passwd,
+        )
+        import os
+
+        cmds = [
+                "mkdir -p %s" % dir_paths["mount_dir"],
+                "mount -t %s %s%s %s" % (
+                    'nfs',
+                    host,
+                    path,
+                    dir_paths["mount_dir"]
+                    ),
+                "test -f %s && echo 'snapshot exists'" % (
+                    os.path.join(dir_paths["mount_dir"], snapshotPath)
+                    ),
+            ]
+
+        for c in cmds:
+            result = ssh_client.execute(c)
+
+        # Unmount the Sec Storage
+        cmds = [
+                "cd",
+                "umount %s" % (dir_paths["mount_dir"]),
+            ]
+        for c in cmds:
+            ssh_client.execute(c)
+    except Exception as e:
+        raise Exception("SSH failed for management server: %s - %s" %
+                      (config_mgtSvr[0].mgtSvrIp, e))
+    return 'snapshot exists' in result
