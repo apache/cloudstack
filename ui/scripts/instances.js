@@ -1278,7 +1278,14 @@
                         label: 'label.change.service.offering',
                         createForm: {
                             title: 'label.change.service.offering',
-                            desc: 'Please read the dynamic scaling section in the admin guide before scaling up.',                            
+                            desc: function(args) {
+                            	var description = '';                            	
+                            	var vmObj = args.jsonObj;                            	
+                            	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
+                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                            	}                             
+                                return description;                  	                
+                            },
                             fields: {
                                 serviceOffering: {
                                     label: 'label.compute.offering',
