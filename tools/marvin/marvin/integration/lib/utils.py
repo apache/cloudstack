@@ -153,6 +153,17 @@ def fetch_api_client(config_file='datacenterCfg'):
         )
     )
 
+def get_host_credentials(config, hostname):
+    """Get login information for a host `hostname` from marvin's `config`
+
+    @return the tuple username, password for the host else raise keyerror"""
+    for zone in config.zones:
+        for pod in zone.pods:
+            for cluster in pod.clusters:
+                for host in cluster.hosts:
+                    if str(host.url).find(str(hostname)) > 0:
+                        return host.username, host.password
+    raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
 
 def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):

@@ -24,7 +24,6 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 
 #Import System modules
 import time
@@ -1219,20 +1218,24 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         )
         host = hosts[0]
         # For DNS and DHCP check 'dnsmasq' process status
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                router.linklocalip,
-                                'iptables -t nat -L'
-                                )
-        self.debug("iptables -t nat -L: %s" % result)
-        self.debug("Public IP: %s" % public_ip.ipaddress)
-        res = str(result)
-        self.assertEqual(
-                            res.count(str(public_ip.ipaddress)),
-                            1,
-                            "Check public IP address"
-                        )
+        try:
+            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+            result = get_process_status(
+                host.ipaddress,
+                22,
+                host.user,
+                host.passwd,
+                router.linklocalip,
+                'iptables -t nat -L'
+            )
+            self.debug("iptables -t nat -L: %s" % result)
+            self.debug("Public IP: %s" % public_ip.ipaddress)
+            res = str(result)
+            self.assertEqual(
+                res.count(str(public_ip.ipaddress)),
+                1,
+                "Check public IP address"
+            )
+        except KeyError:
+            self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
         return
