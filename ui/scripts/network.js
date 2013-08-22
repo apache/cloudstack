@@ -4718,10 +4718,12 @@
                             label: 'label.name'
                         },
                         displaytext: {
-                            label: 'label.description'
+                            label: 'label.description',
+                            truncate: true
                         },
                         zonename: {
-                            label: 'label.zone'
+                            label: 'label.zone',
+                            truncate: true
                         },
                         cidr: {
                             label: 'label.cidr'
