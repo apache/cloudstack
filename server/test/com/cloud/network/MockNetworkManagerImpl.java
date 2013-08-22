@@ -295,7 +295,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
 
 
     @Override
-    public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyIpAssociations(Network network, boolean continueOnError, boolean reprogramNetworkRules) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

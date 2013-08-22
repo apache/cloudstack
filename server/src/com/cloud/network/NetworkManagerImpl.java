@@ -634,17 +634,37 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
-    
-
     @Override
-    public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyIpAssociations(Network network, boolean continueOnError, boolean reprogramNetworkRules) throws ResourceUnavailableException {
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
         boolean success = true;
 
-        // CloudStack will take a lazy approach to associate an acquired public IP to a network service provider as
+        // applyIpAssociations is invoked in below cases
+        //    - associate/dis-associate ip address to a network
+        //    - network restart/implement/shutdown
+        //
+        // For network restart/implement operations that trigger reprogramming network rules run the the Ip Assoc
+        // so that source nat ip is associated with source nat service provider.
+        //
+        // for the associate/disassociate ip take a lazy approach to associate a public IP to a network service provider as
         // it will not know what service an acquired IP will be used for. An IP is actually associated with a provider when first
         // rule is applied. Similarly when last rule on the acquired IP is revoked, IP is not associated with any provider
-        // but still be associated with the account. At this point just mark IP as allocated or released.
+        // so at this point just mark IP as allocated or released.
+
+        if (reprogramNetworkRules) {
+            List<PublicIp> publicIps = new ArrayList<PublicIp>();
+            if (userIps != null && !userIps.isEmpty()) {
+                for (IPAddressVO userIp : userIps) {
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                    publicIps.add(publicIp);
+                }
+            }
+            if (! applyIpAssociations(network, false, continueOnError, publicIps)) {
+                return false;
+            }
+        }
+
+
         for (IPAddressVO addr : userIps) {
             if (addr.getState() == IpAddress.State.Allocating) {
                 addr.setAssociatedWithNetworkId(network.getId());
@@ -982,7 +1002,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         boolean success = false;
         try {
-            success = applyIpAssociations(network, false);
+            success = applyIpAssociations(network, false, false);
             if (success) {
                 s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
             } else {
@@ -995,7 +1015,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     try {
                         s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getId());
-                        if (!applyIpAssociations(network, true)) {
+                        if (!applyIpAssociations(network, true, false)) {
                             // if fail to apply ip assciations again, unassign ip address without updating resource
                             // count and generating usage event as there is no need to keep it in the db
                             _ipAddressDao.unassignIpAddress(ip.getId());
@@ -1083,7 +1103,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _ipAddressDao.update(ipId, ip);
 
         try {
-            boolean success = applyIpAssociations(network, false);
+            boolean success = applyIpAssociations(network, false, false);
             if (success) {
                 s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
             } else {
@@ -1224,7 +1244,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (ip.getAssociatedWithNetworkId() != null) {
             Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
-                if (!applyIpAssociations(network, true)) {
+                if (!applyIpAssociations(network, true, false)) {
                     s_logger.warn("Unable to apply ip address associations for " + network);
                     success = false;
                 }
@@ -3418,7 +3438,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     protected boolean reprogramNetworkRules(long networkId, Account caller, NetworkVO network) throws ResourceUnavailableException {
         boolean success = true;
         // associate all ip addresses
-        if (!applyIpAssociations(network, false)) {
+        if (!applyIpAssociations(network, false, true)) {
             s_logger.warn("Failed to apply ip addresses as a part of network id" + networkId + " restart");
             success = false;
         }
@@ -4038,7 +4058,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         try {
-            if (!applyIpAssociations(network, true)) {
+            if (!applyIpAssociations(network, true, true)) {
                 s_logger.warn("Unable to apply ip address associations for " + network);
                 success = false;
             }
