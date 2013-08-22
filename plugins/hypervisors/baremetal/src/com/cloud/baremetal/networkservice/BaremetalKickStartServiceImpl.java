@@ -31,7 +31,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
-import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
+import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -199,6 +200,9 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new IllegalArgumentException(e.getMessage());
         }
         String ipAddress = uri.getHost();
+        if (ipAddress == null) {
+            ipAddress = cmd.getUrl();
+        }
 
         String guid = getPxeServerGuid(Long.toString(zoneId), BaremetalPxeType.KICK_START.toString(), ipAddress);
 
@@ -236,27 +240,28 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
 
     @Override
     public BaremetalPxeResponse getApiResponse(BaremetalPxeVO vo) {
-        BaremetalPxeKickStartResponse response = new BaremetalPxeKickStartResponse();
-        response.setId(String.valueOf(vo.getId()));
-        response.setPhysicalNetworkId(String.valueOf(vo.getPhysicalNetworkId()));
-        response.setPodId(String.valueOf(vo.getPodId()));
-        Map<String, String> details = _hostDetailsDao.findDetails(vo.getHostId());
-        response.setTftpDir(details.get(BaremetalPxeService.PXE_PARAM_TFTP_DIR));
+        BaremetalPxeResponse response = new BaremetalPxeResponse();
+        response.setId(vo.getUuid());
+        HostVO host = _hostDao.findById(vo.getHostId());
+        response.setUrl(host.getPrivateIpAddress());
+        PhysicalNetworkServiceProviderVO providerVO = _physicalNetworkServiceProviderDao.findById(vo.getNetworkServiceProviderId());
+        response.setPhysicalNetworkId(providerVO.getUuid());
+        PhysicalNetworkVO nwVO = _physicalNetworkDao.findById(vo.getPhysicalNetworkId());
+        response.setPhysicalNetworkId(nwVO.getUuid());
+        response.setObjectName("baremetalpxeserver");
         return response;
     }
 
     @Override
-    public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxePingServersCmd cmd) {
-        SearchCriteriaService<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
-        sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
-        if (cmd.getPodId() != null) {
-            sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cmd.getPodId());
-            if (cmd.getId() != null) {
-                sc.addAnd(sc.getEntity().getId(), Op.EQ, cmd.getId());
-            }
+    public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd) {
+        List<BaremetalPxeResponse> responses = new ArrayList<BaremetalPxeResponse>();
+        if (cmd.getId() != null) {
+            BaremetalPxeVO vo = _pxeDao.findById(cmd.getId());
+            responses.add(getApiResponse(vo));
+            return responses;
         }
-        List<BaremetalPxeVO> vos = sc.list();
-        List<BaremetalPxeResponse> responses = new ArrayList<BaremetalPxeResponse>(vos.size());
+
+        List<BaremetalPxeVO> vos = _pxeDao.listAll();
         for (BaremetalPxeVO vo : vos) {
             responses.add(getApiResponse(vo));
         }

@@ -35,7 +35,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
-import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
+import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -271,34 +272,13 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 
     @Override
     public BaremetalPxeResponse getApiResponse(BaremetalPxeVO vo) {
-        BaremetalPxePingResponse response = new BaremetalPxePingResponse();
-        response.setId(String.valueOf(vo.getId()));
-        response.setPhysicalNetworkId(String.valueOf(vo.getPhysicalNetworkId()));
-        response.setPodId(String.valueOf(vo.getPodId()));
-        Map<String, String> details = _hostDetailsDao.findDetails(vo.getHostId());
-        response.setPingStorageServerIp(details.get(BaremetalPxeService.PXE_PARAM_PING_STORAGE_SERVER_IP));
-        response.setPingDir(details.get(BaremetalPxeService.PXE_PARAM_PING_ROOT_DIR));
-        response.setTftpDir(details.get(BaremetalPxeService.PXE_PARAM_TFTP_DIR));
-        return response;
+        return null;
     }
 
 
     @Override
-    public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxePingServersCmd cmd) {
-        SearchCriteriaService<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
-        sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
-        if (cmd.getPodId() != null) {
-            sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cmd.getPodId());
-            if (cmd.getId() != null) {
-                sc.addAnd(sc.getEntity().getId(), Op.EQ, cmd.getId());
-            }
-        }
-        List<BaremetalPxeVO> vos = sc.list();
-        List<BaremetalPxeResponse> responses = new ArrayList<BaremetalPxeResponse>(vos.size());
-        for (BaremetalPxeVO vo : vos) {
-            responses.add(getApiResponse(vo));
-        }
-        return responses;
+    public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd) {
+        return null;
     }
 
 
