@@ -60,7 +60,7 @@ under the License.
     <section id="what-new-in-4.2">
       <title>What’s New in 4.2</title>
       <para>Apache CloudStack 4.2.0 includes many new features. This section covers the most
-      prominent new features and changes.</para>
+        prominent new features and changes.</para>
       <section id="windows-8">
         <title>Windows 8 and Windows Server as VM Guest OS</title>
         <para>Supported on XenServer, VMware, and KVM.</para>
@@ -693,6 +693,79 @@ service cloudstack-agent restart
             </listitem>
           </orderedlist>
         </listitem>
+        <listitem>
+          <para>(VMware only) Additional steps are required for each VMware cluster. These steps
+            will not affect running guests in the cloud. These steps are required only for clouds
+            using VMware clusters:</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Stop the Management Server:</para>
+              <programlisting>service cloudstack-management stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Generate the encrypted equivalent of your vCenter password:</para>
+              <programlisting>java -classpath /usr/share/cloudstack-common/lib/jasypt-1.9.0.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI encrypt.sh input="_your_vCenter_password_" password="`cat /etc/cloudstack/management/key`" verbose=false</programlisting>
+              <para>Store the output from this step, we need to add this in cluster_details table
+                and vmware_data_center tables in place of the plain text password</para>
+            </listitem>
+            <listitem>
+              <para>Find the ID of the row of cluster_details table that you have to update:</para>
+              <programlisting>mysql -u &lt;username&gt; -p&lt;password&gt;</programlisting>
+              <programlisting>select * from cloud.cluster_details;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the plain text password with the encrypted one</para>
+              <programlisting>update cloud.cluster_details set value = '_ciphertext_from_step_1_' where id = _id_from_step_2_;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Confirm that the table is updated:</para>
+              <programlisting>select * from cloud.cluster_details; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Find the ID of the correct row of vmware_data_center that you want to
+                update</para>
+              <programlisting>select * from cloud.vmware_data_center; </programlisting>
+            </listitem>
+            <listitem>
+              <para>update the plain text password with the encrypted one:</para>
+              <programlisting>update cloud.vmware_data_center set password = '_ciphertext_from_step_1_' where id = _id_from_step_5_; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Confirm that the table is updated:</para>
+              <programlisting>select * from cloud.vmware_data_center; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the &PRODUCT; Management server </para>
+              <programlisting>service cloudstack-management start</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
+            affect running guests in the cloud. These steps are required only for clouds using KVM
+            as hosts and only on the KVM hosts.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Copy the CloudPlatform 4.2 tar file to the host, untar it, and change directory
+                to the resulting directory.</para>
+            </listitem>
+            <listitem>
+              <para>Stop the running agent.</para>
+              <programlisting># service cloud-agent stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the agent software.</para>
+              <programlisting># ./install.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Choose "U" to update the packages.</para>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
+              <programlisting># service cloudstack-agent start</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
         <listitem id="upgrade-rpm-packages">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
             not, skip to step <xref linkend="restart-system-vms"/>.</para>
@@ -929,7 +1002,7 @@ Done restarting router(s).
               If you've created your own packages and APT repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="debsteps-302">
+          <orderedlist numeration="loweralpha" id="debsteps-302">
             <listitem>
               <para>The first order of business will be to change the sources list for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -996,6 +1069,32 @@ service cloudstack-agent restart
               <para>Once the agent is running, you can uninstall the old cloud-* packages from your
                 system:</para>
               <programlisting language="Bash">sudo dpkg --purge cloud-agent</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
+            affect running guests in the cloud. These steps are required only for clouds using KVM
+            as hosts and only on the KVM hosts.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Copy the CloudPlatform 4.2 tar file to the host, untar it, and change directory
+                to the resulting directory.</para>
+            </listitem>
+            <listitem>
+              <para>Stop the running agent.</para>
+              <programlisting># service cloud-agent stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the agent software.</para>
+              <programlisting># ./install.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Choose "U" to update the packages.</para>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
+              <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
           </orderedlist>
         </listitem>
@@ -1131,11 +1230,55 @@ service cloudstack-agent start
           <para><command># service cloudstack-usage start</command></para>
         </listitem>
         <listitem>
-          <note>
-            <para>Additional steps are required for each KVM host. These steps will not affect
-              running guests in the cloud. These steps are required only for clouds using KVM as
-              hosts and only on the KVM hosts.</para>
-          </note>
+          <para>(VMware only) Additional steps are required for each VMware cluster. These steps will not affect running guests in
+            the cloud. These steps are required only for clouds using VMware clusters:</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Stop the Management Server:</para>
+              <programlisting>service cloudstack-management stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Generate the encrypted equivalent of your vCenter password:</para>
+              <programlisting>java -classpath /usr/share/cloudstack-common/lib/jasypt-1.9.0.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI encrypt.sh input="_your_vCenter_password_" password="`cat /etc/cloudstack/management/key`" verbose=false</programlisting>
+              <para>Store the output from this step, we need to add this in cluster_details table
+                and vmware_data_center tables in place of the plain text password</para>
+            </listitem>
+            <listitem>
+              <para>Find the ID of the row of cluster_details table that you have to update:</para>
+              <programlisting>mysql -u &lt;username&gt; -p&lt;password&gt;</programlisting>
+              <programlisting>select * from cloud.cluster_details;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the plain text password with the encrypted one</para>
+              <programlisting>update cloud.cluster_details set value = '_ciphertext_from_step_1_' where id = _id_from_step_2_;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Confirm that the table is updated:</para>
+              <programlisting>select * from cloud.cluster_details; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Find the ID of the correct row of vmware_data_center that you want to
+                update</para>
+              <programlisting>select * from cloud.vmware_data_center; </programlisting>
+            </listitem>
+            <listitem>
+              <para>update the plain text password with the encrypted one:</para>
+              <programlisting>update cloud.vmware_data_center set password = '_ciphertext_from_step_1_' where id = _id_from_step_5_; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Confirm that the table is updated:</para>
+              <programlisting>select * from cloud.vmware_data_center; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the &PRODUCT; Management server </para>
+              <programlisting>service cloudstack-management start</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>Additional steps are required for each KVM host. These steps will not affect running
+            guests in the cloud. These steps are required only for clouds using KVM as hosts and
+            only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
               <para>Configure a yum or apt repository containing the &PRODUCT; packages as outlined
@@ -1691,8 +1834,8 @@ service cloudstack-agent start
         </listitem>
         <listitem>
           <para>After upgrading to 4.2, API clients are expected to send plain text passwords for
-            login and user creation, instead of MD5 hash. Incase, api client changes are not
-            acceptable, following changes are to be made for backward compatibility:</para>
+            login and user creation, instead of MD5 hash. If API client changes are not acceptable,
+            following changes are to be made for backward compatibility:</para>
           <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
             authenticator (1st entry in the userAuthenticators adapter list is default)</para>
           <programlisting language="XML">
@@ -1773,6 +1916,79 @@ service cloudstack-agent start
           <para>Start all Usage Servers (if they were running on your previous version). Perform
             this on each Usage Server host.</para>
           <programlisting language="Bash"><prompt>#</prompt> service cloudstack-usage start</programlisting>
+        </listitem>
+        <listitem>
+          <para>(VMware only) Additional steps are required for each VMware cluster, if you are
+            upgrading from version 3.0.4 or beyond. These steps will not affect running guests in
+            the cloud. These steps are required only for clouds using VMware clusters:</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Stop the Management Server:</para>
+              <programlisting>service cloudstack-management stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Generate the encrypted equivalent of your vCenter password:</para>
+              <programlisting>java -classpath /usr/share/cloudstack-common/lib/jasypt-1.9.0.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI encrypt.sh input="_your_vCenter_password_" password="`cat /etc/cloudstack/management/key`" verbose=false</programlisting>
+              <para>Store the output from this step, we need to add this in cluster_details table
+                and vmware_data_center tables in place of the plain text password</para>
+            </listitem>
+            <listitem>
+              <para>Find the ID of the row of cluster_details table that you have to update:</para>
+              <programlisting>mysql -u &lt;username&gt; -p&lt;password&gt;</programlisting>
+              <programlisting>select * from cloud.cluster_details;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the plain text password with the encrypted one</para>
+              <programlisting>update cloud.cluster_details set value = '_ciphertext_from_step_1_' where id = _id_from_step_2_;</programlisting>
+            </listitem>
+            <listitem>
+              <para>Confirm that the table is updated:</para>
+              <programlisting>select * from cloud.cluster_details; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Find the ID of the correct row of vmware_data_center that you want to
+                update</para>
+              <programlisting>select * from cloud.vmware_data_center; </programlisting>
+            </listitem>
+            <listitem>
+              <para>update the plain text password with the encrypted one:</para>
+              <programlisting>update cloud.vmware_data_center set password = '_ciphertext_from_step_1_' where id = _id_from_step_5_; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Confirm that the table is updated:</para>
+              <programlisting>select * from cloud.vmware_data_center; </programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the &PRODUCT; Management server </para>
+              <programlisting>service cloudstack-management start</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
+          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
+            affect running guests in the cloud. These steps are required only for clouds using KVM
+            as hosts and only on the KVM hosts.</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Copy the CloudPlatform 4.2 tar file to the host, untar it, and change directory
+                to the resulting directory.</para>
+            </listitem>
+            <listitem>
+              <para>Stop the running agent.</para>
+              <programlisting># service cloud-agent stop</programlisting>
+            </listitem>
+            <listitem>
+              <para>Update the agent software.</para>
+              <programlisting># ./install.sh</programlisting>
+            </listitem>
+            <listitem>
+              <para>Choose "U" to update the packages.</para>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
+              <programlisting># service cloudstack-agent start</programlisting>
+            </listitem>
+          </orderedlist>
         </listitem>
         <listitem>
           <para>(KVM only) Additional steps are required for each KVM host. These steps will not
