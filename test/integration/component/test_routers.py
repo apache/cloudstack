@@ -492,6 +492,35 @@ class TestRouterServices(cloudstackTestCase):
         # 4. listRouters should report router to have come back to "Running" state
         # 5. All other VMs in the account should remain in "Stopped" state
 
+
+        #stop all pre-existing virtual machines if they are in 'Running' state
+        virtual_machines = list_virtual_machines(
+                                self.apiclient,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
+                                )
+
+        self.assertEqual(
+                        isinstance(virtual_machines, list),
+                        True,
+                        "Check for list virtual machines response return valid data"
+                        )
+        self.assertNotEqual(
+                             len(virtual_machines),
+                             0,
+                             "Check list virtual machines response"
+                             )
+        for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
+            if virtual_machine.state == 'Running':
+                # Stop virtual machine
+                cmd = stopVirtualMachine.stopVirtualMachineCmd()
+                cmd.id = virtual_machine.id
+                self.apiclient.stopVirtualMachine(cmd)
+
         vm = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
