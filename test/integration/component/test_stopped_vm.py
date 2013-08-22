@@ -1697,9 +1697,7 @@ class TestUploadAttachVolume(cloudstackTestCase):
                             'Stopped',
                             "Check VM state is Running or not"
                         )
-        with self.assertRaises(Exception):
-            virtual_machine.attach_volume(self.apiclient, volume)
-            self.debug("Failed to attach the volume as expected")
+        virtual_machine.attach_volume(self.apiclient, volume)
         return
 
 
