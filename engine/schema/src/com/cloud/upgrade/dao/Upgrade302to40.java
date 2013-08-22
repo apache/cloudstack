@@ -74,6 +74,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         setupExternalNetworkDevices(conn);
         fixZoneUsingExternalDevices(conn);
         encryptConfig(conn);
+        encryptClusterDetails(conn);
     }
 
     @Override
@@ -1071,5 +1072,43 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             }
         }
         s_logger.debug("Done encrypting Config values");
+    }
+
+    private void encryptClusterDetails(Connection conn) {
+        s_logger.debug("Encrypting cluster details");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, value from `cloud`.`cluster_details` where name = 'password'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String value = rs.getString(2);
+                if (value == null) {
+                    continue;
+                }
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement("update `cloud`.`cluster_details` set value=? where id=?");
+                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting cluster_details");
     }
 }
