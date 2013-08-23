@@ -18,9 +18,16 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
+import com.cloud.user.DomainManager;
+import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl;
 import org.apache.cloudstack.storage.datastore.type.DataStoreType;
+import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 
@@ -33,6 +40,28 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
         CloudStackPrimaryDataStoreProviderImpl provider = Mockito.mock(CloudStackPrimaryDataStoreProviderImpl.class);
 
         return provider;
+    }
+
+    @Bean
+    public DataMotionStrategy dataMotionStrategy() {
+        DataMotionStrategy strategy = new MockStorageMotionStrategy();
+        return strategy;
+    }
+
+    @Bean
+    public SnapshotScheduler SnapshotScheduler() {
+        return Mockito.mock(SnapshotScheduler.class);
+    }
+
+    @Bean
+    public DomainManager DomainManager() {
+        return Mockito.mock(DomainManager.class);
+    }
+
+    @Override
+    @Bean
+    public EndPointSelector selector() {
+        return ComponentContext.inject(DefaultEndPointSelector.class);
     }
 
 }

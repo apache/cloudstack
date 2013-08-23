@@ -26,6 +26,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.Host;
+import com.cloud.host.Status;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -65,6 +69,9 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     ClusterDao clusterDao;
     @Inject
     ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    HostDao _hostDao;
+    protected StateMachine2<Status, Event, Host> _statusStateMachine = Status.getStateMachine();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -243,8 +250,12 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
 
     @Override
     public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
-        // TODO Auto-generated method stub
-        return false;
+        try {
+            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+        } catch (NoTransitionException e1) {
+            e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return true;
     }
 
     @Override
