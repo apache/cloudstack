@@ -634,6 +634,9 @@ setup_common() {
 
 setup_dnsmasq() {
   log_it "Setting up dnsmasq"
+
+  touch /etc/dhcpopts.txt
+
   [ -z $DHCP_RANGE ] && [ $ETH0_IP ] && DHCP_RANGE=$ETH0_IP
   [ $ETH0_IP6 ] && DHCP_RANGE_IP6=$ETH0_IP6
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
