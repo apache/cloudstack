@@ -344,8 +344,10 @@ class VirtualMachine:
 
         if networkids:
             cmd.networkids = networkids
+            allow_egress = False
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
+            allow_egress = False
         else:
             # When no networkids are passed, network
             # is created using the "defaultOfferingWithSourceNAT"
