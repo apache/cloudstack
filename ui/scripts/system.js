@@ -15102,6 +15102,12 @@
                                     endipv4: {
                                         label: 'IPv4 End IP'
                                     },
+                                    ip6cidr: {
+                                    	label: 'IPv6 CIDR'
+                                    },
+                                    ip6gateway: {
+                                    	label: 'IPv6 Gateway'
+                                    },
                                     startipv6: {
                                         label: 'IPv6 Start IP'
                                     },
@@ -15122,7 +15128,12 @@
                                     array2.push("&startip=" + args.data.startipv4);
                                 if (args.data.endipv4 != null && args.data.endipv4.length > 0)
                                     array2.push("&endip=" + args.data.endipv4);
-
+                                
+                                if (args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
+                                    array2.push("&ip6cidr=" + args.data.ip6cidr);
+                                if (args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
+                                    array2.push("&ip6gateway=" + args.data.ip6gateway);
+                                
                                 if (args.data.startipv6 != null && args.data.startipv6.length > 0)
                                     array2.push("&startipv6=" + args.data.startipv6);
                                 if (args.data.endipv6 != null && args.data.endipv6.length > 0)
