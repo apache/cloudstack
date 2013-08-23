@@ -1116,7 +1116,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
-        boolean migrationRequired = false;
         if (canMigrateWithStorage) {
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null,
                     null, null, null, null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
@@ -1130,10 +1129,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (volumePools.isEmpty()) {
                     iterator.remove();
                 } else {
+                    boolean migrationRequired = true;
                     if (srcHost.getHypervisorType() == HypervisorType.VMware || srcHost.getHypervisorType() == HypervisorType.KVM) {
                         // Check if each volume required migrating to other pool or not.
                         migrationRequired = checkIfMigrationRequired(volumePools);
                     }
+
                     if ((!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) && migrationRequired) {
                         requiresStorageMotion.put(host, true);
                     }
