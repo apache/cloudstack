@@ -375,6 +375,10 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
+        VolumeObjectTO srcVol = (VolumeObjectTO) srcData;
+        VolumeObjectTO destVol = (VolumeObjectTO) destData;
+        ImageFormat srcFormat = srcVol.getFormat();
+        ImageFormat destFormat = destVol.getFormat();
         DataStoreTO srcStore = srcData.getDataStore();
         DataStoreTO destStore = destData.getDataStore();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) srcStore;
@@ -405,9 +409,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String volumeName = UUID.randomUUID().toString();
 
-
-            String destVolumeName = volumeName + ".qcow2";
+            String destVolumeName = volumeName + "." + destFormat.getFileExtension();
             KVMPhysicalDisk volume = primaryPool.getPhysicalDisk(srcVolumePath);
+            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageUrl);
             secondaryStoragePool.createFolder(destVolumePath);
@@ -418,6 +422,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     destVolumeName,secondaryStoragePool);
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(destVolumePath + File.separator + destVolumeName);
+            newVol.setFormat(destFormat);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());
@@ -661,7 +666,7 @@ public class KVMStorageProcessor implements StorageProcessor {
              *
              * These bindings will read the snapshot and write the contents to
              * the secondary storage directly
-             * 
+             *
              * It will stop doing so if the amount of time spend is longer then
              * cmds.timeout
              */
