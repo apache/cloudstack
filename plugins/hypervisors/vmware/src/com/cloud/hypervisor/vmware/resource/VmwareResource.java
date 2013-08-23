@@ -6448,8 +6448,49 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public Answer execute(DestroyCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource DestroyCommand to evict template from storage pool: " + _gson.toJson(cmd));
+        }
+
+        try {
+            VmwareContext context = getServiceContext(null);
+            VmwareHypervisorHost hyperHost = getHyperHost(context, null);
+            VolumeTO vol = cmd.getVolume();
+ 
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vol.getPoolUuid());
+            if (morDs == null) {
+                String msg = "Unable to find datastore based on volume mount point " + vol.getMountPoint();
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+            ClusterMO clusterMo = new ClusterMO(context, morCluster);
+
+            VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
+            if (vmMo != null) {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Destroy template volume " + vol.getPath());
+                }
+                vmMo.destroy();
+            }
+            else{
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Template volume " + vol.getPath() + " is not found, no need to delete.");
+                }                
+            }
+            return new Answer(cmd, true, "Success");
+
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext(null);
+            }
+
+            String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
     }
     private boolean isVMWareToolsInstalled(VirtualMachineMO vmMo) throws Exception{
         GuestInfo guestInfo = vmMo.getVmGuestInfo();
