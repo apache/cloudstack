@@ -13598,6 +13598,9 @@
                                         label: 'label.storage.tags',
                                         isEditable: true
                                     },
+                                    zonename: {
+                                    	label: 'label.zone'
+                                    },
                                     podname: {
                                         label: 'label.pod'
                                     },
