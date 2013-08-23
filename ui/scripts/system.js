@@ -8660,7 +8660,7 @@
                             dataType: "json",
                             async: false,
                             success: function(json) {
-                                var items = json.listexternaldhcpresponse.baremetaldhcp;
+                                var items = json.listbaremetaldhcpresponse.baremetaldhcp;
                                 args.response.success({
                                     data: items
                                 });
@@ -8729,7 +8729,7 @@
                     },
                     dataProvider: function(args) {
                         $.ajax({
-                            url: createURL('listBaremetalPxePingServer'),
+                            url: createURL('listBaremetalPxeServers'),
                             data: {
                                 physicalnetworkid: selectedPhysicalNetworkObj.id,
                                 page: args.page,
@@ -8738,7 +8738,7 @@
                             dataType: "json",
                             async: false,
                             success: function(json) {
-                                var items = json.listpingpxeserverresponse.pingpxeserver;
+                                var items = json.listbaremetalpxeserversresponse.baremetalpxeserver;
                                 args.response.success({
                                     data: items
                                 });
@@ -15224,7 +15224,7 @@
                                             },
                                             type: "POST",
                                             success: function(json) {
-                                                var jid = json.addexternaldhcpresponse.jobid;
+                                                var jid = json.addbaremetaldhcpresponse.jobid;
                                                 args.response.success({
                                                     _custom: {
                                                         jobId: jid,
@@ -15260,7 +15260,7 @@
                 },
                 type: "POST",
                 success: function(json) {
-                    var jid = json.addexternaldhcpresponse.jobid;
+                    var jid = json.addbaremetaldhcpresponse.jobid;
                     args.response.success({
                         _custom: {
                             jobId: jid,
@@ -15308,12 +15308,12 @@
                                             },
                                             type: "POST",
                                             success: function(json) {
-                                                var jid = json.addexternalpxeresponse.jobid;
+                                                var jid = json.addbaremetalpxeresponse.jobid;
                                                 args.response.success({
                                                     _custom: {
                                                         jobId: jid,
                                                         getUpdatedItem: function(json) {
-                                                            var item = json.queryasyncjobresultresponse.jobresult.externalpxe;
+                                                            var item = json.queryasyncjobresultresponse.jobresult.baremetalpxeserver;
                                                             return item;
                                                         }
                                                     }
@@ -15345,12 +15345,12 @@
                 },
                 type: "POST",
                 success: function(json) {
-                    var jid = json.addexternalpxeresponse.jobid;
+                    var jid = json.addbaremetalpxeresponse.jobid;
                     args.response.success({
                         _custom: {
                             jobId: jid,
                             getUpdatedItem: function(json) {
-                                var item = json.queryasyncjobresultresponse.jobresult.externalpxe;
+                                var item = json.queryasyncjobresultresponse.jobresult.baremetalpxeserver;
                                 return item;
                             }
                         }
