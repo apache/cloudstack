@@ -373,8 +373,8 @@ under the License.
       <title>Known Issues in 4.2.0</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
-          <colspec colwidth="1*" colname="1" colnum="1"/>
-          <colspec colwidth="2*" colname="2" colnum="2"/>
+          <colspec colwidth="1.0*" colname="1" colnum="1"/>
+          <colspec colwidth="2.0*" colname="2" colnum="2"/>
           <thead>
             <row>
               <entry>
@@ -386,6 +386,20 @@ under the License.
             </row>
           </thead>
           <tbody>
+            <row>
+              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4207"
+                    >CLOUDSTACK-4207</ulink></para></entry>
+              <entry>
+                <para>The following exception is observed when the Management Server is started
+                  after upgrade from any older versions to &PRODUCT; 4.2.</para>
+                <para><code>jsonParseException: The JsonDeserializer
+                    com.cloud.agent.transport.ArrayTypeAdaptor@2426e26f failed to deserialize json
+                    object</code></para>
+                <para>Ignore this exception, this would stop after you upgrade the System VM.
+                  However, if you want to prevent this, stop system VM from the hypervisor before
+                  upgrade.</para>
+              </entry>
+            </row>
             <row>
               <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
                     >CLOUDSTACK-2709</ulink></para></entry>
@@ -1230,52 +1244,6 @@ service cloudstack-agent start
           <para><command># service cloudstack-usage start</command></para>
         </listitem>
         <listitem>
-          <para>(VMware only) Additional steps are required for each VMware cluster. These steps will not affect running guests in
-            the cloud. These steps are required only for clouds using VMware clusters:</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Stop the Management Server:</para>
-              <programlisting>service cloudstack-management stop</programlisting>
-            </listitem>
-            <listitem>
-              <para>Generate the encrypted equivalent of your vCenter password:</para>
-              <programlisting>java -classpath /usr/share/cloudstack-common/lib/jasypt-1.9.0.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI encrypt.sh input="_your_vCenter_password_" password="`cat /etc/cloudstack/management/key`" verbose=false</programlisting>
-              <para>Store the output from this step, we need to add this in cluster_details table
-                and vmware_data_center tables in place of the plain text password</para>
-            </listitem>
-            <listitem>
-              <para>Find the ID of the row of cluster_details table that you have to update:</para>
-              <programlisting>mysql -u &lt;username&gt; -p&lt;password&gt;</programlisting>
-              <programlisting>select * from cloud.cluster_details;</programlisting>
-            </listitem>
-            <listitem>
-              <para>Update the plain text password with the encrypted one</para>
-              <programlisting>update cloud.cluster_details set value = '_ciphertext_from_step_1_' where id = _id_from_step_2_;</programlisting>
-            </listitem>
-            <listitem>
-              <para>Confirm that the table is updated:</para>
-              <programlisting>select * from cloud.cluster_details; </programlisting>
-            </listitem>
-            <listitem>
-              <para>Find the ID of the correct row of vmware_data_center that you want to
-                update</para>
-              <programlisting>select * from cloud.vmware_data_center; </programlisting>
-            </listitem>
-            <listitem>
-              <para>update the plain text password with the encrypted one:</para>
-              <programlisting>update cloud.vmware_data_center set password = '_ciphertext_from_step_1_' where id = _id_from_step_5_; </programlisting>
-            </listitem>
-            <listitem>
-              <para>Confirm that the table is updated:</para>
-              <programlisting>select * from cloud.vmware_data_center; </programlisting>
-            </listitem>
-            <listitem>
-              <para>Start the &PRODUCT; Management server </para>
-              <programlisting>service cloudstack-management start</programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
           <para>Additional steps are required for each KVM host. These steps will not affect running
             guests in the cloud. These steps are required only for clouds using KVM as hosts and
             only on the KVM hosts.</para>
@@ -1918,53 +1886,6 @@ service cloudstack-agent start
           <programlisting language="Bash"><prompt>#</prompt> service cloudstack-usage start</programlisting>
         </listitem>
         <listitem>
-          <para>(VMware only) Additional steps are required for each VMware cluster, if you are
-            upgrading from version 3.0.4 or beyond. These steps will not affect running guests in
-            the cloud. These steps are required only for clouds using VMware clusters:</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Stop the Management Server:</para>
-              <programlisting>service cloudstack-management stop</programlisting>
-            </listitem>
-            <listitem>
-              <para>Generate the encrypted equivalent of your vCenter password:</para>
-              <programlisting>java -classpath /usr/share/cloudstack-common/lib/jasypt-1.9.0.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI encrypt.sh input="_your_vCenter_password_" password="`cat /etc/cloudstack/management/key`" verbose=false</programlisting>
-              <para>Store the output from this step, we need to add this in cluster_details table
-                and vmware_data_center tables in place of the plain text password</para>
-            </listitem>
-            <listitem>
-              <para>Find the ID of the row of cluster_details table that you have to update:</para>
-              <programlisting>mysql -u &lt;username&gt; -p&lt;password&gt;</programlisting>
-              <programlisting>select * from cloud.cluster_details;</programlisting>
-            </listitem>
-            <listitem>
-              <para>Update the plain text password with the encrypted one</para>
-              <programlisting>update cloud.cluster_details set value = '_ciphertext_from_step_1_' where id = _id_from_step_2_;</programlisting>
-            </listitem>
-            <listitem>
-              <para>Confirm that the table is updated:</para>
-              <programlisting>select * from cloud.cluster_details; </programlisting>
-            </listitem>
-            <listitem>
-              <para>Find the ID of the correct row of vmware_data_center that you want to
-                update</para>
-              <programlisting>select * from cloud.vmware_data_center; </programlisting>
-            </listitem>
-            <listitem>
-              <para>update the plain text password with the encrypted one:</para>
-              <programlisting>update cloud.vmware_data_center set password = '_ciphertext_from_step_1_' where id = _id_from_step_5_; </programlisting>
-            </listitem>
-            <listitem>
-              <para>Confirm that the table is updated:</para>
-              <programlisting>select * from cloud.vmware_data_center; </programlisting>
-            </listitem>
-            <listitem>
-              <para>Start the &PRODUCT; Management server </para>
-              <programlisting>service cloudstack-management start</programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
           <para>(KVM only) Additional steps are required for each KVM host. These steps will not
             affect running guests in the cloud. These steps are required only for clouds using KVM
             as hosts and only on the KVM hosts.</para>
@@ -1991,9 +1912,9 @@ service cloudstack-agent start
           </orderedlist>
         </listitem>
         <listitem>
-          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
-            affect running guests in the cloud. These steps are required only for clouds using KVM
-            as hosts and only on the KVM hosts.</para>
+          <para>(KVM only) Perform the following additional steps on each KVM host. </para>
+          <para>These steps will not affect running guests in the cloud. These steps are required
+            only for clouds using KVM as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
               <para> Configure your CloudStack package repositories as outlined in the Installation
