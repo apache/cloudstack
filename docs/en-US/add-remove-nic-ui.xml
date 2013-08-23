@@ -34,7 +34,7 @@
     <title>Adding a Network</title>
     <orderedlist>
       <listitem>
-        <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
       </listitem>
       <listitem>
         <para>In the left navigation, click Instances.</para>
@@ -87,7 +87,7 @@
     <title>Removing a Network</title>
     <orderedlist>
       <listitem>
-        <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
       </listitem>
       <listitem>
         <para>In the left navigation, click Instances.</para>
@@ -120,7 +120,7 @@
     <title>Selecting the Default Network</title>
     <orderedlist>
       <listitem>
-        <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
       </listitem>
       <listitem>
         <para>In the left navigation, click Instances.</para>

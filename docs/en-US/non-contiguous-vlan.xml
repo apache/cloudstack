@@ -27,7 +27,7 @@
     extend the VLAN range.</para>
   <orderedlist>
     <listitem>
-      <para>Log in to the CloudPlatform UI as an administrator or end user.</para>
+      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
     </listitem>
     <listitem>
       <para>Ensure that the VLAN range does not already exist.</para>
