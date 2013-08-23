@@ -3699,7 +3699,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public String[] listEventTypes() {
         Object eventObj = new EventTypes();
         Class<EventTypes> c = EventTypes.class;
-        Field[] fields = c.getDeclaredFields();
+        Field[] fields = c.getFields();
         String[] eventTypes = new String[fields.length];
         try {
             int i = 0;
