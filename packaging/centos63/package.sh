@@ -37,13 +37,13 @@ PACK_PROJECT=cloudstack
 
 VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep '^[0-9]\.'`
 if echo $VERSION | grep SNAPSHOT ; then
+  REALVER=`echo $VERSION | cut -d '-' -f 1`
   DEFVER="-D_ver $REALVER"
   DEFPRE="-D_prerelease 1"
   DEFREL="-D_rel SNAPSHOT"
 else
-  REALVER=`echo $VERSION | cut -d '-' -f 1`
+  REALVER=$VERSION
   DEFVER="-D_ver $REALVER"
-  DEFPRE=
   DEFREL="-D_rel 1"
 fi
 
@@ -58,7 +58,7 @@ mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" ${DEFVER} ${DEFREL} ${DEFPRE} -ba SPECS/cloud.spec)
+(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} -ba SPECS/cloud.spec)
 
 exit
 }
@@ -80,7 +80,6 @@ if echo $VERSION | grep SNAPSHOT ; then
 else
   REALVER=`echo $VERSION`
   DEFVER="-D_ver $REALVER"
-  DEFPRE=
   DEFREL="-D_rel 1"
 fi
 
@@ -96,7 +95,7 @@ mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" "$DEFOSSNOSS" -bb SPECS/cloud.spec)
+(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+\"${DEFPRE}\"} "${DEFOSSNOSS}" -bb SPECS/cloud.spec)
 
 exit
 }
