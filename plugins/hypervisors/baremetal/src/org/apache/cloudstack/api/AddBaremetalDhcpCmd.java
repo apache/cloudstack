@@ -84,7 +84,6 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
         try {
             BaremetalDhcpVO vo = mgr.addDchpServer(this);
             BaremetalDhcpResponse response = mgr.generateApiResponse(vo);
-            response.setObjectName(s_name);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (Exception e) {

@@ -85,7 +85,6 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
         try {
             BaremetalPxeVO vo = pxeMgr.addPxeServer(this);
             BaremetalPxeResponse rsp = pxeMgr.getApiResponse(vo);
-            rsp.setObjectName(s_name);
             rsp.setResponseName(getCommandName());
             this.setResponseObject(rsp);
         } catch (Exception e) {
