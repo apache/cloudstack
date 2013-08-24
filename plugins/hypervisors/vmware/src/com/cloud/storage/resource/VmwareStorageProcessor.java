@@ -58,6 +58,7 @@ import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
@@ -949,7 +950,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,
+    // return Pair<String(divice bus name), String[](disk chain)>
+    private Pair<String, String[]> exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,
             String secStorageUrl, String secStorageDir, String exportName,
             String workerVmName) throws Exception {
 
@@ -978,7 +980,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
+            String disks[] = vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
                     VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
             clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
             if(clonedVm == null) {
@@ -988,6 +990,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             clonedVm.exportVm(exportPath, exportName, false, false);
+            
+            return new Pair<String, String[]>(volumeDeviceInfo.second(), disks);
         } finally {
             if(clonedVm != null) {
                 clonedVm.detachAllDisks();
@@ -996,15 +1000,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-
-    private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath,
+    // Ternary<String(backup uuid in secondary storage), String(device bus name), String[](original disk chain in the snapshot)>
+    private Ternary<String, String, String[]> backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath,
             String volumePath, String snapshotUuid, String secStorageUrl,
             String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
-        exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl,
+        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl,
                 installPath, backupUuid, workerVmName);
-        return backupUuid + "/" + backupUuid;
+        return new Ternary<String, String, String[]>(backupUuid + "/" + backupUuid, snapshotInfo.first(), snapshotInfo.second());
     }
 
     @Override
@@ -1033,6 +1037,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String details = null;
         boolean success = false;
         String snapshotBackupUuid = null;
+        
+        boolean hasOwnerVm = false;
+        Ternary<String, String, String[]> backupResult = null;
 
         VmwareContext context = hostService.getServiceContext(cmd);
         VirtualMachineMO vmMo = null;
@@ -1041,6 +1048,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
 
+            CopyCmdAnswer answer = null;
+            
             try {
                 if (vmName != null) {
                     vmMo = hyperHost.findVmOnHyperHost(vmName);
@@ -1067,31 +1076,84 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         // attach volume to worker VM
                         String datastoreVolumePath = dsMo.getDatastorePath(volumePath + ".vmdk");
                         vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
+                    } else {
+                    	s_logger.info("Using owner VM " + vmName + " for snapshot operation");
+                    	hasOwnerVm = true;
                     }
+                } else {
+                	s_logger.info("Using owner VM " + vmName + " for snapshot operation");
+                	hasOwnerVm = true;
                 }
 
                 if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + srcSnapshot.getName(), false, false)) {
                     throw new Exception("Failed to take snapshot " + srcSnapshot.getName() + " on vm: " + vmName);
                 }
 
-                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
+                backupResult = backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
                         hostService.getWorkerName(context, cmd, 1));
+                snapshotBackupUuid = backupResult.first();
 
                 success = (snapshotBackupUuid != null);
                 if (!success) {
                     details = "Failed to backUp the snapshot with uuid: " + snapshotUuid + " to secondary storage.";
-                    return new CopyCmdAnswer(details);
+                    answer = new CopyCmdAnswer(details);
                 } else {
                     details = "Successfully backedUp the snapshot with Uuid: " + snapshotUuid + " to secondary storage.";
                     SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
                     newSnapshot.setPath(destSnapshot.getPath() + "/" + snapshotBackupUuid);
-                    return new CopyCmdAnswer(newSnapshot);
+                    answer = new CopyCmdAnswer(newSnapshot);
                 }
             } finally {
                 if(vmMo != null){
                     ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
-                    if (snapshotMor != null){
+                    if (snapshotMor != null) {
                         vmMo.removeSnapshot(snapshotUuid, false);
+                        
+                        // Snapshot operation may cause disk consolidation in VMware, when this happens
+                        // we need to update CloudStack DB
+                        //
+                        // TODO: this post operation fixup is not atomic and not safe when management server stops
+                        // in the middle
+                        if(backupResult != null && hasOwnerVm) {
+                        	s_logger.info("Check if we have disk consolidation after snapshot operation");
+                        	
+                        	boolean chainConsolidated = false;
+                        	for(String vmdkDsFilePath : backupResult.third()) {
+                        		s_logger.info("Validate disk chain file:" + vmdkDsFilePath);
+                        		
+                        		if(vmMo.getDiskDevice(vmdkDsFilePath, false) == null) {
+                        			s_logger.info("" + vmdkDsFilePath + " no longer exists, consolidation detected");
+                        			chainConsolidated = true;
+                        			break;
+                        		} else {
+                        			s_logger.info("" + vmdkDsFilePath + " is found still in chain");
+                        		}
+                        	}
+                        	
+                        	if(chainConsolidated) {
+                        		String topVmdkFilePath = null;
+                        		try {
+                        			topVmdkFilePath = vmMo.getDiskCurrentTopBackingFileInChain(backupResult.second());
+                        		} catch(Exception e) {
+                        			s_logger.error("Unexpected exception", e);
+                        		}
+                        		
+                        		s_logger.info("Disk has been consolidated, top VMDK is now: " + topVmdkFilePath);
+                        		if(topVmdkFilePath != null) {
+	                        		DatastoreFile file = new DatastoreFile(topVmdkFilePath);
+	                        		
+	                        		SnapshotObjectTO snapshotInfo = (SnapshotObjectTO)answer.getNewData();
+	                        		VolumeObjectTO vol = new VolumeObjectTO();
+	                        		vol.setUuid(srcSnapshot.getVolume().getUuid());
+	                        		vol.setPath(file.getFileBaseName());
+	                        		snapshotInfo.setVolume(vol);
+                        		} else {
+                        			s_logger.error("Disk has been consolidated, but top VMDK is not found ?!");
+                        		}
+                        	}
+                        }
+                    } else {
+                    	s_logger.error("Can not find the snapshot we just used ?!");
                     }
                 }
 
@@ -1105,6 +1167,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.warn("Failed to destroy worker VM: " + workerVMName);
                 }
             }
+            
+            return answer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 hostService.invalidateServiceContext(context);

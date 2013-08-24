@@ -38,6 +38,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
@@ -262,6 +263,19 @@ public class SnapshotObject implements SnapshotInfo {
                     snapshotStore.setParentSnapshotId(0L);
                 }
                 this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+                
+                // update side-effect of snapshot operation
+                if(snapshotTO.getVolume().getPath() != null) {
+                	VolumeVO vol = this.volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
+                	if(vol != null) {
+	                	s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
+	                		+ vol.getPath() + "->" + snapshotTO.getVolume().getPath());
+	                	vol.setPath(snapshotTO.getVolume().getPath());
+	                	this.volumeDao.update(vol.getId(), vol);
+                	} else {
+                		s_logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
+                	}
+                }
             } else {
                 throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
             }
