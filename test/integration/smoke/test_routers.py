@@ -42,7 +42,6 @@ class Services:
                                     "cpunumber": 1,
                                     "cpuspeed": 100, # in MHz
                                     "memory": 128, # In MBs
-                                    "storagetype" : "local",
                                     },
                         "virtual_machine":
                                     {
