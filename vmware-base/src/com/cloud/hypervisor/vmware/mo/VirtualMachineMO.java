@@ -1551,11 +1551,13 @@ public class VirtualMachineMO extends BaseMO {
 		return diskDsFullPaths.toArray(new String[0]);
 	}
 
-	public void cloneFromCurrentSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice,
+	// return the disk chain (VMDK datastore paths) for cloned snapshot
+	public String[] cloneFromCurrentSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice,
 		ManagedObjectReference morDs) throws Exception {
 		assert(morDs != null);
 		String[] disks = getCurrentSnapshotDiskChainDatastorePaths(diskDevice);
 		cloneFromDiskChain(clonedVmName, cpuSpeedMHz, memoryMb, disks, morDs);
+		return disks;
 	}
 
 	public void cloneFromDiskChain(String clonedVmName, int cpuSpeedMHz, int memoryMb,
@@ -1576,7 +1578,6 @@ public class VirtualMachineMO extends BaseMO {
 		boolean bSuccess = false;
 		try {
     		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-    	    //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
     		VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
     	    VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, -1, disks, morDs, -1, 1);
@@ -1611,7 +1612,6 @@ public class VirtualMachineMO extends BaseMO {
 
 	public void plugDevice(VirtualDevice device) throws Exception {
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
         deviceConfigSpec.setDevice(device);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
@@ -1624,7 +1624,6 @@ public class VirtualMachineMO extends BaseMO {
 
 	public void tearDownDevice(VirtualDevice device) throws Exception {
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
         deviceConfigSpec.setDevice(device);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
@@ -1819,6 +1818,28 @@ public class VirtualMachineMO extends BaseMO {
 
 							diskBackingInfo = diskBackingInfo.getParent();
 						} while(diskBackingInfo != null);
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+	
+	public String getDiskCurrentTopBackingFileInChain(String deviceBusName) throws Exception {
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+		if(devices != null && devices.size() > 0) {
+			for(VirtualDevice device : devices) {
+				if(device instanceof VirtualDisk) {
+					s_logger.info("Test against disk device, controller key: " + device.getControllerKey() + ", unit number: " + device.getUnitNumber());
+
+					VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
+					if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+						VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+						
+						String deviceNumbering = getDeviceBusName(devices, device);
+						if(deviceNumbering.equals(deviceBusName))
+							return diskBackingInfo.getFileName();
 					}
 				}
 			}

@@ -305,6 +305,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     @Override
+    @Deprecated
     public Answer execute(VmwareHostService hostService, BackupSnapshotCommand cmd) {
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
@@ -374,7 +375,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             } finally {
                 if(vmMo != null){
                     ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
-                    if (snapshotMor != null){
+                    if (snapshotMor != null) {
                         vmMo.removeSnapshot(snapshotUuid, false);
                     }
                 }
