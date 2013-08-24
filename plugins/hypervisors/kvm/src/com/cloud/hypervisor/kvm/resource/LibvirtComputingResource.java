@@ -1028,12 +1028,12 @@ ServerResource {
         if (! f.isDirectory()){
             s_logger.debug("failing to get physical interface from bridge "
                            + bridgeName + ", does " + f.getAbsolutePath()
-                           + " exist?");
+                           + "exist?");
             return "";
         }
 
         File[] interfaces = f.listFiles();
-        
+
         for (int i = 0; i < interfaces.length; i++) {
             String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
@@ -1049,6 +1049,7 @@ ServerResource {
                         + f.getAbsolutePath());
         return "";
     }
+
 
     private boolean checkNetwork(String networkName) {
         if (networkName == null) {
@@ -1654,7 +1655,7 @@ ServerResource {
             return pifparts[1];
         } else {
             s_logger.debug("failed to get vlan id from bridge " + brName
-                           + " attached to physical interface " + pif);
+                           + "attached to physical interface" + pif);
             return "";
         }
     }
@@ -3029,6 +3030,7 @@ ServerResource {
         } else if (option.equals("deleteVif")) {
             getUsage.add("-d", vif);
         }
+
 
         final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
         String result = getUsage.execute(usageParser);
@@ -4458,7 +4460,7 @@ ServerResource {
                 s_logger.trace("Ignoring libvirt error.", e);
             }
         }
-        
+
         return null;
     }
 

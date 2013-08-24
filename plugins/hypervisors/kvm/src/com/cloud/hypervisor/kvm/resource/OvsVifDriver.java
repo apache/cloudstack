@@ -66,11 +66,7 @@ public class OvsVifDriver extends VifDriverBase {
         String logicalSwitchUuid = null;
         if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) {
             URI broadcastUri = nic.getBroadcastUri();
-            if(broadcastUri.isOpaque()) {
-                vlanId = broadcastUri.getSchemeSpecificPart();
-            } else {
-                vlanId = broadcastUri.getHost();
-            }
+            vlanId = broadcastUri.getHost();
         }
         else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             logicalSwitchUuid = nic.getBroadcastUri().getSchemeSpecificPart();

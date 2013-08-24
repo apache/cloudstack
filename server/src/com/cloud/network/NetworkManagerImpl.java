@@ -327,7 +327,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     UsageEventDao _usageEventDao;
     @Inject
     NetworkModel _networkModel;
-    @Inject
+   @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
@@ -631,8 +631,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         try {
             if (predefined == null
                     || (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null &&
-                    !(predefined.getBroadcastDomainType() == BroadcastDomainType.Vlan || predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch ||
-                      predefined.getBroadcastDomainType() == BroadcastDomainType.Vxlan))) {
+                    !(predefined.getBroadcastDomainType() == BroadcastDomainType.Vlan || predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch))) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -1730,12 +1729,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         } else if (zone.getNetworkType() == NetworkType.Advanced) {
             if (zone.isSecurityGroupEnabled()) {
-                if (ipv6) {
-                    throw new InvalidParameterValueException("IPv6 is not supported with security group!");
-                }
-                if (isolatedPvlan != null) {
-                    throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
-                }
+            	if (ipv6) {
+            		throw new InvalidParameterValueException("IPv6 is not supported with security group!");
+            	}
+            	if (isolatedPvlan != null) {
+            		throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
+            	}
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
                 if ( ntwkOff.getGuestType() != GuestType.Shared ){
@@ -1755,7 +1754,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
         }
 
-        //TODO(VXLAN): Support VNI specified
         // VlanId can be specified only when network offering supports it
         boolean vlanSpecified = (vlanId != null);
         if (vlanSpecified != ntwkOff.getSpecifyVlan()) {
@@ -1814,6 +1812,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                             vlanId + " already exists " + "in zone " + zoneId);
                 }
             }
+
+
+
         }
 
         // If networkDomain is not specified, take it from the global configuration
