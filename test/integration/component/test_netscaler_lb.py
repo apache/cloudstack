@@ -2012,17 +2012,6 @@ class TestLoadBalancingRule(cloudstackTestCase):
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            interval = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            cls.network_offering.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2229,17 +2218,6 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            interval = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            cls.network_offering.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2399,17 +2377,6 @@ class TestVmWithLb(cloudstackTestCase):
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            interval = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            cls.network_offering.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
