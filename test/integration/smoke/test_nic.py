@@ -152,9 +152,8 @@ class TestNic(cloudstackTestCase):
             zone = get_zone(self.apiclient, self.services)
             self.services['mode'] = zone.networktype
 
-            if self.services['mode'] != 'Advanced':
-                self.debug("Cannot run this test with a basic zone, please use advanced!")
-                return
+            if zone.networktype != 'Advanced':
+                self.skipTest("Cannot run this test with a basic zone, please use advanced!")
 
             #if local storage is enabled, alter the offerings to use localstorage
             #this step is needed for devcloud
@@ -224,13 +223,11 @@ class TestNic(cloudstackTestCase):
             self.cleanup.insert(0, self.test_network2)
         except Exception as ex:
             self.debug("Exception during NIC test SETUP!: " + str(ex))
-            self.assertEqual(True, False, "Exception during NIC test SETUP!: " + str(ex))
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_nic(self):
-        if self.services['mode'] != 'Advanced':
-            self.debug("Cannot run this test with a basic zone, please use advanced!")
-            return
+        """Test to add and update added nic to a virtual machine"""
+
         try:
             self.virtual_machine = VirtualMachine.create(
                                         self.apiclient,

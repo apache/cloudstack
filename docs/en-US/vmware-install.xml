@@ -406,7 +406,7 @@ esxcfg-firewall -o 59000-60000,tcp,out,vncextras
           before you start:</para>
         <itemizedlist>
           <listitem>
-            <para>vCenter Credentials</para>
+            <para>vCenter credentials</para>
           </listitem>
           <listitem>
             <para>Nexus 1000v VSM IP address</para>

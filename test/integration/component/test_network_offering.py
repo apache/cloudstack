@@ -89,6 +89,19 @@ class Services:
                                             "StaticNat": 'VirtualRouter',
                                         },
                                     },
+                         "network_offering_sourcenat" : {
+                                    "name": 'Network offering - SourceNat only',
+                                    "displaytext": 'Network offering - SourceNat only',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'SourceNat,Dhcp,Dns',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VirtualRouter',
+                                            "Dns": 'VirtualRouter',
+                                            "SourceNat": 'VirtualRouter',
+                                        },
+                                    },
                          "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -1794,4 +1807,134 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
 
+class TestNOWithOnlySourceNAT(cloudstackTestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.apiclient = super(
+            TestNOWithOnlySourceNAT,
+            cls
+        ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.services['mode'] = cls.zone.networktype
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
 
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offering"]
+        )
+
+        cls.cleanup = [
+            cls.service_offering,
+        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "advancedns"])
+    def test_create_network_with_snat(self):
+        """Test to create a network with SourceNAT service only"""
+
+        # Validate the following
+        # 1. create a network offering with source nat service
+        # 2. create a network and deploy a vm within the network
+        # 3. deployment and network creation should be successful
+        # 4. attempt to create a fw rule. should fail since offering hasn't allowed it
+        # 5. try to ping out of the guest to www.google.com to check SourceNAT is working
+
+        self.account = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=False,
+            domainid=self.domain.id
+        )
+        self.cleanup.append(self.account)
+
+        # Create a network offering VR and only SourceNAT service
+        self.debug(
+            "creating network offering with source NAT only"
+        )
+        self.network_offering = NetworkOffering.create(
+            self.apiclient,
+            self.services["network_offering_sourcenat"]
+        )
+        # Enable Network offering
+        self.network_offering.update(self.apiclient, state='Enabled')
+        self.debug("Created n/w offering with ID: %s" %
+                   self.network_offering.id)
+
+        # Creating network using the network offering created
+        self.debug("Creating network with network offering: %s" %
+                   self.network_offering.id)
+        self.network = Network.create(
+            self.apiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
+        self.debug("Created guest network with ID: %s within account %s" % (self.network.id, self.account.name))
+
+        self.debug("Deploying VM in account: %s on the network %s" % (self.account.name, self.network.id))
+        # Spawn an instance in that network
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(self.network.id)]
+        )
+        self.debug("Deployed VM in network: %s" % self.network.id)
+
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            associatednetworkid=self.network.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+        )
+        self.assertEqual(
+            isinstance(src_nat_list, list),
+            True,
+            "List Public IP should return a valid source NAT"
+        )
+        self.assertNotEqual(
+            len(src_nat_list),
+            0,
+            "Length of response from listPublicIp should not be 0"
+        )
+
+        src_nat = src_nat_list[0]
+
+        self.debug("Successfully implemented network with source NAT IP: %s" %
+                   src_nat.ipaddress)
+
+        with self.assertRaises(Exception):
+            FireWallRule.create(
+                self.apiclient,
+                ipaddressid=src_nat.id,
+                protocol='TCP',
+                cidrlist=[self.services["fw_rule"]["cidr"]],
+                startport=self.services["fw_rule"]["startport"],
+                endport=self.services["fw_rule"]["endport"]
+            )
+        return

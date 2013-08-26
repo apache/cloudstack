@@ -156,6 +156,8 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
@@ -1116,7 +1118,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
-        boolean migrationRequired = false;
         if (canMigrateWithStorage) {
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null,
                     null, null, null, null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
@@ -1130,10 +1131,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (volumePools.isEmpty()) {
                     iterator.remove();
                 } else {
+                    boolean migrationRequired = true;
                     if (srcHost.getHypervisorType() == HypervisorType.VMware || srcHost.getHypervisorType() == HypervisorType.KVM) {
                         // Check if each volume required migrating to other pool or not.
                         migrationRequired = checkIfMigrationRequired(volumePools);
                     }
+
                     if ((!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) && migrationRequired) {
                         requiresStorageMotion.put(host, true);
                     }
@@ -2596,10 +2599,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(StopRouterCmd.class);
         cmdList.add(UpgradeRouterCmd.class);
         cmdList.add(AddS3Cmd.class);
+        cmdList.add(AddSwiftCmd.class);
         cmdList.add(CancelPrimaryStorageMaintenanceCmd.class);
         cmdList.add(CreateStoragePoolCmd.class);
         cmdList.add(DeletePoolCmd.class);
         cmdList.add(ListS3sCmd.class);
+        cmdList.add(ListSwiftsCmd.class);
         cmdList.add(ListStoragePoolsCmd.class);
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
@@ -3733,7 +3738,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public String[] listEventTypes() {
         Object eventObj = new EventTypes();
         Class<EventTypes> c = EventTypes.class;
-        Field[] fields = c.getDeclaredFields();
+        Field[] fields = c.getFields();
         String[] eventTypes = new String[fields.length];
         try {
             int i = 0;

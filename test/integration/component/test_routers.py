@@ -24,7 +24,6 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 
 #Import System modules
 import time
@@ -219,6 +218,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -275,6 +275,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -365,6 +366,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -489,6 +491,35 @@ class TestRouterServices(cloudstackTestCase):
         # 3. when listVirtualMachines reports the userVM to be in state=Running
         # 4. listRouters should report router to have come back to "Running" state
         # 5. All other VMs in the account should remain in "Stopped" state
+
+
+        #stop all pre-existing virtual machines if they are in 'Running' state
+        virtual_machines = list_virtual_machines(
+                                self.apiclient,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
+                                )
+
+        self.assertEqual(
+                        isinstance(virtual_machines, list),
+                        True,
+                        "Check for list virtual machines response return valid data"
+                        )
+        self.assertNotEqual(
+                             len(virtual_machines),
+                             0,
+                             "Check list virtual machines response"
+                             )
+        for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
+            if virtual_machine.state == 'Running':
+                # Stop virtual machine
+                cmd = stopVirtualMachine.stopVirtualMachineCmd()
+                cmd.id = virtual_machine.id
+                self.apiclient.stopVirtualMachine(cmd)
 
         vm = VirtualMachine.create(
                                     self.apiclient,
@@ -1219,20 +1250,24 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         )
         host = hosts[0]
         # For DNS and DHCP check 'dnsmasq' process status
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                router.linklocalip,
-                                'iptables -t nat -L'
-                                )
-        self.debug("iptables -t nat -L: %s" % result)
-        self.debug("Public IP: %s" % public_ip.ipaddress)
-        res = str(result)
-        self.assertEqual(
-                            res.count(str(public_ip.ipaddress)),
-                            1,
-                            "Check public IP address"
-                        )
+        try:
+            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+            result = get_process_status(
+                host.ipaddress,
+                22,
+                host.user,
+                host.passwd,
+                router.linklocalip,
+                'iptables -t nat -L'
+            )
+            self.debug("iptables -t nat -L: %s" % result)
+            self.debug("Public IP: %s" % public_ip.ipaddress)
+            res = str(result)
+            self.assertEqual(
+                res.count(str(public_ip.ipaddress)),
+                1,
+                "Check public IP address"
+            )
+        except KeyError:
+            self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
         return

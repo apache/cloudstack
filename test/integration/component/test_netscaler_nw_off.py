@@ -618,17 +618,6 @@ class TestNetScalerSharedMode(cloudstackTestCase):
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            interval = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            cleanup_resources(cls.api_client, cls.cleanup_devices)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

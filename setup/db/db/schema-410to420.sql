@@ -403,7 +403,7 @@ CREATE TABLE `cloud`.`user_vm_clone_setting` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');
 
 CREATE TABLE `cloud`.`affinity_group` (
   `id` bigint unsigned NOT NULL auto_increment,

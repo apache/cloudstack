@@ -24,12 +24,28 @@
 
 <section id="about-secondary-storage">
     <title>About Secondary Storage</title>
-    <para>Secondary storage is associated with a zone, and it stores the following:</para>
+    <para>Secondary storage stores the following:</para>
     <itemizedlist>
         <listitem><para>Templates &mdash; OS images that can be used to boot VMs and can include additional configuration information, such as installed applications</para></listitem>
         <listitem><para>ISO images &mdash; disc images containing data or bootable media for operating systems</para></listitem>
         <listitem><para>Disk volume snapshots &mdash; saved copies of VM data which can be used for data recovery or to create new templates</para></listitem>
     </itemizedlist>
-    <para>The items in zone-based NFS secondary storage are available to all hosts in the zone. &PRODUCT; manages the allocation of guest virtual disks to particular primary storage devices.</para>
-    <para>To make items in secondary storage available to all hosts throughout the cloud, you can add OpenStack Object Storage (Swift, <ulink url="http://swift.openstack.org">swift.openstack.org</ulink>) in addition to the zone-based NFS secondary storage. When using Swift, you configure Swift storage for the entire &PRODUCT;, then set up NFS secondary storage for each zone as usual. The NFS storage in each zone acts as a staging area through which all templates and other secondary storage data pass before being forwarded to Swift. The Swift storage acts as a cloud-wide resource, making templates and other data available to any zone in the cloud. There is no hierarchy in the Swift storage, just one Swift container per storage object. Any secondary storage in the whole cloud can pull a container from Swift at need. It is not necessary to copy templates and snapshots from one zone to another, as would be required when using zone NFS alone. Everything is available everywhere.</para>
+    <para>The items in secondary storage are available to all hosts in the scope of
+        the secondary storage, which may be defined as per zone or per region.</para>
+    <para>To make items in secondary storage available to all hosts throughout the cloud, you can
+        add object storage in addition to the
+        zone-based NFS Secondary Staging Store.
+        It is not necessary to
+        copy templates and snapshots from one zone to another, as would be required when using zone
+        NFS alone. Everything is available everywhere.</para>
+    <para>&PRODUCT; provides plugins that enable both
+        OpenStack Object Storage (Swift, 
+        <ulink url="http://swift.openstack.org">swift.openstack.org</ulink>)
+        and Amazon Simple Storage Service (S3) object storage.
+        When using one of these storage plugins, you configure Swift or S3 storage for
+        the entire &PRODUCT;, then set up the NFS Secondary Staging Store for each zone. The NFS
+        storage in each zone acts as a staging area through which all templates and other secondary
+        storage data pass before being forwarded to Swoft or S3.
+        The backing object storage acts as a cloud-wide
+        resource, making templates and other data available to any zone in the cloud.</para>
 </section>

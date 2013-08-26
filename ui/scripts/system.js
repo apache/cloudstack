@@ -8660,7 +8660,7 @@
                             dataType: "json",
                             async: false,
                             success: function(json) {
-                                var items = json.listexternaldhcpresponse.baremetaldhcp;
+                                var items = json.listbaremetaldhcpresponse.baremetaldhcp;
                                 args.response.success({
                                     data: items
                                 });
@@ -8729,7 +8729,7 @@
                     },
                     dataProvider: function(args) {
                         $.ajax({
-                            url: createURL('listBaremetalPxePingServer'),
+                            url: createURL('listBaremetalPxeServers'),
                             data: {
                                 physicalnetworkid: selectedPhysicalNetworkObj.id,
                                 page: args.page,
@@ -8738,7 +8738,7 @@
                             dataType: "json",
                             async: false,
                             success: function(json) {
-                                var items = json.listpingpxeserverresponse.pingpxeserver;
+                                var items = json.listbaremetalpxeserversresponse.baremetalpxeserver;
                                 args.response.success({
                                     data: items
                                 });
@@ -11869,7 +11869,6 @@
                                             $.ajax({
                                                 url: createURL("listDomains&listAll=true"),
                                                 dataType: "json",
-                                                async: false,
                                                 success: function(json) {
                                                     var domainObjs = json.listdomainsresponse.domain;
                                                     var items = [];
@@ -13598,6 +13597,9 @@
                                         label: 'label.storage.tags',
                                         isEditable: true
                                     },
+                                    zonename: {
+                                    	label: 'label.zone'
+                                    },
                                     podname: {
                                         label: 'label.pod'
                                     },
@@ -15102,6 +15104,12 @@
                                     endipv4: {
                                         label: 'IPv4 End IP'
                                     },
+                                    ip6cidr: {
+                                    	label: 'IPv6 CIDR'
+                                    },
+                                    ip6gateway: {
+                                    	label: 'IPv6 Gateway'
+                                    },
                                     startipv6: {
                                         label: 'IPv6 Start IP'
                                     },
@@ -15122,7 +15130,12 @@
                                     array2.push("&startip=" + args.data.startipv4);
                                 if (args.data.endipv4 != null && args.data.endipv4.length > 0)
                                     array2.push("&endip=" + args.data.endipv4);
-
+                                
+                                if (args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
+                                    array2.push("&ip6cidr=" + args.data.ip6cidr);
+                                if (args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
+                                    array2.push("&ip6gateway=" + args.data.ip6gateway);
+                                
                                 if (args.data.startipv6 != null && args.data.startipv6.length > 0)
                                     array2.push("&startipv6=" + args.data.startipv6);
                                 if (args.data.endipv6 != null && args.data.endipv6.length > 0)
@@ -15224,7 +15237,7 @@
                                             },
                                             type: "POST",
                                             success: function(json) {
-                                                var jid = json.addexternaldhcpresponse.jobid;
+                                                var jid = json.addbaremetaldhcpresponse.jobid;
                                                 args.response.success({
                                                     _custom: {
                                                         jobId: jid,
@@ -15260,7 +15273,7 @@
                 },
                 type: "POST",
                 success: function(json) {
-                    var jid = json.addexternaldhcpresponse.jobid;
+                    var jid = json.addbaremetaldhcpresponse.jobid;
                     args.response.success({
                         _custom: {
                             jobId: jid,
@@ -15308,12 +15321,12 @@
                                             },
                                             type: "POST",
                                             success: function(json) {
-                                                var jid = json.addexternalpxeresponse.jobid;
+                                                var jid = json.addbaremetalpxeresponse.jobid;
                                                 args.response.success({
                                                     _custom: {
                                                         jobId: jid,
                                                         getUpdatedItem: function(json) {
-                                                            var item = json.queryasyncjobresultresponse.jobresult.externalpxe;
+                                                            var item = json.queryasyncjobresultresponse.jobresult.baremetalpxeserver;
                                                             return item;
                                                         }
                                                     }
@@ -15345,12 +15358,12 @@
                 },
                 type: "POST",
                 success: function(json) {
-                    var jid = json.addexternalpxeresponse.jobid;
+                    var jid = json.addbaremetalpxeresponse.jobid;
                     args.response.success({
                         _custom: {
                             jobId: jid,
                             getUpdatedItem: function(json) {
-                                var item = json.queryasyncjobresultresponse.jobresult.externalpxe;
+                                var item = json.queryasyncjobresultresponse.jobresult.baremetalpxeserver;
                                 return item;
                             }
                         }

@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.DB;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -178,6 +179,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
@@ -196,8 +198,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             }
         } catch (SQLException e) {
             s_logger.debug("Failed to find parent snapshot: " + e.toString());
-        } finally {
-            txn.close();
         }
         return null;
     }

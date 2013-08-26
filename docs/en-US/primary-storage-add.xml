@@ -52,8 +52,10 @@
         <listitem>
         <para>Provide the following information in the dialog. The information required varies depending on your choice in Protocol.</para>
         <itemizedlist>
-            <listitem><para><emphasis role="bold">Pod.</emphasis> The pod for the storage device.</para></listitem>
-            <listitem><para><emphasis role="bold">Cluster.</emphasis> The cluster for the storage device.</para></listitem>
+            <listitem><para>Scope. Indicate whether the storage is available to all hosts in the zone or only to hosts in a single cluster.</para></listitem>
+            <listitem><para>Pod. (Visible only if you choose Cluster in the Scope field.) The pod for the storage device.</para></listitem>
+            <listitem><para>Cluster. (Visible only if you choose Cluster in the Scope field.) The cluster for the storage device.</para></listitem>
+            <listitem><para>Name. The name of the storage device</para></listitem>
             <listitem><para><emphasis role="bold">Name.</emphasis> The name of the storage device.</para></listitem>
             <listitem><para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS or SharedMountPoint.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS.</para></listitem>
             <listitem><para><emphasis role="bold">Server (for NFS, iSCSI, or PreSetup).</emphasis> The IP address or DNS name of the storage device.</para></listitem>

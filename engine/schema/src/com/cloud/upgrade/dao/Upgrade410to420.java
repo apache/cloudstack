@@ -111,6 +111,25 @@ public class Upgrade410to420 implements DbUpgrade {
         updateConcurrentConnectionsInNetworkOfferings(conn);
         migrateDatafromIsoIdInVolumesTable(conn);
         setRAWformatForRBDVolumes(conn);
+        migrateVolumeOnSecondaryStorage(conn);
+    }
+
+    private void migrateVolumeOnSecondaryStorage(Connection conn) {
+        PreparedStatement sql = null;
+        try {
+            sql = conn.prepareStatement("update `cloud`.`volumes` set state='Uploaded' where state='UploadOp'");
+            sql.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade volume state: ", e);
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+
+                }
+            }
+        }
     }
 
     private void persistVswitchConfiguration(Connection conn) {
@@ -423,8 +442,6 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
             pstmt.close();
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
@@ -599,7 +616,7 @@ public class Upgrade410to420 implements DbUpgrade {
             };
 
             Map<HypervisorType, String> newTemplateUrl = new HashMap<HypervisorType, String>(){
-                {   put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
+                {   put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2");
                 put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
                 put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
                 put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");

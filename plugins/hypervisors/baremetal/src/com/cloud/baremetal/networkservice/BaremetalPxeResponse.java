@@ -33,9 +33,9 @@ public class BaremetalPxeResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
     private String providerId;
-    
-    @SerializedName(ApiConstants.POD_ID) @Param(description="pod id where the device is in")
-    private String podId;
+
+    @SerializedName(ApiConstants.URL) @Param(description="url")
+    private String url;
 
 	public String getId() {
 		return id;
@@ -61,11 +61,11 @@ public class BaremetalPxeResponse extends BaseResponse {
 		this.providerId = providerId;
 	}
 
-	public String getPodId() {
-		return podId;
-	}
+    public String getUrl() {
+        return url;
+    }
 
-	public void setPodId(String podId) {
-		this.podId = podId;
-	}
+    public void setUrl(String url) {
+        this.url = url;
+    }
 }

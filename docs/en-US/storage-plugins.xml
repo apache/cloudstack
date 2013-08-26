@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<chapter id="storage-plugins">
+    <title>Writing a Storage Plugin</title>
+    <para>This section gives an outline of how to implement a plugin
+        to integrate a third-party storage provider.
+        For details and an example, you will need to read the code.</para>
+    <note>
+        <para>Example code is available at:
+        plugins/storage/volume/sample</para>
+    </note>
+    <para/>
+    <para>Third party storage providers can integrate with &PRODUCT; to provide
+        either primary storage or secondary storage.
+        For example, &PRODUCT; provides plugins for
+        Amazon Simple Storage Service (S3) or OpenStack
+        Object Storage (Swift). Additional third party object storages can be integrated with &PRODUCT;
+        by writing plugin software that uses the object storage plugin framework.
+        Several new interfaces are available so that
+        storage providers can develop vendor-specific plugins based on well-defined
+        contracts that can be seamlessly managed by &PRODUCT;.</para>
+    <para>Artifacts such as templates, ISOs and snapshots are kept in storage which &PRODUCT;
+    refers to as secondary storage. To improve scalability and performance, as when a number
+    of hosts access secondary storage concurrently, object storage can be used for secondary
+    storage. Object storage can also provide built-in high availability capability. When using
+    object storage, access to secondary storage data can be made available across multiple
+    zones in a region. This is a huge benefit, as it is no longer necessary to copy templates,
+    snapshots etc. across zones as would be needed in an environment
+    using only zone-based NFS storage.</para>
+    <para>The user enables a storage plugin through the UI.
+        A new dialog box choice is offered to select the storage
+        provider. Depending on the provider you select, additional input fields may appear so that
+        you can provide the additional details required by that provider, such as a user name and
+        password for a third-party storage account.
+    </para>
+    <section id="storage-plugin-steps">
+        <title>Overview of How to Write a Storage Plugin</title>
+        <para>To add a third-party storage option to &PRODUCT;, implement the following interfaces in Java:</para>
+        <itemizedlist>
+            <listitem><para>DataStoreDriver</para></listitem>
+            <listitem><para>DataStoreLifecycle</para></listitem>
+            <listitem><para>DataStoreProvider</para></listitem>
+            <listitem><para>In addition to implementing the interfaces, you have to hardcode your plugin's required additional
+                input fields into the code for the Add Secondary Storage
+                or Add Primary Storage dialog box.</para></listitem>
+            <listitem><para>Place your .jar file in plugins/storage/volume/ or plugins/storage/image/.</para></listitem>
+            <listitem><para>Edit /client/tomcatconf/componentContext.xml.in.</para></listitem>
+            <listitem><para>Edit client/pom.xml.</para></listitem>
+        </itemizedlist>
+    </section>
+    <section id="datastoredriver">
+        <title>Implementing DataStoreDriver</title>
+        <para>DataStoreDriver contains the code that &PRODUCT; will use to provision the object store, when needed.</para>
+        <para>You must implement the following methods:</para>
+        <itemizedlist>
+            <listitem><para>getTO()</para></listitem>
+            <listitem><para>getStoreTO()</para></listitem>
+            <listitem><para>createAsync()</para></listitem>
+            <listitem><para>deleteAsync()</para></listitem>
+        </itemizedlist>
+        <para>The following methods are optional:</para>
+        <itemizedlist>
+            <listitem><para>resize()</para></listitem>
+            <listitem><para>canCopy() is optional. If you set it to true, then you must implement copyAsync().</para></listitem>
+        </itemizedlist>
+    </section>
+    <section id="datastorelifecycle">
+        <title>Implementing DataStoreLifecycle</title>
+        <para>DataStoreLifecycle contains the code to manage the storage operations for ongoing use of the storage.
+            Several operations are needed, like create, maintenance mode, delete, etc.</para>
+        <para>You must implement the following methods:</para>
+        <itemizedlist>
+            <listitem><para>initialize()</para></listitem>
+            <listitem><para>maintain()</para></listitem>
+            <listitem><para>cancelMaintain()</para></listitem>
+            <listitem><para>deleteDataStore()</para></listitem>
+            <listitem><para>Implement one of the attach*() methods depending on what scope you want the storage to have: attachHost(), attachCluster(), or attachZone().</para></listitem>
+        </itemizedlist>
+    </section>
+    <section id="datastoreprovider">
+        <title>Implementing DataStoreProvider</title>
+        <para>DataStoreProvider contains the main code of the data store.</para>
+        <para>You must implement the following methods:</para>
+        <itemizedlist>
+            <listitem><para>getDatastoreLifeCycle()</para></listitem>
+            <listitem><para>getDataStoreDriver()</para></listitem>
+            <listitem><para>getTypes(). Returns one or more types of storage for which this data store provider can be used.
+                For secondary object storage, return IMAGE, and for a Secondary Staging Store, return ImageCache.</para></listitem>
+            <listitem><para>configure(). First initialize the lifecycle implementation and the driver implementation,
+                then call registerDriver() to register the new object store provider instance with &PRODUCT;.</para></listitem>
+            <listitem><para>getName(). Returns the unique name of your provider; for example,
+                this can be used to get the name to display in the UI.</para></listitem>
+        </itemizedlist>
+        <para>The following methods are optional:</para>
+        <itemizedlist>
+            <listitem><para>getHostListener() is optional; it's for monitoring the status of the host.</para></listitem>
+        </itemizedlist>
+    </section>
+    <section id="storage-plugin-code-location">
+        <title>Place the .jar File in the Right Directory</title>
+        <para>For a secondary storage plugin, place your .jar file here:</para>
+        <programlisting>plugins/storage/image/</programlisting>
+        <para>For a primary storage plugin, place your .jar file here:</para>
+        <programlisting>plugins/storage/volume/</programlisting>
+    </section>
+    <section id="storage-plugin-componentcontext-xml">
+        <title>Edit Configuration Files</title>
+        <para>First, edit the following file tell &PRODUCT; to include your .jar file.
+            Add a line to this file to tell the &PRODUCT; Management Server that it now has a dependency on your code:</para>
+        <programlisting>client/pom.xml</programlisting>
+        <para>Place some facts about your code in the following file so &PRODUCT; can run it:</para>
+        <programlisting>/client/tomcatconf/componentContext.xml.in</programlisting> 
+        <para>In the section “Deployment configurations of various adapters,” add this:</para>
+        <programlisting>&lt;bean&gt;id=”some unique ID” class=”package name of your implementation of DataStoreProvider”&lt;/bean&gt;</programlisting>
+        <para>In the section “Storage Providers,” add this:</para>
+         <programlisting>&lt;property name=”providers”&gt;
+    &lt;ref local=”same ID from the bean tag's id attribute”&gt;
+&lt;/property&gt;</programlisting>
+            
+    </section>
+        
+</chapter>

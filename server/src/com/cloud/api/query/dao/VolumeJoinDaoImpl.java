@@ -166,16 +166,17 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setBytesWriteRate(volume.getBytesReadRate());
             volResponse.setIopsReadRate(volume.getIopsWriteRate());
             volResponse.setIopsWriteRate(volume.getIopsWriteRate());
-
+            
         }
-        Long poolId = volume.getPoolId();
-        String poolName = (poolId == null) ? "none" : volume.getPoolName();
-        volResponse.setStoragePoolName(poolName);
-
-        // return hypervisor for ROOT and Resource domain only
-        if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-                && volume.getState() != Volume.State.UploadOp && volume.getHypervisorType() != null) {
-            volResponse.setHypervisor(volume.getHypervisorType().toString());
+        
+        // return hypervisor and storage pool info for ROOT and Resource domain only
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {   
+            if (volume.getState() != Volume.State.UploadOp && volume.getHypervisorType() != null) {
+                volResponse.setHypervisor(volume.getHypervisorType().toString());
+            }
+            Long poolId = volume.getPoolId();
+            String poolName = (poolId == null) ? "none" : volume.getPoolName();
+            volResponse.setStoragePoolName(poolName);
         }
 
         volResponse.setAttached(volume.getAttached());

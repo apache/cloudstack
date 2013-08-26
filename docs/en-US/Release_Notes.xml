@@ -369,7 +369,7 @@ under the License.
         </tgroup>
       </informaltable>
     </section>
-    <section id="known-issues-4.1">
+    <section id="known-issues-4.2">
       <title>Known Issues in 4.2.0</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
@@ -544,7 +544,7 @@ under the License.
       </informaltable>
     </section>
   </chapter>
-  <chapter id="upgrade-instructions">
+  <chapter id="upgrade-instruction">
     <title>Upgrade Instructions</title>
     <para>This section contains upgrade instructions from prior versions of CloudStack to Apache
       CloudStack 4.2.0. We include instructions on upgrading to Apache CloudStack from pre-Apache
@@ -552,7 +552,7 @@ under the License.
       made while CloudStack was in the Apache Incubator.</para>
     <para>If you run into any issues during upgrades, please feel free to ask questions on
       users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
-    <section id="upgrade-from-4.0-to-4.1">
+    <section id="upgrade-from-4.0-to-4.2">
       <title>Upgrade from 4.x.x to 4.2.0</title>
       <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.2.0.</para>
       <para>Any steps that are hypervisor-specific will be called out with a note.</para>
@@ -579,7 +579,7 @@ under the License.
               url="http://cloudstack.apache.org/downloads.html"
               >http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied
             by community members. You will need them for step <xref linkend="upgrade-deb-packages"/>
-            or step <xref linkend="upgrade-rpm-packages"/>.</para>
+            or step <xref linkend="upgrade-rpm-package"/>.</para>
           <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink
               url="http://cloudstack.apache.org/docs/en-US/index.html">Installation
             Guide</ulink>.</para>
@@ -630,7 +630,7 @@ under the License.
         </listitem>
         <listitem id="upgrade-deb-packages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
-            skip to step <xref linkend="upgrade-rpm-packages"/>.</para>
+            skip to step <xref linkend="upgrade-rpm-package"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
@@ -656,7 +656,7 @@ under the License.
               <para>Now update your apt package list:</para>
               <programlisting language="Bash">$ sudo apt-get update</programlisting>
             </listitem>
-            <listitem id="deb-master">
+            <listitem id="debmaster">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package. This will pull in any other
                 dependencies you need.</para>
@@ -780,7 +780,7 @@ service cloudstack-agent restart
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="upgrade-rpm-packages">
+        <listitem id="upgrade-rpm-package">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
             not, skip to step <xref linkend="restart-system-vms"/>.</para>
           <note>
@@ -789,7 +789,7 @@ service cloudstack-agent restart
               If you've created your own packages and yum repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="rpmsteps">
+          <orderedlist id="rpmstep">
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -811,7 +811,7 @@ gpgcheck=0
               <para>If you're using your own package repository, change this line to read as
                 appropriate for your 4.2.0 repository.</para>
             </listitem>
-            <listitem id="rpm-master">
+            <listitem id="rpmmaster">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package by upgrading the older
                   <filename>cloud-client</filename> package.</para>
@@ -889,7 +889,7 @@ Done restarting router(s).
         </listitem>
       </orderedlist>
     </section>
-    <section id="upgrade-from-3.0.2-to-4.0">
+    <section id="upgrade-from-3.0.2-to-4.2">
       <title>Upgrade from 3.0.2 to 4.2.0</title>
       <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.2.0.
         Sections that are hypervisor-specific will be called out with a note.</para>
@@ -898,7 +898,7 @@ Done restarting router(s).
           <note>
             <para>The following upgrade instructions apply only if you're using VMware hosts. If
               you're not using VMware hosts, skip this step and move on to <xref
-                linkend="stopping-usage-servers"/>.</para>
+                linkend="stopping-usageservers"/>.</para>
           </note>
           <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
           <orderedlist numeration="loweralpha">
@@ -984,7 +984,7 @@ Done restarting router(s).
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="stopping-usage-servers">
+        <listitem id="stoppingusage-servers">
           <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
           <programlisting language="Bash"><prompt>#</prompt> service cloud-usage stop</programlisting>
         </listitem>
@@ -1483,7 +1483,7 @@ service cloudstack-agent start
           issues are seen, try clearing your browser cache and reloading the UI page.</para>
       </note>
     </section>
-    <section id="upgrade-from-2.2.x-to-4.1">
+    <section id="upgrade-from-2.2.x-to-4.2">
       <title>Upgrade from 2.2.14 to 4.2.0</title>
       <orderedlist>
         <listitem>
@@ -1707,7 +1707,7 @@ service cloudstack-agent restart
         </listitem>
         <listitem id="upgrade-rpm-packages-22">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
-            not, skip to step <xref linkend="correct-components-xml-22"/>.</para>
+            not, skip to step <xref linkend="correct-components-xml-23"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
@@ -1770,7 +1770,7 @@ service cloudstack-agent start
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="correct-components-xml-22">
+        <listitem id="correct-components-xml-23">
           <para>If you have made changes to your existing copy of the file components.xml in your
             previous-version CloudStack installation, the changes will be preserved in the upgrade.
             However, you need to do the following steps to place these changes in a new version of
@@ -6755,7 +6755,7 @@ service cloudstack-agent start
             source, or check the Apache CloudStack downloads page at <ulink
               url="http://cloudstack.apache.org/downloads.html"
               >http://cloudstack.apache.org/downloads.html</ulink> for package repositories supplied
-            by community members. You will need them for step <xref linkend="upgrade-deb-packages"/>
+            by community members. You will need them for step <xref linkend="upgrade-debpackages"/>
             or step <xref linkend="upgrade-rpm-packages"/>.</para>
           <para>Instructions for creating packages from the &PRODUCT; source are in the <ulink
               url="http://cloudstack.apache.org/docs/en-US/index.html">Installation
@@ -6805,7 +6805,7 @@ service cloudstack-agent start
           <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to
             4.1.</para>
         </listitem>
-        <listitem id="upgrade-deb-packages">
+        <listitem id="upgrade-debpackages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
             skip to step <xref linkend="upgrade-rpm-packages"/>.</para>
           <note>
@@ -6814,7 +6814,7 @@ service cloudstack-agent start
               If you've created your own packages and APT repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="debsteps">
+          <orderedlist id="debstep">
             <listitem>
               <para>The first order of business will be to change the sources list for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -6839,7 +6839,7 @@ service cloudstack-agent start
                 dependencies you need.</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
             </listitem>
-            <listitem id="kvm-agent-deb">
+            <listitem id="kvm-agentdeb">
               <para>You will need to manually install the <filename>cloudstack-agent</filename>
                 package:</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
@@ -6886,7 +6886,7 @@ service cloudstack-agent restart
         </listitem>
         <listitem id="upgrade-rpm-packages">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
-            not, skip to step <xref linkend="restart-system-vms"/>.</para>
+            not, skip to step <xref linkend="restart-systemvms"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
@@ -6920,7 +6920,7 @@ gpgcheck=0
                   <filename>cloud-client</filename> package.</para>
               <programlisting language="Bash">$ sudo yum upgrade cloud-client</programlisting>
             </listitem>
-            <listitem id="kvm-agent-rpm">
+            <listitem id="kvm-agentrpm">
               <para>For KVM hosts, you will need to upgrade the <filename>cloud-agent</filename>
                 package, similarly installing the new version as
                   <filename>cloudstack-agent</filename>.</para>
@@ -6949,7 +6949,7 @@ service cloudstack-agent start
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="restart-system-vms">
+        <listitem id="restart-systemvms">
           <para>Once you've upgraded the packages on your management servers, you'll need to restart
             the system VMs. Make sure port 8096 is open in your local host firewall to do
             this.</para>
@@ -6979,7 +6979,7 @@ Done restarting router(s).
         </listitem>
       </orderedlist>
     </section>
-    <section id="upgrade-from-3.0.2-to-4.0">
+    <section id="upgrade-from-3.0.2-to-4.1">
       <title>Upgrade from 3.0.2 to 4.1.0</title>
       <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.1.0.
         Sections that are hypervisor-specific will be called out with a note.</para>
@@ -6988,7 +6988,7 @@ Done restarting router(s).
           <note>
             <para>The following upgrade instructions apply only if you're using VMware hosts. If
               you're not using VMware hosts, skip this step and move on to <xref
-                linkend="stopping-usage-servers"/>.</para>
+                linkend="stopping-usageservers"/>.</para>
           </note>
           <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
           <orderedlist numeration="loweralpha">
@@ -7074,7 +7074,7 @@ Done restarting router(s).
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="stopping-usage-servers">
+        <listitem id="stopping-usageservers">
           <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
           <programlisting language="Bash"><prompt>#</prompt> service cloud-usage stop</programlisting>
         </listitem>
@@ -7097,16 +7097,16 @@ Done restarting router(s).
             the community provided yum/apt repositories to gain access to the &PRODUCT;
             binaries.</para>
         </listitem>
-        <listitem id="upgrade-deb-packages-302">
+        <listitem id="upgrade-deb-packages-303">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
-            skip to step <xref linkend="upgrade-rpm-packages-302"/>.</para>
+            skip to step <xref linkend="upgrade-rpm-packages-303"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
               If you've created your own packages and APT repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="debsteps-302">
+          <orderedlist id="debsteps-303">
             <listitem>
               <para>The first order of business will be to change the sources list for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -7125,13 +7125,13 @@ Done restarting router(s).
               <para>Now update your apt package list:</para>
               <programlisting language="Bash">$ sudo apt-get update</programlisting>
             </listitem>
-            <listitem id="deb-master-302">
+            <listitem id="deb-master-303">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package. This will pull in any other
                 dependencies you need.</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
             </listitem>
-            <listitem id="kvm-agent-deb-302">
+            <listitem id="kvm-agent-deb-303">
               <para>You will need to manually install the <filename>cloudstack-agent</filename>
                 package:</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
@@ -7176,16 +7176,16 @@ service cloudstack-agent restart
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="upgrade-rpm-packages-302">
+        <listitem id="upgrade-rpm-packages-303">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
-            not, skip to step <xref linkend="correct-components-xml-302"/>.</para>
+            not, skip to step <xref linkend="correct-components-xml-303"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
               If you've created your own packages and yum repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="rpmsteps-302">
+          <orderedlist id="rpmsteps-303">
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -7206,13 +7206,13 @@ gpgcheck=0
               <para>If you're using your own package repository, change this line to read as
                 appropriate for your 4.1.0 repository.</para>
             </listitem>
-            <listitem id="rpm-master-302">
+            <listitem id="rpm-master-303">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package by upgrading the older
                   <filename>cloud-client</filename> package.</para>
               <programlisting language="Bash">$ sudo yum upgrade cloud-client</programlisting>
             </listitem>
-            <listitem id="kvm-agent-rpm-302">
+            <listitem id="kvm-agent-rpm-303">
               <para>For KVM hosts, you will need to upgrade the <filename>cloud-agent</filename>
                 package, similarly installing the new version as
                   <filename>cloudstack-agent</filename>.</para>
@@ -7241,7 +7241,7 @@ service cloudstack-agent start
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="correct-components-xml-302">
+        <listitem id="correct-components-xml-303">
           <para>If you have made changes to your copy of
               <filename>/etc/cloud/management/components.xml</filename> the changes will be
             preserved in the upgrade. However, you need to do the following steps to place these
@@ -7693,16 +7693,16 @@ service cloudstack-agent start
             the community provided yum/apt repositories to gain access to the &PRODUCT; binaries.
           </para>
         </listitem>
-        <listitem id="upgrade-deb-packages-22">
+        <listitem id="upgrade-deb-packages-23">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
-            skip to step <xref linkend="upgrade-rpm-packages-22"/>.</para>
+            skip to step <xref linkend="upgrade-rpm-packages-23"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
               If you've created your own packages and APT repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="debsteps-22">
+          <orderedlist id="debsteps-23">
             <listitem>
               <para>The first order of business will be to change the sources list for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -7721,13 +7721,13 @@ service cloudstack-agent start
               <para>Now update your apt package list:</para>
               <programlisting language="Bash">$ sudo apt-get update</programlisting>
             </listitem>
-            <listitem id="deb-master-22">
+            <listitem id="deb-master-23">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package. This will pull in any other
                 dependencies you need.</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
             </listitem>
-            <listitem id="kvm-agent-deb-22">
+            <listitem id="kvm-agent-deb-23">
               <para>On KVM hosts, you will need to manually install the
                   <filename>cloudstack-agent</filename> package:</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
@@ -7772,16 +7772,16 @@ service cloudstack-agent restart
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="upgrade-rpm-packages-22">
+        <listitem id="upgrade-rpm-packages-23">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
-            not, skip to step <xref linkend="correct-components-xml-22"/>.</para>
+            not, skip to step <xref linkend="correct-components-xml-24"/>.</para>
           <note>
             <title>Community Packages</title>
             <para>This section assumes you're using the community supplied packages for &PRODUCT;.
               If you've created your own packages and yum repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="rpmsteps-22">
+          <orderedlist id="rpmsteps-24">
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -7802,13 +7802,13 @@ gpgcheck=0
               <para>If you're using your own package repository, change this line to read as
                 appropriate for your 4.1.0 repository.</para>
             </listitem>
-            <listitem id="rpm-master-22">
+            <listitem id="rpm-master-23">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package by upgrading the older
                   <filename>cloud-client</filename> package.</para>
               <programlisting language="Bash">$ sudo yum upgrade cloud-client</programlisting>
             </listitem>
-            <listitem id="kvm-agent-rpm-22">
+            <listitem id="kvm-agent-rpm-24">
               <para>For KVM hosts, you will need to upgrade the <filename>cloud-agent</filename>
                 package, similarly installing the new version as
                   <filename>cloudstack-agent</filename>.</para>
@@ -7837,7 +7837,7 @@ service cloudstack-agent start
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="correct-components-xml-22">
+        <listitem id="correct-components-xml-24">
           <para>If you have made changes to your existing copy of the file components.xml in your
             previous-version CloudStack installation, the changes will be preserved in the upgrade.
             However, you need to do the following steps to place these changes in a new version of
