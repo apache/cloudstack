@@ -937,6 +937,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             newTemplate.setPhysicalSize(result.second());
             newTemplate.setSize(result.third());
             newTemplate.setFormat(ImageFormat.OVA);
+            newTemplate.setName(uniqeName);
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {

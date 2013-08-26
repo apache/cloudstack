@@ -207,6 +207,10 @@ public class TemplateObject implements TemplateInfo {
                         if (newTemplate.getFormat() != null) {
                             templateVO.setFormat(newTemplate.getFormat());
                         }
+                        if (newTemplate.getName() != null ){
+                            // For template created from snapshot, template name is determine by resource code.
+                            templateVO.setUniqueName(newTemplate.getName());
+                        }
                         templateVO.setSize(newTemplate.getSize());
                         this.imageDao.update(templateVO.getId(), templateVO);
                     }

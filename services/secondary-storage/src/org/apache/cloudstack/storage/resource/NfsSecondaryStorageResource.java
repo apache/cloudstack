@@ -375,7 +375,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             FormatInfo info = processor.process(destPath, null, templateUuid);
 
             TemplateLocation loc = new TemplateLocation(_storage, destPath);
-            loc.create(1, true, templateName);
+            loc.create(1, true, templateUuid);
             loc.addFormat(info);
             loc.save();
             TemplateProp prop = loc.getTemplateInfo();
@@ -384,6 +384,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplate.setFormat(ImageFormat.VHD);
             newTemplate.setSize(prop.getSize());
             newTemplate.setPhysicalSize(prop.getPhysicalSize());
+            newTemplate.setName(templateUuid);
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
             s_logger.debug("Failed to create template from snapshot: " + e.toString());
@@ -424,6 +425,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 File metaFile = new File(metaFileName);
                 FileWriter writer = new FileWriter(metaFile);
                 BufferedWriter bufferWriter = new BufferedWriter(writer);
+                // KVM didn't change template unique name, just used the template name passed from orchestration layer, so no need
+                // to send template name back.
                 bufferWriter.write("uniquename=" + destData.getName());
                 bufferWriter.write("\n");
                 bufferWriter.write("filename=" + fileName);
@@ -454,7 +457,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                 FormatInfo info = processor.process(destPath, null, templateName);
                 TemplateLocation loc = new TemplateLocation(_storage, destPath);
-                loc.create(1, true, srcFile.getName());
+                loc.create(1, true, destData.getName());
                 loc.addFormat(info);
                 loc.save();
 
@@ -464,7 +467,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 newTemplate.setFormat(srcFormat);
                 newTemplate.setSize(prop.getSize());
                 newTemplate.setPhysicalSize(prop.getPhysicalSize());
-
                 return new CopyCmdAnswer(newTemplate);
             } catch (ConfigurationException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
