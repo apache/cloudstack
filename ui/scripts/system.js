@@ -10284,6 +10284,47 @@
                             },
                             createForm: {
                                 title: 'label.add.cluster',
+                                preFilter: function(args) {
+                                    var $form = args.$form;
+                                    
+                                    $form.click(function() {
+                                        // VSM fields need to be required if a traffic override is selected
+                                        //
+                                        // ** This is done by switching out optional fields for required fields;
+                                        //    need to check for *either* vsm[...]_req or vsm[...]
+                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
+                                        var $overridePublicTraffic = $form.find('.form-item[rel=overridepublictraffic] input[type=checkbox]');
+                                        var $vsmFields = $form.find('.form-item').filter(function() {
+                                            var vsmFields = [
+                                                'vsmipaddress',
+                                                'vsmusername',
+                                                'vsmpassword'
+                                            ];
+
+                                            return $.inArray($(this).attr('rel'), vsmFields) > -1;
+                                        });
+                                        var $vsmReqFields = $form.find('.form-item').filter(function() {
+                                            var vsmFields = [
+                                                'vsmipaddress_req',
+                                                'vsmusername_req',
+                                                'vsmpassword_req'
+                                            ];
+
+                                            return $.inArray($(this).attr('rel'), vsmFields) > -1;
+                                        });
+
+
+                                        if ($overridePublicTraffic.is(':checked') ||
+                                            $overrideGuestTraffic.is(':checked')) {
+                                            $vsmReqFields.css('display', 'inline-block');
+                                            $vsmFields.hide();
+                                        } else {
+                                            $vsmFields.css('display', 'inline-block');
+                                            $vsmReqFields.hide();
+                                        }
+
+                                    });
+                                },
                                 fields: {
                                     zoneid: {
                                         label: 'Zone Name',
@@ -10722,14 +10763,28 @@
                                         validation: {
                                             required: false
                                         },
-                                        isHidden: false
+                                        isHidden: true
+                                    },
+                                    vsmipaddress_req: {
+                                        label: 'Nexus 1000v IP Address',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
                                     },
                                     vsmusername: {
                                         label: 'Nexus 1000v Username',
                                         validation: {
                                             required: false
                                         },
-                                        isHidden: false
+                                        isHidden: true
+                                    },
+                                    vsmusername_req: {
+                                        label: 'Nexus 1000v Username',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
                                     },
                                     vsmpassword: {
                                         label: 'Nexus 1000v Password',
@@ -10737,7 +10792,15 @@
                                             required: false
                                         },
                                         isPassword: true,
-                                        isHidden: false
+                                        isHidden: true
+                                    },
+                                    vsmpassword_req: {
+                                        label: 'Nexus 1000v Password',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isPassword: true,
+                                        isHidden: true
                                     }
                                     //hypervisor==VMWare ends here
                                 }
