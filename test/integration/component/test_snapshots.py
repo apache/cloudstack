@@ -23,9 +23,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import is_snapshot_on_nfs
-import os
 
 
 class Services:
@@ -250,26 +248,7 @@ class TestSnapshots(cloudstackTestCase):
                             snapshot.id,
                             "Check resource id in list resources call"
                         )
-        qresultset = self.dbclient.execute(
-                        "select id from snapshots where uuid = '%s';" \
-                        % str(snapshot.id)
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-
-        self.assertNotEqual(
-                            str(snapshot_uuid),
-                            'NULL',
-                            "Check if backup_snap_id is not null"
-                        )
-       self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
-                                            self.services["paths"], self.zone.id, snapshot_uuid))
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return
 
     @attr(speed = "slow")
@@ -514,31 +493,16 @@ class TestSnapshots(cloudstackTestCase):
                                    domainid=self.account.domainid
                                    )
         snapshot.delete(self.apiclient)
-
         snapshots = list_snapshots(
                                    self.apiclient,
                                    id=snapshot.id
                                    )
-
         self.assertEqual(
                          snapshots,
                          None,
                          "Check if result exists in list item call"
                          )
-        qresultset = self.dbclient.execute(
-                        "select id from snapshots where uuid = '%s';" \
-                        % str(snapshot.id)
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshotid = qresult[0]
-        self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
-                                            self.services["paths"], self.zone.id, snapshotid))
+        self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return
 
     @attr(speed = "slow")
@@ -981,19 +945,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                         )
         self.debug("select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
                         % snapshot.id)
-        # Verify backup_snap_id is not NULL
-        qresultset = self.dbclient.execute(
-                        "select id from snapshots where uuid = '%s';" \
-                        % snapshot.id
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]
+        snapshot_uuid = snapshot.id
 
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
@@ -1061,8 +1013,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                         'Running',
                         "Check list VM response for Running state"
                     )
-        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
-                                            self.services["paths"], self.zone.id, snapshot_uuid))
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot_uuid))
         return
 
 
