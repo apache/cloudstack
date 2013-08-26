@@ -16,15 +16,21 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
+import com.cloud.utils.component.ConfigInjector;
+import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * ConfigDepotImpl implements the ConfigDepot and ConfigDepotAdmin interface.
@@ -39,8 +45,6 @@ import com.cloud.utils.db.EntityManager;
  *
  * TODO:
  *   - Move the rest of the changes to the config table to here.
- *   - Implement ScopedConfigValue
- *   - Move the code to set scoped configuration values to here.
  *   - Add the code to mark the rows in configuration table without
  *     the corresponding keys to be null.
  *   - Move all of the configurations to using ConfigDepot
@@ -48,28 +52,33 @@ import com.cloud.utils.db.EntityManager;
  *   - Figure out the correct categories.
  *
  */
-class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
+class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker, ConfigInjector {
     @Inject
     EntityManager      _entityMgr;
-
     @Inject
     ConfigurationDao   _configDao;
-
     @Inject
     List<Configurable> _configurables;
+    @Inject
+    List<ScopedConfigStorage> _scopedStorage;
+
+    HashMap<String, ConfigKey<?>> _allKeys = new HashMap<String, ConfigKey<?>>(1007);
 
     public ConfigDepotImpl() {
     }
 
     @Override
     public <T> ConfigValue<T> get(ConfigKey<T> config) {
-        return new ConfigValue<T>(_entityMgr, config);
-    }
-
-    @Override
-    public <T> ScopedConfigValue<T> getScopedValue(ConfigKey<T> config) {
-        assert (config.scope() != null) : "Did you notice the configuration you're trying to retrieve is not scoped?";
-        return new ScopedConfigValue<T>(_entityMgr, config);
+        if (config.scope() == Scope.Global) {
+            return new ConfigValue<T>(_entityMgr, config);
+        } else {
+            for (ScopedConfigStorage storage : _scopedStorage) {
+                if (storage.getScope() == config.scope()) {
+                    return new ConfigValue<T>(_entityMgr, config, storage);
+                }
+            }
+            throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope());
+        }
     }
 
     @Override
@@ -102,5 +111,38 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Override
     public List<String> getComponentsInDepot() {
         return new ArrayList<String>();
+    }
+
+    @Override
+    public void check() {
+        for (Configurable configurable : _configurables) {
+            for (ConfigKey<?> key : configurable.getConfigKeys()) {
+                if (_allKeys.containsKey(key.key())) {
+                    throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before: " + key.toString());
+                }
+                _allKeys.put(key.key(), key);
+            }
+        }
+    }
+
+    @Override
+    public void inject(Field field, Object obj, String key) {
+        ConfigKey<?> configKey = _allKeys.get(key);
+        try {
+            field.set(obj, get(configKey));
+        } catch (IllegalArgumentException e) {
+            throw new CloudRuntimeException("Unable to inject configuration due to ", e);
+        } catch (IllegalAccessException e) {
+            throw new CloudRuntimeException("Unable to inject configuration due to ", e);
+        }
+    }
+
+    @Override
+    public ConfigValue<?> get(String name) {
+        ConfigKey<?> configKey = _allKeys.get(name);
+        if (configKey == null) {
+            throw new CloudRuntimeException("Unable to find a registered config key for " + name);
+        }
+        return get(configKey);
     }
 }

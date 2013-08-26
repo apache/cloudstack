@@ -26,21 +26,22 @@ import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManagerImpl;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
+//@ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
 public class VpcApiUnitTest extends TestCase{
     @Inject VpcManagerImpl _vpcService = null;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         ComponentContext.initComponentsLifeCycle();
@@ -85,9 +86,10 @@ public class VpcApiUnitTest extends TestCase{
     public void validateNtwkOffForVpc() {
         //validate network offering
         //1) correct network offering
+        VpcVO vo = new VpcVO(1, "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain");
         boolean result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 1, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 1, "0.0.0.0", "111-", vo, "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (Exception ex) {
         } finally {
@@ -97,7 +99,7 @@ public class VpcApiUnitTest extends TestCase{
         //2) invalid offering - source nat is not included
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 2, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 2, "0.0.0.0", "111-", vo, "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -107,7 +109,7 @@ public class VpcApiUnitTest extends TestCase{
         //3) invalid offering - conserve mode is off
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 3, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 3, "0.0.0.0", "111-", vo, "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -117,7 +119,7 @@ public class VpcApiUnitTest extends TestCase{
         //4) invalid offering - guest type shared
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 4, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 4, "0.0.0.0", "111-", vo, "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -127,7 +129,7 @@ public class VpcApiUnitTest extends TestCase{
         //5) Invalid offering - no redundant router support
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 5, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 5, "0.0.0.0", "111-", vo, "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -139,7 +141,7 @@ public class VpcApiUnitTest extends TestCase{
 //    public void destroyVpc() {
 //        boolean result = false;
 //        try {
-//            result = _vpcService.destroyVpc(_vpcService.getVpc(1), new AccountVO(), 1L);
+//            result = _vpcService.destroyVpc(vo, new AccountVO(), 1L);
 //        } catch (Exception ex) {
 //            s_logger.debug(ex);
 //        } finally {
@@ -158,7 +160,7 @@ public class VpcApiUnitTest extends TestCase{
 //        } finally {
 //            assertTrue("Delete vpc: TEST FAILED, vpc failed to delete" + result, result);
 //        }
-//        
+//
 //        //delete non-existing offering
 //        result = false;
 //        try {

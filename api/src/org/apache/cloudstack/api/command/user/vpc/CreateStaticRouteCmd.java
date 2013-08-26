@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,14 +30,13 @@ import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 
 @APICommand(name = "createStaticRoute", description="Creates a static route", responseObject=StaticRouteResponse.class)
@@ -119,11 +120,11 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public long getEntityOwnerId() {
-         VpcGateway gateway =  _vpcService.getVpcGateway(gatewayId);
+        VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
          if (gateway == null) {
              throw new InvalidParameterValueException("Invalid gateway id is specified");
          }
-         return _vpcService.getVpc(gateway.getVpcId()).getAccountId();
+        return _entityMgr.findById(Vpc.class, gateway.getVpcId()).getAccountId();
     }
 
     @Override
@@ -133,7 +134,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public Long getSyncObjId() {
-        VpcGateway gateway =  _vpcService.getVpcGateway(gatewayId);
+        VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
         if (gateway == null) {
             throw new InvalidParameterValueException("Invalid id is specified for the gateway");
         }

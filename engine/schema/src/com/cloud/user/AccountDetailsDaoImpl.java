@@ -22,75 +22,87 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.Transaction;
 
-@Component
-@Local(value={AccountDetailsDao.class})
-public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao {
-	protected final SearchBuilder<AccountDetailVO> accountSearch;
-	
-	protected AccountDetailsDaoImpl() {
-		accountSearch = createSearchBuilder();
-		accountSearch.and("accountId", accountSearch.entity().getAccountId(), Op.EQ);
-		accountSearch.done();
-	}
-	
-	@Override
-	public Map<String, String> findDetails(long accountId) {
-		SearchCriteriaService<AccountDetailVO, AccountDetailVO> sc = SearchCriteria2.create(AccountDetailVO.class);
-		sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
-		List<AccountDetailVO> results = sc.list();
-		Map<String, String> details = new HashMap<String, String>(results.size());
-		for (AccountDetailVO r : results) {
-			details.put(r.getName(), r.getValue());
-		}
-		return details;
-	}
+@Local(value = {AccountDetailsDao.class})
+public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao, ScopedConfigStorage {
+    protected final SearchBuilder<AccountDetailVO> accountSearch;
 
-	@Override
-	public void persist(long accountId, Map<String, String> details) {
+    protected AccountDetailsDaoImpl() {
+        accountSearch = createSearchBuilder();
+        accountSearch.and("accountId", accountSearch.entity().getAccountId(), Op.EQ);
+        accountSearch.done();
+    }
+
+    @Override
+    public Map<String, String> findDetails(long accountId) {
+        SearchCriteriaService<AccountDetailVO, AccountDetailVO> sc = SearchCriteria2.create(AccountDetailVO.class);
+        sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
+        List<AccountDetailVO> results = sc.list();
+        Map<String, String> details = new HashMap<String, String>(results.size());
+        for (AccountDetailVO r : results) {
+            details.put(r.getName(), r.getValue());
+        }
+        return details;
+    }
+
+    @Override
+    public void persist(long accountId, Map<String, String> details) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<AccountDetailVO> sc = accountSearch.create();
         sc.setParameters("accountId", accountId);
         expunge(sc);
         for (Map.Entry<String, String> detail : details.entrySet()) {
-        	AccountDetailVO vo = new AccountDetailVO(accountId, detail.getKey(), detail.getValue());
-        	persist(vo);
+            AccountDetailVO vo = new AccountDetailVO(accountId, detail.getKey(), detail.getValue());
+            persist(vo);
         }
         txn.commit();
-	}
+    }
 
-	@Override
-	public AccountDetailVO findDetail(long accountId, String name) {
-		SearchCriteriaService<AccountDetailVO, AccountDetailVO> sc = SearchCriteria2.create(AccountDetailVO.class);
-		sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
-		sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
-		return sc.find();
-	}
+    @Override
+    public AccountDetailVO findDetail(long accountId, String name) {
+        SearchCriteriaService<AccountDetailVO, AccountDetailVO> sc = SearchCriteria2.create(AccountDetailVO.class);
+        sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
+        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+        return sc.find();
+    }
 
-	@Override
-	public void deleteDetails(long accountId) {
-		SearchCriteria<AccountDetailVO> sc = accountSearch.create();
+    @Override
+    public void deleteDetails(long accountId) {
+        SearchCriteria<AccountDetailVO> sc = accountSearch.create();
         sc.setParameters("accountId", accountId);
         List<AccountDetailVO> results = search(sc, null);
         for (AccountDetailVO result : results) {
-        	remove(result.getId());
+            remove(result.getId());
         }
-	}
+    }
 
-	@Override
+    @Override
     public void update(long accountId, Map<String, String> details) {
-	    Map<String, String> oldDetails = findDetails(accountId);
-	    oldDetails.putAll(details);
-	    persist(accountId, oldDetails);
+        Map<String, String> oldDetails = findDetails(accountId);
+        oldDetails.putAll(details);
+        persist(accountId, oldDetails);
+    }
+
+    @Override
+    public Scope getScope() {
+        return ConfigKey.Scope.Account;
+    }
+
+    @Override
+    public String getConfigValue(long id, ConfigKey<?> key) {
+        AccountDetailVO vo = findDetail(id, key.key());
+        return vo == null ? null : vo.getValue();
     }
 }

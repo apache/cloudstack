@@ -22,19 +22,19 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-@Component
 @Local(value = StoragePoolDetailsDao.class)
-public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailVO, Long> implements
-        StoragePoolDetailsDao {
+public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailVO, Long> implements StoragePoolDetailsDao, ScopedConfigStorage {
 
     protected final SearchBuilder<StoragePoolDetailVO> PoolSearch;
 
@@ -82,5 +82,16 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
         sc.setParameters("name", name);
 
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public Scope getScope() {
+        return ConfigKey.Scope.StoragePool;
+    }
+
+    @Override
+    public String getConfigValue(long id, ConfigKey<?> key) {
+        StoragePoolDetailVO vo = findDetail(id, key.key());
+        return vo == null ? null : vo.getValue();
     }
 }

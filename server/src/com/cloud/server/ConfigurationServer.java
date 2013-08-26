@@ -34,6 +34,5 @@ public interface ConfigurationServer {
      */
     public void persistDefaultValues() throws InternalErrorException;
     public void updateKeyPairs();
-    public String getConfigValue(String name, String scope, Long resourceId);
     public List<ConfigurationVO> getConfigListByScope(String scope, Long resourceId);
 }

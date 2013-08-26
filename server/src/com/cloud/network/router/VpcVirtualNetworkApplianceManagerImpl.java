@@ -161,6 +161,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     VpcGatewayDao _vpcGatewayDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    EntityManager _entityMgr;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner,
@@ -627,7 +629,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             
             //add vpc cidr/dns/networkdomain to the boot load args
             StringBuilder buf = profile.getBootArgsBuilder();
-            Vpc vpc = _vpcMgr.getVpc(vr.getVpcId());
+            Vpc vpc = _entityMgr.findById(Vpc.class, vr.getVpcId());
             buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
             
             buf.append(" dns1=").append(defaultDns1);
@@ -829,7 +831,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         for (StaticRoute route : routes) {
             VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
             if (gateway == null) {
-                gateway = _vpcMgr.getVpcGateway(route.getVpcGatewayId());
+                gateway = _entityMgr.findById(VpcGateway.class, route.getVpcGatewayId());
                 gatewayMap.put(gateway.getId(), gateway);
             }
             staticRouteProfiles.add(new StaticRouteProfile(route, gateway));

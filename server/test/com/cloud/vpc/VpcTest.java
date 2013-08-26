@@ -121,11 +121,11 @@ public class VpcTest extends TestCase {
     @Test
     public void testCreateVpc() throws Exception {
         Mockito.when(
-                _vpcMgr.createVpc(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+            _vpcService.createVpc(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
                         Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(vpc);
         Mockito.when(_vpcOfferinDao.persist(Mockito.any(VpcOfferingVO.class))).thenReturn(
                 new VpcOfferingVO("test", "test", 1L));
-        Vpc vpc1 = _vpcMgr.createVpc(1, 1, 1, "myVpc", "my Vpc", "10.0.0.0/16", "test");
+        Vpc vpc1 = _vpcService.createVpc(1, 1, 1, "myVpc", "my Vpc", "10.0.0.0/16", "test");
         assertNotNull("Vpc is created", vpc1);
     }
 

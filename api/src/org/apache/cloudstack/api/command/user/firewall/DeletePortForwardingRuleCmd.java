@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,8 +29,6 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -100,7 +100,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete port forwarding rule");
         }
@@ -114,7 +114,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _rulesService.getPortForwardigRule(id).getNetworkId();
+        return _entityMgr.findById(PortForwardingRule.class, id).getNetworkId();
     }
 
     @Override

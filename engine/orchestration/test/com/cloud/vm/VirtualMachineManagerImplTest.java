@@ -45,7 +45,23 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.MigrateWithStorageAnswer;
+import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
+import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
+import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
+import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
+import com.cloud.agent.api.MigrateWithStorageSendAnswer;
+import com.cloud.agent.api.MigrateWithStorageSendCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -60,6 +76,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -85,6 +102,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public class VirtualMachineManagerImplTest {
 
@@ -94,8 +112,6 @@ public class VirtualMachineManagerImplTest {
     VolumeOrchestrationService _storageMgr;
     @Mock
     Account _account;
-    @Mock
-    AccountManager _accountMgr;
     @Mock
     ConfigurationManager _configMgr;
     @Mock
@@ -140,8 +156,6 @@ public class VirtualMachineManagerImplTest {
     List<VolumeVO> _rootVols;
     @Mock
     ItWorkVO _work;
-    @Mock
-    ConfigurationServer _configServer;
     @Mock
     HostVO hostVO;
     @Mock
@@ -191,9 +205,6 @@ public class VirtualMachineManagerImplTest {
         _vmMgr._templateDao = _templateDao;
         _vmMgr._volsDao = _volsDao;
         _vmMgr.volumeMgr = _storageMgr;
-        _vmMgr._accountDao = _accountDao;
-        _vmMgr._accountMgr = _accountMgr;
-        _vmMgr._configMgr = _configMgr;
         _vmMgr._capacityMgr = _capacityMgr;
         _vmMgr._hostDao = _hostDao;
         _vmMgr._nodeId = 1L;
@@ -209,7 +220,6 @@ public class VirtualMachineManagerImplTest {
         _vmMgr._hvGuruMgr = _hvGuruMgr;
         _vmMgr._vmSnapshotMgr = _vmSnapshotMgr;
         _vmMgr._vmDao = _vmInstanceDao;
-        _vmMgr._configServer = _configServer;
         _vmMgr._uservmDetailsDao = _vmDetailsDao;
         _vmMgr._entityMgr = _entityMgr;
 
@@ -256,9 +266,9 @@ public class VirtualMachineManagerImplTest {
         doReturn(hostVO).when(_hostDao).findById(1L);
         doReturn(1L).when(_vmInstance).getDataCenterId();
         doReturn(1L).when(hostVO).getClusterId();
-        when(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), 1L)).thenReturn("true");
-        when(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
-        when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
+        when(_configMgr.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.Scope.zone.toString(), 1L)).thenReturn("true");
+        when(_configMgr.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.Scope.cluster.toString(), 1L)).thenReturn("1.0");
+        when(_configMgr.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.Scope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
                 newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(),
                 newServiceOffering.getLimitCpuUse());
@@ -334,8 +344,8 @@ public class VirtualMachineManagerImplTest {
 
         // Mock the vm guru and the user vm object that gets returned.
         _vmMgr._vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
-        UserVmManagerImpl userVmManager = mock(UserVmManagerImpl.class);
-        _vmMgr.registerGuru(VirtualMachine.Type.User, userVmManager);
+//        UserVmManagerImpl userVmManager = mock(UserVmManagerImpl.class);
+//        _vmMgr.registerGuru(VirtualMachine.Type.User, userVmManager);
 
         // Mock the iteration over all the volumes of an instance.
         Iterator<VolumeVO> volumeIterator = mock(Iterator.class);

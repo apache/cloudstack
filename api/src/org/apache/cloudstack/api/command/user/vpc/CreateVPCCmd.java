@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,8 +30,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -124,8 +124,8 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
         Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(),
                 getCidr(), getNetworkDomain());
         if (vpc != null) {
-            this.setEntityId(vpc.getId());
-            this.setEntityUuid(vpc.getUuid());
+            setEntityId(vpc.getId());
+            setEntityUuid(vpc.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a VPC");
         }
@@ -135,8 +135,8 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public void execute() {
         Vpc vpc = null;
         try {
-             if (_vpcService.startVpc(this.getEntityId(), true)) {
-                 vpc = _vpcService.getVpc(getEntityId());
+             if (_vpcService.startVpc(getEntityId(), true)) {
+                vpc = _entityMgr.findById(Vpc.class, getEntityId());
              }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
@@ -153,7 +153,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
         if (vpc != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(vpc);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VPC");
         }

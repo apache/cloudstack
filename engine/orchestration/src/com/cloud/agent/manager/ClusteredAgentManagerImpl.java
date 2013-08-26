@@ -66,7 +66,6 @@ import com.cloud.agent.api.TransferAgentCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.agent.transport.Response;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusterServicePdu;
@@ -86,7 +85,6 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -141,7 +139,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected final ConfigKey<Integer> LoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", "16",
             "How many agents to connect to in each round", true);
     protected final ConfigKey<Integer> ScanInterval = new ConfigKey<Integer>(Integer.class, "direct.agent.scan.interval", "Advanced", "90",
-            "Interval between scans to load agents", false);
+        "Interval between scans to load agents", false, ConfigKey.Scope.Global, 1000);
     
 
     protected ConfigValue<Boolean> _agentLBEnabled;
@@ -158,7 +156,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         s_logger.info("Configuring ClusterAgentManagerImpl. management server node id(msid): " + _nodeId);
 
         _loadSize = _configDepot.get(LoadSize);
-        _directAgentScanInterval = _configDepot.get(ScanInterval).setMultiplier(1000);
+        _directAgentScanInterval = _configDepot.get(ScanInterval);
         _agentLBEnabled = _configDepot.get(EnableLB);
         _connectedAgentsThreshold = _configDepot.get(ConnectedAgentThreshold);
 
@@ -293,9 +291,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     protected AgentAttache createAttacheForDirectConnect(HostVO host, ServerResource resource) {
-        if (resource instanceof DummySecondaryStorageResource) {
-            return new DummyAttache(this, host.getId(), false);
-        }
+//        if (resource instanceof DummySecondaryStorageResource) {
+//            return new DummyAttache(this, host.getId(), false);
+//        }
         s_logger.debug("create ClusteredDirectAgentAttache for " + host.getId());
         final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), _nodeId, resource, host.isInMaintenanceStates(), this);
         AgentAttache old = null;
@@ -565,7 +563,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
         if (agent == null) {
         	AgentUnavailableException ex = new AgentUnavailableException("Host with specified id is not in the right state: " + host.getStatus(), hostId);
-            ex.addProxyObject(ApiDBUtils.findHostById(hostId).getUuid());
+            ex.addProxyObject(_entityMgr.findById(Host.class, hostId).getUuid());
             throw ex;
         }
 

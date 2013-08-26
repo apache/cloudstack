@@ -73,6 +73,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -282,9 +283,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private int _createVolumeFromSnapshotWait;
     private int _copyvolumewait;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
-    protected int _retry = 2;
-    protected int _pingInterval = 60; // seconds
-    protected int _hostRetry;
     // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _maxVolumeSizeInGb;
     private long _serverId;
@@ -444,9 +442,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
-        _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
-        _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
-        _hostRetry = NumbersUtil.parseInt(configs.get("host.retry"), 2);
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
@@ -894,7 +889,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public BigDecimal getStorageOverProvisioningFactor(Long dcId) {
         return new BigDecimal(_configServer.getConfigValue(Config.StorageOverprovisioningFactor.key(),
-                Config.ConfigurationParameterScope.zone.toString(), dcId));
+                ConfigKey.Scope.Zone.toString(), dcId));
     }
 
     @Override
@@ -1504,7 +1499,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private boolean checkUsagedSpace(StoragePool pool) {
         StatsCollector sc = StatsCollector.getInstance();
         double storageUsedThreshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageCapacityDisableThreshold.key(),
-                Config.ConfigurationParameterScope.zone.toString(), pool.getDataCenterId()));
+                ConfigKey.Scope.Zone.toString(), pool.getDataCenterId()));
         if (sc != null) {
             long totalSize = pool.getCapacityBytes();
             StorageStats stats = sc.getStoragePoolStats(pool.getId());
@@ -1610,7 +1605,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         double storageAllocatedThreshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageAllocatedCapacityDisableThreshold.key(),
-                Config.ConfigurationParameterScope.zone.toString(), pool.getDataCenterId()));
+                ConfigKey.Scope.Zone.toString(), pool.getDataCenterId()));
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity
                     + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: "

@@ -57,6 +57,7 @@ import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -140,6 +141,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     NicSecondaryIpDao _nicSecondaryDao;
     @Inject
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
+    @Inject
+    VpcService _vpcService;
 
     
     protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller, Boolean ignoreVmState) {
@@ -506,7 +509,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
                             // associate portable IP to vpc, if network is part of VPC
                             if (network.getVpcId() != null) {
-                                _vpcMgr.associateIPToVpc(ipId, network.getVpcId());
+                                _vpcService.associateIPToVpc(ipId, network.getVpcId());
                             }
 
                             // associate portable IP with guest network

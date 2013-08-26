@@ -32,13 +32,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.configuration.Config;
@@ -126,9 +127,8 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 
 
-@Component
 @Local(value = { VpcManager.class, VpcService.class, VpcProvisioningService.class })
-public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService{
+public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
     @Inject
     EntityManager _entityMgr;
@@ -190,12 +190,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     NetworkACLDao _networkAclDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    ConfigDepot _configDepot;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
  
+    ConfigValue<String> _networkDomain;
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -256,7 +259,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
         _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
-        
+
+        _networkDomain = _configDepot.get(NetworkOrchestrationService.GuestDomainSuffix);
         
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
@@ -395,11 +399,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         txn.commit();
 
         return offering;
-    }
-    
-    @Override
-    public Vpc getVpc(long vpcId) {
-        return _vpcDao.findById(vpcId);
     }
     
     @Override
@@ -621,7 +620,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             // 2) If null, generate networkDomain using domain suffix from the global config variables
             if (networkDomain == null) {
-                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkModel.getDefaultNetworkDomain(zoneId);
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain.valueIn(zoneId);
             }
         }
         
@@ -709,7 +708,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         CallContext ctx = CallContext.current();
 
         // Verify vpc id
-        Vpc vpc = getVpc(vpcId);
+        Vpc vpc = _vpcDao.findById(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("unable to find VPC id=" + vpcId);
         }
@@ -1017,7 +1016,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Account caller = ctx.getCallingAccount();
         
         //check if vpc exists
-        Vpc vpc = getVpc(vpcId);
+        Vpc vpc = _vpcDao.findById(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
@@ -1353,11 +1352,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return getPrivateGatewayProfile(gateway);
     }
     
-    @Override
-    public VpcGateway getVpcGateway(long id) {
-        return _vpcGatewayDao.findById(id);
-    }
-
     protected PrivateGateway getPrivateGatewayProfile(VpcGateway gateway) {
         Network network = _ntwkModel.getNetwork(gateway.getNetworkId());
         return new PrivateGatewayProfile(gateway, network.getPhysicalNetworkId());
@@ -1659,7 +1653,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             s_logger.debug("No static routes to apply");
             return true;
         }
-        Vpc vpc = getVpc(routes.get(0).getVpcId());
+        Vpc vpc = _vpcDao.findById(routes.get(0).getVpcId());
         
         s_logger.debug("Applying static routes for vpc " + vpc);
         String staticNatProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.StaticNat);
@@ -1778,7 +1772,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean isCidrBlacklisted(String cidr, long zoneId) {
-        String routesStr = _configServer.getConfigValue(Config.BlacklistedRoutes.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
+        String routesStr = _networkDomain.valueIn(zoneId);
         if (routesStr != null && !routesStr.isEmpty()) {
             String[] cidrBlackList = routesStr.split(",");
             
@@ -1959,7 +1953,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return null;
         }
 
-        Vpc vpc = getVpc(vpcId);
+        Vpc vpc = _vpcDao.findById(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Invalid VPC id provided");
         }

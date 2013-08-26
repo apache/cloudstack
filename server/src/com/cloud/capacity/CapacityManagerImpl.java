@@ -28,8 +28,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -71,7 +72,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -83,27 +83,18 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-@Component
 @Local(value = CapacityManager.class)
-public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener {
+public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
+        Configurable {
     private static final Logger s_logger = Logger.getLogger(CapacityManagerImpl.class);
     @Inject
     CapacityDao _capacityDao;
@@ -931,5 +922,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return true;
         }
         return false;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return CapacityManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor};
     }
 }

@@ -103,6 +103,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -1047,7 +1048,7 @@ public class ApiDBUtils {
     }
 
     public static float getCpuOverprovisioningFactor() {
-        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        String opFactor = _configDao.getValue(CapacityManager.CpuOverprovisioningFactorCK);
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
         return cpuOverprovisioningFactor;
     }

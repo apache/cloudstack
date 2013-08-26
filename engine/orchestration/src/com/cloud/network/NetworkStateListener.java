@@ -17,24 +17,26 @@
 
 package com.cloud.network;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
 import com.cloud.event.EventCategory;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.Network.Event;
 import com.cloud.network.Network.State;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
-import javax.inject.Inject;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 public class NetworkStateListener implements StateListener<State, Event, Network> {
 
@@ -46,8 +48,8 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
 
     public NetworkStateListener(UsageEventDao usageEventDao, NetworkDao networkDao) {
-        this._usageEventDao = usageEventDao;
-        this._networkDao = networkDao;
+        _usageEventDao = usageEventDao;
+        _networkDao = networkDao;
     }
 
     @Override
@@ -72,7 +74,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
 
         String resourceName = getEntityFromClassName(Network.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                ManagementServer.Name,
+"management-server",
                 EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
                 event,
                 resourceName,

@@ -842,7 +842,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId) {
         List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(zoneId, null, null);
         Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
-        float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
 
         for (SummedCapacity capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();

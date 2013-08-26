@@ -228,7 +228,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
             return network.getAccountId();
         } else if (vpcId != null) {
-            Vpc vpc = _vpcService.getVpc(getVpcId());
+            Vpc vpc = _entityMgr.findById(Vpc.class, getVpcId());
             if (vpc == null) {
                 throw new InvalidParameterValueException("Can't find Enabled vpc by id specified");
             }

@@ -293,6 +293,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     NetworkACLDao _networkACLDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1930,7 +1932,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
-            Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
+            Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
             _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()), null);
         }
 

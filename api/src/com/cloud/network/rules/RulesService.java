@@ -69,10 +69,6 @@ public interface RulesService {
 
     boolean enableStaticNat(long ipAddressId, long vmId, long networkId, String vmGuestIp) throws NetworkRuleConflictException, ResourceUnavailableException;
 
-    PortForwardingRule getPortForwardigRule(long ruleId);
-
-    FirewallRule getFirewallRule(long ruleId);
-
     StaticNatRule createStaticNatRule(StaticNatRule rule, boolean openFirewall) throws NetworkRuleConflictException;
 
     boolean revokeStaticNatRule(long ruleId, boolean apply);
@@ -80,8 +76,6 @@ public interface RulesService {
     boolean applyStaticNatRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
 
     StaticNatRule buildStaticNatRule(FirewallRule rule, boolean forRevoke);
-
-    List<String> getSourceCidrs(long ruleId);
 
     boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException;
 

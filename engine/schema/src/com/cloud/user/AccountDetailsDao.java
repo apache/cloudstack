@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.util.Map;
+
 import com.cloud.utils.db.GenericDao;
 
 
@@ -31,7 +32,7 @@ public interface AccountDetailsDao extends GenericDao<AccountDetailVO, Long> {
 	
 	/*
 	 * For these existing entries, they will get updated. For these new entries,
-	 * they will get created 
+	 * they will get created
 	 */
 	void update(long accountId, Map<String, String> details);
 }

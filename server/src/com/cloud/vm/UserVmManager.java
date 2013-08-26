@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -39,6 +41,10 @@ import com.cloud.utils.Pair;
  * 
  */
 public interface UserVmManager extends UserVmService {
+    static final String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
+    static final ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
+        "Enables/Diables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
+    
 
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**

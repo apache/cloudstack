@@ -939,19 +939,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
 
-
-
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getNetworkLockTimeout()
-     */
-    @Override
-    public int getNetworkLockTimeout() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#restartNetwork(java.lang.Long, com.cloud.user.Account, com.cloud.user.User, boolean)
      */

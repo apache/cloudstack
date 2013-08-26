@@ -22,7 +22,9 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
@@ -30,9 +32,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-@Component
 @Local(value=ClusterDetailsDao.class)
-public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao {
+public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
 
@@ -88,7 +89,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
     @Override
     public void deleteDetails(long clusterId) {
-        SearchCriteria sc = ClusterSearch.create();
+        SearchCriteria<ClusterDetailsVO> sc = ClusterSearch.create();
         sc.setParameters("clusterId", clusterId);
 
         List<ClusterDetailsVO> results = search(sc, null);
@@ -130,4 +131,14 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         txn.commit();
     }
 
+    @Override
+    public Scope getScope() {
+        return ConfigKey.Scope.Cluster;
+    }
+
+    @Override
+    public String getConfigValue(long id, ConfigKey<?> key) {
+        ClusterDetailsVO vo = findDetail(id, key.key());
+        return vo == null ? null : vo.getValue();
+    }
 }

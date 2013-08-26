@@ -71,6 +71,8 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.ConfigurationVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIp;
@@ -90,6 +92,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
@@ -359,10 +362,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private void weightBasedParametersForValidation() {
         weightBasedParametersForValidation = new HashSet<String>();
-        weightBasedParametersForValidation.add(Config.CPUCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.StorageAllocatedCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.StorageCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.MemoryCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.CPUCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.MemoryCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.PublicIpCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.PrivateIpCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.SecondaryStorageCapacityThreshold.key());
@@ -381,8 +384,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private void overProvisioningFactorsForValidation() {
         overprovisioningFactorsForValidation = new HashSet<String>();
-        overprovisioningFactorsForValidation.add(Config.MemOverprovisioningFactor.key());
-        overprovisioningFactorsForValidation.add(Config.CPUOverprovisioningFactor.key());
+        overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
+        overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(Config.StorageOverprovisioningFactor.key());
     }
 
@@ -444,9 +447,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
         if (scope != null && !scope.isEmpty()
-                && !Config.ConfigurationParameterScope.global.toString().equalsIgnoreCase(scope)) {
-            switch (Config.ConfigurationParameterScope.valueOf(scope)) {
-            case zone:
+                && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
+            switch (ConfigKey.Scope.valueOf(scope)) {
+            case Zone:
                 DataCenterVO zone = _zoneDao.findById(resourceId);
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
@@ -460,7 +463,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _dcDetailsDao.update(dcDetailVO.getId(), dcDetailVO);
                 }
                 break;
-            case cluster:
+            case Cluster:
                 ClusterVO cluster = _clusterDao.findById(resourceId);
                 if (cluster == null) {
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
@@ -475,7 +478,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 break;
 
-            case storagepool:
+            case StoragePool:
                 StoragePoolVO pool = _storagePoolDao.findById(resourceId);
                 if (pool == null) {
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
@@ -491,7 +494,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 break;
 
-            case account:
+            case Account:
                 AccountVO account = _accountDao.findById(resourceId);
                 if (account == null) {
                     throw new InvalidParameterValueException("unable to find account by id " + resourceId);
@@ -655,22 +658,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         int paramCountCheck = 0;
 
         if (zoneId != null) {
-            scope = Config.ConfigurationParameterScope.zone.toString();
+            scope = ConfigKey.Scope.Zone.toString();
             id = zoneId;
             paramCountCheck++;
         }
         if (clusterId != null) {
-            scope = Config.ConfigurationParameterScope.cluster.toString();
+            scope = ConfigKey.Scope.Cluster.toString();
             id = clusterId;
             paramCountCheck++;
         }
         if (accountId != null) {
-            scope = Config.ConfigurationParameterScope.account.toString();
+            scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
-            scope = Config.ConfigurationParameterScope.storagepool.toString();
+            scope = ConfigKey.Scope.StoragePool.toString();
             id = storagepoolId;
             paramCountCheck++;
         }
@@ -4624,6 +4627,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    @InjectConfig(key = NetworkOrchestrationService.NetworkThrottlingRateCK)
+    ConfigValue<Integer> _networkThrottlingRate;
+
     @Override
     public Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId) {
 
@@ -4637,8 +4643,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (no.getRateMbps() != null) {
             networkRate = no.getRateMbps();
         } else {
-            networkRate = Integer.parseInt(_configServer.getConfigValue(Config.NetworkThrottlingRate.key(),
-                    Config.ConfigurationParameterScope.zone.toString(), dataCenterId));
+            networkRate = _networkThrottlingRate.valueIn(dataCenterId);
         }
 
         // networkRate is unsigned int in netowrkOfferings table, and can't be
@@ -4761,8 +4766,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // for domain router service offering, get network rate from
             if (offering.getSystemVmType() != null
                     && offering.getSystemVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
-                networkRate = Integer.parseInt(_configServer.getConfigValue(Config.NetworkThrottlingRate.key(),
-                        Config.ConfigurationParameterScope.zone.toString(), dataCenterId));
+                networkRate = _networkThrottlingRate.valueIn(dataCenterId);
             } else {
                 networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
             }

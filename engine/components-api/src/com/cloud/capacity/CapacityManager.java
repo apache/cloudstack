@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.capacity;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.host.Host;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -28,7 +28,17 @@ import com.cloud.vm.VirtualMachine;
  * available within the Cloud Stack.
  *
  */
-public interface CapacityManager extends Manager {
+public interface CapacityManager {
+
+    static final String CpuOverprovisioningFactorCK = "cpu.overprovisioning.factor";
+    static final String MemOverprovisioningFactorCK = "mem.overprovisioning.factor";
+
+    static final ConfigKey<Float> CpuOverprovisioningFactor = new ConfigKey<Float>(Float.class, CpuOverprovisioningFactorCK, "Advanced", "1.0",
+        "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", true, ConfigKey.Scope.Cluster, null);
+    static final ConfigKey<Float> MemOverprovisioningFactor = new ConfigKey<Float>(Float.class, MemOverprovisioningFactorCK, "Advanced", "1.0",
+        "Used for memory overprovisioning calculation", true, ConfigKey.Scope.Cluster, null);
+
+    
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);

@@ -69,6 +69,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -170,6 +173,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -183,8 +187,11 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { TemplateManager.class, TemplateApiService.class })
-public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService {
+public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
+    @InjectConfig(key = TemplateManager.AllowPublicUserTemplatesCK)
+    ConfigValue<Boolean> _allowPublicUserTemplates;
+
     @Inject
     VMTemplateDao _tmpltDao;
     @Inject
@@ -1213,8 +1220,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         boolean isAdmin = _accountMgr.isAdmin(caller.getType());
         // check configuration parameter(allow.public.user.templates) value for
         // the template owner
-        boolean allowPublicUserTemplates = Boolean.valueOf(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(),
-                Config.ConfigurationParameterScope.account.toString(), template.getAccountId()));
+        boolean allowPublicUserTemplates = _allowPublicUserTemplates.valueIn(template.getAccountId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
@@ -1476,8 +1482,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         boolean  isDynamicScalingEnabled = cmd.isDynamicallyScalable();
         // check whether template owner can create public templates
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(),
-                Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
+        boolean allowPublicUserTemplates = _allowPublicUserTemplates.valueIn(templateOwner.getId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template " + name + ", only private templates can be created.");
         }
@@ -1791,5 +1796,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(id, template);
 
         return _tmpltDao.findById(id);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return TemplateManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {AllowPublicUserTemplates};
     }
 }

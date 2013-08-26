@@ -19,6 +19,15 @@
 
 package com.cloud.network.guru;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateVnsNetworkAnswer;
 import com.cloud.agent.api.CreateVnsNetworkCommand;
@@ -35,9 +44,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkProfile;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
@@ -51,17 +60,7 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
 
 
 @Local(value = NetworkGuru.class)
@@ -161,8 +160,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setCidr(network.getCidr());
         }
 
-        String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId,
-                network.getAccountId(), context.getReservationId(), canUseSystemGuestVlan(network.getAccountId()));
+        String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), _useSystemGuestVlans.valueIn(network.getAccountId()));
         if (vnet == null) {
             throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
                         "part of network " + network + " implement ", DataCenter.class, dcId);

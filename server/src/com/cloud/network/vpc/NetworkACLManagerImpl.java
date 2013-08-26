@@ -56,8 +56,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
     @Inject
-    EntityManager _entityMgr;
-    @Inject
     AccountManager _accountMgr;
     @Inject
     NetworkModel _networkMgr;
@@ -81,6 +79,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     NetworkModel _ntwkModel;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
@@ -105,7 +105,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
         List<VpcGatewayVO> vpcGateways = _vpcGatewayDao.listByAclIdAndType(aclId, VpcGateway.Type.Private);
         for (VpcGatewayVO vpcGateway : vpcGateways) {
-            PrivateGateway privateGateway = _vpcMgr.getVpcPrivateGateway(vpcGateway.getId());
+            PrivateGateway privateGateway = _entityMgr.findById(PrivateGateway.class, vpcGateway.getId());
             if (!applyACLToPrivateGw(privateGateway)) {
                 aclApplyStatus = false;
                 s_logger.debug("failed to apply network acl item on private gateway " + privateGateway.getId() + "acl id " + aclId);

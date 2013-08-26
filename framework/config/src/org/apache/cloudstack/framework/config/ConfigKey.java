@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
-import com.cloud.org.Grouping;
+import com.cloud.utils.exception.CloudRuntimeException;
+
 
 /**
  * ConfigKey supplants the original Config.java.  It is just a class
@@ -24,7 +25,11 @@ import com.cloud.org.Grouping;
  * 
  */
 public class ConfigKey<T> {
-    
+
+    public static enum Scope {
+        Global, Zone, Cluster, StoragePool, Account
+    }
+
     private final String _category;
 
     public String category() {
@@ -35,7 +40,7 @@ public class ConfigKey<T> {
         return _type;
     }
 
-    public String key() {
+    public final String key() {
         return _name;
     }
 
@@ -47,7 +52,7 @@ public class ConfigKey<T> {
         return _description;
     }
 
-    public Class<? extends Grouping> scope() {
+    public Scope scope() {
         return _scope;
     }
 
@@ -64,11 +69,19 @@ public class ConfigKey<T> {
     private final String _name;
     private final String _defaultValue;
     private final String _description;
-    private final Class<? extends Grouping> _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+    private final Scope _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final boolean _isDynamic;
+    private final T _multiplier;
 
-    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic,
-            Class<? extends Grouping> scope) {
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Scope scope) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, null);
+    }
+
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic) {
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier) {
         _category = category;
         _type = type;
         _name = name;
@@ -76,9 +89,32 @@ public class ConfigKey<T> {
         _description = description;
         _scope = scope;
         _isDynamic = isDynamic;
+        _multiplier = multiplier;
     }
 
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic) {
-        this(type, name, category, defaultValue, description, isDynamic, null);
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
+    }
+
+    public T multiplier() {
+        return _multiplier;
+    }
+
+    @Override
+    public int hashCode() {
+        return _name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ConfigKey) {
+            ConfigKey<?> that = (ConfigKey<?>)obj;
+            return this._name.equals(that._name);
+        } else if (obj instanceof String) {
+            String key = (String)obj;
+            return key.equals(_name);
+        }
+
+        throw new CloudRuntimeException("Comparing ConfigKey to " + obj.toString());
     }
 }

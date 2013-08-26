@@ -68,6 +68,9 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -258,9 +261,8 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
-public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService {
-    private static final Logger s_logger = Logger
-            .getLogger(UserVmManagerImpl.class);
+public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
+    private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; // 3
     // seconds
@@ -269,6 +271,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         full,
         linked
     }
+
+    @InjectConfig(key = EnableDynamicallyScaleVmCK)
+    ConfigValue<Boolean> _enableDynamicallyScaleVm;
 
     @Inject
     EntityManager _entityMgr;
@@ -442,8 +447,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected int _scaleRetry;
 
     @Inject ConfigurationDao _configDao;
-    private int _createprivatetemplatefromvolumewait;
-    private int _createprivatetemplatefromsnapshotwait;
     private final int MAX_VM_NAME_LEN = 80;
     private final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private final int MAX_HTTP_POST_LENGTH = 16 * MAX_USER_DATA_LENGTH_BYTES;
@@ -605,14 +608,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long vmId = cmd.getId();
 
         UserVmVO userVm = _vmDao.findById(cmd.getId());
+        if (userVm == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+        }
+
         _vmDao.loadDetails(userVm);
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
 
         // Do parameters input validation
-
-        if (userVm == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
-        }
 
         if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
             s_logger.error("vm is not in the right state: " + vmId);
@@ -714,8 +717,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         User user = _userDao.findById(userId);
-        Account account = _accountDao.findById(user.getAccountId());
-
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
             status = vmEntity.stop(new Long(userId).toString());
@@ -1269,7 +1270,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance.getState().equals(State.Running)) {
             int retry = _scaleRetry;
             ExcludeList excludes = new ExcludeList();
-            boolean enableDynamicallyScaleVm = Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vmInstance.getDataCenterId()));
+            boolean enableDynamicallyScaleVm = _enableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId());
             if(!enableDynamicallyScaleVm){
                throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
@@ -1495,19 +1496,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (_instance == null) {
             _instance = "DEFAULT";
         }
-
-        String value = _configDao
-                .getValue(Config.CreatePrivateTemplateFromVolumeWait.toString());
-        _createprivatetemplatefromvolumewait = NumbersUtil.parseInt(value,
-                Integer.parseInt(Config.CreatePrivateTemplateFromVolumeWait
-                        .getDefaultValue()));
-
-        value = _configDao
-                .getValue(Config.CreatePrivateTemplateFromSnapshotWait
-                        .toString());
-        _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(value,
-                Integer.parseInt(Config.CreatePrivateTemplateFromSnapshotWait
-                        .getDefaultValue()));
 
         String workers = configs.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 10);
@@ -1768,12 +1756,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-    }
-
-    private static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN)
-                || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-                || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
     @Override
@@ -4901,6 +4883,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             vm.setDetail("Encrypted.Password", encryptedPasswd);
             _vmDao.saveDetails(vm);
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

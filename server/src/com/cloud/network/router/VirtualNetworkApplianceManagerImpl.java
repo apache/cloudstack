@@ -47,6 +47,9 @@ import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -218,6 +221,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -363,6 +367,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     NetworkService _networkSvc;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    ConfigDepot _configDepot;
 
     
     int _routerRamSize;
@@ -635,8 +641,27 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
+    @InjectConfig(key = RouterTemplateXenCK)
+    ConfigValue<String> _routerTemplateXen;
+    @InjectConfig(key = RouterTemplateKvmCK)
+    ConfigValue<String> _routerTemplateKvm;
+    @InjectConfig(key = RouterTemplateVmwareCK)
+    ConfigValue<String> _routerTemplateVmware;
+    @InjectConfig(key = RouterTemplateHyperVCK)
+    ConfigValue<String> _routerTemplateHyperV;
+    @InjectConfig(key = RouterTemplateLxcCK)
+    ConfigValue<String> _routerTemplateLxc;
+    @InjectConfig(key = NetworkOrchestrationService.NetworkLockTimeoutCK)
+    ConfigValue<Integer> _networkLockTimeout;
+    @InjectConfig(key = "use.external.dns")
+    ConfigValue<Boolean> _useExternalDnsServers;
+
+    static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
+        "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+
+        _useExternalDnsServers = _configDepot.get(UseExternalDnsServers);
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
@@ -1426,7 +1451,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             InsufficientCapacityException, ResourceUnavailableException {
 
         List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
-        Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), _networkMgr.getNetworkLockTimeout());
+        Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), _networkLockTimeout.value());
         if (lock == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
@@ -1621,19 +1646,19 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 String templateName = null;
                 switch (hType) {
                     case XenServer:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateXen.valueIn(dest.getDataCenter().getId());
                         break;
                     case KVM:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateKvm.valueIn(dest.getDataCenter().getId());
                         break;
                     case VMware:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateVmware.valueIn(dest.getDataCenter().getId());
                         break;
                     case Hyperv:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateHyperV.valueIn(dest.getDataCenter().getId());
                         break;
                     case LXC:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateLxc.valueIn(dest.getDataCenter().getId());
                         break;
                     default: break;
                 }
@@ -2151,10 +2176,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             boolean useExtDns = !dnsProvided;
             /* For backward compatibility */
-            String use_external_dns = _configServer.getConfigValue(Config.UseExternalDnsServers.key(), Config.ConfigurationParameterScope.zone.toString(), dc.getId());
-            if (use_external_dns != null && use_external_dns.equals("true")) {
-                useExtDns = true;
-            }
+            useExtDns = _useExternalDnsServers.valueIn(dc.getId());
 
             if (useExtDns) {
                 buf.append(" useextdns=true");

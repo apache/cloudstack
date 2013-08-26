@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,7 +30,6 @@ import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -145,8 +146,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private gateway");
         }
@@ -159,7 +160,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         if (result != null) {
             PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private gateway");
         }
@@ -189,7 +190,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     @Override
     public Long getSyncObjId() {
-        Vpc vpc =  _vpcService.getVpc(vpcId);
+        Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Invalid id is specified for the vpc");
         }

@@ -29,6 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
+    static final String RemoteAccessVpnClientIpRangeCK = "remote.access.vpn.client.iprange";
 
     RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId)
             throws NetworkRuleConflictException;

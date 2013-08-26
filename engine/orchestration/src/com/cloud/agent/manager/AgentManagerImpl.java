@@ -72,7 +72,6 @@ import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -91,12 +90,10 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -185,14 +182,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "Interval to send application level pings to make sure the connection is still working", false);
     protected final ConfigKey<Float> PingTimeout = new ConfigKey<Float>(Float.class, "ping.timeout", "Advance", "2.5",
             "Multiplier to ping.interval before announcing an agent has timed out", true);
-    protected final ConfigKey<Integer> Wait = new ConfigKey<Integer>(Integer.class, "wait", "Advance", "1800",
-            "Time in seconds to wait for control commands to return", true);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>(Integer.class, "alert.wait", "Advance", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advance", "16",
             "The number of direct agents to load each time", false);
     protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advance", "500",
             "Default size for DirectAgentPool", false);
+    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, WaitCK, "1800", "Time in seconds to wait for control commands to return", true);
 
     protected ConfigValue<Integer> _port;
 
@@ -642,8 +638,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             params.put("ipaddress", host.getPrivateIpAddress());
             params.put("secondary.storage.vm", "false");
-            params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
-            params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
 
             try {
                 resource.configure(host.getName(), params);
@@ -699,9 +693,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected AgentAttache createAttacheForDirectConnect(HostVO host, ServerResource resource)
             throws ConnectionException {
-        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
-            return new DummyAttache(this, host.getId(), false);
-        }
+//        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
+//            return new DummyAttache(this, host.getId(), false);
+//        }
 
         s_logger.debug("create DirectAgentAttache for " + host.getId());
         DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), resource, host.isInMaintenanceStates(), this);
@@ -1401,7 +1395,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         disconnectInternal(hostId, event, false);
     }
 
-    @Override
     public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
         AgentAttache attache;
 

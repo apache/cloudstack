@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.dc.DataCenterVO;
@@ -36,6 +37,9 @@ import com.cloud.utils.Pair;
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
  */
 public interface TemplateManager {
+    static final String AllowPublicUserTemplatesCK = "allow.public.user.templates";
+    static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
+        "If false, users will not be able to create public templates.", true, ConfigKey.Scope.Account);
 
     /**
      * Prepares a template for vm creation for a certain storage pool.

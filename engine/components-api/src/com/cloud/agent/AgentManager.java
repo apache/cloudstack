@@ -18,26 +18,21 @@ package com.cloud.agent;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.component.Manager;
 
 /**
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
-public interface AgentManager extends Manager {
+public interface AgentManager {
+    final static String WaitCK = "wait";
+
     public enum TapAgentsAction {
-        Add,
-        Del,
-        Contains,
+        Add, Del, Contains,
     }
 
     /**
@@ -109,14 +104,13 @@ public interface AgentManager extends Manager {
      */
     int registerForHostEvents(Listener listener, boolean connections, boolean commands, boolean priority);
 
-
     /**
      * Register to listen for initial agent connections.
      * @param creator
      * @param priority in listening for events.
      * @return id to unregister if needed.
      */
-    int registerForInitialConnects(StartupCommandProcessor creator,  boolean priority);
+    int registerForInitialConnects(StartupCommandProcessor creator, boolean priority);
 
     /**
      * Unregister for listening to host events.
@@ -128,11 +122,10 @@ public interface AgentManager extends Manager {
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
-
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
 
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
+//    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
 
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
 
@@ -144,5 +137,5 @@ public interface AgentManager extends Manager {
 
     public void pullAgentOutMaintenance(long hostId);
 
-	boolean reconnect(long hostId);
+    boolean reconnect(long hostId);
 }

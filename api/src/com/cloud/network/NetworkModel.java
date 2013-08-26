@@ -97,8 +97,6 @@ public interface NetworkModel {
 
     List<? extends Network> listAllNetworksInAllZonesByType(Network.GuestType type);
 
-    String getGlobalGuestDomainSuffix();
-
     String getStartIpAddress(long networkId);
 
     String getIpInNetwork(long vmId, long networkId);
@@ -178,11 +176,6 @@ public interface NetworkModel {
      * @return
      */
     String getAccountNetworkDomain(long accountId, long zoneId);
-
-    /**
-     * @return
-     */
-    String getDefaultNetworkDomain(long zoneId);
 
     /**
      * @param ntwkOffId

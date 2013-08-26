@@ -62,6 +62,7 @@ import com.cloud.cluster.ManagementServerHost;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -80,9 +81,9 @@ import com.cloud.utils.mgmt.JmxUtil;
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
     private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", "1440",
-            "Time (in minutes) for async-jobs to be kept in system", true, null);
-    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced",
-            "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, null);
+        "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global, 60l);
+    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced", "60",
+        "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global, 60l);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
 
@@ -105,7 +106,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject
     private ConfigDepot _configDepot;
 
+    @InjectConfig(key = "job.expire.minutes")
     private ConfigValue<Long> _jobExpireSeconds;						// 1 day
+    @InjectConfig(key = "job.cancel.threshold.minutes")
     private ConfigValue<Long> _jobCancelThresholdSeconds;         	// 1 hour (for cancelling the jobs blocking other jobs)
     
     private volatile long _executionRunNumber = 1;
@@ -878,8 +881,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _jobExpireSeconds = _configDepot.get(JobExpireMinutes).setMultiplier(60);
-        _jobCancelThresholdSeconds = _configDepot.get(JobCancelThresholdMinutes).setMultiplier(60);
+        _jobExpireSeconds = _configDepot.get(JobExpireMinutes);
+        _jobCancelThresholdSeconds = _configDepot.get(JobCancelThresholdMinutes);
 
         try {
             final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");

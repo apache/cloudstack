@@ -27,9 +27,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
@@ -79,6 +80,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -117,12 +119,9 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 
-@Component
 @Local(value = { InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
-public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
-        InternalLoadBalancerVMManager, VirtualMachineGuru {
-    private static final Logger s_logger = Logger
-            .getLogger(InternalLoadBalancerVMManagerImpl.class);
+public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
+    private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerVMManagerImpl.class);
     static final private String _internalLbVmNamePrefix = "b";
     
     private String _instance;
@@ -151,6 +150,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     @Inject VMTemplateDao _templateDao;
     @Inject ResourceManager _resourceMgr;
     @Inject ConfigurationServer _configServer;
+    @Inject
+    ConfigDepot _configDepot;
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile,
@@ -343,6 +344,13 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     public void prepareStop(VirtualMachineProfile profile) {
     }
     
+    static ConfigValue<Integer> _networkLockTimeout;
+    static ConfigValue<String> _routerTemplateXen;
+    static ConfigValue<String> _routerTemplateKvm;
+    static ConfigValue<String> _routerTemplateVmware;
+    static ConfigValue<String> _routerTemplateHyperV;
+    static ConfigValue<String> _routerTemplateLxc;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
@@ -351,6 +359,13 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             _instance = "DEFAULT";
         }
         
+        _networkLockTimeout = _configDepot.get(NetworkOrchestrationService.NetworkLockTimeout);
+        _routerTemplateXen = _configDepot.get(VirtualNetworkApplianceManager.RouterTemplateXen);
+        _routerTemplateKvm = _configDepot.get(VirtualNetworkApplianceManager.RouterTemplateKvm);
+        _routerTemplateVmware = _configDepot.get(VirtualNetworkApplianceManager.RouterTemplateVmware);
+        _routerTemplateHyperV = _configDepot.get(VirtualNetworkApplianceManager.RouterTemplateHyperV);
+        _routerTemplateLxc = _configDepot.get(VirtualNetworkApplianceManager.RouterTemplateLxc);
+
         _mgmtHost = configs.get("host");
         _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
         
@@ -587,7 +602,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             InsufficientCapacityException, ResourceUnavailableException {
 
         List<DomainRouterVO> internalLbVms = new ArrayList<DomainRouterVO>();
-        Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), _ntwkMgr.getNetworkLockTimeout());
+        Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), _networkLockTimeout.value());
         if (lock == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
@@ -740,19 +755,19 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
                 }                String templateName = null;
                 switch (hType) {
                     case XenServer:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateXen.valueIn(dest.getDataCenter().getId());
                         break;
                     case KVM:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateKvm.valueIn(dest.getDataCenter().getId());
                         break;
                     case VMware:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateVmware.valueIn(dest.getDataCenter().getId());
                         break;
                     case Hyperv:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateHyperV.valueIn(dest.getDataCenter().getId());
                         break;
                     case LXC:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        templateName = _routerTemplateLxc.valueIn(dest.getDataCenter().getId());
                         break;
                     default: break;
                 }

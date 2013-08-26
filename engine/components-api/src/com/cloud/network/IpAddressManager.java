@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import java.util.List;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
@@ -36,6 +38,11 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface IpAddressManager {
+    static final String UseSystemPublicIpsCK = "use.system.public.ips";
+    static final ConfigKey<Boolean> UseSystemPublicIps = new ConfigKey<Boolean>("Advanced", Boolean.class, UseSystemPublicIpsCK, "true",
+        "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool", true,
+        ConfigKey.Scope.Account);
+
     /**
      * Assigns a new public ip address.
      * 
@@ -52,7 +59,6 @@ public interface IpAddressManager {
      * @return
      * @throws InsufficientAddressCapacityException
      */
-
     PublicIp
         assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
 

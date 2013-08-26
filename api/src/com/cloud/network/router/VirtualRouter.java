@@ -22,7 +22,7 @@ import com.cloud.vm.VirtualMachine;
  *  bridge internal and external traffic.
  */
 public interface VirtualRouter extends VirtualMachine {
-	public enum Role {
+    public enum Role {
 		VIRTUAL_ROUTER, LB, INTERNAL_LB_VM
 	}
     Role getRole();

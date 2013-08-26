@@ -80,7 +80,7 @@ public class ConfigurationVO implements Configuration {
         this(key.category(), "DEFAULT", component, key.key(), key.defaultValue(), key.description());
         defaultValue = key.defaultValue();
         dynamic = key.isDynamic();
-        scope = key.scope() != null ? key.scope().getName() : null;
+        scope = key.scope() != null ? key.scope().toString() : null;
     }
 
     @Override

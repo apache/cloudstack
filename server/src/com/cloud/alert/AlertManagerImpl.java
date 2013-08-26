@@ -38,12 +38,19 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
+
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -67,25 +74,17 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
-
-@Component
 @Local(value={AlertManager.class})
-public class AlertManagerImpl extends ManagerBase implements AlertManager {
+public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
     private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
 
@@ -96,31 +95,30 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
 
     private EmailAlert _emailAlert;
     @Inject private AlertDao _alertDao;
-    @Inject private HostDao _hostDao;
     @Inject protected StorageManager _storageMgr;
     @Inject protected CapacityManager _capacityMgr;
     @Inject private CapacityDao _capacityDao;
     @Inject private DataCenterDao _dcDao;
     @Inject private HostPodDao _podDao;
     @Inject private ClusterDao _clusterDao;
-    @Inject private VolumeDao _volumeDao;
     @Inject private IPAddressDao _publicIPAddressDao;
     @Inject private DataCenterIpAddressDao _privateIPAddressDao;
     @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private ResourceManager _resourceMgr;
     @Inject private ConfigurationManager _configMgr;
-    @Inject ConfigurationServer _configServer;
+    @Inject
+    protected ConfigDepot _configDepot;
+
     private Timer _timer = null;
-    private float _cpuOverProvisioningFactor = 1;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // one hour by default
-    private double _memoryCapacityThreshold = 0.75;
-    private double _cpuCapacityThreshold = 0.75;
-    private double _storageCapacityThreshold = 0.75;
-    private double _storageAllocCapacityThreshold = 0.75;
+    private ConfigValue<Double> _memoryCapacityThreshold;
+    private ConfigValue<Double> _cpuCapacityThreshold;
+    private ConfigValue<Double> _storageCapacityThreshold;
+    private ConfigValue<Double> _storageAllocCapacityThreshold;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
-    private double _secondaryStorageCapacityThreshold = 0.75; 
+    private double _secondaryStorageCapacityThreshold = 0.75;
     private double _vlanCapacityThreshold = 0.75;
     private double _directNetworkPublicIpCapacityThreshold = 0.75;
     private double _localStorageCapacityThreshold = 0.75;
@@ -152,11 +150,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
 
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
-
-        String storageCapacityThreshold = _configDao.getValue(Config.StorageCapacityThreshold.key());
-        String cpuCapacityThreshold = _configDao.getValue(Config.CPUCapacityThreshold.key());
-        String memoryCapacityThreshold = _configDao.getValue(Config.MemoryCapacityThreshold.key());
-        String storageAllocCapacityThreshold = _configDao.getValue(Config.StorageAllocatedCapacityThreshold.key());
         String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());
         String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());
         String secondaryStorageCapacityThreshold = _configDao.getValue(Config.SecondaryStorageCapacityThreshold.key());
@@ -164,18 +157,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
         String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
 
-        if (storageCapacityThreshold != null) {
-            _storageCapacityThreshold = Double.parseDouble(storageCapacityThreshold);
-        }
-        if (storageAllocCapacityThreshold != null) {
-            _storageAllocCapacityThreshold = Double.parseDouble(storageAllocCapacityThreshold);
-        }
-        if (cpuCapacityThreshold != null) {
-            _cpuCapacityThreshold = Double.parseDouble(cpuCapacityThreshold);
-        }
-        if (memoryCapacityThreshold != null) {
-            _memoryCapacityThreshold = Double.parseDouble(memoryCapacityThreshold);
-        }
+        _storageCapacityThreshold = _configDepot.get(StorageCapacityThreshold);
+        _cpuCapacityThreshold = _configDepot.get(CPUCapacityThreshold);
+        _memoryCapacityThreshold = _configDepot.get(MemoryCapacityThreshold);
+        _storageAllocCapacityThreshold = _configDepot.get(StorageAllocatedCapacityThreshold);
+
         if (publicIPCapacityThreshold != null) {
             _publicIPCapacityThreshold = Double.parseDouble(publicIPCapacityThreshold);
         }
@@ -195,10 +181,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             _localStorageCapacityThreshold = Double.parseDouble(localStorageCapacityThreshold);
         }
 
-        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE, _storageCapacityThreshold);
-        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, _storageAllocCapacityThreshold);
-        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, _cpuCapacityThreshold);
-        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, _memoryCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, _secondaryStorageCapacityThreshold);
@@ -212,14 +194,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             _capacityCheckPeriod = Long.parseLong(capacityCheckPeriodStr);
             if(_capacityCheckPeriod <= 0)
                 _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
-        }
-
-        String cpuOverProvisioningFactorStr = configs.get("cpu.overprovisioning.factor");
-        if (cpuOverProvisioningFactorStr != null) {
-            _cpuOverProvisioningFactor = NumbersUtil.parseFloat(cpuOverProvisioningFactorStr,1);
-            if(_cpuOverProvisioningFactor < 1){
-                _cpuOverProvisioningFactor = 1;
-            }
         }
 
         _timer = new Timer("CapacityChecker");
@@ -336,7 +310,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         //        than this model right now, so when a VM is started, we update the amount allocated, and when a VM
         //        is stopped we updated the amount allocated, and when VM sync reports a changed state, we update
         //        the amount allocated.  Hopefully it's limited to 3 entry points and will keep the amount allocated
-        //        per host accurate.        
+        //        per host accurate.
 
         try {
 
@@ -347,7 +321,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
 
             // Calculate CPU and RAM capacities
             // 	get all hosts...even if they are not in 'UP' state
-            List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);	        	        
+            List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
             for (HostVO host : hosts) {
                 _capacityMgr.updateCapacityForHost(host);
             }
@@ -377,13 +351,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 long dcId = datacenter.getId();
 
                 //NOTE
-                //What happens if we have multiple vlans? Dashboard currently shows stats 
+                //What happens if we have multiple vlans? Dashboard currently shows stats
                 //with no filter based on a vlan
                 //ideal way would be to remove out the vlan param, and filter only on dcId
                 //implementing the same
 
                 // Calculate new Public IP capacity for Virtual Network
-                if (datacenter.getNetworkType() == NetworkType.Advanced){        			
+                if (datacenter.getNetworkType() == NetworkType.Advanced){
                     createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, datacenter.getAllocationState());
                 }
 
@@ -394,7 +368,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                     //Calculate VLAN's capacity
                     createOrUpdateVlanCapacity(dcId, datacenter.getAllocationState());
                 }
-            }        
+            }
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Done capacity updates for public ip and Vlans");
@@ -415,7 +389,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 s_logger.debug("Done recalculating system capacity");
             }
 
-        } catch (Throwable t) {        	
+        } catch (Throwable t) {
             s_logger.error("Caught exception in recalculating capacity", t);
         }
     }
@@ -439,14 +413,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             CapacityVO newVlanCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
             if (capacityState == AllocationState.Disabled){
                 newVlanCapacity.setCapacityState(CapacityState.Disabled);
-            } 
+            }
             _capacityDao.persist(newVlanCapacity);
-        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedVlans 
+        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedVlans
                 && capacities.get(0).getTotalCapacity() == totalVlans) ){
             CapacityVO capacity = capacities.get(0);
             capacity.setUsedCapacity(allocatedVlans);
             capacity.setTotalCapacity(totalVlans);
-            _capacityDao.update(capacity.getId(), capacity);        	
+            _capacityDao.update(capacity.getId(), capacity);
         }
 
 
@@ -479,9 +453,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedIPs, totalIPs, capacityType);
             if (capacityState == AllocationState.Disabled){
                 newPublicIPCapacity.setCapacityState(CapacityState.Disabled);
-            }        		
+            }
             _capacityDao.persist(newPublicIPCapacity);
-        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedIPs 
+        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedIPs
                 && capacities.get(0).getTotalCapacity() == totalIPs) ){
             CapacityVO capacity = capacities.get(0);
             capacity.setUsedCapacity(allocatedIPs);
@@ -504,19 +478,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         }
     }
 
-    private float getOverProvisioningFactor(long clusterId, short capacityType) {
-        float overProvisioinigFactor = 1f;
-        switch (capacityType) {
-            case Capacity.CAPACITY_TYPE_CPU:
-                overProvisioinigFactor = Float.parseFloat(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), clusterId));
-                break;
-            case Capacity.CAPACITY_TYPE_MEMORY:
-                overProvisioinigFactor = Float.parseFloat(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), clusterId));
-                break;
-        }
-        return overProvisioinigFactor;
-    }
-
     public void checkForAlerts(){
 
         recalculateCapacity();
@@ -531,9 +492,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         List<ClusterVO> clusterList = _clusterDao.listAll();
         List<HostPodVO> podList = _podDao.listAll();
         //Get capacity types at different levels
-        List<Short> dataCenterCapacityTypes = getCapacityTypesAtZoneLevel();         
-        List<Short> podCapacityTypes = getCapacityTypesAtPodLevel();        
-        List<Short> clusterCapacityTypes = getCapacityTypesAtClusterLevel();        
+        List<Short> dataCenterCapacityTypes = getCapacityTypesAtZoneLevel();
+        List<Short> podCapacityTypes = getCapacityTypesAtPodLevel();
+        List<Short> clusterCapacityTypes = getCapacityTypesAtClusterLevel();
 
         // Generate Alerts for Zone Level capacities
         for(DataCenterVO dc : dataCenterList){
@@ -547,7 +508,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 if (capacity == null || capacity.size() == 0){
                     continue;
                 }
-                double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double totalCapacity = capacity.get(0).getTotalCapacity();
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
                     generateEmailAlert(dc, null, null, totalCapacity, usedCapacity, capacityType);
@@ -562,10 +523,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 if (capacity == null || capacity.size() == 0){
                     continue;
                 }
-                double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double totalCapacity = capacity.get(0).getTotalCapacity();
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
-                    generateEmailAlert(ApiDBUtils.findZoneById(pod.getDataCenterId()), pod, null, 
+                    generateEmailAlert(ApiDBUtils.findZoneById(pod.getDataCenterId()), pod, null,
                             totalCapacity, usedCapacity, capacityType);
                 }
             }
@@ -582,16 +543,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 switch (capacityType) {
                     case Capacity.CAPACITY_TYPE_STORAGE:
                         capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
-                        threshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        threshold = _storageCapacityThreshold.valueIn(cluster.getId());
                         break;
                     case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
-                        threshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageAllocatedCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        threshold = _storageAllocCapacityThreshold.valueIn(cluster.getId());
                         break;
                     case Capacity.CAPACITY_TYPE_CPU:
-                        threshold = Double.parseDouble(_configServer.getConfigValue(Config.CPUCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        threshold = _cpuCapacityThreshold.valueIn(cluster.getId());
                         break;
                     case Capacity.CAPACITY_TYPE_MEMORY:
-                        threshold = Double.parseDouble(_configServer.getConfigValue(Config.MemoryCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        threshold = _memoryCapacityThreshold.valueIn(cluster.getId());
                         break;
                     default:
                         threshold = _capacityTypeThresholdMap.get(capacityType);
@@ -619,7 +580,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
         }
         if (capacity != null){
-            return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);	
+            return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);
         }else{
             return null;
         }
@@ -676,8 +637,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             alertType = ALERT_TYPE_LOCAL_STORAGE;
             break;
 
-            //Pod Level    
-        case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:        	
+            //Pod Level
+        case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:
             msgSubject = "System Alert: Number of unallocated private IPs is low in pod " +pod.getName()+ " of availability zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
@@ -686,7 +647,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             break;
 
             //Zone Level
-        case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:        	
+        case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:
             msgSubject = "System Alert: Low Available Secondary Storage in availability zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
@@ -723,7 +684,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             }
             _emailAlert.sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
-            s_logger.error("Exception in CapacityChecker", ex);        
+            s_logger.error("Exception in CapacityChecker", ex);
         }
     }
 
@@ -741,7 +702,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     private List<Short> getCapacityTypesAtPodLevel(){
 
         List<Short> podCapacityTypes = new ArrayList<Short>();
-        podCapacityTypes.add(Capacity.CAPACITY_TYPE_PRIVATE_IP);    	
+        podCapacityTypes.add(Capacity.CAPACITY_TYPE_PRIVATE_IP);
         return podCapacityTypes;
 
     }
@@ -896,5 +857,15 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     private static String formatBytesToMegabytes(double bytes) {
         double megaBytes = (bytes / (1024 * 1024));
         return _dfWhole.format(megaBytes);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return AlertManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold};
     }
 }

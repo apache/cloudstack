@@ -16,20 +16,34 @@
 // under the License.
 package com.cloud.utils.component;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import com.cloud.utils.ReflectUtil;
 
 public class ComponentLifecycleBase implements ComponentLifecycle {
 
 	protected String _name;
 	protected int _runLevel;
     protected Map<String, Object> _configParams = new HashMap<String, Object>();
+    @Inject
+    protected ConfigInjector _configInjector;
 	
 	public ComponentLifecycleBase() {
 		_name = this.getClass().getSimpleName();
 		_runLevel = RUN_LEVEL_COMPONENT;
+
+        for (Field field : ReflectUtil.getAllFieldsForClass(this.getClass(), Object.class)) {
+            InjectConfig config = field.getAnnotation(InjectConfig.class);
+            if (config != null) {
+                field.setAccessible(true);
+                _configInjector.inject(field, this, config.key());
+            }
+        }
 	}
 	
 	@Override

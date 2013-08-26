@@ -205,7 +205,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     SearchBuilder<NicVO> NicForTrafficTypeSearch;
 
    
-    private String _networkDomain;
     private boolean _allowSubdomainNetworkAccess;
 
     private Map<String, String> _configs;
@@ -970,11 +969,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public String getGlobalGuestDomainSuffix() {
-        return _networkDomain;
-    }
-
-    @Override
     public String getStartIpAddress(long networkId) {
         List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
         if (vlans.isEmpty()) {
@@ -1597,11 +1591,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public String getDefaultNetworkDomain(long zoneId) {
-        return _configServer.getConfigValue(Config.GuestDomainSuffix.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
-    }
-
-    @Override
     public List<Provider> getNtwkOffDistinctProviders(long ntkwOffId) {
         List<String> providerNames = _ntwkOfferingSrvcDao.getDistinctProviders(ntkwOffId);
         List<Provider> providers = new ArrayList<Provider>();
@@ -1900,7 +1889,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _configs = _configDao.getConfiguration("Network", params);
-        _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
         _executeInSequenceNtwkElmtCmd = Boolean.valueOf(_configs.get(Config.ExecuteInSequenceNetworkElementCommands.key()));
 

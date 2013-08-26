@@ -34,6 +34,9 @@ import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -43,7 +46,6 @@ import org.apache.cloudstack.region.Region;
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
@@ -123,7 +125,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -133,6 +134,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -158,8 +160,11 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager {
+public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
+
+    @InjectConfig(key = UseSystemPublicIpsCK)
+    ConfigValue<Boolean> _useSystemPublicIps;
 
     @Inject
     NetworkOrchestrationService _networkMgr = null;
@@ -205,8 +210,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     PodVlanMapDao _podVlanMapDao;
     @Inject
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
-    @Inject
-    ConfigurationServer _configServer;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
     @Inject
@@ -724,9 +727,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // If all the dedicated IPs of the owner are in use fetch an IP from the system pool
         if (addrs.size() == 0 && fetchFromDedicatedRange) {
             // Verify if account is allowed to acquire IPs from the system
-            boolean useSystemIps = Boolean.parseBoolean(_configServer.getConfigValue(Config.UseSystemPublicIps.key(),
-                Config.ConfigurationParameterScope.account.toString(),
-                owner.getId()));
+            boolean useSystemIps = _useSystemPublicIps.valueIn(owner.getId());
             if (useSystemIps && nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                 fetchFromDedicatedRange = false;
                 sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
@@ -1916,5 +1917,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         ipaddr = acquireGuestIpAddress(network, requestedIp);
         return ipaddr;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return IpAddressManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {UseSystemPublicIps};
     }
 }

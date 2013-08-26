@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -27,11 +27,10 @@ import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
-public interface InternalLoadBalancerVMManager extends Manager, InternalLoadBalancerVMService{
+public interface InternalLoadBalancerVMManager {
     //RAM/CPU for the system offering used by Internal LB VMs
     public static final int DEFAULT_INTERNALLB_VM_RAMSIZE = 128;            // 128 MB
     public static final int DEFAULT_INTERNALLB_VM_CPU_MHZ = 256;            // 256 MHz
@@ -41,11 +40,11 @@ public interface InternalLoadBalancerVMManager extends Manager, InternalLoadBala
      * @param vmId
      * @param caller
      * @param callerUserId
-     * @return 
+     * @return
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException
      */
-    boolean destroyInternalLbVm(long vmId, Account caller, Long callerUserId) 
+    boolean destroyInternalLbVm(long vmId, Account caller, Long callerUserId)
             throws ResourceUnavailableException, ConcurrentOperationException;
 
 

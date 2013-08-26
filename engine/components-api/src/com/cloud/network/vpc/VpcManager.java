@@ -38,7 +38,14 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 
-public interface VpcManager extends VpcService{
+public interface VpcManager {
+    /**
+     * Returns all the Guest networks that are part of VPC
+     * 
+     * @param vpcId
+     * @return
+     */
+    public List<? extends Network> getVpcNetworks(long vpcId);
 
     /**
      * Returns all existing VPCs for a given account
@@ -141,7 +148,7 @@ public interface VpcManager extends VpcService{
     /**
      * Lists all the services and providers that the current VPC suppots
      * @param vpcOffId
-     * @return map of Service to Provider(s) map 
+     * @return map of Service to Provider(s) map
      */
     Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId);
     
@@ -155,7 +162,7 @@ public interface VpcManager extends VpcService{
 
 
     /**
-     * Performs network offering validation to determine if it can be used for network upgrade inside the VPC 
+     * Performs network offering validation to determine if it can be used for network upgrade inside the VPC
      * @param networkId
      * @param newNtwkOffId
      * @param newCidr
