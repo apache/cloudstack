@@ -289,25 +289,5 @@ class TestSnapshotLimit(cloudstackTestCase):
         snapshot = snapshots[0]
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
-
-        # Fetch values from database
-        qresultset = self.dbclient.execute(
-                        "select id from snapshots where uuid = '%s';" \
-                        % snapshot.id
-                        )
-        self.assertEqual(
-                            isinstance(qresultset, list),
-                            True,
-                            "Invalid db query response for snapshot %s" % snapshot.id
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "No such snapshot %s found in the cloudstack db" % snapshot.id
-                            )
-
-        qresult = qresultset[0]
-        snapshot_id = qresult[0]
-        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
-                                            self.services["paths"], self.zone.id, snapshot_id))
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return

@@ -21,9 +21,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import is_snapshot_on_nfs
-import os
 
 
 class Services:
@@ -289,27 +287,8 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                             "Check snapshot id in list resources call"
                         )
 
-        qresultset = self.dbclient.execute(
-                        "select id from snapshots where uuid = '%s';" \
-                        % self.snapshot.id
-                        )
-        self.assertEqual(
-                            isinstance(qresultset, list),
-                            True,
-                            "Invalid db query response for snapshot %s" % self.snapshot.id
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "No such snapshot %s found in the cloudstack db" % self.snapshot.id
-                            )
-
-        qresult = qresultset[0]
-        snapshot_id = qresult[0]
-
-        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
-                                            self.services["paths"], self.zone.id, snapshot_id),
-                                            "Snapshot was not found on NFS")
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, self.snapshot.id),
+            "Snapshot was not found on NFS")
 
         self.debug("Deleting account: %s" % self.account.name)
         # Delete account
@@ -327,7 +306,6 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             "List accounts should return empty list after account deletion"
             )
 
-        self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config.mgtSvr,
-                                            self.services["paths"], self.zone.id, snapshot_id),
-                                            "Snapshot was still found no NFS after account gc")
+        self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, self.snapshot.id),
+                                            "Snapshot was still found on NFS after account gc")
         return

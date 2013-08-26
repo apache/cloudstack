@@ -18,15 +18,16 @@
 """
 
 import marvin
+import os
 import time
-from marvin.remoteSSHClient import remoteSSHClient
-from marvin.cloudstackAPI import *
 import logging
 import string
 import random
 import imaplib
 import email
 import datetime
+from marvin.cloudstackAPI import *
+from marvin.remoteSSHClient import remoteSSHClient
 
 
 def restart_mgmt_server(server):
@@ -220,34 +221,46 @@ def xsplit(txt, seps):
         txt = txt.replace(sep, default_sep)
     return [i.strip() for i in txt.split(default_sep)]
 
-def is_snapshot_on_nfs(api_client, db_client, config_mgtSvr,
-                        dir_paths, zone_id, snapshot_id):
+def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     """
-    Checks whether a snapshot with id (not UUID) `snapshot_id` is present on the nfs storage
+    Checks whether a snapshot with id (not UUID) `snapshotid` is present on the nfs storage
 
-    @param snapshot_id: id of the snapshot (not uuid)
+    @param apiclient: api client connection
+    @param @dbconn:  connection to the cloudstack db
+    @param config: marvin configuration file
+    @param zoneid: uuid of the zone on which the secondary nfs storage pool is mounted
+    @param snapshotid: uuid of the snapshot
     @return: True if snapshot is found, False otherwise
     """
 
-    from base import ImageStore
-
-    secondaryStores = ImageStore.list(api_client, zoneid=zone_id)
+    from base import ImageStore, Snapshot
+    secondaryStores = ImageStore.list(apiclient, zoneid=zoneid)
 
     assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
-    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zone_id
+    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zoneid
 
     secondaryStore = secondaryStores[0]
 
     if str(secondaryStore.providername).lower() != "nfs":
-        raise Exception("Test works only against nfs secondary storage")
+        raise Exception(
+            "is_snapshot_on_nfs works only against nfs secondary storage. found %s" % str(secondaryStore.providername))
 
-    qresultset = db_client.execute(
-        "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshot_id
+    qresultset = dbconn.execute(
+                        "select id from snapshots where uuid = '%s';" \
+                        % str(snapshotid)
+                        )
+    if len(qresultset) == 0:
+        raise Exception(
+            "No snapshot found in cloudstack with id %s" % snapshotid)
+
+
+    snapshotid = qresultset[0][0]
+    qresultset = dbconn.execute(
+        "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshotid
     )
 
-    assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshot_id
-
-    assert len(qresultset) != 0, "No such snapshot %s found in the cloudstack db" % snapshot_id
+    assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshotid
+    assert len(qresultset) != 0, "No such snapshot %s found in the cloudstack db" % snapshotid
 
     snapshotPath = qresultset[0][0]
 
@@ -256,28 +269,27 @@ def is_snapshot_on_nfs(api_client, db_client, config_mgtSvr,
     from urllib2 import urlparse
     parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
     host, path = parse_url.netloc, parse_url.path
-    snapshots = []
+
+    if not config.mgtSvr:
+        raise Exception("Your marvin configuration does not contain mgmt server credentials")
+    host, user, passwd = config.mgtSvr[0].mgtSvrIp, config.mgtSvr[0].user, config.mgtSvr[0].passwd
 
     try:
-        # Login to Secondary storage VM to check snapshot present on sec disk
         ssh_client = remoteSSHClient(
-            config_mgtSvr[0].mgtSvrIp,
+            host,
             22,
-            config_mgtSvr[0].user,
-            config_mgtSvr[0].passwd,
+            user,
+            passwd,
         )
-        import os
-
         cmds = [
-                "mkdir -p %s" % dir_paths["mount_dir"],
-                "mount -t %s %s%s %s" % (
+                "mkdir -p %s /mnt/tmp",
+                "mount -t %s %s%s /mnt/tmp" % (
                     'nfs',
                     host,
                     path,
-                    dir_paths["mount_dir"]
                     ),
                 "test -f %s && echo 'snapshot exists'" % (
-                    os.path.join(dir_paths["mount_dir"], snapshotPath)
+                    os.path.join("/mnt/tmp", snapshotPath)
                     ),
             ]
 
@@ -287,11 +299,11 @@ def is_snapshot_on_nfs(api_client, db_client, config_mgtSvr,
         # Unmount the Sec Storage
         cmds = [
                 "cd",
-                "umount %s" % (dir_paths["mount_dir"]),
+                "umount /mnt/tmp",
             ]
         for c in cmds:
             ssh_client.execute(c)
     except Exception as e:
         raise Exception("SSH failed for management server: %s - %s" %
-                      (config_mgtSvr[0].mgtSvrIp, e))
+                      (config[0].mgtSvrIp, e))
     return 'snapshot exists' in result
