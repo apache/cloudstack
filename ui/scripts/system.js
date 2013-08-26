@@ -11869,7 +11869,6 @@
                                             $.ajax({
                                                 url: createURL("listDomains&listAll=true"),
                                                 dataType: "json",
-                                                async: false,
                                                 success: function(json) {
                                                     var domainObjs = json.listdomainsresponse.domain;
                                                     var items = [];
