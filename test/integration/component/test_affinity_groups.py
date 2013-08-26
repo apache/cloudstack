@@ -9,7 +9,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required byswa applicable law or agreed to in writing,
+# Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
@@ -112,7 +112,6 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         )
 
         cls.services["account"] = cls.account.name
-        cls.services["domainid"] = cls.domain.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -203,8 +202,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
                                             acc=self.do_admin.name, domainid=self.new_domain.id)
         aff_grp.delete(domainapiclient)
 
-    #@attr(tags=["simulator", "basic", "advanced"])
-    @attr(tags=["vogxn", "simulator", "basic", "advanced"])
+    @attr(tags=["simulator", "basic", "advanced"])
     def test_03_user_create_aff_grp(self):
         """
         Test create affinity group as user
@@ -306,7 +304,6 @@ class TestListAffinityGroups(cloudstackTestCase):
         )
 
         cls.services["account"] = cls.account.name
-        cls.services["domainid"] = cls.domain.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -362,18 +359,11 @@ class TestListAffinityGroups(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    def create_vm_in_aff_grps(self, ag_list, account_name=None, domain_id=None):
-        if account_name == None:
-            account_name = "admin"
-        if domain_id == None:
-            domain_id = self.domain.id
-
+    def create_vm_in_aff_grps(self, ag_list):
         self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
         vm = VirtualMachine.create(
                    self.api_client,
                    self.services["virtual_machine"],
-                   accountid=account_name,
-                   domainid=domain_id,
                    templateid=self.template.id,
                    serviceofferingid=self.service_offering.id,
                    affinitygroupnames=ag_list
@@ -397,10 +387,10 @@ class TestListAffinityGroups(cloudstackTestCase):
            List affinity group for a vm
         """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
         list_aff_grps = AffinityGroup.list(self.api_client)
 
-        vm, hostid = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        vm, hostid = self.create_vm_in_aff_grps([self.aff_grp[0].name])
         list_aff_grps = AffinityGroup.list(self.api_client,
                                            virtualmachineid=vm.id)
 
@@ -419,11 +409,11 @@ class TestListAffinityGroups(cloudstackTestCase):
            List multiple affinity groups associated with a vm
         """
 
-        aff_grp_01 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        aff_grp_02 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        aff_grp_01 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        aff_grp_02 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
         aff_grps_names = [self.aff_grp[0].name, self.aff_grp[1].name]
-        vm, hostid = self.create_vm_in_aff_grps(aff_grps_names, account_name=self.account.name, domain_id=self.domain.id)
+        vm, hostid = self.create_vm_in_aff_grps(aff_grps_names)
         list_aff_grps = AffinityGroup.list(self.api_client,
                                            virtualmachineid=vm.id)
 
@@ -505,9 +495,9 @@ class TestListAffinityGroups(cloudstackTestCase):
            List affinity group should list all for a vms associated with that group
         """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
-        vm, hostid = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        vm, hostid = self.create_vm_in_aff_grps([self.aff_grp[0].name])
         list_aff_grps = AffinityGroup.list(self.api_client, id=self.aff_grp[0].id)
 
         self.assertEqual(list_aff_grps[0].name, self.aff_grp[0].name,
@@ -552,7 +542,6 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         )
 
         cls.services["account"] = cls.account.name
-        cls.services["domainid"] = cls.domain.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -606,17 +595,11 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    def create_vm_in_aff_grps(self, ag_list, account_name=None, domain_id=None):
-        if account_name == None:
-            account_name = "admin"
-        if domain_id == None:
-            domain_id = self.domain.id
+    def create_vm_in_aff_grps(self, ag_list):
         self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
         vm = VirtualMachine.create(
                    self.api_client,
                    self.services["virtual_machine"],
-                   accountid=account_name,
-                   domainid=domain_id,
                    templateid=self.template.id,
                    serviceofferingid=self.service_offering.id,
                    affinitygroupnames=ag_list
@@ -666,7 +649,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
 
         aff_0.delete(self.api_client)
         with self.assertRaises(Exception):
-            self.create_vm_in_aff_grps([aff_0.name], account_name=self.account.name, domain_id=self.domain.id)
+            self.create_vm_in_aff_grps([aff_0.name])
         aff_1.delete(self.api_client)
 
     @attr(tags=["simulator", "basic", "advanced", "multihost"])
@@ -675,10 +658,10 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
             Delete Affinity Group which has vms in it
         """
 
-        aff_0 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        aff_1 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        aff_0 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        aff_1 = self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
-        vm, hostid = self.create_vm_in_aff_grps([aff_0.name, aff_1.name], account_name=self.account.name, domain_id=self.domain.id)
+        vm, hostid = self.create_vm_in_aff_grps([aff_0.name, aff_1.name])
         aff_0.delete(self.api_client)
         vm_list = list_virtual_machines(self.apiclient, id=vm.id)
         self.assert_(vm_list is not None)
@@ -822,7 +805,6 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         )
 
         cls.services["account"] = cls.account.name
-        cls.services["domainid"] = cls.domain.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -877,18 +859,13 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    def create_vm_in_aff_grps(self, ag_list, account_name=None, domain_id=None):
-        if account_name == None:
-            account_name = "admin"
-        if domain_id == None:
-            domain_id = self.domain.id
+    def create_vm_in_aff_grps(self, ag_list):
+
         self.debug('Creating VM in AffinityGroup=%s' % ag_list)
 
         vm = VirtualMachine.create(
                self.api_client,
                self.services["virtual_machine"],
-               accountid=account_name,
-               domainid=domain_id,
                templateid=self.template.id,
                serviceofferingid=self.service_offering.id,
                affinitygroupnames=ag_list
@@ -915,15 +892,15 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             Update the list of affinityGroups by using affinity groupids
 
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
-        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
-        vm2, hostid2 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
+        vm2, hostid2 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
 
         vm1.stop(self.api_client)
 
-        list_aff_grps = AffinityGroup.list(self.api_client, account=self.account.name, domainid=self.domain.id)
+        list_aff_grps = AffinityGroup.list(self.api_client)
 
         self.assertEqual(len(list_aff_grps), 2 , "2 affinity groups should be present")
 
@@ -963,10 +940,10 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             Update the list of affinityGroups by using affinity groupnames
 
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
-        vm2, hostid2 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
+        vm2, hostid2 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
 
         vm1.stop(self.api_client)
 
@@ -1007,10 +984,10 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             with any affinity groups.
 
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        vm1, hostid1 = self.create_vm_in_aff_grps([], account_name=self.account.name, domain_id=self.domain.id)
-        vm2, hostid2 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        vm1, hostid1 = self.create_vm_in_aff_grps([])
+        vm2, hostid2 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
 
         vm1.stop(self.api_client)
 
@@ -1041,7 +1018,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
 
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
         self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
-        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
 
         aff_grps = [self.aff_grp[0], self.aff_grp[1]]
         vm1.stop(self.api_client)
@@ -1065,9 +1042,9 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             Update the list of Affinity Groups on running vm
         """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        vm1, hostid1 = self.create_vm_in_aff_grps([self.aff_grp[0].name])
 
         aff_grps = [self.aff_grp[0], self.aff_grp[1]]
         with self.assertRaises(Exception):
@@ -1106,7 +1083,6 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         )
 
         cls.services["account"] = cls.account.name
-        cls.services["domainid"] = cls.domain.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -1161,19 +1137,14 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    def create_vm_in_aff_grps(self, api_client=None, ag_list=None, ag_ids=None, account_name=None, domain_id=None):
-        if account_name == None:
-            account_name = "admin"
-        if domain_id == None:
-            domain_id = self.domain.id
+    def create_vm_in_aff_grps(self, api_client=None, ag_list=None, ag_ids=None):
+
         if api_client == None:
             api_client = self.api_client
         self.debug('Creating VM in AffinityGroup=%s' % ag_list)
         vm = VirtualMachine.create(
                api_client,
                self.services["virtual_machine"],
-               accountid=account_name,
-               domainid=domain_id,
                templateid=self.template.id,
                serviceofferingid=self.service_offering.id,
                affinitygroupnames=ag_list,
@@ -1200,7 +1171,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
             Deploy VM without affinity group
         """
-        vm1, hostid1 = self.create_vm_in_aff_grps(account_name=self.account.name, domain_id=self.domain.id)
+        vm1, hostid1 = self.create_vm_in_aff_grps()
 
         vm1.delete(self.api_client)
         #Wait for expunge interval to cleanup VM
@@ -1211,8 +1182,8 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
             Deploy VM by aff grp name
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name])
 
         vm1.delete(self.api_client)
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
@@ -1223,12 +1194,12 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
             Deploy VM by aff grp id
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
         list_aff_grps = AffinityGroup.list(self.api_client,
-                                           name=self.aff_grp[0].name, account=self.account.name, domainid=self.domain.id)
+                                           name=self.aff_grp[0].name)
 
-        vm1, hostid1 = self.create_vm_in_aff_grps(ag_ids=[list_aff_grps[0].id], account_name=self.account.name, domain_id=self.domain.id)
+        vm1, hostid1 = self.create_vm_in_aff_grps(ag_ids=[list_aff_grps[0].id])
 
         vm1.delete(self.api_client)
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
@@ -1242,9 +1213,9 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         deploy VM1 and VM2 in the same host-anti-affinity groups
         Verify that the vms are deployed on separate hosts
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
-        vm2, hostid2 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name])
+        vm2, hostid2 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name])
 
         self.assertNotEqual(hostid1, hostid2,
             msg="Both VMs of affinity group %s are on the same host"
@@ -1260,13 +1231,13 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
             Deploy vms by affinity group id
         """
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
         list_aff_grps = AffinityGroup.list(self.api_client,
-                                           name=self.aff_grp[0].name, acc=self.account.name, domainid=self.domain.id)
+                                           name=self.aff_grp[0].name)
 
-        vm1, hostid1 = self.create_vm_in_aff_grps(ag_ids=[list_aff_grps[0].id], account_name=self.account.name, domain_id=self.domain.id)
-        vm2, hostid2 = self.create_vm_in_aff_grps(ag_ids=[list_aff_grps[0].id], account_name=self.account.name, domain_id=self.domain.id)
+        vm1, hostid1 = self.create_vm_in_aff_grps(ag_ids=[list_aff_grps[0].id])
+        vm2, hostid2 = self.create_vm_in_aff_grps(ag_ids=[list_aff_grps[0].id])
 
         self.assertNotEqual(hostid1, hostid2,
             msg="Both VMs of affinity group %s are on the same host"
@@ -1304,7 +1275,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             vm1, hostid1 = self.create_vm_in_aff_grps(api_client=userapiclient,
-                                                  ag_list=[self.aff_grp[0].name], account_name=self.account.name, domain_id=self.domain.id)
+                                                  ag_list=[self.aff_grp[0].name])
 
 
         self.aff_grp[0].delete(self.api_client)
@@ -1341,7 +1312,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         # Deploy VM in Affinity group belonging to different user by id
         with self.assertRaises(Exception):
             vm1, hostid1 = self.create_vm_in_aff_grps(api_client=userapiclient,
-                                                  ag_ids=[list_aff_grps[0].id], account_name=self.account.name, domain_id=self.domain.id)
+                                                  ag_ids=[list_aff_grps[0].id])
 
         self.aff_grp[0].delete(self.api_client)
         self.aff_grp[1].delete(userapiclient)
@@ -1352,11 +1323,11 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
             Deploy vm in multiple affinity groups
         """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
         vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name,
-                                                   self.aff_grp[1].name], account_name=self.account.name, domain_id=self.domain.id)
+                                                   self.aff_grp[1].name])
 
         list_aff_grps = AffinityGroup.list(self.api_client,
                                            virtualmachineid=vm1.id)
@@ -1381,13 +1352,13 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
             Deploy multiple vms in multiple affinity groups
         """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
         vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name,
-                                                   self.aff_grp[1].name], account_name=self.account.name, domain_id=self.domain.id)
+                                                   self.aff_grp[1].name])
         vm2, hostid2 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name,
-                                                   self.aff_grp[1].name], account_name=self.account.name, domain_id=self.domain.id)
+                                                   self.aff_grp[1].name])
 
         aff_grps_names = [self.aff_grp[0].name, self.aff_grp[1].name]
         aff_grps_names.sort()
@@ -1416,14 +1387,14 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
             Deploy VM by aff grp name and id
         """
 
-        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"], acc=self.account.name, domainid=self.domain.id)
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
 
         list_aff_grps = AffinityGroup.list(self.api_client,
                                            name=self.aff_grp[0].name)
 
         with self.assertRaises(Exception):
             vm1, hostid1 = self.create_vm_in_aff_grps(ag_list=[self.aff_grp[0].name],
-                                                  ag_ids=[list_aff_grps[0].id], account_name=self.account.name, domain_id=self.domain.id)
+                                                  ag_ids=[list_aff_grps[0].id])
 
         self.aff_grp[0].delete(self.api_client)
 
@@ -1454,7 +1425,6 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         )
 
         cls.services["account"] = cls.account.name
-        cls.services["domainid"] = cls.domain.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -1508,11 +1478,8 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    def create_vm_in_aff_grps(self, api_client=None, ag_list=None, ag_ids=None, account_name=None, domain_id=None):
-        if account_name == None:
-            account_name = "admin"
-        if domain_id == None:
-            domain_id = self.domain.id
+    def create_vm_in_aff_grps(self, api_client=None, ag_list=None, ag_ids=None):
+
         if api_client == None:
             api_client = self.api_client
         self.debug('Creating VM in AffinityGroup=%s' % ag_list)
@@ -1563,7 +1530,6 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         aff_grp.delete(userapiclient)
 
     @attr(tags=["simulator", "basic", "advanced", "multihost"])
-
     def test_02_create_aff_grp_user(self):
         """
             Create Affinity Group as admin for regular user
