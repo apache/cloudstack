@@ -1073,7 +1073,7 @@ CREATE VIEW `cloud`.`host_view` AS
             left join
         `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
             left join
-        `cloud`.`host_details` ON host.id = host_details.id
+        `cloud`.`host_details` ON host.id = host_details.host_id
             and host_details.name = 'guest.os.category.id'
             left join
         `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT( host_details.value , UNSIGNED)
