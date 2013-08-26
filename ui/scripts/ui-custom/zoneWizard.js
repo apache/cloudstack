@@ -190,8 +190,7 @@
             var $configuredTrafficTypes = $trafficTypes.filter(function() {
                 var $trafficType = $(this);
 
-                return $trafficType.data('traffic-type-data') &&
-                    $trafficType.data('traffic-type-data').label.length >= 1;
+                return ($trafficType.data('traffic-type-data') != null);
             });
 
             if ($enabledPhysicalNetworks.size() > 1 &&
@@ -295,20 +294,60 @@
             var trafficData = $trafficType.data('traffic-type-data') ?
                 $trafficType.data('traffic-type-data') : {};
             var hypervisor = getData($trafficType.closest('.zone-wizard')).zone.hypervisor;
+            
+            var fields;
+            
+            if (hypervisor == 'VMware') {
+            	fields = {
+            		vSwitchName: {
+	                    label: 'vSwitch Name' ,
+	                    defaultValue: trafficData.vSwitchName
+	                },
+	                vlanId: { 
+	                	label: 'VLAN ID',
+	                	defaultValue: trafficData.vlanId
+	                }	                
+	            };  
+            	
+            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {
+            		$.extend(fields, {
+            		    vSwitchType: {
+            		        label: 'vSwitch Type',
+            		        select: function (args) {            		        	
+            		            args.response.success({
+            		                data: [{
+            		                    id: 'nexusdvs',
+            		                    description: 'Cisco Nexus 1000v Distributed Virtual Switch'
+            		                }, {
+            		                    id: 'vmwaresvs',
+            		                    description: 'VMware vNetwork Standard Virtual Switch'
+            		                }, {
+            		                    id: 'vmwaredvs',
+            		                    description: 'VMware vNetwork Distributed Virtual Switch'
+            		                }],
+            		                defaultValue: trafficData.vSwitchType
+            		            });
+            		        }
+            		    }
+            		});   
+            	}            	
+            } else {    
+	            fields = {
+	                label: {
+	                    label: hypervisor + ' ' + _l('label.traffic.label'),
+	                    defaultValue: trafficData.label
+	                }
+	            };
+            }
 
             cloudStack.dialog.createForm({
                 form: {
                     title: _l('label.edit.traffic.type'),
                     desc: _l('message.edit.traffic.type'),
-                    fields: {
-                        label: {
-                            label: hypervisor + ' ' + _l('label.traffic.label'),
-                            defaultValue: trafficData.label
-                        }
-                    }
+                    fields: fields
                 },
 
-                after: function(args) {
+                after: function(args) {               
                     $trafficType.data('traffic-type-data', args.data);
                 }
             });
