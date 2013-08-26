@@ -541,24 +541,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#getPod(long)
-     */
-    @Override
-    public HostPodVO getPod(long id) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#getCluster(long)
-     */
-    @Override
-    public ClusterVO getCluster(long id) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationManager#deleteAccountSpecificVirtualRanges(long)
      */
     @Override

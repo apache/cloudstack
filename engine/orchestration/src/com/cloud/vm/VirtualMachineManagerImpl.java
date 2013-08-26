@@ -89,6 +89,7 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -1906,9 +1907,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Host host = _hostDao.findById(vm.getHostId());
         Cluster cluster = null;
         if (host != null) {
-            cluster = _configMgr.getCluster(host.getClusterId());
+            cluster = _entityMgr.findById(Cluster.class, host.getClusterId());
         }
-        HostPodVO pod = _configMgr.getPod(host.getPodId());
+        Pod pod = _entityMgr.findById(Pod.class, host.getPodId());
         DeployDestination dest = new DeployDestination(dc, pod, cluster, host);
 
         try {

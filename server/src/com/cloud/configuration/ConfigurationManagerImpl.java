@@ -4864,16 +4864,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public HostPodVO getPod(long id) {
-        return _podDao.findById(id);
-    }
-
-    @Override
-    public ClusterVO getCluster(long id) {
-        return _clusterDao.findById(id);
-    }
-
-    @Override
     public AllocationState findClusterAllocationState(ClusterVO cluster) {
 
         if (cluster.getAllocationState() == AllocationState.Disabled) {

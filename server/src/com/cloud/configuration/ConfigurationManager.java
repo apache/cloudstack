@@ -225,10 +225,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 
-    HostPodVO getPod(long id);
-
-    ClusterVO getCluster(long id);
-
     boolean releaseAccountSpecificVirtualRanges(long accountId);
 
     /**
