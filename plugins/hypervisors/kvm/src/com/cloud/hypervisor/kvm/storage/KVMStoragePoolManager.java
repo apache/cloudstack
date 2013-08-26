@@ -173,7 +173,8 @@ public class KVMStoragePoolManager {
         return createStoragePool(name, host, port, path, userInfo, type, true);
     }
 
-    private KVMStoragePool createStoragePool( String name, String host, int port,
+    //Note: due to bug CLOUDSTACK-4459, createStoragepool can be called in parallel, so need to be synced.
+    private synchronized KVMStoragePool createStoragePool( String name, String host, int port,
                                              String path, String userInfo,
                                              StoragePoolType type, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
