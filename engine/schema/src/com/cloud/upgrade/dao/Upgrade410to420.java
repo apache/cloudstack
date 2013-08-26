@@ -111,6 +111,25 @@ public class Upgrade410to420 implements DbUpgrade {
         updateConcurrentConnectionsInNetworkOfferings(conn);
         migrateDatafromIsoIdInVolumesTable(conn);
         setRAWformatForRBDVolumes(conn);
+        migrateVolumeOnSecondaryStorage(conn);
+    }
+
+    private void migrateVolumeOnSecondaryStorage(Connection conn) {
+        PreparedStatement sql = null;
+        try {
+            sql = conn.prepareStatement("update `cloud`.`volumes` set state='Uploaded' where state='UploadOp'");
+            sql.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade volume state: ", e);
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+
+                }
+            }
+        }
     }
 
     private void persistVswitchConfiguration(Connection conn) {
