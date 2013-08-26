@@ -152,6 +152,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -188,6 +189,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private static final long MIN_GRE_KEY = 0L;
     private static final long MAX_GRE_KEY = 4294967295L; // 2^32 -1
 
+    @Inject
+    EntityManager _entityMgr;
 
     @Inject
     DataCenterDao _dcDao = null;
@@ -507,7 +510,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
         if (networkId != null) {
             Network network = _networksDao.findById(networkId);
@@ -546,7 +549,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
         if ((networkId == null && vpcId == null) || (networkId != null && vpcId != null)) {
             throw new InvalidParameterValueException("One of Network id or VPC is should be passed");
@@ -672,7 +675,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Invalid zone Id is given");
         }
@@ -3860,7 +3863,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             //Do not allow multiple private gateways with same Vlan within a VPC
             if(vpcId.equals(privateNetwork.getVpcId())){
                 throw new InvalidParameterValueException("Private network for the vlan: " + vlan + " and cidr  "+ cidr +"  already exists " +
-                        "for Vpc "+vpcId+" in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
+                        "for Vpc "+vpcId+" in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
             }
         }
 
@@ -3868,7 +3871,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
         if (privateIp != null) {
             throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" +
-                    " in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
+                    " in zone " + _entityMgr.findById(DataCenter.class, pNtwk.getDataCenterId()).getName());
         }
 
         Long mac = dc.getMacAddress();

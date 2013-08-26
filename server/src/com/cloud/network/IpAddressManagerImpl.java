@@ -409,7 +409,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // check permissions
         _accountMgr.checkAccess(caller, null, false, ipOwner);
 
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
         return allocateIp(ipOwner, isSystem, caller, callerUserId, zone);
     }
@@ -702,7 +702,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         sc.setParameters("dc", dcId);
 
-        DataCenter zone = _configMgr.getZone(dcId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
         // for direct network take ip addresses only from the vlans belonging to the network
         if (vlanUse == VlanType.DirectAttached) {
@@ -1153,7 +1153,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 throw new InvalidParameterValueException("Invalid network id is given");
             }
 
-            DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
@@ -1185,7 +1185,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return null;
         }
 
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
         // allow associating IP addresses to guest network only
         if (network.getTrafficType() != TrafficType.Guest) {
@@ -1300,7 +1300,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 throw new InvalidParameterValueException("IP " + ipToAssoc + " is not associated with network id" + networkId);
             }
 
-            DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
                     assert (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()));
@@ -1315,7 +1315,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return null;
         }
 
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
         // Check that network belongs to IP owner - skip this check
         //     - if zone is basic zone as there is just one guest network,

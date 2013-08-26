@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 
@@ -27,12 +27,13 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -71,6 +72,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -98,7 +100,9 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Inject ConfigurationManager _configMgr;
     @Inject AccountManager _accountMgr;
     @Inject ApplicationLoadBalancerRuleDao _appLbDao;
-    
+    @Inject
+    EntityManager _entityMgr;
+
     protected InternalLoadBalancerElement() {
     }
     
@@ -113,7 +117,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     
     private boolean canHandle(Network config, Scheme lbScheme) {
         //works in Advance zone only
-        DataCenter dc = _configMgr.getZone(config.getDataCenterId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, config.getDataCenterId());
         if (dc.getNetworkType() != NetworkType.Advanced) {
             s_logger.trace("Not hanling zone of network type " + dc.getNetworkType());
             return false;
@@ -123,12 +127,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             return false;
         }
         
-        Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+        Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
             if (schemeCaps != null && lbScheme != null) {
                 if (!schemeCaps.contains(lbScheme.toString())) {
-                    s_logger.debug("Scheme " + lbScheme.toString() + " is not supported by the provider " + this.getName());
+                    s_logger.debug("Scheme " + lbScheme.toString() + " is not supported by the provider " + getName());
                     return false;
                 }
             }
@@ -161,7 +165,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             InsufficientCapacityException {
         
         if (!canHandle(network, null)) {
-            s_logger.trace("No need to implement " + this.getName());
+            s_logger.trace("No need to implement " + getName());
             return true;
         }
         
@@ -174,7 +178,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             ResourceUnavailableException, InsufficientCapacityException {
         
         if (!canHandle(network, null)) {
-            s_logger.trace("No need to prepare " + this.getName());
+            s_logger.trace("No need to prepare " + getName());
             return true;
         }
         
@@ -200,18 +204,18 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 try {
                     internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
                 } catch (InsufficientCapacityException e) {
-                    s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp + " due to:", e);
+                    s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp + " due to:", e);
                     return false;
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp +  " due to:", e);
+                    s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp +  " due to:", e);
                     return false;
                 }
                 
                 if (internalLbVms == null || internalLbVms.isEmpty()) {
-                    throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
+                    throw new ResourceUnavailableException("Can't deploy " + getName() + " to handle LB rules",
                             DataCenter.class, network.getDataCenterId());
                 }
-            }  
+            }
         }
         
         return true;
@@ -265,7 +269,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), 
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(),
                 VirtualRouterProviderType.InternalLbVm);
         if (element == null) {
             return false;
@@ -277,7 +281,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), 
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(),
                 VirtualRouterProviderType.InternalLbVm);
         if (element == null) {
             return true;
@@ -320,7 +324,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         
         //2) Get rules to apply
         Map<Ip, List<LoadBalancingRule>> rulesToApply = getLbRulesToApply(rules);
-        s_logger.debug("Applying " + rulesToApply.size() + " on element " + this.getName());
+        s_logger.debug("Applying " + rulesToApply.size() + " on element " + getName());
 
  
         for (Ip sourceIp : rulesToApply.keySet()) {
@@ -334,7 +338,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                         return _internalLbMgr.destroyInternalLbVm(vms.get(0).getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM),
                                 _accountMgr.getUserIncludingRemoved(User.UID_SYSTEM).getId());
                     } catch (ConcurrentOperationException e) {
-                        s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + " on the element " + this.getName() + " due to:", e);
+                        s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + " on the element " + getName() + " due to:", e);
                         return false;
                     }
                 }
@@ -342,13 +346,13 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 //2.2 Start Internal LB vm per IP address
                 List<? extends VirtualRouter> internalLbVms;
                 try {
-                    DeployDestination dest = new DeployDestination(_configMgr.getZone(network.getDataCenterId()), null, null, null); 
+                    DeployDestination dest = new DeployDestination(_entityMgr.findById(DataCenter.class, network.getDataCenterId()), null, null, null);
                     internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
                 } catch (InsufficientCapacityException e) {
-                    s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + "on the element " + this.getName() + " due to:", e);
+                    s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + "on the element " + getName() + " due to:", e);
                     return false;
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + "on the element " + this.getName() + " due to:", e);
+                    s_logger.warn("Failed to apply lb rule(s) for ip " + sourceIp.addr() + "on the element " + getName() + " due to:", e);
                     return false;
                 }
                 
@@ -359,13 +363,13 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                  
                 //2.3 Apply Internal LB rules on the VM
                 if (!_internalLbMgr.applyLoadBalancingRules(network, rulesToApply.get(sourceIp), internalLbVms)) {
-                    throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() + 
-                            " in network " + network.getId() + " on element " + this.getName());
+                    throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() +
+                            " in network " + network.getId() + " on element " + getName());
                 }
             }
         }
 
-        return true;    
+        return true;
     }
 
     
@@ -464,8 +468,8 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public VirtualRouterProvider configureInternalLoadBalancerElement(long id, boolean enable) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(id);
         if (element == null || element.getType() != VirtualRouterProviderType.InternalLbVm) {
-            throw new InvalidParameterValueException("Can't find " + this.getName() + " element with network service provider id " + id +
-                    " to be used as a provider for " + this.getName());
+            throw new InvalidParameterValueException("Can't find " + getName() + " element with network service provider id " + id +
+                    " to be used as a provider for " + getName());
         }
 
         element.setEnabled(enable);
@@ -478,12 +482,12 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public VirtualRouterProvider addInternalLoadBalancerElement(long ntwkSvcProviderId) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, VirtualRouterProviderType.InternalLbVm);
         if (element != null) {
-            s_logger.debug("There is already an " + this.getName() + " with service provider id " + ntwkSvcProviderId);
+            s_logger.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
             return null;
         }
         
         PhysicalNetworkServiceProvider provider = _pNtwkSvcProviderDao.findById(ntwkSvcProviderId);
-        if (provider == null || !provider.getProviderName().equalsIgnoreCase(this.getName())) {
+        if (provider == null || !provider.getProviderName().equalsIgnoreCase(getName())) {
             throw new InvalidParameterValueException("Invalid network service provider is specified");
         }
         
@@ -497,7 +501,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public VirtualRouterProvider getInternalLoadBalancerElement(long id) {
         VirtualRouterProvider provider = _vrProviderDao.findById(id);
         if (provider == null || provider.getType() != VirtualRouterProviderType.InternalLbVm) {
-            throw new InvalidParameterValueException("Unable to find " + this.getName() + " by id");
+            throw new InvalidParameterValueException("Unable to find " + getName() + " by id");
         }
         return provider;
     }

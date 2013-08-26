@@ -83,6 +83,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ReservationContext;
 
@@ -102,6 +103,7 @@ public class CiscoVnmcElementTest {
     CiscoNexusVSMDeviceDao _vsmDeviceDao = mock(CiscoNexusVSMDeviceDao.class);
     VlanDao _vlanDao = mock(VlanDao.class);
     IpAddressManager _ipAddrMgr = mock(IpAddressManager.class);
+    EntityManager _entityMgr = mock(EntityManager.class);
 
     @Before
     public void setUp() throws ConfigurationException {
@@ -117,6 +119,7 @@ public class CiscoVnmcElementTest {
         _element._clusterVsmMapDao = _clusterVsmMapDao;
         _element._vsmDeviceDao = _vsmDeviceDao;
         _element._vlanDao = _vlanDao;
+        _element._entityMgr = _entityMgr;
 
         // Standard responses
         when(_networkModel.isProviderForNetwork(Provider.CiscoVnmc, 1L)).thenReturn(true);
@@ -164,7 +167,7 @@ public class CiscoVnmcElementTest {
 
         DataCenter dc = mock(DataCenter.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
-        when(_configMgr.getZone(network.getDataCenterId())).thenReturn(dc);
+        when(_entityMgr.findById(DataCenter.class, network.getDataCenterId())).thenReturn(dc);
 
         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
         devices.add(mock(CiscoVnmcControllerVO.class));

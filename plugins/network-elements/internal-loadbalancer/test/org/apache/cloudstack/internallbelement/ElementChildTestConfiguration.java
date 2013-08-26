@@ -41,6 +41,7 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.DomainRouterDao;
 
@@ -107,6 +108,10 @@ public class ElementChildTestConfiguration {
             return Mockito.mock(ConfigurationManager.class);
         }
         
+        @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
+        }
         
         @Bean
         public ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao() {

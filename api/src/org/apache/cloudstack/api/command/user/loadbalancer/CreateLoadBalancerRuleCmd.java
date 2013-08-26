@@ -164,7 +164,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         }
 
         if (zoneId != null) {
-            DataCenter zone = _configService.getZone(zoneId);
+            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
                 if (networks.size() == 0) {

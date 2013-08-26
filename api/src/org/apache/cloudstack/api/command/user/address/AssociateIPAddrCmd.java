@@ -164,7 +164,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             return null;
         }
 
-        DataCenter zone = _configService.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone.getNetworkType() == NetworkType.Advanced) {
             List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(),
                     _accountService.getAccount(getEntityOwnerId()));
@@ -218,7 +218,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
             NetworkOffering offering = _configService.getNetworkOffering(network.getNetworkOfferingId());
 
-            DataCenter zone = _configService.getZone(network.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
             if (zone.getNetworkType() == NetworkType.Basic && offering.getElasticIp() && offering.getElasticLb()) {
                 // Since the basic zone network is owned by 'Root' domain, domain access checkers will fail for the
                 // accounts in non-root domains while acquiring public IP. So add an exception for the 'Basic' zone

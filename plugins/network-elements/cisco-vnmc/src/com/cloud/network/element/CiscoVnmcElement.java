@@ -121,6 +121,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -136,6 +137,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -275,7 +278,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
         if (zone.getNetworkType() == NetworkType.Basic) {
             s_logger.debug("Not handling network implement in zone of type " + NetworkType.Basic);

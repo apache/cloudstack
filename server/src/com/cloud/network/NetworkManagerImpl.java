@@ -37,7 +37,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
@@ -162,6 +161,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -194,10 +194,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Component
 @Local(value = { NetworkManager.class})
 public class NetworkManagerImpl extends ManagerBase implements NetworkManager, Listener {
     static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);
+    @Inject
+    EntityManager _entityMgr;
 
     @Inject
     DataCenterDao _dcDao = null;
@@ -2124,7 +2125,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         //In Basic zone, make sure that there are no non-removed console proxies and SSVMs using the network
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         if (zone.getNetworkType() == NetworkType.Basic) {
             List<VMInstanceVO> systemVms = _vmDao.listNonRemovedVmsByTypeAndNetwork(network.getId(),
                     Type.ConsoleProxy, Type.SecondaryStorageVm);
@@ -2454,7 +2455,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     protected boolean isSharedNetworkWithServices(Network network) {
         assert(network != null);
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         if (network.getGuestType() == Network.GuestType.Shared &&
                 zone.getNetworkType() == NetworkType.Advanced &&
                 isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
@@ -2973,7 +2974,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
                 
                 VirtualMachine vm = vmProfile.getVirtualMachine();
-                DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+                DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
                 Host host = _hostDao.findById(vm.getHostId());
                 DeployDestination dest = new DeployDestination(dc, null, null, host);
                 

@@ -1902,7 +1902,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             ResourceUnavailableException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-        DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         Cluster cluster = null;
         if (host != null) {
@@ -2771,7 +2771,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null, null, null, null);
 
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
 
@@ -2840,7 +2840,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null,
                 null, null, null);
 
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
@@ -2904,7 +2904,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null,
                 null, null, null);
 
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());

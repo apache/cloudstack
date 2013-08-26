@@ -111,6 +111,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -129,6 +130,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 @Local(value = { VpcManager.class, VpcService.class, VpcProvisioningService.class })
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService{
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     VpcOfferingDao _vpcOffDao;
     @Inject
@@ -599,7 +602,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
        
         //Validate zone
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Can't find zone by id specified");
         }
@@ -961,7 +964,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         //permission check
         _accountMgr.checkAccess(caller, null, false, vpc);
         
-        DataCenter dc = _configMgr.getZone(vpc.getZoneId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
      
         DeployDestination dest = new DeployDestination(dc, null, null, null);
         ReservationContext context = new ReservationContextImpl(null, null, callerUser,

@@ -4379,7 +4379,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean forVpc = cmd.getForVpc();
 
         if (zoneId != null) {
-            zone = getZone(zoneId);
+            zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone == null) {
                 throw new InvalidParameterValueException("Unable to find the zone by id=" + zoneId);
             }
@@ -4765,11 +4765,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
         }
-    }
-
-    @Override
-    public DataCenterVO getZone(long id) {
-        return _zoneDao.findById(id);
     }
 
     @Override

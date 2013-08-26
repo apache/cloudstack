@@ -147,6 +147,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -249,6 +250,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject ApplicationLoadBalancerRuleDao _appLbRuleDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
@@ -305,7 +308,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String vmName = "AutoScale-LB-" + lbName;
         String lbNetworkUuid = null;
 
-        DataCenter zone = _configMgr.getZone(vmGroup.getZoneId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, vmGroup.getZoneId());
         if (zone == null) {
             // This should never happen, but still a cautious check
             s_logger.warn("Unable to find zone while packaging AutoScale Vm Group, zoneid: " + vmGroup.getZoneId());
