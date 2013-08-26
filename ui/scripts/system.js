@@ -10292,8 +10292,13 @@
                                         //
                                         // ** This is done by switching out optional fields for required fields;
                                         //    need to check for *either* vsm[...]_req or vsm[...]
-                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
+                                        
                                         var $overridePublicTraffic = $form.find('.form-item[rel=overridepublictraffic] input[type=checkbox]');
+                                        var $vSwitchPublicType = $form.find('.form-item[rel=vSwitchPublicType] select');
+                                        
+                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
+                                        var $vSwitchGuestType = $form.find('.form-item[rel=vSwitchGuestType] select');
+                                        
                                         var $vsmFields = $form.find('.form-item').filter(function() {
                                             var vsmFields = [
                                                 'vsmipaddress',
@@ -10314,8 +10319,8 @@
                                         });
 
 
-                                        if ($overridePublicTraffic.is(':checked') ||
-                                            $overrideGuestTraffic.is(':checked')) {
+                                        if (($overridePublicTraffic.is(':checked') && $vSwitchPublicType.val() == 'nexusdvs') ||
+                                            ($overrideGuestTraffic.is(':checked') && $vSwitchGuestType.val() == 'nexusdvs' )) {
                                             $vsmReqFields.css('display', 'inline-block');
                                             $vsmFields.hide();
                                         } else {
