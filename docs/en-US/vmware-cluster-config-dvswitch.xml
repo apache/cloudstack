@@ -89,7 +89,7 @@
       </textobject>
     </mediaobject>
     <informaltable frame="all">
-      <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <tgroup cols="3" align="left" colsep="1" rowsep="1">
         <colspec colname="c1"/>
         <colspec colname="c2"/>
         <colspec colname="c3"/>
