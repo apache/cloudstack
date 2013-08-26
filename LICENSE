@@ -306,7 +306,7 @@ Within the scripts/vm/hypervisor/xenserver directory
         from OpenStack, LLC  http://www.openstack.org 
             swift 
 
-Within the tools/appliance/definitions/{devcloud,systemvmtemplate,systemvmtemplate64} directories
+Within the tools/appliance/definitions/{devcloud,systemvmtemplate,systemvmtemplate64} directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
             Copyright (c) 2010-2012 Patrick Debois 
@@ -460,7 +460,7 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2006 - 2011 Jörn Zaefferer 
+            Copyright (c) 2006 - 2011 JÃ¶rn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -655,7 +655,7 @@ Within the ui/lib/jquery-ui directory
 Within the ui/lib/qunit directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2012 John Resig, Jörn Zaefferer 
+            Copyright (c) 2012 John Resig, JÃ¶rn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -685,4 +685,11 @@ Within the utils/src/com/cloud/utils/db directory
     Copyright (c) 2004 Clinton Begin
         from Clinton Begin  http://code.google.com/p/mybatis/ 
             ScriptRunner.java  from http://code.google.com/p/mybatis/
+
+Within the utils/src/org/apache/commons/httpclient/contrib/ssl directory
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    Copyright (c) 2007 The Apache Software Foundation
+        from The Apache Software Foundation  http://www.apache.org/ 
+            EasySSLProtocolSocketFactory.java 
+            EasyX509TrustManager.java 
 
