@@ -675,7 +675,7 @@ public class Upgrade410to420 implements DbUpgrade {
             };
 
             Map<HypervisorType, String> newTemplateUrl = new HashMap<HypervisorType, String>(){
-                {   put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
+                {   put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2");
                 put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
                 put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
                 put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");
