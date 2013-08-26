@@ -34,7 +34,34 @@
         physicalNetworkID = zoneType == 'Advanced' ? physicalNetworkID : 0;
         var physicalNetwork = data.physicalNetworks ? data.physicalNetworks[physicalNetworkID] : null;
         var trafficConfig = physicalNetwork ? physicalNetwork.trafficTypeConfiguration[trafficTypeID] : null;
-        var trafficLabel = trafficConfig ? trafficConfig.label : null;
+                
+        var trafficLabel;       
+        if (trafficConfig != null) {
+        	if ('label' in trafficConfig) {
+        		trafficLabel = trafficConfig.label;
+        	}
+        	else {
+        		trafficLabel = '';
+        		
+        		if ('vSwitchName' in trafficConfig) {
+        			trafficLabel += trafficConfig.vSwitchName;
+        		}
+        		if ('vlanId' in trafficConfig) {
+        			if (trafficLabel.length > 0)
+        				trafficLabel += ',';
+        			trafficLabel += trafficConfig.vlanId;
+        		}
+        		if ('vSwitchType' in trafficConfig) {
+        			if (trafficLabel.length > 0)
+        				trafficLabel += ',';
+        			trafficLabel += trafficConfig.vSwitchType;
+        		}
+        		
+        		if (trafficLabel.length == 0) //trafficLabel == ''
+        			trafficLabel = null;
+        	}
+        }
+        
         var hypervisorAttr, trafficLabelStr;
 
         switch (hypervisor) {
