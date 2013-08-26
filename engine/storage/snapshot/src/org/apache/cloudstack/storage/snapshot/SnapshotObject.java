@@ -265,7 +265,7 @@ public class SnapshotObject implements SnapshotInfo {
                 this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
                 
                 // update side-effect of snapshot operation
-                if(snapshotTO.getVolume().getPath() != null) {
+                if(snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
                 	VolumeVO vol = this.volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
                 	if(vol != null) {
 	                	s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
