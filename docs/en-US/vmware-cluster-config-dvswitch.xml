@@ -78,6 +78,66 @@
     <para>Use this VDS name when you specify the switch name in the traffic label while creating the
       zone. Traffic label format is [["Name of vSwitch/dvSwitch/EthernetPortProfile"][,"VLAN
       ID"[,"vSwitch Type"]]]</para>
+    <para>possible values for networkLabel, "" (empty string) dvSwitch0 dvSwitch0,200
+      dvSwitch0,300,vmwaredvs myEthernetPortProfile,,nexusdvs dvSwitch0,,vmwaredvs</para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/traffic-label.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>traffic-label.png: Traffic label specified while zone creation.</phrase>
+      </textobject>
+    </mediaobject>
+    <informaltable frame="all">
+      <tgroup cols="2" align="left" colsep="1" rowsep="1">
+        <colspec colname="c1"/>
+        <colspec colname="c2"/>
+        <colspec colname="c3"/>
+        <thead>
+          <row>
+            <entry><para>Fields</para></entry>
+            <entry><para>Name</para></entry>
+            <entry><para>Description</para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>1</para></entry>
+            <entry><para>Represents the name of the virtual / distributed virtual switch at
+                vCenter.</para></entry>
+            <entry><para>The default value assumed would depend upon the type of virtual switch.
+                Defaults values are as follows. vSwitch0 if type of virtual switch is "VMware
+                vNetwork Standard virtual switch" dvSwitch0 if type of virtual switch is "VMware
+                vNetwork distributed virtual switch" epp0 if type of virtual switch is "Cisco Nexus
+                1000v distributed virtual switch</para></entry>
+          </row>
+          <row>
+            <entry><para>2</para></entry>
+            <entry><para>VLAN ID to be used for this traffic where ever applicable</para></entry>
+            <entry><para>This field would be used for only public traffic as of now. In case of guest traffic this
+                field would be ignored and could be left empty for guest traffic. By default empty
+                string would be assumed which translates to untagged VLAN for that specific traffic
+                type.</para></entry>
+          </row>
+          <row>
+            <entry><para>3</para></entry>
+            <entry><para>Type of virtual switch specified as string</para></entry>
+            <entry><para>Possible valid values are vmwaredvs, vmwaresvs, nexusdvs. Each translates as follows.
+                "vmwaresvs" represents "VMware vNetwork Standard virtual switch" "vmwaredvs"
+                represents "VMware vNetwork distributed virtual switch" "nexusdvs" represents "Cisco
+                Nexus 1000v distributed virtual switch" If nothing is specified (left empty) that
+                means zone level default virtual switch (based on value of global parameters) would
+                be assumed. Following are the global configuration parameters. vmware.use.dvswitch -
+                This should be true to enable any kind (VMware DVS / Cisco Nexus 1000v DVS) of
+                distributed virtual switch in cloudstack deployment. If this is false that means
+                default virtual switch in that cloudstack deployment is "standard virtual switch"
+                only. vmware.use.nexus.vswitch - This parameter would be ignored unless
+                "vmware.use.dvswitch" is true. Set this to "true" to enable Cisco Nexus 1000v
+                distributed virtual switch in a cloudstack deployment.</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
   <section id="enable-dvswitch">
     <title>Enabling Virtual Distributed Switch in &PRODUCT;</title>
@@ -88,8 +148,8 @@
       &PRODUCT; uses VDS for virtual network infrastructure if the value of vmware.use.dvswitch
       parameter is true and the value of vmware.use.nexus.dvswitch parameter is false. Another
       global parameter that defines VDS configuration is vmware.ports.per.dvportgroup. This is the
-      default number of ports per VMware dvPortGroup in a VMware environment. This number directly
-      associated with the number of guest network you can create.</para>
+      default number of ports per VMware dvPortGroup in a VMware environment. Default value is 256.
+      This number directly associated with the number of guest network you can create.</para>
     <para>&PRODUCT; supports orchestration of virtual networks in a deployment with a mix of Virtual
       Distributed Switch, Standard Virtual Switch and Nexus 1000v Virtual Switch. </para>
   </section>
@@ -179,5 +239,4 @@
       </tgroup>
     </informaltable>
   </section>
-  
 </section>
