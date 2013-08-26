@@ -265,6 +265,25 @@ def wait_for_ssvms(apiclient, zoneid, podid, interval=60):
                 break
     return
 
+def get_builtin_template_info(apiclient, zoneid):
+    """Returns hypervisor specific infor for templates"""
+
+    list_template_response = Template.list(
+                                    apiclient,
+                                    templatefilter='featured',
+                                    zoneid=zoneid,
+                                    )
+
+    for b_template in list_template_response:
+            if b_template.templatetype == 'BUILTIN':
+                break
+
+    extract_response = Template.extract(apiclient,
+                                            b_template.id,
+                                            'HTTP_DOWNLOAD',
+                                            zoneid)
+
+    return extract_response.url, b_template.hypervisor, b_template.format
 
 def download_builtin_templates(apiclient, zoneid, hypervisor, host,
                                                 linklocalip, interval=60):
