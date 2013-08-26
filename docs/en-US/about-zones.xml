@@ -55,21 +55,19 @@
     </itemizedlist>
     <para>When you add a new zone using the &PRODUCT; UI, you will be prompted to configure the zone’s physical network
         and add the first pod, cluster, host, primary storage, and secondary storage.</para>
-    <para>In order to support zone-wide primary storage for VMware, changes have been made so
-        that &PRODUCT; is now aware of VMware Datacenters and can map each Datacenter to a
-        &PRODUCT; zone. Previously, &PRODUCT; was only aware of VMware Clusters, a smaller
-        organizational unit than Datacenters. This implies that a single &PRODUCT; zone could
-        possibly contain clusters from different VMware Datacenters. In order for zone-wide
-        primary storage to work for VMware hosts, &PRODUCT; has to make sure that a zone
+    <para>In order to support zone-wide functions for VMware, &PRODUCT; is aware of VMware Datacenters and can map each Datacenter to a
+        &PRODUCT; zone. To enable features like storage live migration and zone-wide
+        primary storage for VMware hosts, &PRODUCT; has to make sure that a zone
         contains only a single VMware Datacenter. Therefore, when you are creating a new
-        &PRODUCT; zone, you will now be able to select a VMware Datacenter for the zone. If you
+        &PRODUCT; zone, you can select a VMware Datacenter for the zone. If you
         are provisioning multiple VMware Datacenters, each one will be set up as a single zone
         in &PRODUCT;. </para>
     <note>
         <para>If you are upgrading from a previous &PRODUCT; version, and your existing
             deployment contains a zone with clusters from multiple VMware Datacenters, that zone
             will not be forcibly migrated to the new model. It will continue to function as
-            before. However, any new zone-wide operations, such as zone-wide primary storage, will
+            before. However, any new zone-wide operations, such as zone-wide primary storage
+            and live storage migration, will
             not be available in that zone.</para>
     </note>
     <para/>
