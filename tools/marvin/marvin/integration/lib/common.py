@@ -59,7 +59,7 @@ def wait_for_cleanup(apiclient, configs=None):
         time.sleep(int(config_desc.value))
     return
 
-def add_netscaler(apiclient, zoneid, services=None):
+def add_netscaler(apiclient, zoneid, NSservice):
     """ Adds Netscaler device and enables NS provider"""
 
     cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
@@ -70,7 +70,7 @@ def add_netscaler(apiclient, zoneid, services=None):
 
     netscaler = NetScaler.add(
                     apiclient,
-                    services["netscaler"],
+                    NSservice,
                     physicalnetworkid=physical_network.id
                     )
 
