@@ -536,6 +536,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             newTemplate.setSize(info.virtualSize);
             newTemplate.setPhysicalSize(info.size);
             newTemplate.setFormat(ImageFormat.QCOW2);
+            newTemplate.setName(templateName);
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
             s_logger.debug("Failed to create template from volume: " + e.toString());
