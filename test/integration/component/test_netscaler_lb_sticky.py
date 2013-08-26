@@ -131,7 +131,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
