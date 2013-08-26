@@ -31,11 +31,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.google.gson.Gson;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -147,9 +146,11 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -261,6 +262,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private HypervisorType _defaultSystemVMHypervisor;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds
+
+    private GenericSearchBuilder<HostVO, String> _hypervisorsInDC;
 
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -1338,6 +1341,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _defaultSystemVMHypervisor = HypervisorType.getType(_configDao.getValue(Config.SystemVMDefaultHypervisor.toString()));
         _gson = GsonHelper.getGson();
+
+        _hypervisorsInDC = _hostDao.createSearchBuilder(String.class);
+        _hypervisorsInDC.select(null, Func.DISTINCT, _hypervisorsInDC.entity().getHypervisorType());
+        _hypervisorsInDC.and("hypervisorType", _hypervisorsInDC.entity().getHypervisorType(), SearchCriteria.Op.NNULL);
+        _hypervisorsInDC.and("dataCenter", _hypervisorsInDC.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        _hypervisorsInDC.and("id", _hypervisorsInDC.entity().getId(), SearchCriteria.Op.NEQ);
+        _hypervisorsInDC.and("type", _hypervisorsInDC.entity().getType(), SearchCriteria.Op.EQ);
+        _hypervisorsInDC.done();
+
         return true;
     }
 
@@ -2418,23 +2430,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        SearchCriteria<String> sc = _hypervisorsInDC.create();
         if (zoneId != null) {
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+            sc.setParameters("dataCenter", zoneId);
         }
         if (hostId != null) {
             // exclude the given host, since we want to check what hypervisor is already handled
             // in adding this new host
-            sc.addAnd(sc.getEntity().getId(), Op.NEQ, hostId);
+            sc.setParameters("id", hostId);
         }
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
-        List<HostVO> hosts = sc.list();
+        sc.setParameters("type", Host.Type.Routing);
 
-        List<HypervisorType> hypers = new ArrayList<HypervisorType>(5);
-        for (HostVO host : hosts) {
-            hypers.add(host.getHypervisorType());
+        // The search is not able to return list of enums, so getting
+        // list of hypervisors as strings and then converting them to enum
+        List<String> hvs = _hostDao.customSearch(sc, null);
+        List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
+        for (String hv : hvs) {
+            hypervisors.add(HypervisorType.getType(hv));
         }
-        return hypers;
+        return hypervisors;
     }
 
     @Override
