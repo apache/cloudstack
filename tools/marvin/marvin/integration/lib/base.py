@@ -903,6 +903,17 @@ class Template:
             return Template(template[0].__dict__)
 
     @classmethod
+    def extract(cls, apiclient, id, mode, zoneid=None):
+        "Extract template "
+
+        cmd = extractTemplate.extractTemplateCmd()
+        cmd.id = id
+        cmd.mode = mode
+        cmd.zoneid = zoneid
+
+        return apiclient.extractTemplate(cmd)
+
+    @classmethod
     def create_from_snapshot(cls, apiclient, snapshot, services,
                                                         random_name=True):
         """Create Template from snapshot"""
