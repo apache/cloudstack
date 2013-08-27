@@ -207,7 +207,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
-    public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
     @Inject
     EntityManager _entityMgr;
@@ -2228,7 +2228,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Verify input parameters
-        ServiceOffering offeringHandle = getServiceOffering(id);
+        ServiceOffering offeringHandle = _entityMgr.findById(ServiceOffering.class, id);
 
         if (offeringHandle == null) {
             throw new InvalidParameterValueException("unable to find service offering " + id);
@@ -2419,7 +2419,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer sortKey = cmd.getSortKey();
 
         // Check if diskOffering exists
-        DiskOffering diskOfferingHandle = getDiskOffering(diskOfferingId);
+        DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
 
         if (diskOfferingHandle == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
@@ -2482,13 +2482,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) {
         Long diskOfferingId = cmd.getId();
 
-        DiskOffering offering = getDiskOffering(diskOfferingId);
+        DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
 
         if (offering == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
         }
 
-        if (_diskOfferingDao.remove(diskOfferingId)) {
+        offering.setState(DiskOffering.State.Inactive);
+        if (_diskOfferingDao.update(offering.getId(), offering)) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
             return true;
         } else {
@@ -2508,7 +2509,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Verify service offering id
-        ServiceOffering offering = getServiceOffering(offeringId);
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(offeringId);
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find service offering " + offeringId);
         }
@@ -2517,7 +2518,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Default service offerings cannot be deleted");
         }
 
-        if (_serviceOfferingDao.remove(offeringId)) {
+        offering.setState(DiskOffering.State.Inactive);
+        if (_serviceOfferingDao.update(offeringId, offering)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
             return true;
         } else {
@@ -4768,15 +4770,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public NetworkOffering getNetworkOffering(long id) {
-        return _networkOfferingDao.findById(id);
-    }
-
-    @Override
     public Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId) {
 
         // validate network offering information
-        NetworkOffering no = getNetworkOffering(networkOfferingId);
+        NetworkOffering no = _entityMgr.findById(NetworkOffering.class, networkOfferingId);
         if (no == null) {
             throw new InvalidParameterValueException("Unable to find network offering by id=" + networkOfferingId);
         }
@@ -4889,16 +4886,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
 
     @Override
-    public ServiceOffering getServiceOffering(long serviceOfferingId) {
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
-        if (offering != null && offering.getRemoved() == null) {
-            return offering;
-        }
-
-        return null;
-    }
-
-    @Override
     public Long getDefaultPageSize() {
         return _defaultPageSize;
     }
@@ -4935,16 +4922,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return networkRate;
-    }
-
-    @Override
-    public DiskOffering getDiskOffering(long diskOfferingId) {
-        DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
-        if (offering != null && offering.getRemoved() == null) {
-            return offering;
-        }
-
-        return null;
     }
 
     @Override

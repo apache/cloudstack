@@ -158,7 +158,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         if (!canHandle(offering, dc)) {
             return null;
         }

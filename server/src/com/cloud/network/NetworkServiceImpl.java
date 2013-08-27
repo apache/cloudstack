@@ -894,7 +894,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             Long networkId = ipVO.getAssociatedWithNetworkId();
             if (networkId != null) {
                 Network guestNetwork = getNetwork(networkId);
-                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
                 if (offering.getElasticIp() && vmId != null) {
                     _rulesMgr.getSystemIpAndEnableStaticNatForVm(_userVmDao.findById(vmId), true);
@@ -1991,7 +1991,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
             //can't update from vpc to non-vpc network offering
             boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
-            boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
+            boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_entityMgr.findById(NetworkOffering.class, oldNetworkOfferingId));
             if (forVpcNew != vorVpcOriginal) {
                 String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
                 throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
@@ -2024,7 +2024,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Map<String, String> newSvcProviders = new HashMap<String, String>();
         if (networkOfferingChanged) {
-            newSvcProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId());
+            newSvcProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(_entityMgr.findById(NetworkOffering.class, networkOfferingId), network.getPhysicalNetworkId());
         }
 
         // don't allow to modify network domain if the service is not supported
@@ -2041,7 +2041,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 offeringId = networkOfferingId;
             }
 
-            Map<Network.Capability, String> dnsCapabilities = getNetworkOfferingServiceCapabilities(_configMgr.getNetworkOffering(offeringId), Service.Dns);
+            Map<Network.Capability, String> dnsCapabilities = getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, offeringId), Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
                 // TBD: use uuid instead of networkOfferingId. May need to hardcode tablename in call to addProxyObject().
@@ -2224,7 +2224,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 txn.commit();
             }   else {
                 network.setNetworkOfferingId(networkOfferingId);
-                _networksDao.update(networkId, network, _networkMgr.finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
+                _networksDao.update(networkId, network, _networkMgr.finalizeServicesAndProvidersForNetwork(_entityMgr.findById(NetworkOffering.class, networkOfferingId), network.getPhysicalNetworkId()));
             }
         }   else {
             _networksDao.update(networkId, network);

@@ -42,7 +42,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -222,6 +221,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -259,12 +259,13 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
  */
-@Component
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService,
         VirtualMachineGuru, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -448,7 +449,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             return _routerDao.findById(routerId);
         }
 
-        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(serviceOfferingId);
+        ServiceOffering newServiceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }

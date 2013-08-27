@@ -255,33 +255,17 @@ public interface ConfigurationService {
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
 
-    NetworkOffering getNetworkOffering(long id);
-
-    Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId);
-
     Account getVlanAccount(long vlanId);
 
     List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly);
 
-    ServiceOffering getServiceOffering(long serviceOfferingId);
-
     Long getDefaultPageSize();
-
-    Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId);
-
-    DiskOffering getDiskOffering(long diskOfferingId);
 
     boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException;
 
 	boolean removeLDAP(LDAPRemoveCmd cmd);
 
     LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd);
-
-    /**
-     * @param offering
-     * @return
-     */
-    boolean isOfferingForVpc(NetworkOffering offering);
 
     PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException;
 

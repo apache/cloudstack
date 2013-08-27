@@ -106,6 +106,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
@@ -203,7 +204,6 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -298,6 +298,7 @@ public class ApiDBUtils {
     static NetworkModel _networkModel;
     static NetworkManager _networkMgr;
     static TemplateManager _templateMgr;
+    static ConfigurationManager _configMgr;
 
     static StatsCollector _statsCollector;
 
@@ -340,7 +341,7 @@ public class ApiDBUtils {
     static NetworkOfferingDao _networkOfferingDao;
     static NetworkDao _networkDao;
     static PhysicalNetworkDao _physicalNetworkDao;
-    static ConfigurationService _configMgr;
+    static ConfigurationService _configSvc;
     static ConfigurationDao _configDao;
     static ConsoleProxyDao _consoleProxyDao;
     static FirewallRulesCidrsDao _firewallCidrsDao;
@@ -452,7 +453,7 @@ public class ApiDBUtils {
     @Inject private NetworkOfferingDao networkOfferingDao;
     @Inject private NetworkDao networkDao;
     @Inject private PhysicalNetworkDao physicalNetworkDao;
-    @Inject private ConfigurationService configMgr;
+    @Inject private ConfigurationService configSvc;
     @Inject private ConfigurationDao configDao;
     @Inject private ConsoleProxyDao consoleProxyDao;
     @Inject private FirewallRulesCidrsDao firewallCidrsDao;
@@ -511,17 +512,20 @@ public class ApiDBUtils {
     @Inject private NetworkACLDao networkACLDao;
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject private AccountService accountService;
+    @Inject
+    private ConfigurationManager configMgr;
 
     @PostConstruct
     void init() {
         _ms = ms;
+        _configMgr = configMgr;
         _asyncMgr = asyncMgr;
         _securityGroupMgr = securityGroupMgr;
         _storageMgr = storageMgr;
         _userVmMgr = userVmMgr;
         _networkModel = networkModel;
         _networkMgr = networkMgr;
-        _configMgr = configMgr;
+        _configSvc = configSvc;
         _templateMgr = templateMgr;
 
         _accountDao = accountDao;
@@ -1026,7 +1030,7 @@ public class ApiDBUtils {
     }
 
     public static Account getVlanAccount(long vlanId) {
-        return _configMgr.getVlanAccount(vlanId);
+        return _configSvc.getVlanAccount(vlanId);
     }
 
     public static boolean isSecurityGroupEnabledInZone(long zoneId) {
@@ -1151,11 +1155,6 @@ public class ApiDBUtils {
 
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
-    }
-
-    public static boolean isOfferingForVpc(NetworkOffering offering) {
-        boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
-        return vpcProvider;
     }
 
     public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {

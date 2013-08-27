@@ -275,14 +275,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#getNetworkOffering(long)
-     */
-    @Override
-    public NetworkOffering getNetworkOffering(long id) {
-        return _ntwkOffDao.findById(id);
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#getNetworkOfferingNetworkRate(long)
      */
     @Override
@@ -310,15 +302,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#getServiceOffering(long)
-     */
-    @Override
-    public ServiceOffering getServiceOffering(long serviceOfferingId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#getDefaultPageSize()
      */
     @Override
@@ -331,15 +314,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#getDiskOffering(long)
-     */
-    @Override
-    public DiskOffering getDiskOffering(long diskOfferingId) {
         // TODO Auto-generated method stub
         return null;
     }

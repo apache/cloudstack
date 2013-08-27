@@ -31,9 +31,7 @@ public interface GenericDao<T, ID extends Serializable> {
  
     /**
      */
-    static final String REMOVED_COLUMN = "cloud_removed";
-    
-    static final String REMOVED = "removed";
+    static final String REMOVED_COLUMN = "removed";
     
     /**
      * This column can be used if the table wants to track creation time.

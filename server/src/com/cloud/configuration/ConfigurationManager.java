@@ -43,7 +43,6 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -51,7 +50,16 @@ import com.cloud.vm.VirtualMachine;
  * configuration values
  * 
  */
-public interface ConfigurationManager extends ConfigurationService, Manager {
+public interface ConfigurationManager {
+    /**
+     * @param offering
+     * @return
+     */
+    boolean isOfferingForVpc(NetworkOffering offering);
+
+    Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId);
+
+    Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId);
 
     /**
      * Updates a configuration entry with a new value

@@ -35,7 +35,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
-import com.cloud.service.dao.ServiceOfferingDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -64,6 +63,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -77,6 +77,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -109,6 +110,9 @@ public class UserVmManagerTest {
     @Mock List<VolumeVO> _rootVols;
     @Mock Account _accountMock2;
     @Mock ServiceOfferingDao _offeringDao;
+    @Mock
+    EntityManager _entityMgr;
+
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
@@ -127,6 +131,7 @@ public class UserVmManagerTest {
         _userVmMgr._offeringDao= _offeringDao;
         _userVmMgr._capacityMgr = _capacityMgr;
         _userVmMgr._scaleRetry = 2;
+        _userVmMgr._entityMgr = _entityMgr;
 
         doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
@@ -358,7 +363,7 @@ public class UserVmManagerTest {
         ServiceOffering so1 =  getSvcoffering(512);
         ServiceOffering so2 =  getSvcoffering(256);
 
-        when(_configMgr.getServiceOffering(anyLong())).thenReturn(so1);
+        when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so1);
         when(_offeringDao.findByIdIncludingRemoved(anyLong())).thenReturn((ServiceOfferingVO) so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
@@ -395,8 +400,8 @@ public class UserVmManagerTest {
         ServiceOffering so1 =  getSvcoffering(512);
         ServiceOffering so2 =  getSvcoffering(256);
 
-        when(_configMgr.getServiceOffering(anyLong())).thenReturn(so2);
-        when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
+        when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so2);
+        when(_entityMgr.findById(ServiceOffering.class, 1L)).thenReturn(so1);
 
         doReturn(VirtualMachine.State.Stopped).when(_vmInstance).getState();
         when(_vmDao.findById(anyLong())).thenReturn(null);
@@ -442,8 +447,8 @@ public class UserVmManagerTest {
         ServiceOffering so1 =  getSvcoffering(512);
         ServiceOffering so2 =  getSvcoffering(256);
 
-        when(_configMgr.getServiceOffering(anyLong())).thenReturn(so2);
-        when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
+        when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so2);
+        when(_entityMgr.findById(ServiceOffering.class, 1L)).thenReturn(so1);
 
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 

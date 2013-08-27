@@ -360,7 +360,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (storeUuid != null) {
             imageStore = _dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            imageStore = this._dataStoreMgr.getImageStore(zoneId);
+            imageStore = _dataStoreMgr.getImageStore(zoneId);
             if (imageStore == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
@@ -1040,7 +1040,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long templateId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
 
-        VirtualMachineTemplate template = getTemplate(templateId);
+        VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
@@ -1050,6 +1050,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (template.getFormat() == ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
+
+        template.setState(VirtualMachineTemplate.State.Inactive);
+        _tmpltDao.update(template.getId(), template);
 
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
@@ -1063,8 +1066,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
 
-        VirtualMachineTemplate template = getTemplate(templateId);
-        ;
+        VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
@@ -1075,14 +1077,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a valid iso.");
         }
 
+
         // check if there is any VM using this ISO.
         if (!templateIsDeleteable(templateId)) {
             throw new InvalidParameterValueException("Unable to delete iso, as it's used by other vms");
         }
-
+        
         if (zoneId != null && (_dataStoreMgr.getImageStore(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");
         }
+
+        template.setState(VirtualMachineTemplate.State.Inactive);
+        _tmpltDao.update(template.getId(), template);
+
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
         boolean result = adapter.delete(profile);
@@ -1524,7 +1531,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
 
-            volume = this._volumeDao.findById(snapshot.getVolumeId());
+            volume = _volumeDao.findById(snapshot.getVolumeId());
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);

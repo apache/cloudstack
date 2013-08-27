@@ -66,6 +66,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -86,6 +87,8 @@ public class NetworkACLManagerTest extends TestCase{
     NetworkDao _networkDao;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     NetworkModel _networkModel;
     @Inject
@@ -174,6 +177,11 @@ public class NetworkACLManagerTest extends TestCase{
         @Bean
         public VpcManager vpcManager() {
             return Mockito.mock(VpcManager.class);
+        }
+
+        @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
         }
 
         @Bean

@@ -136,7 +136,6 @@ public class SqlGenerator {
             Attribute attr = new Attribute(clazz, overrides, field, tableName, embedded, isId);
 
             if (attr.getColumnName().equals(GenericDao.REMOVED_COLUMN)) {
-                attr.setColumnName(GenericDao.REMOVED);
                 attr.setTrue(Attribute.Flag.DaoGenerated);
                 attr.setFalse(Attribute.Flag.Insertable);
                 attr.setFalse(Attribute.Flag.Updatable);
@@ -145,7 +144,7 @@ public class SqlGenerator {
                 attr.setFalse(Attribute.Flag.Date);
                 attr.setTrue(Attribute.Flag.Nullable);
                 attr.setTrue(Attribute.Flag.Removed);
-            } 
+            }
 
             if (attr.isId()) {
                 List<Attribute> attrs = _ids.get(tableName);
@@ -281,7 +280,7 @@ public class SqlGenerator {
         for (Attribute attr : _attributes) {
 
             if (attr.columnName.equalsIgnoreCase(name)) {
-                if (attr.columnName.equalsIgnoreCase(GenericDao.REMOVED) && attr.isUpdatable()) {
+                if (attr.columnName.equalsIgnoreCase(GenericDao.REMOVED_COLUMN) && attr.isUpdatable()) {
                     return null;
                 }
                 return attr;
@@ -385,7 +384,7 @@ public class SqlGenerator {
         }
 
         sql.append(") VALUES (");
-        for (Attribute attr : attrs) {
+        for (int i = 0; i < attrs.size(); i++) {
             sql.append("?, ");
         }
 
@@ -435,7 +434,7 @@ public class SqlGenerator {
     }
 
     public Pair<String, Attribute[]> buildRemoveSql() {
-        Attribute attribute = findAttribute(GenericDao.REMOVED);
+        Attribute attribute = findAttribute(GenericDao.REMOVED_COLUMN);
         if (attribute == null) {
             return null;
         }
@@ -518,7 +517,7 @@ public class SqlGenerator {
     }
 
     public Pair<String, Attribute> getRemovedAttribute() {
-        Attribute removed = findAttribute(GenericDao.REMOVED);
+        Attribute removed = findAttribute(GenericDao.REMOVED_COLUMN);
         if (removed == null) {
             return null;
         }

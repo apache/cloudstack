@@ -16,17 +16,25 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
+import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
@@ -85,7 +93,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
     public void execute(){
         CallContext.current().setEventDetails("SystemVm Id: "+getId());
 
-        ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
         }
@@ -109,7 +117,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade system vm");
         }

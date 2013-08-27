@@ -172,6 +172,7 @@ import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
@@ -309,6 +310,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     protected AccountManager _accountMgr;
     @Inject
     protected AsyncJobManager _jobMgr;
+    @Inject
+    ConfigurationManager _configMgr;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2089,7 +2092,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             serviceResponses.add(svcRsp);
         }
-        response.setForVpc(ApiDBUtils.isOfferingForVpc(offering));
+        response.setForVpc(_configMgr.isOfferingForVpc(offering));
 
         response.setServices(serviceResponses);
 

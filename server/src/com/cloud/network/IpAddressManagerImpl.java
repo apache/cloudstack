@@ -1768,7 +1768,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException {
         Network guestNetwork = _networksDao.findById(networkId);
-        NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+        NetworkOffering off = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
         IpAddress ip = null;
         if ((off.getElasticLb() && forElasticLb) || (off.getElasticIp() && forElasticIp)) {
 

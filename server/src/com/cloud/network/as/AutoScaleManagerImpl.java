@@ -320,7 +320,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException("Unable to find zone by id");
         }
 
-        ServiceOffering serviceOffering = _configMgr.getServiceOffering(serviceOfferingId);
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id");
         }

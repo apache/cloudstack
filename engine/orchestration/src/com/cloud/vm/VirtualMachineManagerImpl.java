@@ -2754,7 +2754,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean upgradeVmDb(long vmId, long serviceOfferingId) {
         VMInstanceVO vmForUpdate = _vmDao.createForUpdate();
         vmForUpdate.setServiceOfferingId(serviceOfferingId);
-        ServiceOffering newSvcOff = _configMgr.getServiceOffering(serviceOfferingId);
+        ServiceOffering newSvcOff = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         vmForUpdate.setHaEnabled(newSvcOff.getOfferHA());
         vmForUpdate.setLimitCpuUse(newSvcOff.getLimitCpuUse());
         vmForUpdate.setServiceOfferingId(newSvcOff.getId());
@@ -3267,7 +3267,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         long newServiceofferingId = vm.getServiceOfferingId();
-        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceofferingId);
+        ServiceOffering newServiceOffering = _entityMgr.findById(ServiceOffering.class, newServiceofferingId);
         HostVO hostVo = _hostDao.findById(vm.getHostId());
 
         Float memoryOvercommitRatio = Float.parseFloat(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(),

@@ -31,14 +31,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "vm_template")
@@ -80,7 +77,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created = null;
 
-    @Column(name = GenericDao.REMOVED)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
@@ -118,6 +115,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "source_template_id")
     private Long sourceTemplateId;
 
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    private State state;
+
     @Column(name = "template_tag")
     private String templateTag;
 
@@ -141,7 +142,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     Date updated;
 
     @Transient
-    Map details;
+    Map<String, String> details;
 
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
@@ -156,7 +157,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     public VMTemplateVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -165,23 +166,24 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured,
             boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId,
             String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
-            HypervisorType hyperType, Map details) {
+            HypervisorType hyperType, Map<String, String> details) {
         this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, isExtractable, type, url,
                 null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType,
                 details);
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured,
             boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId,
             String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
-            HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
+            HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
         this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum,
                 displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
-        this.uuid = UUID.randomUUID().toString();
-        this.enableSshKey = sshKeyEnabled;
-        this.dynamicallyScalable = isDynamicallyScalable;
+        uuid = UUID.randomUUID().toString();
+        enableSshKey = sshKeyEnabled;
+        dynamicallyScalable = isDynamicallyScalable;
+        state = State.Active;
     }
 
 
@@ -200,14 +202,14 @@ public class VMTemplateVO implements VirtualMachineTemplate {
             HypervisorType hyperType) {
         this.id = id;
         this.name = name;
-        this.publicTemplate = isPublic;
+        publicTemplate = isPublic;
         this.featured = featured;
-        this.templateType = type;
+        templateType = type;
         this.url = url;
         this.requiresHvm = requiresHvm;
         this.bits = bits;
         this.accountId = accountId;
-        this.checksum = cksum;
+        checksum = cksum;
         this.uniqueName = uniqueName;
         this.displayText = displayText;
         this.enablePassword = enablePassword;
@@ -215,30 +217,33 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.created = created;
         this.guestOSId = guestOSId;
         this.bootable = bootable;
-        this.hypervisorType = hyperType;
-        this.uuid = UUID.randomUUID().toString();
+        hypervisorType = hyperType;
+        uuid = UUID.randomUUID().toString();
+        state = State.Active;
     }
 
     // Has an extra attribute - isExtractable
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic,
             boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm,
             int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
-            boolean bootable, HypervisorType hyperType, Map details) {
+            boolean bootable, HypervisorType hyperType, Map<String, String> details) {
         this(id, uniqueName, name, format, isPublic, featured, type, url, created, requiresHvm, bits, accountId, cksum,
                 displayText, enablePassword, guestOSId, bootable, hyperType);
-        this.extractable = isExtractable;
-        this.uuid = UUID.randomUUID().toString();
+        extractable = isExtractable;
+        uuid = UUID.randomUUID().toString();
         this.details = details;
+        state = State.Active;
     }
 
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic,
             boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm,
             int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
-            boolean bootable, HypervisorType hyperType, String templateTag, Map details) {
+            boolean bootable, HypervisorType hyperType, String templateTag, Map<String, String> details) {
         this(id, uniqueName, name, format, isPublic, featured, isExtractable, type, url, created, requiresHvm, bits,
                 accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
+        state = State.Active;
     }
 
     @Override
@@ -270,6 +275,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    @Override
     public long getId() {
         return id;
     }
@@ -280,7 +294,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     public void setTemplateType(TemplateType type) {
-        this.templateType = type;
+        templateType = type;
     }
 
     public boolean requiresHvm() {
@@ -455,18 +469,19 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
-    public Map getDetails() {
-        return this.details;
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
         this.details = details;
     }
 
@@ -480,7 +495,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         }
         VMTemplateVO other = (VMTemplateVO) that;
 
-        return ((this.getUniqueName().equals(other.getUniqueName())));
+        return ((getUniqueName().equals(other.getUniqueName())));
     }
 
     @Override
@@ -516,8 +531,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
             this.dynamicallyScalable = dynamicallyScalable;
         }
 
+        @Override
         public Boolean isDynamicallyScalable() {
-            return this.dynamicallyScalable;
+            return dynamicallyScalable;
         }
 
     @Override
@@ -534,19 +550,19 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     public Long getSize() {
-        return this.size;
+        return size;
     }
 
     public long getUpdatedCount() {
-        return this.updatedCount;
+        return updatedCount;
     }
 
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     public void decrUpdatedCount() {
-        this.updatedCount--;
+        updatedCount--;
     }
 
     public Date getUpdated() {

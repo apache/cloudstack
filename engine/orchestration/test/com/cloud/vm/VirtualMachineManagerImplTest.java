@@ -33,6 +33,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
@@ -77,6 +78,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -96,6 +98,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
@@ -199,6 +202,8 @@ public class VirtualMachineManagerImplTest {
     HostVO _destHostMock;
     @Mock
     Map<Volume, StoragePool> _volumeToPoolMock;
+    @Mock
+    EntityManager _entityMgr;
 
     @Before
     public void setup() {
@@ -227,6 +232,7 @@ public class VirtualMachineManagerImplTest {
         _vmMgr._vmDao = _vmInstanceDao;
         _vmMgr._configServer = _configServer;
         _vmMgr._uservmDetailsDao = _vmDetailsDao;
+        _vmMgr._entityMgr = _entityMgr;
 
         when(_vmMock.getId()).thenReturn(314l);
         when(_vmInstance.getId()).thenReturn(1L);
@@ -236,7 +242,7 @@ public class VirtualMachineManagerImplTest {
         when(_vmInstance.getType()).thenReturn(VirtualMachine.Type.User);
         when(_host.getId()).thenReturn(1L);
         when(_hostDao.findById(anyLong())).thenReturn(null);
-        when(_configMgr.getServiceOffering(anyLong())).thenReturn(getSvcoffering(512));
+        when(_entityMgr.findById(Mockito.eq(ServiceOffering.class), anyLong())).thenReturn(getSvcoffering(512));
         when(_workDao.persist(_work)).thenReturn(_work);
         when(_workDao.update("1", _work)).thenReturn(true);
         when(_work.getId()).thenReturn("1");

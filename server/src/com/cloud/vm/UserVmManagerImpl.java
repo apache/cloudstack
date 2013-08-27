@@ -232,6 +232,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.RSAHelper;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
@@ -269,6 +270,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         linked
     }
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     protected HostDao _hostDao = null;
     @Inject
@@ -1235,7 +1238,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOfferingId);
 
         //Check if its a scale "up"
-        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceOfferingId);
+        ServiceOffering newServiceOffering = _entityMgr.findById(ServiceOffering.class, newServiceOfferingId);
         ServiceOffering currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
         int newCpu = newServiceOffering.getCpu();
         int newMemory = newServiceOffering.getRamSize();
@@ -2453,8 +2456,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _networkModel.checkNetworkPermissions(owner, network);
 
                 // don't allow to use system networks
-                NetworkOffering networkOffering = _configMgr
-                        .getNetworkOffering(network.getNetworkOfferingId());
+                NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                 if (networkOffering.isSystemOnly()) {
                     throw new InvalidParameterValueException(
                             "Network id="
@@ -3218,7 +3220,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             try {
                 long networkId = ip.getAssociatedWithNetworkId();
                 Network guestNetwork = _networkDao.findById(networkId);
-                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (Exception ex) {
@@ -4593,9 +4595,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         _networkModel.checkNetworkPermissions(newAccount, network);
 
                         // don't allow to use system networks
-                        NetworkOffering networkOffering = _configMgr
-                                .getNetworkOffering(network
-                                        .getNetworkOfferingId());
+                        NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                         if (networkOffering.isSystemOnly()) {
                             InvalidParameterValueException ex = new InvalidParameterValueException(
                                     "Specified Network id is system only and can't be used for vm deployment");

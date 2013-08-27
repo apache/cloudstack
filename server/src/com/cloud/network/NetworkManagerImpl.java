@@ -1821,7 +1821,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // If networkDomain is not specified, take it from the global configuration
         if (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
             Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities
-                    (_configMgr.getNetworkOffering(networkOfferingId), Service.Dns);
+                    (_entityMgr.findById(NetworkOffering.class, networkOfferingId), Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
                 if (networkDomain != null) {
@@ -2214,7 +2214,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         _networkAccountDao.remove(networkAccount.getId());
                 }
 
-                NetworkOffering ntwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                 boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, network.getAclType());
                 if (updateResourceCount) {
                     _resourceLimitMgr.decrementResourceCount(owner.getId(), ResourceType.network);
@@ -3105,7 +3105,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (lbElements.size() > 1) {
             String providerName = null;
             //get network offering details
-            NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+            NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
             if (lbScheme == Scheme.Public) {
                 providerName = _ntwkOffDetailsDao.getDetail(off.getId(), NetworkOffering.Detail.PublicLbProvider);
             } else {

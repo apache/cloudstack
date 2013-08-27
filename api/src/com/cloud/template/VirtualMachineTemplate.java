@@ -28,6 +28,10 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 
 public interface VirtualMachineTemplate extends ControlledEntity, Identity, InternalIdentity {
+    enum State {
+        Active,
+        Inactive;
+    }
 
     public static enum BootloaderType {
         PyGrub, HVM, External, CD
@@ -43,6 +47,8 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
         community, // returns templates that have been marked as public but not featured
         all // all templates (only usable by admins)
     }
+
+    State getState();
 
     boolean isFeatured();
 

@@ -16,16 +16,23 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -212,7 +219,7 @@ public class CreateNetworkCmd extends BaseCmd {
     }
 
     public Long getPhysicalNetworkId() {
-        NetworkOffering offering = _configService.getNetworkOffering(networkOfferingId);
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, networkOfferingId);
         if (offering == null) {
             throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
         }
@@ -288,7 +295,7 @@ public class CreateNetworkCmd extends BaseCmd {
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         }else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network");
         }

@@ -1051,7 +1051,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr,
             String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId) {
         
-        NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(newNtwkOffId);
+        NetworkOffering guestNtwkOff = _entityMgr.findById(NetworkOffering.class, newNtwkOffId);
         
         if (guestNtwkOff == null) {
             throw new InvalidParameterValueException("Can't find network offering by id specified");
@@ -1086,7 +1086,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     //skip my own network
                     continue;
                 } else {
-                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    NetworkOffering otherOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                     if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
                         throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);

@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -71,6 +70,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -92,14 +92,14 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Component
 @Local(value = { RulesManager.class, RulesService.class })
 public class RulesManagerImpl extends ManagerBase implements RulesManager, RulesService {
     private static final Logger s_logger = Logger.getLogger(RulesManagerImpl.class);
 
     @Inject
     IpAddressManager _ipAddrMgr;
-
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     PortForwardingRulesDao _portForwardingDao;
     @Inject
@@ -381,7 +381,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         _networkModel.checkIpForService(ipAddress, Service.StaticNat, null);
 
         Network network = _networkModel.getNetwork(networkId);
-        NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         if (off.getElasticIp()) {
             throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
         }
@@ -646,7 +646,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             boolean reassignStaticNat = false;
             if (networkId != null) {
                 Network guestNetwork = _networkModel.getNetwork(networkId);
-                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 if (offering.getElasticIp()) {
                     reassignStaticNat = true;
                 }
@@ -1215,7 +1215,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         // if network has elastic IP functionality supported, we first have to disable static nat on old ip in order to
         // re-enable it on the new one enable static nat takes care of that
         Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
-        NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
             if (offering.getAssociatePublicIP()) {
                 getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
@@ -1412,7 +1412,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
         for (Nic nic : nics) {
             Network guestNetwork = _networkModel.getNetwork(nic.getNetworkId());
-            NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+            NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
             if (offering.getElasticIp()) {
                 boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
