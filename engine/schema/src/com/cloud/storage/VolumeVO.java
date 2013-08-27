@@ -238,6 +238,7 @@ public class VolumeVO implements Volume {
         this.chainInfo = that.getChainInfo();
         this.templateId = that.getTemplateId();
         this.deviceId = that.getDeviceId();
+        this.format = that.getFormat();
         this.uuid = UUID.randomUUID().toString();
     }
 
