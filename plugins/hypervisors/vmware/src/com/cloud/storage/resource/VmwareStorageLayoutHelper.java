@@ -129,17 +129,20 @@ public class VmwareStorageLayoutHelper {
                 vmdkLinkedCloneModePair[1], dcMo.getMor(), true);
 		}
 		
-		s_logger.info("sync " + vmdkLinkedCloneModeLegacyPair[0] + "->" + vmdkLinkedCloneModePair[0]);
-		ds.moveDatastoreFile(vmdkLinkedCloneModeLegacyPair[0], dcMo.getMor(), ds.getMor(), 
-            vmdkLinkedCloneModePair[0], dcMo.getMor(), true);
+		if(ds.fileExists(vmdkLinkedCloneModeLegacyPair[0])) {
+			s_logger.info("sync " + vmdkLinkedCloneModeLegacyPair[0] + "->" + vmdkLinkedCloneModePair[0]);
+			ds.moveDatastoreFile(vmdkLinkedCloneModeLegacyPair[0], dcMo.getMor(), ds.getMor(), 
+	            vmdkLinkedCloneModePair[0], dcMo.getMor(), true);
+		}
 		
+		// Note: we will always return a path
 		return vmdkLinkedCloneModePair[0];
     }
     
     public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName) throws Exception {
     	String fileDsFullPath = ds.searchFileInSubFolders(vmdkName + ".vmdk", false);
     	if(fileDsFullPath == null)
-    		throw new Exception("Unable to find " + vmdkName + ".vmdk in datastore: " + ds.getName());
+    		return;
 
     	DatastoreFile srcDsFile = new DatastoreFile(fileDsFullPath);
     	String companionFilePath = srcDsFile.getCompanionPath(vmdkName + "-flat.vmdk");
