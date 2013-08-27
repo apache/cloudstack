@@ -46,8 +46,33 @@
         <title>Root Administrator</title>
         <para>Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains</para>
     </formalpara>
-    <para>The resources belong to the account, not individual users in that account. For example,
-        billing, resource limits, and so on are maintained by the account, not the users. A user can
-        operate on any resource in the account provided the user has privileges for that operation.
-        The privileges are determined by the role.</para>
+    <formalpara>
+        <title>Resource Ownership</title>
+        <para>Resources belong to the account, not individual users in that account. For example,
+            billing, resource limits, and so on are maintained by the account, not the users. A user can
+            operate on any resource in the account provided the user has privileges for that operation.
+            The privileges are determined by the role.</para>
+    </formalpara>
+    <section id="account-dedicated-resources">
+        <title>Dedicating Resources to Accounts and Domains</title>
+        <para>You can dedicate infrastructure resources including zones, pods, clusters, or hosts to an account or domain.
+        </para>
+        <para>The root administrator can dedicate resources to a specific domain or account
+            that needs private infrastructure for additional security or performance guarantees.
+            A zone, pod, cluster, or host can be reserved by the root administrator for a specific domain or account.
+            Only users in that domain or its subdomain may use the infrastructure.
+            For example, only users in a given domain can create guests in a zone dedicated to that domain.</para>
+        <para>There are several types of dedication available:</para>
+        <itemizedlist>
+            <listitem>
+                <para>To explicitly dedicate a resource, use the explicit-dedicated type of Affinity Group.
+                    For example, when creating a new VM, an end user can choose to place it on dedicated infrastructure.
+                    See <xref linkend="affinity-groups"/>.</para></listitem>
+            <listitem><para>You can also use strict implicit dedication.
+                Strict Implicit dedication, when requested, means, a host will not be shared across multiple accounts – as an example, here is a reason:
+                for deployment of certain types of applications, such as desktops, due to licensing reasons, no host can be shared between different accounts.</para></listitem>
+            <listitem><para>You can also implicitly dedicate a resource with "preferred" implicit dedication. This means that the resource will be deployed
+                in dedicated infrastructure if possible. Otherwise, the resource can be deployed in shared infrastructure.</para></listitem>
+        </itemizedlist>
+    </section>
 </section>
