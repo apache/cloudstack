@@ -2870,4 +2870,22 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         VolumeVO vol = _volsDao.findById(volumeId);
         return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
     }
+    
+    public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
+        VolumeVO vol = _volsDao.findById(volumeId);
+        boolean needUpdate = false;
+        if(!vol.getPath().equalsIgnoreCase(path))
+        	needUpdate = true;
+        
+        if(chainInfo != null && (vol.getChainInfo() == null || !chainInfo.equalsIgnoreCase(vol.getChainInfo())))
+        	needUpdate = true;
+        
+        if(needUpdate) {
+        	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path 
+        		+ ", " + vol.getChainInfo() + " -> " + chainInfo);
+	        vol.setPath(path);
+	        vol.setChainInfo(chainInfo);
+	        _volsDao.update(volumeId, vol);
+        }
+    }
 }

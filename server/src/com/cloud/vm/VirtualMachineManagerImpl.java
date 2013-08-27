@@ -42,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -70,8 +71,10 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
@@ -925,6 +928,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             destHostId = finalHost.getId();
                         }
                         if (vmGuru.finalizeStart(vmProfile, destHostId, cmds, ctx)) {
+                            syncDiskChainChange(startAnswer);
+                            
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
                                 throw new ConcurrentOperationException("Unable to transition to a new state.");
                             }
@@ -1014,6 +1019,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         return startedVm;
+    }
+    
+    private void syncDiskChainChange(StartAnswer answer) {
+    	VirtualMachineTO vmSpec = answer.getVirtualMachine();
+    	
+    	for(DiskTO disk : vmSpec.getDisks()) {
+    		if(disk.getType() != Volume.Type.ISO) {
+	    		VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
+	    		
+	    		volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo());
+    		}
+    	}
     }
 
     @Override
