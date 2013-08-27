@@ -266,7 +266,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
         int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
 
-        VirtualMachineTemplate template = _templateMgr.getTemplate(templateId);
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Unable to use the given template.");

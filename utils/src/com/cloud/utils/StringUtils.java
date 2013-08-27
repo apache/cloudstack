@@ -57,11 +57,24 @@ public class StringUtils {
         return false;
     }
 
+    public static String cleanupTags(String tags) {
+        if (tags != null) {
+            String[] tokens = tags.split(",");
+            StringBuilder t = new StringBuilder();
+            for (int i = 0; i < tokens.length; i++) {
+                t.append(tokens[i].trim()).append(",");
+            }
+            t.delete(t.length() - 1, t.length());
+            tags = t.toString();
+        }
+
+        return tags;
+    }
+
     /**
      * @param tags
      * @return List of tags
      */
-
     public static List<String> csvTagsToList(String tags) {
         List<String> tagsList = new ArrayList<String>();
 

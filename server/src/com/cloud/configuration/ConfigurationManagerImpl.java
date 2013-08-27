@@ -2189,7 +2189,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
             boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
             Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
-        tags = cleanupTags(tags);
+        tags = StringUtils.cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
@@ -2341,7 +2341,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             maxIops = null;
         }
 
-        tags = cleanupTags(tags);
+        tags = StringUtils.cleanupTags(tags);
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized,
         		isCustomizedIops, minIops, maxIops);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
@@ -3428,50 +3428,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    @Override
-    public List<String> csvTagsToList(String tags) {
-        List<String> tagsList = new ArrayList<String>();
-
-        if (tags != null) {
-            String[] tokens = tags.split(",");
-            for (int i = 0; i < tokens.length; i++) {
-                tagsList.add(tokens[i].trim());
-            }
-        }
-
-        return tagsList;
-    }
-
-    @Override
-    public String listToCsvTags(List<String> tagsList) {
-        String tags = "";
-        if (tagsList.size() > 0) {
-            for (int i = 0; i < tagsList.size(); i++) {
-                tags += tagsList.get(i);
-                if (i != tagsList.size() - 1) {
-                    tags += ",";
-                }
-            }
-        }
-
-        return tags;
-    }
-
-    @Override
-    public String cleanupTags(String tags) {
-        if (tags != null) {
-            String[] tokens = tags.split(",");
-            StringBuilder t = new StringBuilder();
-            for (int i = 0; i < tokens.length; i++) {
-                t.append(tokens[i].trim()).append(",");
-            }
-            t.delete(t.length() - 1, t.length());
-            tags = t.toString();
-        }
-
-        return tags;
-    }
-
     @DB
     protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid,
             long physicalNetworkId) {
@@ -4120,7 +4076,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-        tags = cleanupTags(tags);
+        tags = StringUtils.cleanupTags(tags);
 
         // specifyVlan should always be true for Shared network offerings
         if (!specifyVlan && type == GuestType.Shared) {

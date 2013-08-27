@@ -160,6 +160,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -2740,8 +2741,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         // Check that the service offering being upgraded to has all the tags of the current service offering
-        List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
-        List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
+        List<String> currentTags = StringUtils.csvTagsToList(currentServiceOffering.getTags());
+        List<String> newTags = StringUtils.csvTagsToList(newServiceOffering.getTags());
         if (!newTags.containsAll(currentTags)) {
             throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering " +
                     "does not have all the tags of the "

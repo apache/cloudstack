@@ -449,24 +449,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#csvTagsToList(java.lang.String)
-     */
-    @Override
-    public List<String> csvTagsToList(String tags) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#listToCsvTags(java.util.List)
-     */
-    @Override
-    public String listToCsvTags(List<String> tags) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationManager#checkZoneAccess(com.cloud.user.Account, com.cloud.dc.DataCenter)
      */
     @Override
@@ -555,15 +537,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public AllocationState findClusterAllocationState(ClusterVO cluster) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#cleanupTags(java.lang.String)
-     */
-    @Override
-    public String cleanupTags(String tags) {
         // TODO Auto-generated method stub
         return null;
     }

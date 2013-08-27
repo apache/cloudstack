@@ -392,7 +392,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
 
-        VirtualMachineTemplate template = getTemplate(templateId);
+        VirtualMachineTemplate template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
@@ -1101,16 +1101,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public VirtualMachineTemplate getTemplate(long templateId) {
-        VMTemplateVO template = _tmpltDao.findById(templateId);
-        if (template != null && template.getRemoved() == null) {
-            return template;
-        }
-
-        return null;
-    }
-
-    @Override
     public List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Long id = cmd.getId();
@@ -1119,7 +1109,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
         }
 
-        VirtualMachineTemplate template = getTemplate(id);
+        VirtualMachineTemplate template = _tmpltDao.findById(id);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
         }

@@ -36,7 +36,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface TemplateApiService {
@@ -87,8 +86,6 @@ public interface TemplateApiService {
      * @return extractUrl  extract url
      */
     String extract(ExtractTemplateCmd cmd) throws InternalErrorException;
-
-    VirtualMachineTemplate getTemplate(long templateId);
 
     List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd);
 

@@ -465,7 +465,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
             }
 
-            VirtualMachineTemplate template = _templateService.getTemplate(templateId);
+            VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
                 throw new InvalidParameterValueException("Unable to use template " + templateId);
