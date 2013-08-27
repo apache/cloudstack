@@ -84,7 +84,7 @@ public class ApiServlet extends HttpServlet {
         String[] paramsInQueryString = req.getQueryString().split("&");
         if (paramsInQueryString != null) {
             for (String param : paramsInQueryString) {
-                String[] paramTokens = param.split("=");
+                String[] paramTokens = param.split("=", 2);
                 if (paramTokens != null && paramTokens.length == 2) {
                     String name = paramTokens[0];
                     String value = paramTokens[1];
