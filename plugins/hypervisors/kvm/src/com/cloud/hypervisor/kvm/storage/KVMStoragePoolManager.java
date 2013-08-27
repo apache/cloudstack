@@ -97,6 +97,7 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
+
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = null;
         try {
@@ -149,11 +150,14 @@ public class KVMStoragePoolManager {
                 if (vol != null) {
                     break;
                 }
-
-                Thread.sleep(10000);
             } catch (Exception e) {
                 s_logger.debug("Failed to find volume:" + volName + " due to" + e.toString() + ", retry:" + cnt);
                 errMsg = e.toString();
+            }
+
+            try {
+                Thread.sleep(30000);
+            } catch (InterruptedException e) {
             }
             cnt++;
         }
