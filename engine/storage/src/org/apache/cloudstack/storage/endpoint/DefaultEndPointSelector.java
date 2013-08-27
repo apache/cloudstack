@@ -95,13 +95,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
         sbuilder.append(sqlBase);
 
         if (scope.getScopeType() == ScopeType.HOST) {
-            sbuilder.append(" and id = ");
+            sbuilder.append(" and h.id = ");
             sbuilder.append(scope.getScopeId());
         } else if (scope.getScopeType() == ScopeType.CLUSTER) {
-            sbuilder.append(" and cluster_id = ");
+            sbuilder.append(" and h.cluster_id = ");
             sbuilder.append(scope.getScopeId());
         } else if (scope.getScopeType() == ScopeType.ZONE) {
-            sbuilder.append(" and data_center_id = ");
+            sbuilder.append(" and h.data_center_id = ");
             sbuilder.append(scope.getScopeId());
         }
         // TODO: order by rand() is slow if there are lot of hosts
