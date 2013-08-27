@@ -2676,8 +2676,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     public void destroyVolume(VolumeVO volume) {
         try {
-            volService.destroyVolume(volume.getId());
-        } catch (ConcurrentOperationException e) {
+            // Mark volume as removed if volume has not been created on primary
+            if (volume.getState() == Volume.State.Allocated) {
+                _volsDao.remove(volume.getId());
+                stateTransitTo(volume, Volume.Event.DestroyRequested);
+            } else {
+                volService.destroyVolume(volume.getId());
+            }
+        } catch (Exception e) {
             s_logger.debug("Failed to destroy volume" + volume.getId(), e);
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);
         }
