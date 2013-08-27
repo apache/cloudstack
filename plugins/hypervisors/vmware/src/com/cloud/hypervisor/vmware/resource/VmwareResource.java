@@ -3296,10 +3296,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         int scsiUnitNumber = 0;
     	
     	for(DiskTO vol: sortedDisks) {
-    		VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-    		
             if (vol.getType() == Volume.Type.ISO)
                 continue;
+            
+    		VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
 
             controllerKey = getDiskController(vol, vmSpec, ideControllerKey, scsiControllerKey);
             
