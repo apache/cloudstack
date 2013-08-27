@@ -319,6 +319,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcStore = srcData.getDataStore();
         DataStoreTO destStore = destData.getDataStore();
+        VolumeObjectTO srcVol = (VolumeObjectTO) srcData;
+        ImageFormat srcFormat = srcVol.getFormat();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) destStore;
         if (!(srcStore instanceof NfsTO)) {
             return new CopyCmdAnswer("can only handle nfs storage");
@@ -352,14 +354,16 @@ public class KVMStorageProcessor implements StorageProcessor {
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageUrl + File.separator + volumeDir
                            );
-            if (!srcVolumeName.endsWith(".qcow2")) {
+            if (!srcVolumeName.endsWith(".qcow2") && srcFormat == ImageFormat.QCOW2) {
                 srcVolumeName = srcVolumeName + ".qcow2";
             }
             KVMPhysicalDisk volume = secondaryStoragePool
                     .getPhysicalDisk(srcVolumeName);
-            storagePoolMgr.copyPhysicalDisk(volume, volumeName,
+            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
+            KVMPhysicalDisk newDisk = storagePoolMgr.copyPhysicalDisk(volume, volumeName,
                     primaryPool);
             VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setFormat(ImageFormat.valueOf(newDisk.getFormat().toString().toUpperCase()));
             newVol.setPath(volumeName);
             return new CopyCmdAnswer(newVol);
         } catch (CloudRuntimeException e) {
