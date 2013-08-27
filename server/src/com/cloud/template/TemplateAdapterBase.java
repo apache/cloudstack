@@ -66,6 +66,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;

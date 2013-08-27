@@ -125,9 +125,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
-    @Inject
-    EntityManager _entityMgr;
-
     String _name;
     @Inject
     VpcDao _vpcDao;

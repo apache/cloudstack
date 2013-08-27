@@ -68,6 +68,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -93,6 +94,8 @@ public class RulesApiServiceImpl extends ManagerBase implements RulesService {
 
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     @Inject
     PortForwardingRulesDao _portForwardingDao;
@@ -379,7 +382,7 @@ public class RulesApiServiceImpl extends ManagerBase implements RulesService {
         _networkModel.checkIpForService(ipAddress, Service.StaticNat, null);
 
         Network network = _networkModel.getNetwork(networkId);
-        NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         if (off.getElasticIp()) {
             throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
         }
@@ -631,7 +634,7 @@ public class RulesApiServiceImpl extends ManagerBase implements RulesService {
             boolean reassignStaticNat = false;
             if (networkId != null) {
                 Network guestNetwork = _networkModel.getNetwork(networkId);
-                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 if (offering.getElasticIp()) {
                     reassignStaticNat = true;
                 }
@@ -939,7 +942,7 @@ public class RulesApiServiceImpl extends ManagerBase implements RulesService {
         // if network has elastic IP functionality supported, we first have to disable static nat on old ip in order to
         // re-enable it on the new one enable static nat takes care of that
         Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
-        NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
             if (offering.getAssociatePublicIP()) {
                 getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);

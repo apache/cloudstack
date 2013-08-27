@@ -1284,16 +1284,6 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     }
 
     @Override
-    public PortForwardingRule getPortForwardigRule(long ruleId) {
-        return _portForwardingDao.findById(ruleId);
-    }
-
-    @Override
-    public FirewallRule getFirewallRule(long ruleId) {
-        return _firewallDao.findById(ruleId);
-    }
-
-    @Override
     public StaticNatRule buildStaticNatRule(FirewallRule rule, boolean forRevoke) {
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
         FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());

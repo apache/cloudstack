@@ -191,9 +191,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private static final long MAX_GRE_KEY = 4294967295L; // 2^32 -1
 
     @Inject
-    EntityManager _entityMgr;
-
-    @Inject
     DataCenterDao _dcDao = null;
     @Inject
     VlanDao _vlanDao = null;

@@ -37,7 +37,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.lf5.viewer.configure.ConfigurationManager;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
@@ -48,10 +47,21 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.region.PortableIpDao;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.alert.AlertManager;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -127,13 +137,18 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
@@ -190,7 +205,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
 
     @Inject
-    EntityManager _entityMgr = null;
+    EntityManager _entityMgr;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -278,7 +293,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void setDhcpProviders(List<DhcpServiceProvider> _dhcpProviders) {
         this._dhcpProviders = _dhcpProviders;
     }
-
 
     @Inject
     VMInstanceDao _vmDao;
@@ -605,7 +619,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
 
                     if (errorIfAlreadySetup) {
-                        InvalidParameterValueException ex = new InvalidParameterValueException("Found existing network configuration (with specified id) for offering (with specified id)");
+                        InvalidParameterValueException ex = new InvalidParameterValueException(
+                            "Found existing network configuration (with specified id) for offering (with specified id)");
                         ex.addProxyObject(offering.getUuid(), "offeringId");
                         ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
                         throw ex;
@@ -642,22 +657,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
 
-                NetworkVO vo = new NetworkVO(id,
-                    network,
-                    offering.getId(),
-                    guru.getName(),
-                    owner.getDomainId(),
-                    owner.getId(),
-                    related,
-                    name,
-                    displayText,
-                    predefined.getNetworkDomain(),
-                    offering.getGuestType(),
-                    plan.getDataCenterId(),
-                    plan.getPhysicalNetworkId(),
-                    aclType,
-                    offering.getSpecifyIpRanges(),
-                    vpcId);
+                NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText,
+                    predefined.getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
                 vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                     finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
@@ -791,12 +792,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         vo = _nicDao.persist(vo);
 
         Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
-        NicProfile vmNic = new NicProfile(vo,
-            network,
-            vo.getBroadcastUri(),
-            vo.getIsolationUri(),
-            networkRate,
-            _networkModel.isSecurityGroupSupportedInNetwork(network),
+        NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
             _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
@@ -1071,8 +1067,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (!reprogramNetworkRules(network.getId(), CallContext.current().getCallingAccount(), network)) {
             s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
             // see DataCenterVO.java
-            ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement",
-                DataCenter.class,
+            ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
                 network.getDataCenterId());
             ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
             throw ex;
@@ -1281,12 +1276,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             updateNic(nic, network.getId(), 1);
         } else {
-            profile = new NicProfile(nic,
-                network,
-                nic.getBroadcastUri(),
-                nic.getIsolationUri(),
-                networkRate,
-                _networkModel.isSecurityGroupSupportedInNetwork(network),
+            profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
             nic.setState(Nic.State.Reserved);
@@ -1297,13 +1287,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (NetworkElement element : _networkElements) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " +
+                                                    network.getPhysicalNetworkId());
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
                 }
-                if(!prepareElement(element, network, profile, vmProfile, dest, context)) {
-                    throw new InsufficientAddressCapacityException("unable to configure the dhcp service, due to insufficiant address capacity",Network.class, network.getId());
+                if (!prepareElement(element, network, profile, vmProfile, dest, context)) {
+                    throw new InsufficientAddressCapacityException("unable to configure the dhcp service, due to insufficiant address capacity", Network.class, network.getId());
                 }
             }
         }
@@ -1322,12 +1313,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-            NicProfile profile = new NicProfile(nic,
-                network,
-                nic.getBroadcastUri(),
-                nic.getIsolationUri(),
-                networkRate,
-                _networkModel.isSecurityGroupSupportedInNetwork(network),
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             if (guru instanceof NetworkMigrationResponder) {
                 if (!((NetworkMigrationResponder)guru).prepareMigration(profile, network, vm, dest, context)) {
@@ -1338,11 +1324,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (NetworkElement element : _networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " +
+                                                        network.getPhysicalNetworkId());
                     }
-                    if(element instanceof NetworkMigrationResponder){
-                        if(!((NetworkMigrationResponder) element).prepareMigration(profile, network, vm, dest, context)){
-                            s_logger.error("NetworkElement "+element+" prepareForMigration failed."); // XXX: Transaction error
+                    if (element instanceof NetworkMigrationResponder) {
+                        if (!((NetworkMigrationResponder)element).prepareMigration(profile, network, vm, dest, context)) {
+                            s_logger.error("NetworkElement " + element + " prepareForMigration failed."); // XXX: Transaction error
                         }
                     }
                 }
@@ -1377,10 +1364,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (NetworkElement element : _networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " +
+                                                        network.getPhysicalNetworkId());
                     }
-                    if(element instanceof NetworkMigrationResponder){
-                        ((NetworkMigrationResponder) element).commitMigration(nicSrc, network, src, src_context, dst_context);
+                    if (element instanceof NetworkMigrationResponder) {
+                        ((NetworkMigrationResponder)element).commitMigration(nicSrc, network, src, src_context, dst_context);
                     }
                 }
             }
@@ -1407,10 +1395,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (NetworkElement element : _networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " +
+                                                        network.getPhysicalNetworkId());
                     }
-                    if(element instanceof NetworkMigrationResponder){
-                        ((NetworkMigrationResponder) element).rollbackMigration(nicDst, network, dst, src_context, dst_context);
+                    if (element instanceof NetworkMigrationResponder) {
+                        ((NetworkMigrationResponder)element).rollbackMigration(nicDst, network, dst, src_context, dst_context);
                     }
                 }
             }
@@ -1451,12 +1440,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
                 nic.setState(Nic.State.Releasing);
                 _nicDao.update(nic.getId(), nic);
-                NicProfile profile = new NicProfile(nic,
-                    network,
-                    nic.getBroadcastUri(),
-                    nic.getIsolationUri(),
-                    null,
-                    _networkModel.isSecurityGroupSupportedInNetwork(network),
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
                     _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
                 if (guru.release(profile, vmProfile, nic.getReservationId())) {
                     applyProfileToNicForRelease(nic, profile);
@@ -1475,7 +1459,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 for (NetworkElement element : _networkElements) {
                     if (providersToImplement.contains(element.getProvider())) {
                         if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                            throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                            throw new CloudRuntimeException("Service provider " + element.getProvider().getName() +
+                                                            " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
                         }
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Asking " + element.getName() + " to release " + nic);
@@ -1527,7 +1512,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (NetworkElement element : _networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " +
+                                                        network.getPhysicalNetworkId());
                     }
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Asking " + element.getName() + " to release " + nic);
@@ -1535,9 +1521,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     try {
                         element.release(network, profile, vm, null);
                     } catch (ConcurrentOperationException ex) {
-                        s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                        s_logger.warn("release failed during the nic " + nic.toString() + " removeNic due to ", ex);
                     } catch (ResourceUnavailableException ex) {
-                        s_logger.warn("release failed during the nic " +  nic.toString() + " removeNic due to ", ex);
+                        s_logger.warn("release failed during the nic " + nic.toString() + " removeNic due to ", ex);
                     }
                 }
             }
@@ -1778,7 +1764,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // If networkDomain is not specified, take it from the global configuration
         if (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
-            Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, networkOfferingId), Service.Dns);
+            Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, networkOfferingId),
+                Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
                 if (networkDomain != null) {
@@ -1802,9 +1789,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 } else {
                     // validate network domain
                     if (!NetUtils.verifyDomainName(networkDomain)) {
-                        throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
-                                                                 + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                                                 + "and the hyphen ('-'); can't start or end with \"-\"");
+                        throw new InvalidParameterValueException(
+                            "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
+                                    + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                    + "and the hyphen ('-'); can't start or end with \"-\"");
                     }
                 }
             }
@@ -2408,11 +2396,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     protected boolean isSharedNetworkWithServices(Network network) {
-        assert(network != null);
+        assert (network != null);
         DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-        if (network.getGuestType() == Network.GuestType.Shared &&
-                zone.getNetworkType() == NetworkType.Advanced &&
-                isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+        if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced &&
+            isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
             return true;
         }
         return false;
@@ -2915,38 +2902,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-            ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-                
-                VirtualMachine vm = vmProfile.getVirtualMachine();
-                DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-                Host host = _hostDao.findById(vm.getHostId());
-                DeployDestination dest = new DeployDestination(dc, null, null, host);
-                
-                NicProfile nic = getNicProfileForVm(network, requested, vm);
-                
-                //1) allocate nic (if needed) Always allocate if it is a user vm
-                if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
-                    int deviceId = _nicDao.countNics(vm.getId());
-                    
-                    nic = allocateNic(requested, network, false,
-                            deviceId, vmProfile).first();
-                    
-                    if (nic == null) {
-                        throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
-                    }
-                    
-                    s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
-                }
-                
-                //2) prepare nic
-                if (prepare) {
-                    Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
-                    nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
-                    s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
-                }
-                
-                return nic;
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        ResourceUnavailableException {
+
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId());
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+
+        NicProfile nic = getNicProfileForVm(network, requested, vm);
+
+        //1) allocate nic (if needed) Always allocate if it is a user vm
+        if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
+            int deviceId = _nicDao.countNics(vm.getId());
+
+            nic = allocateNic(requested, network, false, deviceId, vmProfile).first();
+
+            if (nic == null) {
+                throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
             }
 
             s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
@@ -2973,13 +2946,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
                 NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
-                NicProfile profile = new NicProfile(nic,
-                    network,
-                    nic.getBroadcastUri(),
-                    nic.getIsolationUri(),
-                    networkRate,
-                    _networkModel.isSecurityGroupSupportedInNetwork(network),
-                    _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+                    _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }
@@ -3117,18 +3085,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return NetworkOrchestrationService.class.getSimpleName();
     }
 
-    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class,
-        "network.gc.wait",
-        "Advanced",
-        "600",
-        "Time (in seconds) to wait before shutting down a network that's not in used",
-        false);
-    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class,
-        "network.gc.interval",
-        "Advanced",
-        "600",
-        "Seconds to wait before checking for networks to shutdown",
-        true);
+    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class, "network.gc.wait", "Advanced", "600",
+        "Time (in seconds) to wait before shutting down a network that's not in used", false);
+    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
+        "Seconds to wait before checking for networks to shutdown", true);
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NetworkGcWait, NetworkGcInterval, NetworkLockTimeout, GuestDomainSuffix, NetworkThrottlingRate};
