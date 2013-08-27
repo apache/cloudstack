@@ -1847,6 +1847,31 @@ public class VirtualMachineMO extends BaseMO {
 
 		return null;
 	}
+	
+	public VirtualMachineDiskInfoBuilder getDiskInfoBuilder() throws Exception {
+		VirtualMachineDiskInfoBuilder builder = new VirtualMachineDiskInfoBuilder();
+		
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+		
+		if(devices != null && devices.size() > 0) {
+			for(VirtualDevice device : devices) {
+				if(device instanceof VirtualDisk) {
+					VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
+					if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+						VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+						
+						while(diskBackingInfo != null) {
+							String deviceBusName = getDeviceBusName(devices, device);
+							builder.addDisk(deviceBusName, diskBackingInfo.getFileName());
+							diskBackingInfo = diskBackingInfo.getParent();
+						}
+					}
+				}
+			}
+		}
+		
+		return builder;
+	}
 
 	@Deprecated
 	public List<Pair<String, ManagedObjectReference>> getDiskDatastorePathChain(VirtualDisk disk, boolean followChain) throws Exception {
@@ -1938,7 +1963,7 @@ public class VirtualMachineMO extends BaseMO {
 		}
 		throw new Exception("Unable to find device controller");
 	}
-
+	
 	public VirtualDisk[] getAllDiskDevice() throws Exception {
 		List<VirtualDisk> deviceList = new ArrayList<VirtualDisk>();
 		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
