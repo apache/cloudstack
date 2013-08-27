@@ -3634,7 +3634,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");
         if (password == null || password.equals("")) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("No password for VM with specified id found.");
+            InvalidParameterValueException ex = new InvalidParameterValueException("No password for VM with specified id found. " +
+                "If VM is created from password enabled template and SSH keypair is assigned to VM then only password can be retrieved.");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
