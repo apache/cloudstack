@@ -283,7 +283,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
         )
         cmds = [
                 "mkdir -p %s /mnt/tmp",
-                "mount -t %s %s%s /mnt/tmp" % (
+                "mount -t %s %s:%s /mnt/tmp" % (
                     'nfs',
                     host,
                     path,
