@@ -316,7 +316,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             if (account != null) {
                 return account.getId();
             } else {
-                throw new InvalidParameterValueException("Unable to find account " + account + " in domain id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId);
             }
         } else {
             throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or publicIpId");
