@@ -78,8 +78,6 @@
     <para>Use this VDS name when you specify the switch name in the traffic label while creating the
       zone. Traffic label format is [["Name of vSwitch/dvSwitch/EthernetPortProfile"][,"VLAN
       ID"[,"vSwitch Type"]]]</para>
-<<<<<<< HEAD
-=======
     <para>The possible values for traffic labels are:</para>
     <itemizedlist>
       <listitem><para>empty string</para></listitem>
@@ -155,7 +153,6 @@
         </tbody>
       </tgroup>
     </informaltable>
->>>>>>> 6fc98a8... CLOUDSTACK-772 review comments on DVS fixed
   </section>
   <section id="enable-dvswitch">
     <title>Enabling Virtual Distributed Switch in &PRODUCT;</title>
@@ -166,8 +163,8 @@
       &PRODUCT; uses VDS for virtual network infrastructure if the value of vmware.use.dvswitch
       parameter is true and the value of vmware.use.nexus.dvswitch parameter is false. Another
       global parameter that defines VDS configuration is vmware.ports.per.dvportgroup. This is the
-      default number of ports per VMware dvPortGroup in a VMware environment. This number directly
-      associated with the number of guest network you can create.</para>
+      default number of ports per VMware dvPortGroup in a VMware environment. Default value is 256.
+      This number directly associated with the number of guest network you can create.</para>
     <para>&PRODUCT; supports orchestration of virtual networks in a deployment with a mix of Virtual
       Distributed Switch, Standard Virtual Switch and Nexus 1000v Virtual Switch. </para>
   </section>
@@ -257,5 +254,4 @@
       </tgroup>
     </informaltable>
   </section>
-  
 </section>
