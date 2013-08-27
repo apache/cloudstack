@@ -19,8 +19,6 @@
 
 package com.cloud.network.guru;
 
-import com.cloud.network.element.MidoNetElement;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -33,21 +31,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.*;
-import com.midokura.midonet.client.resource.Bridge;
-import com.cloud.utils.net.NetUtils;
-
-import com.cloud.network.Networks.AddressFormat;
-import com.midokura.midonet.client.resource.BridgePort;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 
-
-import com.cloud.vm.Nic.ReservationStrategy;
-
 import javax.ejb.Local;
-import java.util.UUID;
 import javax.inject.Inject;
 
 @Component

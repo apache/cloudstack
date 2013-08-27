@@ -21,9 +21,10 @@ package com.cloud.network.element;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.midokura.midonet.client.dto.DtoRule;
+import org.midonet.client.dto.DtoRule;
+import org.midonet.client.resource.*;
 import com.google.common.collect.*;
-import com.midokura.midonet.client.resource.*;
+
 
 import java.util.*;
 // Used for translation between MidoNet firewall rules and
@@ -147,8 +148,14 @@ public class SimpleFirewallRule {
         dstIp = rule.getNwDstAddress();
 
         if("icmp".equals(protocol)){
-            icmpType = rule.getTpSrcStart();
-            icmpCode = rule.getTpDstStart();
+            if(rule.getTpSrc() != null && rule.getTpDst() != null){
+                icmpType = rule.getTpSrc().start;
+                icmpCode = rule.getTpDst().start;
+            } else {
+                icmpType = -1;
+                icmpCode = -1;
+            }
+
         } else {
             /*
              * If this is port forwarding, we want to take the start
@@ -158,9 +165,9 @@ public class SimpleFirewallRule {
             if (targets != null) {
                 dstPortStart = targets[0].portFrom;
             } else {
-                dstPortStart = rule.getTpDstStart();
+                dstPortStart = rule.getTpDst().start;
             }
-            dstPortEnd = rule.getTpDstEnd();
+            dstPortEnd = rule.getTpDst().end;
         }
 
         // cidr, protocol, dstIp, dstPortStart, dstPortEnd, icmpType, icmpCode);
@@ -177,6 +184,7 @@ public class SimpleFirewallRule {
     public int getFieldOne(){
         if(protocol.equals("icmp")){
             return icmpType;
+
         } else {
             return dstPortStart;
         }
