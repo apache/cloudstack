@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -147,6 +148,10 @@ public class Upgrade410to420 implements DbUpgrade {
         boolean nexusEnabled = false;
         String publicVswitchType = VMWARE_STANDARD_VSWITCH;
         String guestVswitchType = VMWARE_STANDARD_VSWITCH;
+        String defaultPublicVswitchName = "vSwitch0";
+        String defaultGuestVswitchName = "vSwitch0";
+        String publicVswitchName = null;
+        String guestVswitchName = null;
         Map<Long, List<Pair<String, String>>> detailsMap = new HashMap<Long, List<Pair<String, String>>>();
         List<Pair<String, String>> detailsList;
 
@@ -163,13 +168,27 @@ public class Upgrade410to420 implements DbUpgrade {
                             nexusEnabled = true;
                         }
                     }
+                    // Set default values if cloud level setting is turned on for nexus 1000v.
                     if (nexusEnabled) {
                         publicVswitchType = NEXUS_1000V_DVSWITCH;
                         guestVswitchType = NEXUS_1000V_DVSWITCH;
+                        defaultPublicVswitchName = "publicEthernetPortProfile";
+                        defaultGuestVswitchName = "guestEthernetPortProfile";
+                    }
+                    // Read zone level settings from zone wide traffic labels for guest traffic and public traffic
+                    guestVswitchName = getDefaultTrafficLabel(conn, TrafficType.Guest.toString());
+                    publicVswitchName = getDefaultTrafficLabel(conn, TrafficType.Public.toString());
+                    if (guestVswitchName == null) {
+                        guestVswitchName = defaultGuestVswitchName;
+                    }
+                    if (publicVswitchName == null) {
+                        publicVswitchName = defaultPublicVswitchName;
                     }
                     detailsList = new ArrayList<Pair<String, String>>();
                     detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, guestVswitchType));
+                    detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, guestVswitchName));
                     detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, publicVswitchType));
+                    detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, publicVswitchName));
                     detailsMap.put(clusterId, detailsList);
 
                     updateClusterDetails(conn, detailsMap);
@@ -235,6 +254,34 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+    }
+
+    private String getDefaultTrafficLabel(Connection conn, String trafficType) {
+        ResultSet rs = null;
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("select vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" + trafficType + "';");
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String label = rs.getString("vmware_network_label");
+                // Handle case of label specified as [vswitch_name,vlan_id]
+                return label.split(",")[0];
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable read default traffic label for " + trafficType + ". ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        return null;
     }
 
     private String getConfigurationParameter(Connection conn, String category, String paramName) {
