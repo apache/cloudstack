@@ -25,8 +25,7 @@
   <title>VM Storage Migration</title>
   <para>Supported in XenServer, KVM, and VMware.</para>
   <note>
-    <para>This procedure is different from moving disk volumes from one VM to another. See Detaching
-      and Moving Volumes <xref linkend="detach-move-volumes"/>.</para>
+    <para>This procedure is different from moving disk volumes from one VM to another. See <xref linkend="detach-move-volumes"/>.</para>
   </note>
   <para>You can migrate a virtual machine’s root disk volume or any additional data disk volume from
     one storage pool to another in the same zone.</para>
