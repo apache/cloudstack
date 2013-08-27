@@ -35,6 +35,7 @@ import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostConfigManager;
@@ -577,8 +578,14 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 
 	public HashMap<String, Integer> getVmVncPortsOnHost() throws Exception {
+		
+		int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+		}
+		
     	ObjectContent[] ocs = getVmPropertiesOnHyperHost(
-            new String[] { "name", "config.extraConfig[\"RemoteDisplay.vnc.port\"]" }
+            new String[] { "name", "config.extraConfig[\"RemoteDisplay.vnc.port\"]", "value[" + key + "]" }
             );
 
         HashMap<String, Integer> portInfo = new HashMap<String, Integer>();
@@ -592,14 +599,15 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		        	for(DynamicProperty objProp : objProps) {
 		        		if(objProp.getName().equals("name")) {
 		                    vmName = (String)objProp.getVal();
+		                } else if(objProp.getName().startsWith("value[")) {
+		                	if(objProp.getVal() != null)
+		                		vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
 		                } else {
 		                    OptionValue optValue = (OptionValue)objProp.getVal();
 		                    value = (String)optValue.getValue();
 		                }
 		            }
-		            VirtualMachineMO vmMo = new VirtualMachineMO(_context, oc.getObj());
-                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		        	
 	                if (vmInternalCSName != null && isUserVMInternalCSName(vmInternalCSName))
 	                    vmName = vmInternalCSName;
 
