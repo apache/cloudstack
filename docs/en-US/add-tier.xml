@@ -75,7 +75,8 @@
             the VPC, and is not overlapped with the CIDR of any existing tier within the VPC.</para>
         </listitem>
         <listitem>
-          <para><emphasis role="bold">VLAN</emphasis>: The VLAN ID for the tier you create. </para>
+          <para><emphasis role="bold">VLAN</emphasis>: The VLAN ID for the tier that the root admin
+            creates. </para>
           <para>This option is only visible if the network offering you selected is
             VLAN-enabled.</para>
           <para condition="install">For more information, see the Assigning VLANs to Isolated
