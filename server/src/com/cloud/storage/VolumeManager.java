@@ -119,4 +119,6 @@ public interface VolumeManager extends VolumeApiService {
     String getStoragePoolOfVolume(long volumeId);
 
     boolean validateVolumeSizeRange(long size);
+    
+    void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
 }
