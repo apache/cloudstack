@@ -387,6 +387,9 @@
           >physical_network_name</emphasis>&gt; > <emphasis role="bold">Network Service
           Providers</emphasis> > <emphasis role="bold">Internal LB VM</emphasis>. You can manage the
         Internal LB VMs as and when required from the location.</para>
+<<<<<<< HEAD
+>>>>>>> 030fe5b... review comments for CLOUDSTACK-2808, CLOUDSTACK-769
+=======
 >>>>>>> 030fe5b... review comments for CLOUDSTACK-2808, CLOUDSTACK-769
       <orderedlist>
         <listitem>
@@ -422,10 +425,13 @@
             </listitem>
             <listitem>
 <<<<<<< HEAD
+<<<<<<< HEAD
               <para><emphasis role="bold">Source IP Address</emphasis>: The source IP from which
                 traffic originates. Typically, this is the IP of an instance on another tier within
                 your VPC.</para>
 =======
+=======
+>>>>>>> 030fe5b... review comments for CLOUDSTACK-2808, CLOUDSTACK-769
               <para><emphasis role="bold">Source IP Address</emphasis>: (Optional) The source IP
                 from which traffic originates. The IP is acquired from the CIDR of that particular
                 tier on which you want to create the Internal LB rule. If not specified, the IP
