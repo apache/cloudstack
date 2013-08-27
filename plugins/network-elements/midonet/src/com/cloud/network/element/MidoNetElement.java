@@ -53,20 +53,21 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-
-import com.midokura.midonet.client.MidonetApi;
-import com.midokura.midonet.client.dto.DtoRule;
-import com.midokura.midonet.client.resource.Bridge;
-import com.midokura.midonet.client.resource.BridgePort;
-import com.midokura.midonet.client.resource.DhcpHost;
-import com.midokura.midonet.client.resource.DhcpSubnet;
-import com.midokura.midonet.client.resource.Port;
-import com.midokura.midonet.client.resource.ResourceCollection;
-import com.midokura.midonet.client.resource.Route;
-import com.midokura.midonet.client.resource.Router;
-import com.midokura.midonet.client.resource.RouterPort;
-import com.midokura.midonet.client.resource.Rule;
-import com.midokura.midonet.client.resource.RuleChain;
+import org.midonet.client.MidonetApi;
+import org.midonet.client.exception.HttpInternalServerError;
+import org.midonet.client.dto.DtoRule;
+import org.midonet.client.dto.DtoRule.DtoRange;
+import org.midonet.client.resource.Bridge;
+import org.midonet.client.resource.BridgePort;
+import org.midonet.client.resource.DhcpHost;
+import org.midonet.client.resource.DhcpSubnet;
+import org.midonet.client.resource.Port;
+import org.midonet.client.resource.ResourceCollection;
+import org.midonet.client.resource.Route;
+import org.midonet.client.resource.Router;
+import org.midonet.client.resource.RouterPort;
+import org.midonet.client.resource.Rule;
+import org.midonet.client.resource.RuleChain;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -424,7 +425,9 @@ public class MidoNetElement extends AdapterBase implements
             sub.subnetLength(cidrInfo.second());
             sub.subnetPrefix(cidrInfo.first());
             sub.defaultGateway(network.getGateway());
-            sub.dnsServerAddr(dest.getDataCenter().getDns1());
+            List<String> dcs = new ArrayList<String>();
+            dcs.add(dest.getDataCenter().getDns1());
+            sub.dnsServerAddrs(dcs);
 
             sub.create();
         }
@@ -533,10 +536,8 @@ public class MidoNetElement extends AdapterBase implements
                 .nwDstAddress(floatingIp)
                 .nwDstLength(32)
                 .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
-                .tpSrcStart(0)
-                .tpSrcEnd(0)
-                .tpDstStart(0)
-                .tpDstEnd(0)
+                .tpSrc(new DtoRange<Integer>(0,0))
+                .tpDst(new DtoRange<Integer>(0,0))
                 .position(2)
                 .create();
 
@@ -689,52 +690,56 @@ public class MidoNetElement extends AdapterBase implements
             }
 
             for (FirewallRule rule : rulesToApply) {
-                IpAddress dstIp = _networkModel.getIp(rule.getSourceIpAddressId());
-                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, dstIp.getAddress().addr());
+                if (rule.getState() == FirewallRule.State.Revoke || rule.getState() == FirewallRule.State.Add) {
+                    IpAddress dstIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                    FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, dstIp.getAddress().addr());
 
-                // Convert to string representation
-                SimpleFirewallRule fwRule = new SimpleFirewallRule(ruleTO);
-                String[] ruleStrings = fwRule.toStringArray();
+                    // Convert to string representation
+                    SimpleFirewallRule fwRule = new SimpleFirewallRule(ruleTO);
+                    String[] ruleStrings = fwRule.toStringArray();
 
-                if (rule.getState() == FirewallRule.State.Revoke) {
-                    // Lookup in existingRules, delete if present
-                    for(String revokeRuleString : ruleStrings){
-                        Rule foundRule = existingRules.get(revokeRuleString);
-                        if(foundRule != null){
-                            foundRule.delete();
-                        }
-                    }
-                } else if (rule.getState() == FirewallRule.State.Add) {
-                    // Lookup in existingRules, add if not present
-                    for(int i = 0; i < ruleStrings.length; i++){
-                        String ruleString = ruleStrings[i];
-                        Rule foundRule = existingRules.get(ruleString);
-                        if(foundRule == null){
-                            // Get the cidr for the related entry in the Source Cidrs list
-                            String relatedCidr = fwRule.sourceCidrs.get(i);
-                            Pair<String,Integer> cidrParts = NetUtils.getCidr(relatedCidr);
-
-                            // Create rule with correct proto, cidr, ACCEPT, dst IP
-                            Rule toApply = preFilter.addRule()
-                                    .type(DtoRule.Jump)
-                                    .jumpChainId(preNat.getId())
-                                    .position(1)
-                                    .nwSrcAddress(cidrParts.first())
-                                    .nwSrcLength(cidrParts.second())
-                                    .nwDstAddress(ruleTO.getSrcIp())
-                                    .nwDstLength(32)
-                                    .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()));
-
-                            if(rule.getProtocol().equals("icmp")){
-                                // ICMP rules - reuse port fields
-                                toApply.tpSrcStart(fwRule.icmpType).tpSrcEnd(fwRule.icmpType)
-                                    .tpDstStart(fwRule.icmpCode).tpDstEnd(fwRule.icmpCode);
-                            } else {
-                                toApply.tpDstStart(fwRule.dstPortStart)
-                                        .tpDstEnd(fwRule.dstPortEnd);
+                    if (rule.getState() == FirewallRule.State.Revoke) {
+                        // Lookup in existingRules, delete if present
+                        for(String revokeRuleString : ruleStrings){
+                            Rule foundRule = existingRules.get(revokeRuleString);
+                            if(foundRule != null){
+                                foundRule.delete();
                             }
+                        }
+                    } else if (rule.getState() == FirewallRule.State.Add) {
+                        // Lookup in existingRules, add if not present
+                        for(int i = 0; i < ruleStrings.length; i++){
+                            String ruleString = ruleStrings[i];
+                            Rule foundRule = existingRules.get(ruleString);
+                            if(foundRule == null){
+                                // Get the cidr for the related entry in the Source Cidrs list
+                                String relatedCidr = fwRule.sourceCidrs.get(i);
+                                Pair<String,Integer> cidrParts = NetUtils.getCidr(relatedCidr);
 
-                            toApply.create();
+                                // Create rule with correct proto, cidr, ACCEPT, dst IP
+                                Rule toApply = preFilter.addRule()
+                                        .type(DtoRule.Jump)
+                                        .jumpChainId(preNat.getId())
+                                        .position(1)
+                                        .nwSrcAddress(cidrParts.first())
+                                        .nwSrcLength(cidrParts.second())
+                                        .nwDstAddress(ruleTO.getSrcIp())
+                                        .nwDstLength(32)
+                                        .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()));
+
+                                if(rule.getProtocol().equals("icmp")){
+                                    // ICMP rules - reuse port fields
+                                    // (-1, -1) means "allow all ICMP", so we don't set tpSrc / tpDst
+                                    if(fwRule.icmpType != -1 | fwRule.icmpCode != -1){
+                                        toApply.tpSrc(new DtoRange(fwRule.icmpType, fwRule.icmpType))
+                                            .tpDst(new DtoRange(fwRule.icmpCode, fwRule.icmpCode));
+                                    }
+                                } else {
+                                    toApply.tpDst(new DtoRange(fwRule.dstPortStart, fwRule.dstPortEnd));
+                                }
+
+                                toApply.create();
+                            }
                         }
                     }
                 }
@@ -973,8 +978,11 @@ public class MidoNetElement extends AdapterBase implements
         // Rules in the preNat table
         Map<String, Rule> existingPreNatRules = new HashMap<String, Rule>();
         for (Rule existingRule : preNat.getRules()) {
-            String ruleString = new SimpleFirewallRule(existingRule).toStringArray()[0];
-            existingPreNatRules.put(ruleString, existingRule);
+            // The "port forwarding" rules we're interested in are dnat rules where src / dst ports are specified
+            if(existingRule.getType().equals(DtoRule.DNAT) && existingRule.getTpDst() != null){
+                String ruleString = new SimpleFirewallRule(existingRule).toStringArray()[0];
+                existingPreNatRules.put(ruleString, existingRule);
+            }
         }
 
         /*
@@ -1058,8 +1066,7 @@ public class MidoNetElement extends AdapterBase implements
                             .flowAction(DtoRule.Accept)
                             .nwDstAddress(publicIp)
                             .nwDstLength(32)
-                            .tpDstStart(pubPortStart)
-                            .tpDstEnd(pubPortEnd)
+                            .tpDst(new DtoRange(pubPortStart, pubPortEnd))
                             .natTargets(preTargets)
                             .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()))
                             .position(1);
@@ -1123,7 +1130,8 @@ public class MidoNetElement extends AdapterBase implements
         capabilities.put(Service.Gateway, null);
 
         // L3 Support : DHCP
-        capabilities.put(Service.Dhcp, null);
+        Map<Capability, String> dhcpCapabilities = new HashMap<Capability, String>();
+        capabilities.put(Service.Dhcp, dhcpCapabilities);
 
         // L3 Support : SourceNat
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
@@ -1364,7 +1372,7 @@ public class MidoNetElement extends AdapterBase implements
         int pos = 1;
         // If it is ARP, accept it
         egressChain.addRule().type(DtoRule.Accept)
-            .dlType((short)0x0806)
+            .dlType(0x0806)
             .position(pos++)
             .create();
 
@@ -1423,7 +1431,7 @@ public class MidoNetElement extends AdapterBase implements
 
             // If it is ARP, accept it
             inc.addRule().type(DtoRule.Accept)
-                         .dlType((short)0x0806)
+                         .dlType(0x0806)
                          .position(pos++)
                          .create();
 
@@ -1487,7 +1495,13 @@ public class MidoNetElement extends AdapterBase implements
 
             String networkUUIDStr = String.valueOf(networkID);
 
-            netBridge = api.addBridge().tenantId(accountUuid).name(networkUUIDStr).create();
+            s_logger.debug("Attempting to create guest network bridge");
+            try {
+                netBridge = api.addBridge().tenantId(accountUuid).name(networkUUIDStr).create();
+            } catch (HttpInternalServerError ex) {
+                s_logger.warn("Bridge creation failed, retrying bridge get in case it now exists.", ex);
+                netBridge = getNetworkBridge(networkID, accountUuid);
+            }
         }
         return netBridge;
     }
