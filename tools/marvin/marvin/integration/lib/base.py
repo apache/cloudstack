@@ -1493,6 +1493,10 @@ class NetworkOffering:
             cmd.specifyVlan = services["specifyVlan"]
         if "specifyIpRanges" in services:
             cmd.specifyIpRanges = services["specifyIpRanges"]
+
+        if "egress_policy" in services:
+            cmd.egressdefaultpolicy = services["egress_policy"]
+
         cmd.availability = 'Optional'
 
         [setattr(cmd, k, v) for k, v in kwargs.items()]
