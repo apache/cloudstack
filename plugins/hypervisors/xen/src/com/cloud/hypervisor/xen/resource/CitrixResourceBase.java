@@ -1027,40 +1027,39 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.error("Network is not configured on the backend for nic " + nic.toString());
             throw new CloudRuntimeException("Network for the backend is not configured correctly for network broadcast domain: " + nic.getBroadcastUri());
         }
-        if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
+        URI uri = nic.getBroadcastUri();
+        BroadcastDomainType type = nic.getBroadcastType();
+        if (uri != null && uri.toString().contains("untagged")) {
             return network.getNetwork();
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            assert broadcastUri.getScheme().equals(BroadcastDomainType.Vlan.scheme());
-            long vlan = Long.parseLong(broadcastUri.getHost());
+        } else if (type == BroadcastDomainType.Vlan) {
+            assert (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Vlan);
+            long vlan = Long.parseLong(BroadcastDomainType.getValue(uri));
             return enableVlanNetwork(conn, vlan, network);
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
+        } else if (type == BroadcastDomainType.Native || type == BroadcastDomainType.LinkLocal) {
             return network.getNetwork();
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Vswitch) {
-            String broadcastUri = nic.getBroadcastUri().toString();
-            String header = broadcastUri.substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length());
+        } else if (type == BroadcastDomainType.Vswitch) {
+            String header = uri.toString().substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length());
             if (header.startsWith("vlan")) {
                 _isOvs = true;
                 return setupvSwitchNetwork(conn);
             } else {
-                long vnetId = Long.parseLong(nic.getBroadcastUri().getHost());
+                long vnetId = Long.parseLong(BroadcastDomainType.getValue(uri));
                 return findOrCreateTunnelNetwork(conn, vnetId);
             }
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Storage) {
-            URI broadcastUri = nic.getBroadcastUri();
-            if (broadcastUri == null) {
+        } else if (type == BroadcastDomainType.Storage) {
+            if (uri == null) {
                 return network.getNetwork();
             } else {
-                long vlan = Long.parseLong(broadcastUri.getHost());
+                long vlan = Long.parseLong(BroadcastDomainType.getValue(uri));
                 return enableVlanNetwork(conn, vlan, network);
             }
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Lswitch) {
+        } else if (type == BroadcastDomainType.Lswitch) {
             // Nicira Logical Switch
             return network.getNetwork();
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Pvlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            assert broadcastUri.getScheme().equals(BroadcastDomainType.Pvlan.scheme());
-            long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(broadcastUri));
+        } else if (type == BroadcastDomainType.Pvlan) {
+            assert BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Pvlan;
+            // TODO considder moving this NetUtils method to BroadcastDomainType
+            long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(uri));
             return enableVlanNetwork(conn, vlan, network);
         }
 
@@ -1639,7 +1638,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // TODO(Salvatore-orlando): This code should go
                 for (NicTO nic : vmSpec.getNics()) {
                     if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vswitch) {
-                        HashMap<String, String> args = parseDefaultOvsRuleComamnd(nic.getBroadcastUri().toString().substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length()));
+                        HashMap<String, String> args = parseDefaultOvsRuleComamnd(BroadcastDomainType.getValue(nic.getBroadcastUri()));
                         OvsSetTagAndFlowCommand flowCmd = new OvsSetTagAndFlowCommand(args.get("vmName"), args.get("tag"), args.get("vlans"),
                                 args.get("seqno"), Long.parseLong(args.get("vmId")));
                         OvsSetTagAndFlowAnswer r = execute(flowCmd);
@@ -2273,8 +2272,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (vlanId == null) {
                 nic.setBroadcastType(BroadcastDomainType.Native);
             } else {
-                nic.setBroadcastType(BroadcastDomainType.Vlan);
-                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
+                URI uri = BroadcastDomainType.fromString(vlanId);
+                nic.setBroadcastType(BroadcastDomainType.getSchemeValue(uri));
+                nic.setBroadcastUri(uri);
             }
             nic.setDeviceId(0);
             nic.setNetworkRateMbps(networkRate);
@@ -4215,8 +4215,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (ip.getVlanId() == null) {
             nic.setBroadcastType(BroadcastDomainType.Native);
         } else {
-            nic.setBroadcastType(BroadcastDomainType.Vlan);
-            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanId()));
+            URI uri = BroadcastDomainType.fromString(ip.getVlanId());
+            nic.setBroadcastType(BroadcastDomainType.getSchemeValue(uri));
+            nic.setBroadcastUri(uri);
         }
         Network network = getNetwork(conn, nic);
         // Determine the correct VIF on DomR to associate/disassociate the
@@ -8216,7 +8217,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
-        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
+        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
         String domainName = cmd.getNetworkDomain();
         String dns = cmd.getDefaultDns1();
         if (dns == null || dns.isEmpty()) {

@@ -245,7 +245,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
         HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
         
-        DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(networkObject.getBroadcastUri().getSchemeSpecificPart());
+        DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(BroadcastDomainType.getValue(networkObject.getBroadcastUri()));
         DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
         
         if (answer == null || !answer.getResult()) {

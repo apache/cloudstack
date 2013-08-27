@@ -199,6 +199,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -2180,8 +2181,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
-            if (broadcastUri.startsWith("vlan")) {
-                vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+            if (BroadcastDomainType.Vlan.scheme().equals(BroadcastDomainType.getSchemeValue(network.getBroadcastUri()))) {
+                vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);

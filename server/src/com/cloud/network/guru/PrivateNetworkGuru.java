@@ -183,7 +183,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             throws InsufficientVirtualNetworkCapcityException,InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
-            String vlanTag = network.getBroadcastUri().getHost();
+            String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask,
                     NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));

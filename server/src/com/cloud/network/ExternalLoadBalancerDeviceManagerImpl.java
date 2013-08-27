@@ -66,6 +66,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
@@ -904,7 +905,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
             LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
-            long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
+                long guestVlanTag = Integer.parseInt(BroadcastDomainType.getValue(network.getBroadcastUri()));
             cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
             Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -980,7 +981,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         // Send a command to the external load balancer to implement or shutdown the guest network
-        long guestVlanTag = Long.parseLong(guestConfig.getBroadcastUri().getHost());
+        long guestVlanTag = Long.parseLong(BroadcastDomainType.getValue(guestConfig.getBroadcastUri()));
         String selfIp = null;
         String guestVlanNetmask = NetUtils.cidr2Netmask(guestConfig.getCidr());
         Integer networkRate = _networkModel.getNetworkRate(guestConfig.getId(), null);
@@ -1188,7 +1189,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 // LoadBalancerConfigCommand cmd = new
                 // LoadBalancerConfigCommand(loadBalancersForCommand, null);
                 HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand);
-                long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
+                long guestVlanTag = Integer.parseInt(BroadcastDomainType.getValue(network.getBroadcastUri()));
                 cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
 
                 answer = (HealthCheckLBConfigAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);

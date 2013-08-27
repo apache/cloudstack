@@ -19,23 +19,23 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import java.io.File;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
+
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-
-import javax.naming.ConfigurationException;
-import java.net.URI;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.io.File;
 
 public class BridgeVifDriver extends VifDriverBase {
 
@@ -87,8 +87,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
         String vlanId = null;
         if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            vlanId = broadcastUri.getHost();
+            vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
         }
         else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
             throw new InternalErrorException("Nicira NVP Logicalswitches are not supported by the BridgeVifDriver");

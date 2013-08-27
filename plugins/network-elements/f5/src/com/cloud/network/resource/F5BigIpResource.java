@@ -294,6 +294,7 @@ public class F5BigIpResource implements ServerResource {
             try {		
                 IpAddressTO[] ips = cmd.getIpAddresses();
                 for (IpAddressTO ip : ips) {
+                // TODO BroadcastDomain.getValue(ip.getVlanId) ???
                     long guestVlanTag = Long.valueOf(ip.getVlanId());
                     // It's a hack, using isOneToOneNat field for indicate if it's inline or not
                     boolean inline = ip.isOneToOneNat();

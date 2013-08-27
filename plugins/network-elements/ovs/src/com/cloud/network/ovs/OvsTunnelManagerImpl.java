@@ -45,6 +45,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -240,9 +241,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		int key = 0;
 		try {
 			//The GRE key is actually in the host part of the URI
-			String keyStr = network.getBroadcastUri().getHost();
-    		// The key is most certainly and int.
-    		// So we feel quite safe in converting it into a string			
+            // this is not true for lswitch/NiciraNvp!
+            String keyStr = BroadcastDomainType.getValue(network.getBroadcastUri());
+		// The key is most certainly and int if network is a vlan.
+            // !! not in the case of lswitch/pvlan/(possibly)vswitch
+            // So we now feel quite safe in converting it into a string
+            // by calling the appropriate BroadcastDomainType method
     		key = Integer.valueOf(keyStr);
     		return key;
 		} catch (NumberFormatException e) {

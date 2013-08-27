@@ -591,8 +591,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         String vlanId = null;
         String bridgeName = null;
         if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            vlanId = broadcastUri.getHost();
+            vlanId = BroadcastDomainType.getValue(nic.getBroadcastUri());
         }
         
         if (nic.getType() == TrafficType.Guest) {

@@ -18,7 +18,6 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
-import java.net.URI;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -65,12 +64,12 @@ public class OvsVifDriver extends VifDriverBase {
         String vlanId = null;
         String logicalSwitchUuid = null;
         if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            vlanId = broadcastUri.getHost();
+            vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
         }
         else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
-            logicalSwitchUuid = nic.getBroadcastUri().getSchemeSpecificPart();
+            logicalSwitchUuid = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
         } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) {
+            // TODO consider moving some of this functionality from NetUtils to Networks....
             vlanId = NetUtils.getPrimaryPvlanFromUri(nic.getBroadcastUri());
         }
         String trafficLabel = nic.getName();

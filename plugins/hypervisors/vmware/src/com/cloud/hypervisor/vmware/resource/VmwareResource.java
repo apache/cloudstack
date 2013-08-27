@@ -1635,7 +1635,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             NicTO nicTo = cmd.getNic();
             VirtualDevice nic;
-            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());;
+            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());
             if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                 String dvSwitchUuid;
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -3181,9 +3181,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (nicTo.getBroadcastUri() != null) {
                 if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan)
                     // For vlan, the broadcast uri is of the form vlan://<vlanid>
-                    return nicTo.getBroadcastUri().getHost();
+                    // BroadcastDomainType recogniizes and handles this.
+                    return BroadcastDomainType.getValue(nicTo.getBroadcastUri());
                 else
                     // for pvlan, the broacast uri will be of the form pvlan://<vlanid>-i<pvlanid>
+                    // TODO consider the spread of functionality between BroadcastDomainType and NetUtils
                     return NetUtils.getPrimaryPvlanFromUri(nicTo.getBroadcastUri());
             } else {
                 s_logger.warn("BroadcastType is not claimed as VLAN or PVLAN, but without vlan info in broadcast URI. Use vlan info from labeling: " + defaultVlan);

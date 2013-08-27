@@ -1772,7 +1772,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         + " is already being used for dynamic vlan allocation for the guest network in zone " + zone.getName());
             }
             
-            String uri = "vlan://" + vlanId;
+            String uri = BroadcastDomainType.fromString(vlanId).toString();
             // For Isolated networks, don't allow to create network with vlan that already exists in the zone
             if (ntwkOff.getGuestType() == GuestType.Isolated) {
                 if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
@@ -1902,7 +1902,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         
         if (vlanId != null) {
         	if (isolatedPvlan == null) {
-        		userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                URI uri = BroadcastDomainType.fromString(vlanId);
+                userNetwork.setBroadcastUri(uri);
         		if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
         			userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
         		} else {

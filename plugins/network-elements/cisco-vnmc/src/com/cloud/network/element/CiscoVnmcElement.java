@@ -342,8 +342,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             _hostDao.loadDetails(ciscoVnmcHost);
             Account owner = context.getAccount();
             PublicIp sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
-            String vlan = network.getBroadcastUri().getHost();
-            long vlanId = Long.parseLong(vlan);
+            long vlanId = Long.parseLong(BroadcastDomainType.getValue(network.getBroadcastUri()));
 
             List<VlanVO> vlanVOList = _vlanDao.listVlansByPhysicalNetworkId(network.getPhysicalNetworkId());
             List<String> publicGateways = new ArrayList<String>();
@@ -465,8 +464,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         unassignAsa1000vFromNetwork(network);
 
-        String vlan = network.getBroadcastUri().getHost();
-        long vlanId = Long.parseLong(vlan);
+        long vlanId = Long.parseLong(BroadcastDomainType.getValue(network.getBroadcastUri()));
         List<CiscoVnmcControllerVO> devices = _ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (!devices.isEmpty()) {
             CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
@@ -709,7 +707,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         if (!rulesTO.isEmpty()) {
             SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
-            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, network.getBroadcastUri().getHost());
+            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, BroadcastDomainType.getValue(network.getBroadcastUri()));
             cmd.setContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
             Answer answer = _agentMgr.easySend(ciscoVnmcHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -764,7 +762,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         if (!rulesTO.isEmpty()) {
             SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rulesTO);
-            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, network.getBroadcastUri().getHost());
+            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, BroadcastDomainType.getValue(network.getBroadcastUri()));
             cmd.setContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
             Answer answer = _agentMgr.easySend(ciscoVnmcHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -819,7 +817,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         if (!rulesTO.isEmpty()) {
             SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
-            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, network.getBroadcastUri().getHost());
+            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, BroadcastDomainType.getValue(network.getBroadcastUri()));
             cmd.setContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
             Answer answer = _agentMgr.easySend(ciscoVnmcHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {

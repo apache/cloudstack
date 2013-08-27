@@ -273,7 +273,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
             CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
                     niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
-                    network.getBroadcastUri().getSchemeSpecificPart(),
+                    BroadcastDomainType.getValue(network.getBroadcastUri()),
                     "router-" + network.getDisplayText(), publicCidr,
                     sourceNatIp.getGateway(), internalCidr, context
                     .getDomain().getName()
@@ -339,8 +339,8 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                         + nic.getName() + " with uuid "
                         + existingNicMap.getLogicalSwitchPortUuid());
                 UpdateLogicalSwitchPortCommand cmd = new UpdateLogicalSwitchPortCommand(
-                        existingNicMap.getLogicalSwitchPortUuid(), network
-                        .getBroadcastUri().getSchemeSpecificPart(),
+                        existingNicMap.getLogicalSwitchPortUuid(),
+                        BroadcastDomainType.getValue(network.getBroadcastUri()),
                         nicVO.getUuid(), context.getDomain().getName() + "-"
                                 + context.getAccount().getAccountName(),
                                 nic.getName());
@@ -355,7 +355,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         }
 
         CreateLogicalSwitchPortCommand cmd = new CreateLogicalSwitchPortCommand(
-                network.getBroadcastUri().getSchemeSpecificPart(),
+                BroadcastDomainType.getValue(network.getBroadcastUri()),
                 nicVO.getUuid(), context.getDomain().getName() + "-"
                         + context.getAccount().getAccountName(), nic.getName());
         CreateLogicalSwitchPortAnswer answer = (CreateLogicalSwitchPortAnswer) _agentMgr
@@ -366,8 +366,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
             return false;
         }
 
-        NiciraNvpNicMappingVO nicMap = new NiciraNvpNicMappingVO(network
-                .getBroadcastUri().getSchemeSpecificPart(),
+        NiciraNvpNicMappingVO nicMap = new NiciraNvpNicMappingVO(BroadcastDomainType.getValue(network.getBroadcastUri()),
                 answer.getLogicalSwitchPortUuid(), nicVO.getUuid());
         _niciraNvpNicMappingDao.persist(nicMap);
 

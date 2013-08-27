@@ -27,8 +27,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateVnsPortAnswer;
@@ -85,14 +87,12 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.springframework.stereotype.Component;
 
 @Component
 @Local(value = {NetworkElement.class, ConnectivityProvider.class})
 public class BigSwitchVnsElement extends AdapterBase implements
-             BigSwitchVnsElementService, ConnectivityProvider, ResourceStateAdapter {
+        BigSwitchVnsElementService, ConnectivityProvider, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(BigSwitchVnsElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -134,7 +134,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
 
     private boolean canHandle(Network network, Service service) {
         s_logger.debug("Checking if BigSwitchVnsElement can handle service "
-                        + service.getName() + " on network " + network.getDisplayText());
+                + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
             return false;
         }
@@ -210,12 +210,12 @@ public class BigSwitchVnsElement extends AdapterBase implements
         HostVO bigswitchVnsHost = _hostDao.findById(bigswitchVnsDevice.getHostId());
 
         CreateVnsPortCommand cmd = new CreateVnsPortCommand(
-                network.getBroadcastUri().getSchemeSpecificPart(),
+                BroadcastDomainType.getValue(network.getBroadcastUri()),
                 vm.getUuid(),
                 tenantId,
                 nic.getName(),
                 mac);
-        CreateVnsPortAnswer answer = (CreateVnsPortAnswer) _agentMgr
+        CreateVnsPortAnswer answer = (CreateVnsPortAnswer)_agentMgr
                 .easySend(bigswitchVnsHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
@@ -254,10 +254,10 @@ public class BigSwitchVnsElement extends AdapterBase implements
         HostVO bigswitchVnsHost = _hostDao.findById(bigswitchVnsDevice.getHostId());
 
         DeleteVnsPortCommand cmd = new DeleteVnsPortCommand(
-                network.getBroadcastUri().getSchemeSpecificPart(),
+                BroadcastDomainType.getValue(network.getBroadcastUri()),
                 vm.getUuid(),
                 tenantId);
-        DeleteVnsPortAnswer answer = (DeleteVnsPortAnswer) _agentMgr
+        DeleteVnsPortAnswer answer = (DeleteVnsPortAnswer)_agentMgr
                 .easySend(bigswitchVnsHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
@@ -420,7 +420,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
         if (pnw != null) {
             response.setPhysicalNetworkId(pnw.getUuid());
         }
-		response.setId(bigswitchVnsDeviceVO.getUuid());
+        response.setId(bigswitchVnsDeviceVO.getUuid());
         response.setProviderName(bigswitchVnsDeviceVO.getProviderName());
         response.setHostName(bigswitchVnsHost.getDetail("ip"));
         response.setObjectName("bigswitchvnsdevice");
@@ -452,7 +452,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
                             && (network.getState() != Network.State.Destroy)) {
                         throw new CloudRuntimeException(
                                 "This BigSwitch Controller device can not be deleted as there are one or more " +
-                                "logical networks provisioned by cloudstack.");
+                                        "logical networks provisioned by cloudstack.");
                     }
                 }
             }
@@ -533,13 +533,13 @@ public class BigSwitchVnsElement extends AdapterBase implements
         return new DeleteHostAnswer(true);
     }
 
-	@Override
-	public List<Class<?>> getCommands() {
-		List<Class<?>> cmdList = new ArrayList<Class<?>>();
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(AddBigSwitchVnsDeviceCmd.class);
         cmdList.add(DeleteBigSwitchVnsDeviceCmd.class);
         cmdList.add(ListBigSwitchVnsDevicesCmd.class);
         return cmdList;
-	}
+    }
 
 }

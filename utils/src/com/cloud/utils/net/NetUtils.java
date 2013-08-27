@@ -1378,6 +1378,9 @@ public class NetUtils {
         }
     }
 
+    // Attention maintainers: these pvlan functions should take into account code
+    // in Networks.BroadcastDomainType, where URI construction is done for other
+    // types of BroadcastDomainTypes
 	public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
         return URI.create("pvlan://" + primaryVlan + "-i" + isolatedPvlan);
 	}

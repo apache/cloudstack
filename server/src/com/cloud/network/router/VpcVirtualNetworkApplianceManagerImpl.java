@@ -393,7 +393,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         
         if (network.getBroadcastDomainType() == BroadcastDomainType.Vlan) {
-                long guestVlanTag = Long.parseLong(network.getBroadcastUri().getHost());
+            long guestVlanTag = Long.parseLong(BroadcastDomainType.Vlan.getValueFrom(network.getBroadcastUri()));
                 setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
         }
         
@@ -669,7 +669,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Network guestNtwk = _networkDao.findById(guestNetworkId);
         URI uri = guestNtwk.getBroadcastUri();
         if (uri != null) {
-            guestVlan = guestNtwk.getBroadcastUri().getHost();
+            guestVlan = BroadcastDomainType.getValue(uri);
         }
         
         if (rules != null) {
@@ -730,7 +730,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             } else if (network.getTrafficType() == TrafficType.Public) {
                 Pair<Nic, Network> publicNic = new Pair<Nic, Network>(routerNic, network);
                 publicNics.add(publicNic);
-                String vlanTag = routerNic.getBroadcastUri().getHost();
+                String vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
                 vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
             }
         }
@@ -796,7 +796,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     //set private network
                     PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIp4Address());
                     Network network = _networkDao.findById(guestNic.getNetworkId());
-                    String vlanTag = network.getBroadcastUri().getHost();
+                    // should this be a vlan id or a broadcast uri???
+                    String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
                     String netmask = NetUtils.getCidrNetmask(network.getCidr());
                     PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, guestNic.getMacAddress());
                     
@@ -934,7 +935,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() == State.Running) {
             PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIp4Address());
             Network network = _networkDao.findById(privateNic.getNetworkId());
-            String vlanTag = network.getBroadcastUri().getHost();
+            // TODO should this be a lan tag or a broadcast uri???
+            // or maybe conditional; in case of vlan ... in case of lswitch
+            String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, privateNic.getMacAddress());
             
@@ -1227,16 +1230,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork),
                     _networkModel.getNetworkTag(vm.getHypervisorType(), privateNetwork));
         } else {
-            String vlanTag = privateNetwork.getBroadcastUri().getHost();
+            String vlanTag = BroadcastDomainType.getValue(privateNetwork.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, privateNetwork.getGateway(), netmask,
                     NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
             
+            URI netUri = BroadcastDomainType.fromString(ip.getVlanTag());
             privateNicProfile.setIp4Address(ip.getIpAddress());
             privateNicProfile.setGateway(ip.getGateway());
             privateNicProfile.setNetmask(ip.getNetmask());
-            privateNicProfile.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-            privateNicProfile.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            privateNicProfile.setIsolationUri(netUri);
+            privateNicProfile.setBroadcastUri(netUri);
             privateNicProfile.setBroadcastType(BroadcastDomainType.Vlan);
             privateNicProfile.setFormat(AddressFormat.Ip4);
             privateNicProfile.setReservationId(String.valueOf(ip.getVlanTag()));
