@@ -388,7 +388,8 @@ class nfsConfig(serviceCfgBase):
                 return True
 
             cfo = configFileOps("/etc/nfsmount.conf")
-            cfo.addEntry("AC", "False")
+            cfo.addEntry("Ac", "False")
+            cfo.addEntry("actimeo", "0")
             cfo.save()
 
             self.syscfg.svo.enableService("rpcbind")
