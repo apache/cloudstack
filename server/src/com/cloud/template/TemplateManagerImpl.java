@@ -1374,6 +1374,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             AsyncCallFuture<TemplateApiResult> future = null;
             if (snapshotId != null) {
                 SnapshotInfo snapInfo = this._snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+                DataStore snapStore = snapInfo.getDataStore();
+                if ( snapStore != null ){
+                    store = snapStore; // pick snapshot image store to create template
+                }
                 future = this._tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = this._volFactory.getVolume(volumeId);
