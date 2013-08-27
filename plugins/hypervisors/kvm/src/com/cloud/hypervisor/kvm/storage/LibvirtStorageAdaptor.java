@@ -101,10 +101,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             vol = pool.storageVolLookupByName(volName);
         } catch (LibvirtException e) {
-
+            s_logger.debug("Can't find volume: " + e.toString());
         }
         if (vol == null) {
-            storagePoolRefresh(pool);
+            try {
+                refreshPool(pool);
+            } catch (LibvirtException e) {
+                s_logger.debug("failed to refresh pool: " + e.toString());
+            }
+
             try {
                 vol = pool.storageVolLookupByName(volName);
             } catch (LibvirtException e) {
@@ -119,6 +124,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID
                 .randomUUID().toString(), size, format, null, null);
         s_logger.debug(volDef.toString());
+
         return pool.storageVolCreateXML(volDef.toString(), 0);
     }
 
@@ -128,7 +134,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 refreshPool(pool);
             }
         } catch (LibvirtException e) {
-
+            s_logger.debug("refresh storage pool failed: " + e.toString());
         }
     }
 
@@ -438,6 +444,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             return disk;
         } catch (LibvirtException e) {
+            s_logger.debug("Failed to get physical disk:", e);
             throw new CloudRuntimeException(e.toString());
         }
 
