@@ -10287,25 +10287,13 @@
                                 preFilter: function(args) {
                                     var $form = args.$form;
                                     
-                                    $form.click(function() {
-                                        // VSM fields need to be required if a traffic override is selected
-                                        //
-                                        // ** This is done by switching out optional fields for required fields;
-                                        //    need to check for *either* vsm[...]_req or vsm[...]
-                                        
-                                        var $overridePublicTraffic = $form.find('.form-item[rel=overridepublictraffic] input[type=checkbox]');
-                                        var $vSwitchPublicType = $form.find('.form-item[rel=vSwitchPublicType] select');
-                                        
-                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
-                                        var $vSwitchGuestType = $form.find('.form-item[rel=vSwitchGuestType] select');
-                                        
+                                    $form.click(function() { 
                                         var $vsmFields = $form.find('.form-item').filter(function() {
                                             var vsmFields = [
                                                 'vsmipaddress',
                                                 'vsmusername',
                                                 'vsmpassword'
-                                            ];
-
+                                            ];	
                                             return $.inArray($(this).attr('rel'), vsmFields) > -1;
                                         });
                                         var $vsmReqFields = $form.find('.form-item').filter(function() {
@@ -10313,21 +10301,33 @@
                                                 'vsmipaddress_req',
                                                 'vsmusername_req',
                                                 'vsmpassword_req'
-                                            ];
-
+                                            ];	
                                             return $.inArray($(this).attr('rel'), vsmFields) > -1;
-                                        });
-
-
-                                        if (($overridePublicTraffic.is(':checked') && $vSwitchPublicType.val() == 'nexusdvs') ||
-                                            ($overrideGuestTraffic.is(':checked') && $vSwitchGuestType.val() == 'nexusdvs' )) {
-                                            $vsmReqFields.css('display', 'inline-block');
-                                            $vsmFields.hide();
+                                        });                                    	
+                                    	
+                                    	if ($form.find('.form-item[rel=hypervisor] select').val() == 'VMware' ) {   
+	                                        // VSM fields need to be required if a traffic override is selected and vSwitchType is 'nexusdvs'.                                        
+	                                        // This is done by switching out optional fields for required fields;     
+	                                        var $overridePublicTraffic = $form.find('.form-item[rel=overridepublictraffic] input[type=checkbox]');
+	                                        var $vSwitchPublicType = $form.find('.form-item[rel=vSwitchPublicType] select');
+	                                        
+	                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
+	                                        var $vSwitchGuestType = $form.find('.form-item[rel=vSwitchGuestType] select');
+	                                        
+		
+	                                        if (($overridePublicTraffic.is(':checked') && $vSwitchPublicType.val() == 'nexusdvs') ||
+	                                            ($overrideGuestTraffic.is(':checked') && $vSwitchGuestType.val() == 'nexusdvs' )) {
+	                                            $vsmReqFields.css('display', 'inline-block');
+	                                            $vsmFields.hide();
+	                                        } else {
+	                                            $vsmFields.css('display', 'inline-block');
+	                                            $vsmReqFields.hide();
+	                                        }
                                         } else {
-                                            $vsmFields.css('display', 'inline-block');
-                                            $vsmReqFields.hide();
+                                        	$vsmFields.hide();
+                                        	$vsmReqFields.hide();
                                         }
-
+                                    	
                                     });
                                 },
                                 fields: {
@@ -10419,15 +10419,17 @@
 
                                             args.$select.bind("change", function(event) {
                                                 var $form = $(this).closest('form');
+                                                
+                                                /*
                                                 var $vsmFields = $form.find('.form-item').filter(function() {
                                                     var vsmFields = [
                                                         'vsmipaddress',
                                                         'vsmusername',
                                                         'vsmpassword'
                                                     ];
-
                                                     return $.inArray($(this).attr('rel'), vsmFields) > -1;
                                                 });
+                                                */
 
                                                 if ($(this).val() == "VMware") {      
                                                     if (dvSwitchEnabled) {                                                        
@@ -10445,11 +10447,13 @@
                                                     $form.find('.form-item[rel=vCenterPassword]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=vCenterDatacenter]').css('display', 'inline-block');
 
+                                                    /*
                                                     if (vSwitchEnabled) {
                                                         $vsmFields.css('display', 'inline-block');
                                                     } else {
                                                         $vsmFields.css('display', 'none');
                                                     }
+                                                    */
                                                     
                                                 } else {
                                                     $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
@@ -10464,7 +10468,7 @@
                                                     $form.find('.form-item[rel=vCenterPassword]').css('display', 'none');
                                                     $form.find('.form-item[rel=vCenterDatacenter]').css('display', 'none');
                                                     $form.find('.form-item[rel=enableNexusVswitch]').css('display', 'none');
-                                                    $vsmFields.css('display', 'none');
+                                                    //$vsmFields.css('display', 'none');
                                                 }
                                             });
                                         }
