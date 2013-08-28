@@ -518,6 +518,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
+
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
             // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
