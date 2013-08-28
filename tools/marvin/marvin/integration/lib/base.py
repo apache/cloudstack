@@ -410,9 +410,16 @@ class VirtualMachine:
         #program ssh access over NAT via PF
         if mode.lower() == 'advanced':
             cls.access_ssh_over_nat(apiclient, services, virtual_machine, allow_egress=allow_egress)
+
         elif mode.lower() == 'basic':
-            virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
-            virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
+
+           if virtual_machine.publicip is not None:
+               vm_ssh_ip = virtual_machine.publicip #EIP/ELB (netscaler) enabled zone
+           else:
+               vm_ssh_ip = virtual_machine.nic[0].ipaddress #regular basic zone with security group
+
+            virtual_machine.ssh_ip = vm_ssh_ip
+            virtual_machine.public_ip = vm_ssh_ip
         return VirtualMachine(virtual_machine.__dict__, services)
 
     def start(self, apiclient):
