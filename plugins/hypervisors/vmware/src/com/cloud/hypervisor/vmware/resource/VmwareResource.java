@@ -4160,6 +4160,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return str.replace('/', '-');
     }
 
+    private String trimIqn(String iqn) {
+        String[] tmp = iqn.split("/");
+
+        if (tmp.length != 3) {
+            String msg = "Wrong format for iScsi path: " + iqn + ". It should be formatted as '/targetIQN/LUN'.";
+
+            s_logger.warn(msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+
+        return tmp[1].trim();
+    }
+
     @Override
     public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
             String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
@@ -4167,9 +4181,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
         ManagedObjectReference morDs = createVmfsDatastore(hyperHost, getDatastoreName(iqn),
-                storageHost, storagePort, iqn,
-                initiatorUsername, initiatorPassword,
-                targetUsername, targetPassword);
+                                                           storageHost, storagePort, trimIqn(iqn),
+                                                           initiatorUsername, initiatorPassword,
+                                                           targetUsername, targetPassword);
 
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
@@ -4198,7 +4212,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, iqn);
+        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
     }
 
     protected Answer execute(AttachVolumeCommand cmd) {
