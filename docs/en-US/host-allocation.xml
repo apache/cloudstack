@@ -108,5 +108,16 @@
             <listitem><para>Click View Instances. The members of the group are listed.</para>
                 <para>From here, you can click the name of any VM in the list to access all its details and controls.</para></listitem>
         </orderedlist>
+        <formalpara><title>Delete an Affinity Group</title>
+            <para>To delete an affinity group:</para></formalpara>
+        <orderedlist>
+            <listitem><para>In the left navigation bar, click Affinity Groups.</para></listitem>
+            <listitem><para>Click the name of the group you are interested in.</para></listitem>
+            <listitem><para>Click Delete.</para>
+                <para>Any VM that is a member of the affinity group will be disassociated from the group.
+                    The former group members will continue to run normally on the current hosts, but if the
+                    VM is restarted, it will no longer follow the host allocation rules from its former
+                    affinity group.</para></listitem>
+        </orderedlist>
     </section>
 </section>    
