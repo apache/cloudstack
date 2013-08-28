@@ -4480,13 +4480,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return false;
     }
 
+    private String trimIqn(String iqn) {
+        String[] tmp = iqn.split("/");
+
+        if (tmp.length != 3) {
+            String msg = "Wrong format for iScsi path: " + iqn + ". It should be formatted as '/targetIQN/LUN'.";
+
+            s_logger.warn(msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+
+        return tmp[1].trim();
+    }
+
     public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
                                                                String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
         ManagedObjectReference morDs = createVmfsDatastore(hyperHost, getDatastoreName(iqn),
-                                                           storageHost, storagePort, iqn,
+                                                           storageHost, storagePort, trimIqn(iqn),
                                                            initiatorUsername, initiatorPassword,
                                                            targetUsername, targetPassword);
 
@@ -4516,7 +4530,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, iqn);
+        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
     }
 
     protected Answer execute(AttachVolumeCommand cmd) {
