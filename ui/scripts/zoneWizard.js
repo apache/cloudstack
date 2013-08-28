@@ -57,8 +57,13 @@
         			trafficLabel += trafficConfig.vSwitchType;
         		}
         		
-        		if (trafficLabel.length == 0) //trafficLabel == ''
+        		if (trafficLabel.length == 0) { //trafficLabel == ''
         			trafficLabel = null;
+        		} else if (trafficLabel.length >= 1) {            		
+            		if (trafficLabel.charAt(trafficLabel.length-1) == ',') { //if last character is comma  
+            			trafficLabel = trafficLabel.substring(0, trafficLabel.length - 1); //remove the last character (which is comma)  
+            		}
+        		}        		
         	}
         }
         
