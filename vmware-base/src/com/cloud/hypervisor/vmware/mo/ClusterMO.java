@@ -98,25 +98,28 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
 	@Override
 	public VirtualMachineMO findVmOnHyperHost(String name) throws Exception {
-		ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name" });
-		return HypervisorHostHelper.findVmFromObjectContent(_context, ocs, name);
+		
+		int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+		}
+		
+		String instanceNameCustomField = "value[" + key + "]";
+		ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name",  instanceNameCustomField });
+		return HypervisorHostHelper.findVmFromObjectContent(_context, ocs, name, instanceNameCustomField);
 	}
 
 	@Override
 	public VirtualMachineMO findVmOnPeerHyperHost(String name) throws Exception {
-		ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name" });
-		if(ocs != null && ocs.length > 0) {
-			for(ObjectContent oc : ocs) {
-				List<DynamicProperty> props = oc.getPropSet();
-				if(props != null) {
-					for(DynamicProperty prop : props) {
-						if(prop.getVal().toString().equals(name))
-							return new VirtualMachineMO(_context, oc.getObj());
-					}
-				}
-			}
+		int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
 		}
-		return null;
+		
+		String instanceNameCustomField = "value[" + key + "]";
+		
+		ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name", instanceNameCustomField });
+		return HypervisorHostHelper.findVmFromObjectContent(_context, ocs, name, instanceNameCustomField);
 	}
 
 	@Override

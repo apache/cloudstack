@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
@@ -46,7 +47,6 @@ import com.vmware.vim25.HttpNfcLeaseState;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
-import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
@@ -91,8 +91,8 @@ public class HypervisorHostHelper {
     private static final String UNTAGGED_VLAN_NAME = "untagged";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context,
-            ObjectContent[] ocs, String name) {
-
+            ObjectContent[] ocs, String name, String instanceNameCustomField) {
+    	
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
                 String vmNameInvCenter = null;
@@ -102,16 +102,14 @@ public class HypervisorHostHelper {
 		            for(DynamicProperty objProp : objProps) {
 		                if(objProp.getName().equals("name")) {
 		                    vmNameInvCenter = (String)objProp.getVal();
+		                } else if(objProp.getName().contains(instanceNameCustomField)) {
+		                	if(objProp.getVal() != null)
+		                		vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
 		                }
-		                VirtualMachineMO vmMo = new VirtualMachineMO(context, oc.getObj());
-	                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-		                try {
-		                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
-		                } catch (Exception e) {
-		                    s_logger.error("Unable to retrieve custom field value for internal VM name");
-		                }
+		                
                         if ( (vmNameInvCenter != null && name.equalsIgnoreCase(vmNameInvCenter))
                                 || (vmInternalCSName != null && name.equalsIgnoreCase(vmInternalCSName)) ) {
+    		                VirtualMachineMO vmMo = new VirtualMachineMO(context, oc.getObj());
                             return vmMo;
                         }
                     }
