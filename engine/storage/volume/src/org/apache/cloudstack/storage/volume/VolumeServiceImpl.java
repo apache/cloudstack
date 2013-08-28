@@ -522,6 +522,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
+
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
         }
