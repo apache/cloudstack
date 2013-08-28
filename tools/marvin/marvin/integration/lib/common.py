@@ -68,12 +68,6 @@ def add_netscaler(apiclient, zoneid, NSservice):
     if isinstance(physical_networks, list):
        physical_network = physical_networks[0]
 
-    netscaler = NetScaler.add(
-                    apiclient,
-                    NSservice,
-                    physicalnetworkid=physical_network.id
-                    )
-
     cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
     cmd.name = 'Netscaler'
     cmd.physicalnetworkid=physical_network.id
@@ -81,6 +75,17 @@ def add_netscaler(apiclient, zoneid, NSservice):
 
     if isinstance(nw_service_providers, list):
         netscaler_provider = nw_service_providers[0]
+    else:
+        cmd1 = addNetworkServiceProvider.addNetworkServiceProviderCmd()
+        cmd1.name = 'Netscaler'
+        cmd1.physicalnetworkid = physical_network.id
+        netscaler_provider = apiclient.addNetworkServiceProvider(cmd1)
+
+    netscaler = NetScaler.add(
+                    apiclient,
+                    NSservice,
+                    physicalnetworkid=physical_network.id
+                    )
     if netscaler_provider.state != 'Enabled':
       cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
       cmd.id = netscaler_provider.id
