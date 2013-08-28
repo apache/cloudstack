@@ -30,9 +30,8 @@
         <title>The First Region: The Default Region</title>
     <para>If you do not take action to define regions, then all the zones in your cloud will be
             automatically grouped into a single default region. This region is assigned the region
-            ID of 1.</para>
-        <para>You can change the name or URL of the default region by using the API command updateRegion. For example:</para>
-        <programlisting>http://&lt;IP_of_Management_Server&gt;:8080/client/api?command=updateRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+            ID of 1. You can change the name or URL of the default region by displaying the region in
+            the &PRODUCT; UI and clicking the Edit button.</para>
     </section>
     <section id="region-add-2">
         <title>Adding a Region</title>
