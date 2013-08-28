@@ -3950,6 +3950,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + destinationHost.getResourceState());
         }
 
+        if (vm.getType() != VirtualMachine.Type.User) {
+            // for System VMs check that the destination host is within the same
+            // cluster
+            HostVO srcHost = _hostDao.findById(srcHostId);
+            if (srcHost != null && srcHost.getClusterId() != null && destinationHost.getClusterId() != null) {
+                if (srcHost.getClusterId().longValue() != destinationHost.getClusterId().longValue()) {
+                    throw new InvalidParameterValueException(
+                            "Cannot migrate the VM, destination host is not in the same cluster as current host of the VM");
+                }
+            }
+        }
+
         checkHostsDedication(vm, srcHostId, destinationHost.getId());
 
          // call to core process
