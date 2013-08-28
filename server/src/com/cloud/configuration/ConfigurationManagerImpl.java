@@ -40,8 +40,6 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -87,6 +85,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -687,19 +686,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private String validateConfigurationValue(String name, String value, String scope) {
 
-        Config c = Config.getConfig(name);
-        if (c == null) {
+        ConfigurationVO cfg = _configDao.findByName(name);
+        if (cfg == null) {
             s_logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
-        String configScope = c.getScope();
+
+        String configScope = cfg.getScope();
         if (scope != null) {
             if (!configScope.contains(scope)) {
                 s_logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
-
+        Config c = Config.getConfig(name);
+        if (c == null) {
+            s_logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot?");
+            return null;
+        }
         Class<?> type = c.getType();
 
         if (value == null) {
