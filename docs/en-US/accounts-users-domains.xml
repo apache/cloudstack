@@ -49,13 +49,13 @@
     <formalpara>
         <title>Resource Ownership</title>
         <para>Resources belong to the account, not individual users in that account. For example,
-            billing, resource limits, and so on are maintained by the account, not the users. A user can
-            operate on any resource in the account provided the user has privileges for that operation.
-            The privileges are determined by the role.
-            A root administrator can change the ownership of any virtual machine, network,
-            data disk, snapshot, template, or ISO from one account to any other account. A domain or
-            sub-domain administrator can do the same for items within the domain from one account to
-            any other account in the domain.</para>
+            billing, resource limits, and so on are maintained by the account, not the users. A user
+            can operate on any resource in the account provided the user has privileges for that
+            operation. The privileges are determined by the role. A root administrator can change
+            the ownership of any virtual machine from one account to any other account by using the
+            assignVirtualMachine API. A domain or sub-domain administrator can do the same for VMs
+            within the domain from one account to any other account in the domain or any of its
+            sub-domains.</para>
     </formalpara>
     <section id="dedicated-host-cluster-pod">
         <title>Dedicating Resources to Accounts and Domains</title>
