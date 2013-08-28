@@ -367,6 +367,7 @@ sed -i /"cloud soft nofile"/d /etc/security/limits.conf
 echo "cloud hard nofile 4096" >> /etc/security/limits.conf
 echo "cloud soft nofile 4096" >> /etc/security/limits.conf
 rm -rf %{_localstatedir}/cache/cloud
+rm -rf %{_localstatedir}/cache/cloudstack
 # user harcoded here, also hardcoded on wscript
 
 # save old configs if they exist (for upgrade). Otherwise we may lose them
