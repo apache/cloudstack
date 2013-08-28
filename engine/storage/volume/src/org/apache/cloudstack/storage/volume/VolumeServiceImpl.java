@@ -49,6 +49,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -516,17 +517,41 @@ public class VolumeServiceImpl implements VolumeService {
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
             CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
         DataObject vo = context.vo;
+        DataObject tmplOnPrimary = context.templateOnStore;
         CopyCommandResult result = callback.getResult();
         VolumeApiResult volResult = new VolumeApiResult((VolumeObject) vo);
 
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed, result.getAnswer());
-        } else {
-
+        } else {            
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
+            // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
+            // template_spool_ref entry here to NOT_DOWNLOADED and Allocated state
+            Answer ans = result.getAnswer();
+            if ( ans != null && ans instanceof CopyCmdAnswer && ans.getDetails().contains("request template reload")){
+                if (tmplOnPrimary != null){
+                    s_logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
+                    VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId());
+                    if (templatePoolRef != null) {
+                        long templatePoolRefId = templatePoolRef.getId();
+                        templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, 1200);
+                        if (templatePoolRef == null) {
+                            s_logger.warn("Reset Template State On Pool failed - unable to lock TemplatePoolRef " + templatePoolRefId);
+                        }
+                        
+                        try {
+                            templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+                            templatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                            _tmpltPoolDao.update(templatePoolRefId, templatePoolRef);
+                        } finally {
+                            _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
+                        }
+                    }
+                }
+            }
         }
-
+        
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
         future.complete(volResult);
         return null;
