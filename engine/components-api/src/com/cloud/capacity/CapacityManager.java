@@ -32,13 +32,22 @@ public interface CapacityManager {
 
     static final String CpuOverprovisioningFactorCK = "cpu.overprovisioning.factor";
     static final String MemOverprovisioningFactorCK = "mem.overprovisioning.factor";
+    static final String StorageCapacityDisableThresholdCK = "pool.storage.capacity.disablethreshold";
+    static final String StorageOverprovisioningFactorCK = "storage.overprovisioning.factor";
+    static final String StorageAllocatedCapacityDisableThresholdCK = "pool.storage.allocated.capacity.disablethreshold";
 
     static final ConfigKey<Float> CpuOverprovisioningFactor = new ConfigKey<Float>(Float.class, CpuOverprovisioningFactorCK, "Advanced", "1.0",
         "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", true, ConfigKey.Scope.Cluster, null);
     static final ConfigKey<Float> MemOverprovisioningFactor = new ConfigKey<Float>(Float.class, MemOverprovisioningFactorCK, "Advanced", "1.0",
         "Used for memory overprovisioning calculation", true, ConfigKey.Scope.Cluster, null);
+    static final ConfigKey<Double> StorageCapacityDisableThreshold = new ConfigKey<Double>("Alert", Double.class, StorageCapacityDisableThresholdCK, "0.85",
+        "Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.", true, ConfigKey.Scope.Zone);
+    static final ConfigKey<Double> StorageOverprovisioningFactor = new ConfigKey<Double>("Storage", Double.class, StorageOverprovisioningFactorCK, "2",
+        "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", true, ConfigKey.Scope.Zone);
+    static final ConfigKey<Double> StorageAllocatedCapacityDisableThreshold = new ConfigKey<Double>("Alert", Double.class, StorageAllocatedCapacityDisableThresholdCK, "0.85",
+        "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the pool for low allocated storage available.", true,
+        ConfigKey.Scope.Zone);
 
-    
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);

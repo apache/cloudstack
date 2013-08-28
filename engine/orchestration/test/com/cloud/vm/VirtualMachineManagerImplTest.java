@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.lf5.viewer.configure.ConfigurationManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -41,6 +40,8 @@ import org.mockito.Spy;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -112,8 +113,6 @@ public class VirtualMachineManagerImplTest {
     VolumeOrchestrationService _storageMgr;
     @Mock
     Account _account;
-    @Mock
-    ConfigurationManager _configMgr;
     @Mock
     CapacityManager _capacityMgr;
     @Mock
@@ -197,6 +196,8 @@ public class VirtualMachineManagerImplTest {
     Map<Volume, StoragePool> _volumeToPoolMock;
     @Mock
     EntityManager _entityMgr;
+    @Mock
+    ConfigDepot _configDepot;
 
     @Before
     public void setup() {
@@ -222,6 +223,7 @@ public class VirtualMachineManagerImplTest {
         _vmMgr._vmDao = _vmInstanceDao;
         _vmMgr._uservmDetailsDao = _vmDetailsDao;
         _vmMgr._entityMgr = _entityMgr;
+        _vmMgr._configDepot = _configDepot;
 
         when(_vmMock.getId()).thenReturn(314l);
         when(_vmInstance.getId()).thenReturn(1L);
@@ -266,9 +268,14 @@ public class VirtualMachineManagerImplTest {
         doReturn(hostVO).when(_hostDao).findById(1L);
         doReturn(1L).when(_vmInstance).getDataCenterId();
         doReturn(1L).when(hostVO).getClusterId();
-        when(_configMgr.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.Scope.zone.toString(), 1L)).thenReturn("true");
-        when(_configMgr.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.Scope.cluster.toString(), 1L)).thenReturn("1.0");
-        when(_configMgr.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.Scope.cluster.toString(), 1L)).thenReturn("1.0");
+        @SuppressWarnings("unchecked")
+        ConfigValue<Float> memOverprovisioningFactor = mock(ConfigValue.class);
+        @SuppressWarnings("unchecked")
+        ConfigValue<Float> cpuOverprovisioningFactor = mock(ConfigValue.class);
+        when(_configDepot.get(CapacityManager.MemOverprovisioningFactor)).thenReturn(memOverprovisioningFactor);
+        when(memOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
+        when(_configDepot.get(CapacityManager.CpuOverprovisioningFactor)).thenReturn(cpuOverprovisioningFactor);
+        when(cpuOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
                 newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(),
                 newServiceOffering.getLimitCpuUse());

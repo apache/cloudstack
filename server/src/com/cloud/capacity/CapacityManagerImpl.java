@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -75,6 +76,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -133,9 +135,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     ClusterDetailsDao _clusterDetailsDao;
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;
-    private boolean _stopped;
     long _extraBytesPerVolume = 0;
-    private float _storageOverProvisioningFactor = 1.0f;
+    @InjectConfig(key = StorageOverprovisioningFactorCK)
+    private ConfigValue<Double> _storageOverProvisioningFactor;
 
     @Inject
     MessageBus _messageBus;
@@ -145,7 +147,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
-        _storageOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.StorageOverprovisioningFactor.key()), 1.0f);
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
         VirtualMachine.State.getStateMachine().registerListener(this);
@@ -165,7 +166,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public boolean stop() {
         _executor.shutdownNow();
-        _stopped = true;
         return true;
     }
 

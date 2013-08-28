@@ -373,8 +373,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(Config.VlanCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.DirectNetworkPublicIpCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.StorageAllocatedCapacityDisableThreshold.key());
-        weightBasedParametersForValidation.add(Config.StorageCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(CapacityManager.StorageCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(Config.CPUCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(Config.MemoryCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
@@ -387,7 +387,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         overprovisioningFactorsForValidation = new HashSet<String>();
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
-        overprovisioningFactorsForValidation.add(Config.StorageOverprovisioningFactor.key());
+        overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
     }
 
     @Override

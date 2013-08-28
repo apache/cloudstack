@@ -73,7 +73,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -147,13 +147,13 @@ import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -280,18 +280,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     boolean _storageCleanupEnabled;
     boolean _templateCleanupEnabled = true;
     int _storageCleanupInterval;
-    private int _createVolumeFromSnapshotWait;
-    private int _copyvolumewait;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
-    private long _maxVolumeSizeInGb;
     private long _serverId;
 
-    private int _customDiskOfferingMinSize = 1;
-    private int _customDiskOfferingMaxSize = 1024;
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
-
-    private boolean _recreateSystemVmEnabled;
 
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
@@ -450,16 +443,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String storageCleanupEnabled = configs.get("storage.cleanup.enabled");
         _storageCleanupEnabled = (storageCleanupEnabled == null) ? true : Boolean.parseBoolean(storageCleanupEnabled);
 
-        String value = _configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
-        _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
-
-        value = _configDao.getValue(Config.CopyVolumeWait.toString());
-        _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-
-        value = _configDao.getValue(Config.RecreateSystemVmEnabled.key());
-        _recreateSystemVmEnabled = Boolean.parseBoolean(value);
-
-        value = _configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
+        String value = _configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
         _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
 
         String time = configs.get("storage.cleanup.interval");
@@ -473,17 +457,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("StorageManager-Scavenger"));
 
         _agentMgr.registerForHostEvents(ComponentContext.inject(LocalStoragePoolListener.class), true, false, false);
-
-        String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
-        _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
-
-        String _customDiskOfferingMinSizeStr = _configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
-        _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr,
-                Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
-
-        String _customDiskOfferingMaxSizeStr = _configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
-        _customDiskOfferingMaxSize = NumbersUtil.parseInt(_customDiskOfferingMaxSizeStr,
-                Integer.parseInt(Config.CustomDiskOfferingMaxSize.getDefaultValue()));
 
         _serverId = _msServer.getId();
 
@@ -598,7 +571,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
     ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
@@ -886,10 +858,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         listener.hostConnect(hostId, pool.getId());
     }
 
+    @InjectConfig(key = CapacityManager.StorageOverprovisioningFactorCK)
+    ConfigValue<Double> _storageOverprovisioningFactor;
+
     @Override
     public BigDecimal getStorageOverProvisioningFactor(Long dcId) {
-        return new BigDecimal(_configServer.getConfigValue(Config.StorageOverprovisioningFactor.key(),
-                ConfigKey.Scope.Zone.toString(), dcId));
+        return new BigDecimal(_storageOverprovisioningFactor.valueIn(dcId));
     }
 
     @Override
@@ -1221,11 +1195,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @DB
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException,
     InsufficientCapacityException {
-        Long userId = CallContext.current().getCallingUserId();
-        User user = _userDao.findById(userId);
-        Account account = CallContext.current().getCallingAccount();
-
-        boolean restart = true;
         StoragePoolVO primaryStorage = null;
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
 
@@ -1252,9 +1221,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @DB
     public PrimaryDataStoreInfo cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException {
         Long primaryStorageId = cmd.getId();
-        Long userId = CallContext.current().getCallingUserId();
-        User user = _userDao.findById(userId);
-        Account account = CallContext.current().getCallingAccount();
         StoragePoolVO primaryStorage = null;
 
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
@@ -1496,10 +1462,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    @InjectConfig(key = CapacityManager.StorageCapacityDisableThresholdCK)
+    ConfigValue<Float> _storageCapacityDisableThreshold;
+
     private boolean checkUsagedSpace(StoragePool pool) {
         StatsCollector sc = StatsCollector.getInstance();
-        double storageUsedThreshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageCapacityDisableThreshold.key(),
-                ConfigKey.Scope.Zone.toString(), pool.getDataCenterId()));
+        double storageUsedThreshold = _storageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (sc != null) {
             long totalSize = pool.getCapacityBytes();
             StorageStats stats = sc.getStoragePoolStats(pool.getId());
@@ -1569,6 +1537,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return futureIops <= pool.getCapacityIops();
     }
 
+    @InjectConfig(key = CapacityManager.StorageAllocatedCapacityDisableThresholdCK)
+    ConfigValue<Double> _storageAllocatedCapacityDisableThreshold;
+
     @Override
     public boolean storagePoolHasEnoughSpace(List<Volume> volumes,
             StoragePool pool) {
@@ -1604,8 +1575,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             totalOverProvCapacity = pool.getCapacityBytes();
         }
 
-        double storageAllocatedThreshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageAllocatedCapacityDisableThreshold.key(),
-                ConfigKey.Scope.Zone.toString(), pool.getDataCenterId()));
+        double storageAllocatedThreshold = _storageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity
                     + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: "
@@ -1782,7 +1752,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public boolean deleteImageStore(DeleteImageStoreCmd cmd) {
         long storeId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         // Verify that image store exists
         ImageStoreVO store = _imageStoreDao.findById(storeId);
         if (store == null) {
@@ -1893,7 +1862,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd) {
         long storeId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         // Verify that cache store exists
         ImageStoreVO store = _imageStoreDao.findById(storeId);
         if (store == null) {

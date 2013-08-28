@@ -142,7 +142,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Inject
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
     @Inject
-    VpcService _vpcService;
+    VpcService _vpcSvc;
 
     
     protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller, Boolean ignoreVmState) {
@@ -509,7 +509,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
                             // associate portable IP to vpc, if network is part of VPC
                             if (network.getVpcId() != null) {
-                                _vpcService.associateIPToVpc(ipId, network.getVpcId());
+                                _vpcSvc.associateIPToVpc(ipId, network.getVpcId());
                             }
 
                             // associate portable IP with guest network
@@ -843,12 +843,6 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Pair<List<PortForwardingRuleVO>, Integer> result = _portForwardingDao.searchAndCount(sc, filter);
         return new Pair<List<? extends PortForwardingRule>, Integer>(result.first(), result.second());
     }
-
-    @Override
-    public List<String> getSourceCidrs(long ruleId) {
-        return _firewallCidrsDao.getSourceCidrs(ruleId);
-    }
-
 
     protected boolean applyPortForwardingRules(long ipId, boolean continueOnError, Account caller) {
         List<PortForwardingRuleVO> rules = _portForwardingDao.listForApplication(ipId);

@@ -30,7 +30,7 @@ import com.cloud.vm.VirtualMachine;
 /**
  * Rules Manager manages the network rules created for different networks.
  */
-public interface RulesManager {
+public interface RulesManager extends RulesService {
 
     boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller);
 
