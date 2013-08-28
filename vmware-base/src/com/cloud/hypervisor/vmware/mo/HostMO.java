@@ -510,9 +510,14 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         _vmCache.clear();
 
+		int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+		}
+        
         // name is the name of the VM as it appears in vCenter. The CLOUD_VM_INTERNAL_NAME custom
         // field value contains the name of the VM as it is maintained internally by cloudstack (i-x-y).
-        ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name" });
+        ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] { "name", "value[" + key + "]" });
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
                 List<DynamicProperty> props = oc.getPropSet();
@@ -522,11 +527,11 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
                     for (DynamicProperty prop : props) {
                         if (prop.getName().equals("name")) {
                             vmVcenterName = prop.getVal().toString();
-                        }
+                        } else if(prop.getName().startsWith("value[")) {
+		                	if(prop.getVal() != null)
+		                		vmInternalCSName = ((CustomFieldStringValue)prop.getVal()).getValue();
+		                }                        
                     }
-                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, oc.getObj());
-                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
                     String vmName = null;
                     if (vmInternalCSName != null && isUserVMInternalCSName(vmInternalCSName)) {
                         vmName = vmInternalCSName;

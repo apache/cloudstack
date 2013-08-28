@@ -277,6 +277,7 @@ import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortConfigInfo;
 import com.vmware.vim25.DVPortConfigSpec;
 import com.vmware.vim25.DatastoreSummary;
@@ -5799,10 +5800,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	
 	                if(_recycleHungWorker) {
 	                    s_logger.info("Scan hung worker VM to recycle");
+	                    
+	            		int key = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+	            		if(key == 0) {
+	            			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+	            		}
+	            		String instanceNameCustomField = "value[" + key + "]";
 	
 	                    // GC worker that has been running for too long
 	                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
-	                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime"});
+	                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime", instanceNameCustomField });
 	                    if(ocs != null) {
 	                        for(ObjectContent oc : ocs) {
 	                            List<DynamicProperty> props = oc.getPropSet();
@@ -5816,6 +5823,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	                                for(DynamicProperty prop : props) {
 	                                    if (prop.getName().equals("name"))
 	                                        vmName = prop.getVal().toString();
+	                                    else if(prop.getName().startsWith("value[")) {
+	            		                	if(prop.getVal() != null)
+	            		                		internalName = ((CustomFieldStringValue)prop.getVal()).getValue();
+	            		                } 
 	                                    else if(prop.getName().equals("config.template"))
 	                                        template = (Boolean)prop.getVal();
 	                                    else if(prop.getName().equals("runtime.powerState"))
@@ -5825,15 +5836,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	                                }
 	
 	                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
-	                                // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-	                                internalName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
-	
 	                                String name = null;
 	                                if (internalName != null) {
 	                                    name = internalName;
 	                                } else {
 	                                    name = vmName;
 	                                }
+	                                
 	                                if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
 	                                    boolean recycle = false;
 	
@@ -6274,9 +6283,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private HashMap<String, State> getVmStates() throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        
+		int key = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+		}
+		String instanceNameCustomField = "value[" + key + "]";
+        
         // CLOUD_VM_INTERNAL_NAME stores the internal CS generated vm name. This was earlier stored in name. Now, name can be either the hostname or
         // the internal CS name, but the custom field CLOUD_VM_INTERNAL_NAME always stores the internal CS name.
-        ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] { "name", "runtime.powerState", "config.template" });
+        ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] { "name", "runtime.powerState", "config.template", instanceNameCustomField });
 
         HashMap<String, State> newStates = new HashMap<String, State>();
         if (ocs != null && ocs.length > 0) {
@@ -6297,13 +6313,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             powerState = (VirtualMachinePowerState) objProp.getVal();
                         } else if (objProp.getName().equals("name")) {
                             name = (String) objProp.getVal();
-                        } else {
+                        } else if(objProp.getName().contains(instanceNameCustomField)) {
+		                	if(objProp.getVal() != null)
+		                		VMInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
+		                }
+                        else {
                             assert (false);
                         }
                     }
-                    VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
-                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-                    VMInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+                    
                     if (VMInternalCSName != null)
                         name = VMInternalCSName;
 
@@ -6335,8 +6353,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
+        
+		int key = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+		}
+		String instanceNameCustomField = "value[" + key + "]";
 
-        ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "summary.config.numCpu", "summary.quickStats.overallCpuUsage"});
+        ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "summary.config.numCpu", "summary.quickStats.overallCpuUsage", instanceNameCustomField});
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -6349,16 +6373,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     for (DynamicProperty objProp : objProps) {
                         if (objProp.getName().equals("name")) {
                             vmNameOnVcenter = objProp.getVal().toString();
-                        } else if (objProp.getName().equals("summary.config.numCpu")) {
+                        } else if(objProp.getName().contains(instanceNameCustomField)) {
+		                	if(objProp.getVal() != null)
+		                		vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
+		                }
+                        else if (objProp.getName().equals("summary.config.numCpu")) {
                             numberCPUs = objProp.getVal().toString();
                         } else if (objProp.getName().equals("summary.quickStats.overallCpuUsage")) {
                             maxCpuUsage =  objProp.getVal().toString();
                         }
                     }
                     VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
-                    // Check if vmMo has the custom property CLOUD_VM_INTERNAL_NAME set.
-                    vmInternalCSName =  vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
-
                     if (vmInternalCSName != null) {
                         name = vmInternalCSName;
                     } else {
