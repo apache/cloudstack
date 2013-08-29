@@ -856,12 +856,14 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt3=conn.prepareStatement("select value from `cloud`.`configuration` where name=?");
             pstmt3.setString(1,"cpu.overprovisioning.factor");
             rscpu_global = pstmt3.executeQuery();
-            rscpu_global.next();
-            String global_cpu_overprovisioning_factor=rscpu_global.getString(1);
+            String global_cpu_overprovisioning_factor = "1";
+            if (rscpu_global.next())
+                global_cpu_overprovisioning_factor = rscpu_global.getString(1);
             pstmt3.setString(1,"mem.overprovisioning.factor");
             rsmem_global = pstmt3.executeQuery();
-            rsmem_global.next();
-            String global_mem_overprovisioning_factor = rsmem_global.getString(1);
+            String global_mem_overprovisioning_factor = "1";
+            if (rsmem_global.next())
+                global_mem_overprovisioning_factor = rsmem_global.getString(1);
             rs1 = pstmt.executeQuery();
 
             while (rs1.next()) {
