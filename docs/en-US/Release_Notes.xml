@@ -21,7 +21,7 @@ under the License.
 <book>
   <xi:include href="Book_Info_Release_Notes_4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="Preface.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <chapter id="welcome-4.1">
+  <chapter id="welcome-4.2">
     <title>Welcome to &PRODUCT; 4.2</title>
     <para>Welcome to the 4.2.0 release of &PRODUCT;, the second major release from the Apache
       CloudStack project since its graduation from the Apache Incubator. &PRODUCT; 4.2 includes more
@@ -574,6 +574,8 @@ under the License.
             of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using
             RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for
             Ubuntu).</para>
+        </listitem>
+        <listitem>
           <para>Create RPM or Debian packages (as appropriate) and a repository from the 4.2.0
             source, or check the Apache CloudStack downloads page at <ulink
               url="http://cloudstack.apache.org/downloads.html"
@@ -760,8 +762,11 @@ service cloudstack-agent restart
             as hosts and only on the KVM hosts.</para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>Copy the CloudPlatform 4.2 tar file to the host, untar it, and change directory
-                to the resulting directory.</para>
+              <para>Manually clean up <filename>/var/cache/cloudstack</filename>.</para>
+            </listitem>
+            <listitem>
+              <para>Copy the 4.2 tar file to the host, untar it, and change directory to the
+                resulting directory.</para>
             </listitem>
             <listitem>
               <para>Stop the running agent.</para>
@@ -1263,10 +1268,7 @@ service cloudstack-agent start
               <para><command># apt-get update</command></para>
               <para><command># apt-get upgrade cloud-*</command></para>
             </listitem>
-            <listitem>
-              <para>Start the agent.</para>
-              <programlisting># service cloudstack-agent start</programlisting>
-            </listitem>
+            
             <listitem>
               <para>Edit <filename>/etc/cloudstack/agent/agent.properties</filename> to change the
                 resource parameter from
@@ -1275,6 +1277,7 @@ service cloudstack-agent start
             </listitem>
             <listitem>
               <para>Start the cloud agent and cloud management services.</para>
+              <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
               <para>When the Management Server is up and running, log in to the CloudStack UI and
@@ -1290,7 +1293,6 @@ service cloudstack-agent start
             <para>Troubleshooting: If login fails, clear your browser cache and reload the
               page.</para>
           </note>
-          <para/>
           <para>Do not proceed to the next step until the hosts show in Up state.</para>
         </listitem>
         <listitem>
