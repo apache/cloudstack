@@ -56,6 +56,8 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmDiskStatsAnswer;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -489,6 +491,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetHostStatsCommand) cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return execute((GetVmStatsCommand) cmd);
+        } else if (clazz == GetVmDiskStatsCommand.class) {
+            return execute((GetVmDiskStatsCommand) cmd);
         } else if (clazz == CheckHealthCommand.class) {
             return execute((CheckHealthCommand) cmd);
         } else if (clazz == StopCommand.class) {
@@ -2743,6 +2747,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return vmResponseMap;
+    }
+
+    protected GetVmDiskStatsAnswer execute(GetVmDiskStatsCommand cmd) {
+        return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
 
     protected Object[] getRRDData(Connection conn, int flag) {
