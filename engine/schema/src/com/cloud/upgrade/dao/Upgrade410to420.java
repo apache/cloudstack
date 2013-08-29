@@ -845,30 +845,66 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement pstmt = null;
         PreparedStatement pstmt1 = null;
         PreparedStatement pstmt2 =null;
-        ResultSet rs = null;
-
+        PreparedStatement pstmt3 = null;
+        ResultSet rs1 = null;
+        ResultSet rscpu_global = null;
+        ResultSet rsmem_global = null;
         try {
-            pstmt = conn.prepareStatement("select id from `cloud`.`cluster`");
-            pstmt1=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', '1')");
-            pstmt2=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', '1')");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                //update cluster_details table with the default overcommit ratios.
-                pstmt1.setLong(1,id);
-                pstmt1.execute();
-                pstmt2.setLong(1,id);
-                pstmt2.execute();
+            pstmt = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster`");
+            pstmt1=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', ?)");
+            pstmt2=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', ?)");
+            pstmt3=conn.prepareStatement("select value from `cloud`.`configuration` where name=?");
+            pstmt3.setString(1,"cpu.overprovisioning.factor");
+            rscpu_global = pstmt3.executeQuery();
+            rscpu_global.next();
+            String global_cpu_overprovisioning_factor=rscpu_global.getString(1);
+            pstmt3.setString(1,"mem.overprovisioning.factor");
+            rsmem_global = pstmt3.executeQuery();
+            rsmem_global.next();
+            String global_mem_overprovisioning_factor = rsmem_global.getString(1);
+            rs1 = pstmt.executeQuery();
+
+            while (rs1.next()) {
+                long id = rs1.getLong(1);
+                String hypervisor_type = rs1.getString(2);
+                if (hypervisor_type.equalsIgnoreCase(HypervisorType.VMware.toString())) {
+                    pstmt1.setLong(1,id);
+                    pstmt1.setString(2,global_cpu_overprovisioning_factor);
+                    pstmt1.execute();
+                    pstmt2.setLong(1,id);
+                    pstmt2.setString(2,global_mem_overprovisioning_factor);
+                    pstmt2.execute();
+                }else {
+                    //update cluster_details table with the default overcommit ratios.
+                    pstmt1.setLong(1,id);
+                    pstmt1.setString(2,"1");
+                    pstmt1.execute();
+                    pstmt2.setLong(1,id);
+                    pstmt2.setString(2,"1");
+                    pstmt2.execute();
+                }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update cluster_details with default overcommit ratios.", e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
+                if (rs1 != null) {
+                    rs1.close();
+                }
+                if (rsmem_global != null) {
+                    rsmem_global.close();
+                }
+                if (rscpu_global != null) {
+                    rsmem_global.close();
                 }
                 if (pstmt != null) {
                     pstmt.close();
+                }
+                if (pstmt2 != null) {
+                    pstmt2.close();
+                }
+                if (pstmt3 != null) {
+                    pstmt3.close();
                 }
             } catch (SQLException e) {
             }
