@@ -392,6 +392,15 @@ public class Upgrade410to420 implements DbUpgrade {
                     if (rs2.next()) {
                         affinityGroupId = rs2.getLong(1);
                     }
+
+                    // add the domain map
+                    String sqlMap = "INSERT INTO `cloud`.`affinity_group_domain_map` (`domain_id`, `affinity_group_id`) VALUES (?, ?)";
+                    pstmtUpdate = conn.prepareStatement(sqlMap);
+                    pstmtUpdate.setLong(1, domainId);
+                    pstmtUpdate.setLong(2, affinityGroupId);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+
                 }
 
                 rs2.close();
