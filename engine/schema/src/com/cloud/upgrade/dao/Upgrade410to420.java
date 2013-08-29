@@ -113,6 +113,73 @@ public class Upgrade410to420 implements DbUpgrade {
         encryptSite2SitePSK(conn);
         migrateDatafromIsoIdInVolumesTable(conn);
         setRAWformatForRBDVolumes(conn);
+        migrateVolumeOnSecondaryStorage(conn);
+        createFullCloneFlag(conn);
+    }
+
+    private void createFullCloneFlag(Connection conn) {
+        ResultSet rs = null;
+        PreparedStatement delete = null;
+        PreparedStatement query = null;
+        PreparedStatement update = null;
+        int numRows = 0;
+        try {
+            delete = conn.prepareStatement("delete from `cloud`.`configuration` where name='vmware.create.full.clone';");
+            delete.executeUpdate();
+            query = conn.prepareStatement("select count(*) from `cloud`.`data_center`");
+            rs = query.executeQuery();
+            if (rs.next()) {
+                numRows = rs.getInt(1);
+            }
+            if (numRows > 0) {
+                update = conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');");
+            } else {
+                update = conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');");
+            }
+            update.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
+        } finally {
+            if (update != null) {
+                try {
+                    update.close();
+                } catch (SQLException e) {
+
+                }
+            }
+            if (query != null) {
+                try {
+                    query.close();
+                } catch (SQLException e) {
+
+                }
+            }
+            if (delete != null) {
+                try {
+                    delete.close();
+                } catch (SQLException e) {
+
+                }
+            }
+        }
+    }
+
+    private void migrateVolumeOnSecondaryStorage(Connection conn) {
+        PreparedStatement sql = null;
+        try {
+            sql = conn.prepareStatement("update `cloud`.`volumes` set state='Uploaded' where state='UploadOp'");
+            sql.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade volume state: ", e);
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+
+                }
+            }
+        }
     }
 
     private void persistVswitchConfiguration(Connection conn) {

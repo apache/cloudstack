@@ -397,10 +397,6 @@ CREATE TABLE `cloud`.`user_vm_clone_setting` (
   PRIMARY KEY (`vm_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description)
-    SELECT tmp.category, tmp.instance, tmp.component, tmp.name, tmp.value, tmp.description FROM
-    (SELECT 'Advanced' category, 'DEFAULT' instance, 'UserVmManager' component, 'vmware.create.full.clone' name, 'true' value, 'If set to true, creates VMs as full clones on ESX hypervisor' description) tmp
-    WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE name = 'vmware.create.full.clone');
 
 CREATE TABLE `cloud`.`affinity_group` (
   `id` bigint unsigned NOT NULL auto_increment,
