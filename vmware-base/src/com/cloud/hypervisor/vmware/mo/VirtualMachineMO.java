@@ -991,13 +991,11 @@ public class VirtualMachineMO extends BaseMO {
 		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, getScsiDeviceControllerKey(),
 			vmdkDatastorePathChain, morDs, -1, 1);
 	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-	    //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
 	    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
 	    deviceConfigSpec.setDevice(newDisk);
 	    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-	    //deviceConfigSpecArray[0] = deviceConfigSpec;
 	    reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
 	    ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1024,13 +1022,11 @@ public class VirtualMachineMO extends BaseMO {
 		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey,
 			vmdkDatastorePathChain, -1, 1);
 	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-	    //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
 	    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
 	    deviceConfigSpec.setDevice(newDisk);
 	    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-	    //deviceConfigSpecArray[0] = deviceConfigSpec;
 	    reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
 	    ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1067,7 +1063,6 @@ public class VirtualMachineMO extends BaseMO {
 		List<Pair<String, ManagedObjectReference>> chain = getDiskDatastorePathChain(deviceInfo.first(), true);
 
 	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-	    //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
 	    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
 	    deviceConfigSpec.setDevice(deviceInfo.first());
@@ -1076,7 +1071,6 @@ public class VirtualMachineMO extends BaseMO {
         }
 	    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
 
-	    //deviceConfigSpecArray[0] = deviceConfigSpec;
 	    reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
 	    ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
@@ -1962,6 +1956,50 @@ public class VirtualMachineMO extends BaseMO {
 			}
 		}
 		throw new Exception("Unable to find device controller");
+	}
+	
+	public List<String> detachAllDisksExcept(String vmdkBaseName, String deviceBusName) throws Exception {
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+
+	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+	    List<String> detachedDiskFiles = new ArrayList<String>();
+	    
+	    for(VirtualDevice device : devices) {
+	    	if(device instanceof VirtualDisk) {
+			    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+		
+				VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)device.getBacking();
+	
+				DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+				String backingBaseName = dsBackingFile.getFileBaseName();
+				String deviceNumbering = getDeviceBusName(devices, device);
+				if(backingBaseName.equalsIgnoreCase(vmdkBaseName) || (deviceBusName != null && deviceBusName.equals(deviceNumbering))) {
+					continue;
+				} else {
+					s_logger.info("Detach " + diskBackingInfo.getFileName() + " from " + getName());
+					
+					detachedDiskFiles.add(diskBackingInfo.getFileName());
+					
+				    deviceConfigSpec.setDevice(device);
+				    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+			
+				    reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+				}
+	    	}
+	    }
+	    
+	    if(detachedDiskFiles.size() > 0) {
+		    ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+			boolean result = _context.getVimClient().waitForTask(morTask);
+			if(result) {
+				_context.waitForTaskProgressDone(morTask);
+			} else {
+				s_logger.warn("Unable to reconfigure the VM to detach disks");
+				throw new Exception("Unable to reconfigure the VM to detach disks");
+			}
+	    }
+	    	
+	    return detachedDiskFiles; 
 	}
 	
 	public VirtualDisk[] getAllDiskDevice() throws Exception {

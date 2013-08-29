@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage.resource;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -166,6 +168,40 @@ public class VmwareStorageLayoutHelper {
 		s_logger.info("Fixup folder-synchronization. move " + fileDsFullPath + " -> " + targetPath);
     	ds.moveDatastoreFile(fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
     }
+    
+    public static void moveVolumeToRootFolder(DatacenterMO dcMo, List<String> detachedDisks) throws Exception {
+    	if(detachedDisks.size() > 0) {
+    		for(String fileFullDsPath : detachedDisks) {
+    			DatastoreFile file = new DatastoreFile(fileFullDsPath);
+    			
+    			s_logger.info("Check if we need to move " + fileFullDsPath + " to its root location");
+    			DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(file.getDatastoreName()));
+    			if(dsMo.getMor() != null) {
+    				DatastoreFile targetFile = new DatastoreFile(file.getDatastoreName(), file.getFileName());
+    				if(!targetFile.getPath().equalsIgnoreCase(file.getPath())) {
+    					s_logger.info("Move " + file.getPath() + " -> " + targetFile.getPath());
+    					dsMo.moveDatastoreFile(file.getPath(), dcMo.getMor(), dsMo.getMor(), targetFile.getPath(), dcMo.getMor(), true);
+
+    					String pairSrcFilePath = file.getCompanionPath(file.getFileBaseName() + "-flat.vmdk");
+        				String pairTargetFilePath = targetFile.getCompanionPath(file.getFileBaseName() + "-flat.vmdk");
+        				if(dsMo.fileExists(pairSrcFilePath)) {
+	        				s_logger.info("Move " + pairSrcFilePath + " -> " + pairTargetFilePath);
+	    					dsMo.moveDatastoreFile(pairSrcFilePath, dcMo.getMor(), dsMo.getMor(), pairTargetFilePath, dcMo.getMor(), true);
+        				}
+        				
+    					pairSrcFilePath = file.getCompanionPath(file.getFileBaseName() + "-delta.vmdk");
+        				pairTargetFilePath = targetFile.getCompanionPath(file.getFileBaseName() + "-delta.vmdk");
+        				if(dsMo.fileExists(pairSrcFilePath)) {
+	        				s_logger.info("Move " + pairSrcFilePath + " -> " + pairTargetFilePath);
+	    					dsMo.moveDatastoreFile(pairSrcFilePath, dcMo.getMor(), dsMo.getMor(), pairTargetFilePath, dcMo.getMor(), true);
+        				}
+    				}
+    			} else {
+    				s_logger.warn("Datastore for " + fileFullDsPath + " no longer exists, we have to skip");
+    			}
+    		}
+    	}
+    }
      
     public static String getTemplateOnSecStorageFilePath(String secStorageMountPoint, String templateRelativeFolderPath,
     	String templateName, String fileExtension) {
@@ -227,7 +263,7 @@ public class VmwareStorageLayoutHelper {
 		if(!dsMo.fileExists(fileFullPath))
 			fileFullPath = dsMo.searchFileInSubFolders(fileName, false);
 		if(fileFullPath != null) {
-			dsMo.deleteFile(fileFullPath, dcMo.getMor(), false);
+			dsMo.deleteFile(fileFullPath, dcMo.getMor(), true);
 		} else {
 			s_logger.warn("Unable to locate VMDK file: " + fileName);
 		}
@@ -237,7 +273,7 @@ public class VmwareStorageLayoutHelper {
 		if(!dsMo.fileExists(fileFullPath))
 			fileFullPath = dsMo.searchFileInSubFolders(fileName, false);
 		if(fileFullPath != null) {
-			dsMo.deleteFile(fileFullPath, dcMo.getMor(), false);
+			dsMo.deleteFile(fileFullPath, dcMo.getMor(), true);
 		} else {
 			s_logger.warn("Unable to locate VMDK file: " + fileName);
 		}
@@ -247,7 +283,7 @@ public class VmwareStorageLayoutHelper {
 		if(!dsMo.fileExists(fileFullPath))
 			fileFullPath = dsMo.searchFileInSubFolders(fileName, false);
 		if(fileFullPath != null) {
-			dsMo.deleteFile(fileFullPath, dcMo.getMor(), false);
+			dsMo.deleteFile(fileFullPath, dcMo.getMor(), true);
 		} else {
 			s_logger.warn("Unable to locate VMDK file: " + fileName);
 		}
