@@ -288,6 +288,7 @@ install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_s
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
 install -D agent/target/transformed/cloudstack-agent-upgrade ${RPM_BUILD_ROOT}%{_bindir}/%{name}-agent-upgrade
+install -D agent/target/transformed/libvirtqemuhook ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}%{_bindir}/%{name}-ssh
 install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/lib/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
@@ -556,6 +557,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
+%attr(0755,root,root) %{_datadir}/%{name}-agent/lib/libvirtqemuhook
 %dir %{_datadir}/%{name}-agent/plugins
 %{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-agent-%{version}/NOTICE

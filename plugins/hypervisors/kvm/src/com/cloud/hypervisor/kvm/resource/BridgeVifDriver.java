@@ -45,6 +45,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private static final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
+    private String bridgeNameSchema;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -59,7 +60,9 @@ public class BridgeVifDriver extends VifDriverBase {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
 
-        String value = (String)params.get("scripts.timeout");
+        bridgeNameSchema = (String) params.get("network.bridge.name.schema");
+
+        String value = (String) params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         _modifyVlanPath = Script.findScript(networkScriptsDir, "modifyvlan.sh");
@@ -142,13 +145,15 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
-        String brName = "br" + pifName + "-" + vnetId;
-        String oldStyleBrName = "cloudVirBr" + vnetId;
-
-        String cmdout = Script.runSimpleBashScript("brctl show | grep " + oldStyleBrName);
-        if (cmdout != null && cmdout.contains(oldStyleBrName)) {
-            s_logger.info("Using old style bridge name for vlan " + vnetId + " because existing bridge " + oldStyleBrName + " was found");
-            brName = oldStyleBrName;
+        String brName = null;
+        if (bridgeNameSchema != null) {
+            if (bridgeNameSchema.equalsIgnoreCase("3.0")) {
+                brName = "cloudVirBr" + vnetId;
+            } else if (bridgeNameSchema.equalsIgnoreCase("4.0")) {
+                brName = "br" + pifName + "-"+ vnetId;
+            }
+        } else {
+            brName = "br" + pifName + "-"+ vnetId;
         }
 
         return brName;
