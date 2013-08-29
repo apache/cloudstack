@@ -570,6 +570,10 @@ under the License.
         system.</para>
       <orderedlist>
         <listitem>
+          <!-- CLOUDSTACK-4509 -->
+          <para>Manually clean up <filename>/var/cache/cloudstack</filename>.</para>
+        </listitem>
+        <listitem>
           <para>Most users of &PRODUCT; manage the installation and upgrades of &PRODUCT; with one
             of Linux's predominant package systems, RPM or APT. This guide assumes you'll be using
             RPM and Yum (for Red Hat Enterprise Linux or CentOS), or APT and Debian packages (for
