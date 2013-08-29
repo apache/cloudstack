@@ -369,7 +369,7 @@ under the License.
         </tgroup>
       </informaltable>
     </section>
-    <section id="known-issues-4.1">
+    <section id="known-issues-4.2">
       <title>Known Issues in 4.2.0</title>
       <informaltable>
         <tgroup cols="2" align="left" colsep="1" rowsep="1">
