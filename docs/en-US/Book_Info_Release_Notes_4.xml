@@ -18,13 +18,13 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<bookinfo id="book-release-notes-4.1">
-  <title>Version 4.1.0 Release Notes</title>
-  <productname>Apache CloudStack</productname>
+<bookinfo id="book-release-notes-4.2">
+  <title>Version 4.2.0 Release Notes</title>
+  <productname>Apache &PRODUCT;</productname>
   <productnumber/>
   <pubsnumber/>
   <abstract>
-    <para>Release notes for the Apache CloudStack 4.1.0 release.</para>
+    <para>Release notes for the Apache &PRODUCT; 4.2.0 release.</para>
   </abstract>
   <corpauthor>
     <inlinemediaobject>
