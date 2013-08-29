@@ -136,14 +136,14 @@ class TestProjectsCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupProjectAccounts()
 
-   api_client = self.testClient.createUserApiClient(
-                             UserName=self.admin.name,
-                             DomainName=self.admin.domain)
+        api_client = self.testClient.createUserApiClient(
+            UserName=self.admin.name,
+            DomainName=self.admin.domain)
 
         self.debug("Creating an instance with service offering: %s" %
-                                                    self.service_offering.name)
+                   self.service_offering.name)
         self.vm = self.createInstance(project=self.project,
-                                  service_off=self.service_offering, api_client=api_client)
+            service_off=self.service_offering, api_client=api_client)
 
         return
 
@@ -159,26 +159,26 @@ class TestProjectsCPULimits(cloudstackTestCase):
     def createInstance(self, project, service_off, networks=None, api_client=None):
         """Creates an instance in account"""
 
-   if api_client is None:
-       api_client = self.api_client
+        if api_client is None:
+            api_client = self.api_client
 
-        try:
-            self.vm = VirtualMachine.create(
-                                api_client,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                projectid=project.id,
-                                networkids=networks,
-                                serviceofferingid=service_off.id)
-            vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
-            self.assertIsInstance(vms,
-                                  list,
-                                  "List VMs should return a valid response")
-            self.assertEqual(vms[0].state, "Running",
-                             "Vm state should be running after deployment")
-            return self.vm
-        except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e)
+            try:
+                self.vm = VirtualMachine.create(
+                    api_client,
+                    self.services["virtual_machine"],
+                    templateid=self.template.id,
+                    projectid=project.id,
+                    networkids=networks,
+                    serviceofferingid=service_off.id)
+                vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
+                self.assertIsInstance(vms,
+                    list,
+                    "List VMs should return a valid response")
+                self.assertEqual(vms[0].state, "Running",
+                    "Vm state should be running after deployment")
+                return self.vm
+            except Exception as e:
+                self.fail("Failed to deploy an instance: %s" % e)
 
     def setupProjectAccounts(self):
 
