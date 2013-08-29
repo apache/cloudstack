@@ -250,7 +250,6 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         SnapshotResult result = new SnapshotResult(snapshot, null);
         try {
-
             snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
             DataStore imageStore = this.findSnapshotImageStore(snapshot);

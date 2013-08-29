@@ -963,7 +963,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     throw new Exception("unable to prepare snapshot backup directory");
                 }
             }
-        }
+        }	
 
         VirtualMachineMO clonedVm = null;
         try {

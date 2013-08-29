@@ -342,7 +342,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 }
             }
         }
-
+        
         if(!needDelegation) {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }

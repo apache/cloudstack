@@ -1055,8 +1055,7 @@ public class VirtualMachineMO extends BaseMO {
 		// VirtualDisk, we only perform prefix matching
 		Pair<VirtualDisk, String> deviceInfo = getDiskDevice(vmdkDatastorePath, false);
 		if(deviceInfo == null) {
-			if(s_logger.isTraceEnabled())
-				s_logger.trace("vCenter API trace - detachDisk() done (failed)");
+			s_logger.warn("vCenter API trace - detachDisk() done (failed)");
 			throw new Exception("No such disk device: " + vmdkDatastorePath);
 		}
 
