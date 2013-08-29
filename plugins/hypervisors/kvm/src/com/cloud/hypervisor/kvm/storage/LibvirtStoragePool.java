@@ -129,7 +129,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         try {
             disk = this._storageAdaptor.getPhysicalDisk(volumeUuid, this);
         } catch (CloudRuntimeException e) {
-            if ((this.getStoragePoolType() != StoragePoolType.NetworkFilesystem) ||
+            if ((this.getStoragePoolType() != StoragePoolType.NetworkFilesystem) &&
                     (this.getStoragePoolType() != StoragePoolType.Filesystem)) {
                 throw e;
             }
