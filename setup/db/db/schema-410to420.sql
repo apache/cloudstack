@@ -432,7 +432,7 @@ CREATE TABLE `cloud`.`affinity_group_domain_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
   `affinity_group_id` bigint unsigned NOT NULL COMMENT 'affinity group id',
-  `subdomain_access` int(1) unsigned COMMENT '1 if affinity group can be accessible from the subdomain',
+  `subdomain_access` int(1) unsigned DEFAULT 1 COMMENT '1 if affinity group can be accessible from the subdomain',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_affinity_group_domain_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_affinity_group_domain_map__affinity_group_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE
