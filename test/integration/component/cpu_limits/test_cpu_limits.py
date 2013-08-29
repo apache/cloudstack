@@ -149,31 +149,31 @@ class TestCPULimits(cloudstackTestCase):
         return
 
     def createInstance(self, service_off, networks=None, api_client=None):
-        """Creates an instance in account"""
+        """Creates an instance in account
+        """
+        if api_client is None:
+            api_client = self.apiclient
 
-   if api_client is None:
-       api_client = self.apiclient
-
-        self.debug("Deploying an instance in account: %s" %
-                                                self.account.name)
-        try:
-            vm = VirtualMachine.create(
-                                api_client,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkids=networks,
-                                serviceofferingid=service_off.id)
-            vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
-            self.assertIsInstance(vms,
-                                  list,
-                                  "List VMs should return a valid response")
-            self.assertEqual(vms[0].state, "Running",
-                             "Vm state should be running after deployment")
-            return vm
-        except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e)
+            self.debug("Deploying an instance in account: %s" %
+                       self.account.name)
+            try:
+                vm = VirtualMachine.create(
+                    api_client,
+                    self.services["virtual_machine"],
+                    templateid=self.template.id,
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    networkids=networks,
+                    serviceofferingid=service_off.id)
+                vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
+                self.assertIsInstance(vms,
+                    list,
+                    "List VMs should return a valid response")
+                self.assertEqual(vms[0].state, "Running",
+                    "Vm state should be running after deployment")
+                return vm
+            except Exception as e:
+                self.fail("Failed to deploy an instance: %s" % e)
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_01_multiplecore_start_stop_instance(self):
@@ -396,66 +396,66 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         return
 
     def createInstance(self, service_off, networks=None, api_client=None):
-        """Creates an instance in account"""
+        """Creates an instance in account
+        """
+        if api_client is None:
+            api_client = self.apiclient
 
-   if api_client is None:
-       api_client = self.apiclient
-
-        self.debug("Deploying an instance in account: %s" %
-                                                self.account.name)
-        try:
-            vm = VirtualMachine.create(
-                                api_client,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkids=networks,
-                                serviceofferingid=service_off.id)
-            vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
-            self.assertIsInstance(vms,
-                                  list,
-                                  "List VMs should return a valid response")
-            self.assertEqual(vms[0].state, "Running",
-                             "Vm state should be running after deployment")
-            return vm
-        except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e)
+            self.debug("Deploying an instance in account: %s" %
+                       self.account.name)
+            try:
+                vm = VirtualMachine.create(
+                    api_client,
+                    self.services["virtual_machine"],
+                    templateid=self.template.id,
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    networkids=networks,
+                    serviceofferingid=service_off.id)
+                vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
+                self.assertIsInstance(vms,
+                    list,
+                    "List VMs should return a valid response")
+                self.assertEqual(vms[0].state, "Running",
+                    "Vm state should be running after deployment")
+                return vm
+            except Exception as e:
+                self.fail("Failed to deploy an instance: %s" % e)
 
     def setupAccounts(self):
 
         self.debug("Creating a sub-domain under: %s" % self.domain.name)
-   self.child_domain_1 = Domain.create(
-               self.apiclient,
-                                services=self.services["domain"],
-                                parentdomainid=self.domain.id
-               )
-   self.child_do_admin_1 = Account.create(
-                                self.apiclient,
-                                self.services["account"],
-                                admin=True,
-                                domainid=self.child_domain_1.id
-                                )
-   # Cleanup the resources created at end of test
-   self.cleanup.append(self.child_do_admin_1)
-   self.cleanup.append(self.child_domain_1)
+        self.child_domain_1 = Domain.create(
+            self.apiclient,
+            services=self.services["domain"],
+            parentdomainid=self.domain.id
+        )
+        self.child_do_admin_1 = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=True,
+            domainid=self.child_domain_1.id
+        )
+        # Cleanup the resources created at end of test
+        self.cleanup.append(self.child_do_admin_1)
+        self.cleanup.append(self.child_domain_1)
 
-   self.child_domain_2 = Domain.create(
-                 self.apiclient,
-                              services=self.services["domain"],
-                              parentdomainid=self.domain.id
-                 )
+        self.child_domain_2 = Domain.create(
+            self.apiclient,
+            services=self.services["domain"],
+            parentdomainid=self.domain.id
+        )
 
-   self.child_do_admin_2 = Account.create(
-                                self.apiclient,
-                                self.services["account"],
-                                admin=True,
-                                domainid=self.child_domain_2.id
-                   )
+        self.child_do_admin_2 = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=True,
+            domainid=self.child_domain_2.id
+        )
 
-   # Cleanup the resources created at end of test
-   self.cleanup.append(self.child_do_admin_2)
-   self.cleanup.append(self.child_domain_2)
+        # Cleanup the resources created at end of test
+        self.cleanup.append(self.child_do_admin_2)
+        self.cleanup.append(self.child_domain_2)
 
         return
 
@@ -478,57 +478,57 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-       api_client = self.testClient.createUserApiClient(
-                             UserName=self.account.name,
-                             DomainName=self.account.domain)
+        api_client = self.testClient.createUserApiClient(
+            UserName=self.account.name,
+            DomainName=self.account.domain)
 
-            self.debug("Creating an instance with service offering: %s" %
-                                                    self.service_offering.name)
-            vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
+        self.debug("Creating an instance with service offering: %s" %
+                   self.service_offering.name)
+        vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count = account_list[0].cputotal
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count = account_list[0].cputotal
 
-            expected_resource_count = int(self.services["service_offering"]["cpunumber"])
+        expected_resource_count = int(self.services["service_offering"]["cpunumber"])
 
-            self.assertEqual(resource_count, expected_resource_count,
-                         "Initial resource count should match with the expected resource count")
+        self.assertEqual(resource_count, expected_resource_count,
+            "Initial resource count should match with the expected resource count")
 
-            self.debug("Stopping instance: %s" % vm.name)
-            try:
-                vm.stop(self.apiclient)
-            except Exception as e:
-                self.fail("Failed to stop instance: %s" % e)
+        self.debug("Stopping instance: %s" % vm.name)
+        try:
+            vm.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop instance: %s" % e)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count_after_stop = account_list[0].cputotal
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count_after_stop = account_list[0].cputotal
 
-            self.assertEqual(resource_count, resource_count_after_stop,
-                         "Resource count should be same after stopping the instance")
+        self.assertEqual(resource_count, resource_count_after_stop,
+            "Resource count should be same after stopping the instance")
 
-            self.debug("Starting instance: %s" % vm.name)
-            try:
-                vm.start(self.apiclient)
-            except Exception as e:
-                self.fail("Failed to start instance: %s" % e)
+        self.debug("Starting instance: %s" % vm.name)
+        try:
+            vm.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start instance: %s" % e)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count_after_start = account_list[0].cputotal
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count_after_start = account_list[0].cputotal
 
-            self.assertEqual(resource_count_after_stop, resource_count_after_start,
-                         "Resource count should be same after starting the instance")
+        self.assertEqual(resource_count_after_stop, resource_count_after_start,
+            "Resource count should be same after starting the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
@@ -550,43 +550,43 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-       api_client = self.testClient.createUserApiClient(
-                             UserName=self.account.name,
-                             DomainName=self.account.domain)
+        api_client = self.testClient.createUserApiClient(
+            UserName=self.account.name,
+            DomainName=self.account.domain)
 
-            self.debug("Creating an instance with service offering: %s" %
-                                                    self.service_offering.name)
-            vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
+        self.debug("Creating an instance with service offering: %s" %
+                   self.service_offering.name)
+        vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count = account_list[0].cputotal
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count = account_list[0].cputotal
 
-            expected_resource_count = int(self.services["service_offering"]["cpunumber"])
+        expected_resource_count = int(self.services["service_offering"]["cpunumber"])
 
-            self.assertEqual(resource_count, expected_resource_count,
-                         "Initial resource count should with the expected resource count")
+        self.assertEqual(resource_count, expected_resource_count,
+            "Initial resource count should with the expected resource count")
 
-            host = find_suitable_host(self.apiclient, vm)
-            self.debug("Migrating instance: %s to host: %s" %
-                                                        (vm.name, host.name))
-            try:
-                vm.migrate(self.apiclient, host.id)
-            except Exception as e:
-                self.fail("Failed to migrate instance: %s" % e)
+        host = find_suitable_host(self.apiclient, vm)
+        self.debug("Migrating instance: %s to host: %s" %
+                   (vm.name, host.name))
+        try:
+            vm.migrate(self.apiclient, host.id)
+        except Exception as e:
+            self.fail("Failed to migrate instance: %s" % e)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count_after_migrate = account_list[0].cputotal
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count_after_migrate = account_list[0].cputotal
 
-            self.assertEqual(resource_count, resource_count_after_migrate,
-                         "Resource count should be same after starting the instance")
+        self.assertEqual(resource_count, resource_count_after_migrate,
+            "Resource count should be same after starting the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
@@ -608,47 +608,46 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             self.account = admin
             self.domain = domain
 
-       api_client = self.testClient.createUserApiClient(
-                             UserName=self.account.name,
-                             DomainName=self.account.domain)
+        api_client = self.testClient.createUserApiClient(
+            UserName=self.account.name,
+            DomainName=self.account.domain)
 
-            self.debug("Creating an instance with service offering: %s" %
-                                                    self.service_offering.name)
-            vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
+        self.debug("Creating an instance with service offering: %s" %
+                   self.service_offering.name)
+        vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count = account_list[0].cputotal
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count = account_list[0].cputotal
 
-            expected_resource_count = int(self.services["service_offering"]["cpunumber"])
+        expected_resource_count = int(self.services["service_offering"]["cpunumber"])
 
-            self.assertEqual(resource_count, expected_resource_count,
-                         "Initial resource count should match with the expected resource count")
+        self.assertEqual(resource_count, expected_resource_count,
+            "Initial resource count should match with the expected resource count")
 
-            self.debug("Destroying instance: %s" % vm.name)
-            try:
-                vm.delete(self.apiclient)
-            except Exception as e:
-                self.fail("Failed to delete instance: %s" % e)
+        self.debug("Destroying instance: %s" % vm.name)
+        try:
+            vm.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to delete instance: %s" % e)
 
-            account_list = Account.list(self.apiclient, id=self.account.id)
-            self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
-            resource_count = account_list[0].cputotal
-            self.assertEqual(resource_count, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
+        account_list = Account.list(self.apiclient, id=self.account.id)
+        self.assertIsInstance(account_list,
+            list,
+            "List Accounts should return a valid response"
+        )
+        resource_count = account_list[0].cputotal
+        self.assertEqual(resource_count, 0, "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
     @attr(configuration='max.account.cpus')
     def test_04_deploy_multiple_vm_with_multiple_cpus(self):
         """Test Deploy multiple VM with 4 core CPU & verify the usage"""
-   #keep the configuration value - max.account.cpus number = 16
-
+        #keep the configuration value - max.account.cpus number = 16
         # Validate the following
         # 1. Create compute offering with 4 core CPU
         # 2. Deploy multiple VMs with this service offering
@@ -681,12 +680,12 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
             if cpu_account_gc[0].max != 16:
                 self.skipTest("This test case requires configuration value max.account.cpus to be 16")
 
-       api_client = self.testClient.createUserApiClient(
-                             UserName=self.account.name,
-                             DomainName=self.account.domain)
+            api_client = self.testClient.createUserApiClient(
+                UserName=self.account.name,
+                DomainName=self.account.domain)
 
             self.debug("Creating an instance with service offering: %s" %
-                                                    self.service_offering.name)
+                       self.service_offering.name)
             vm_1 = self.createInstance(service_off=self.service_offering, api_client=api_client)
             vm_2 = self.createInstance(service_off=self.service_offering, api_client=api_client)
             self.createInstance(service_off=self.service_offering, api_client=api_client)
@@ -698,15 +697,15 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
 
             account_list = Account.list(self.apiclient, id=self.account.id)
             self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
+                list,
+                "List Accounts should return a valid response"
+            )
             resource_count = account_list[0].cputotal
 
             expected_resource_count = int(self.services["service_offering"]["cpunumber"]) * 4 #Total 4 vms
 
             self.assertEqual(resource_count, expected_resource_count,
-                         "Initial resource count should with the expected resource count")
+                "Initial resource count should with the expected resource count")
 
             self.debug("Destroying instance: %s" % vm_1.name)
             try:
@@ -716,15 +715,15 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
 
             account_list = Account.list(self.apiclient, id=self.account.id)
             self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
+                list,
+                "List Accounts should return a valid response"
+            )
             resource_count_after_delete = account_list[0].cputotal
 
             expected_resource_count -= int(self.services["service_offering"]["cpunumber"])
 
             self.assertEqual(resource_count_after_delete, expected_resource_count,
-                         "Resource count should be less than before after deleting the instance")
+                "Resource count should be less than before after deleting the instance")
 
             host = find_suitable_host(self.apiclient, vm_2)
             self.debug("Migrating instance: %s to host: %s" % (vm_2.name,
@@ -736,12 +735,11 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
 
             account_list = Account.list(self.apiclient, id=self.account.id)
             self.assertIsInstance(account_list,
-                                  list,
-                                  "List Accounts should return a valid response"
-                                  )
+                list,
+                "List Accounts should return a valid response"
+            )
             resource_count_after_migrate = account_list[0].cputotal
 
             self.debug(resource_count_after_migrate)
             self.assertEqual(resource_count_after_delete, resource_count_after_migrate,
-                         "Resource count should be same after migrating the instance")
-        return
+                "Resource count should be same after migrating the instance")
