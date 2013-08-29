@@ -1405,6 +1405,19 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
     
     @Override
+    public void rescan() {
+        // schedule a scan task immediately
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Scheduling a host scan task");
+        }
+        // schedule host scan task on current MS
+        scheduleHostScanTask();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Notifying all peer MS to schedule host scan task");
+        }
+    }
+
+    @Override
     public ConfigKey<?>[] getConfigKeys() {
         ConfigKey<?>[] keys = super.getConfigKeys();
         

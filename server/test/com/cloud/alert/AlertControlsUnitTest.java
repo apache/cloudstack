@@ -48,6 +48,7 @@ public class AlertControlsUnitTest extends TestCase {
     @Mock AlertDao _alertDao;
     @Override
     @Before
+    @SuppressWarnings("unchecked")
     protected void setUp() {
         MockitoAnnotations.initMocks(this);
         _mgmtServer._alertDao = _alertDao;
@@ -57,6 +58,7 @@ public class AlertControlsUnitTest extends TestCase {
         when(_alertDao.deleteAlert(anyList(), anyString(), any(Date.class), any(Date.class), anyLong())).thenReturn(true);
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
     }

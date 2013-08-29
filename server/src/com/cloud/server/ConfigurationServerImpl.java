@@ -48,8 +48,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
-import org.apache.cloudstack.framework.config.ConfigurationVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;

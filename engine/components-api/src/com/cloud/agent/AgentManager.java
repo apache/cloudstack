@@ -122,9 +122,6 @@ public interface AgentManager {
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
-    /* working as a lock while agent is being loaded */
-    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
-
 //    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
 
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
@@ -138,4 +135,6 @@ public interface AgentManager {
     public void pullAgentOutMaintenance(long hostId);
 
     boolean reconnect(long hostId);
+
+    void rescan();
 }

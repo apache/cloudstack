@@ -81,7 +81,7 @@
   </bean>
 
   <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
-  <bean id="configDepot" class = "org.apache.cloudstack.framework.config.ConfigDepotImpl" />
+  <bean id="configDepot" class = "org.apache.cloudstack.framework.config.impl.ConfigDepotImpl" />
 
   <!--
     DAO with customized configuration
@@ -718,6 +718,7 @@
   <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl"/>
   
   <bean id="volumeOrchestrator" class="org.apache.cloudstack.engine.orchestration.VolumeOrchestrator">
+    <property name="PodAllocators" value="#{podAllocators.Adapters}" />
     <property name="StoragePoolAllocators" value="#{storagePoolAllocators.Adapters}" />
   </bean>
 
@@ -726,7 +727,6 @@
   </bean>
 
   <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
-    <property name="PodAllocators" value="#{podAllocators.Adapters}" />
     <property name="Discoverers" value="#{resourceDiscoverers.Adapters}" />
   </bean>
 
@@ -739,7 +739,7 @@
     <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
   </bean>
 
-  <bean id="networkManagerImpl" class="com.cloud.network.NetworkManagerImpl" >
+  <bean id="networkOrchestrator" class="org.apache.cloudstack.engine.orchestration.NetworkOrchestrator" >
     <property name="NetworkGurus" value="#{networkGurus.Adapters}" />
     <property name="NetworkElements" value="#{networkElements.Adapters}" />
     <property name="IpDeployers" value="#{ipDeployers.Adapters}" />

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.config;
+package org.apache.cloudstack.framework.config.impl;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -24,12 +24,20 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ConfigValue;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ConfigInjector;
 import com.cloud.utils.component.SystemIntegrityChecker;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -52,9 +60,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *   - Figure out the correct categories.
  *
  */
-class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker, ConfigInjector {
-    @Inject
-    EntityManager      _entityMgr;
+public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker, ConfigInjector {
+    private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
     @Inject
     ConfigurationDao   _configDao;
     @Inject
@@ -62,7 +69,7 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityC
     @Inject
     List<ScopedConfigStorage> _scopedStorage;
 
-    HashMap<String, ConfigKey<?>> _allKeys = new HashMap<String, ConfigKey<?>>(1007);
+    HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
     public ConfigDepotImpl() {
     }
@@ -70,11 +77,11 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityC
     @Override
     public <T> ConfigValue<T> get(ConfigKey<T> config) {
         if (config.scope() == Scope.Global) {
-            return new ConfigValue<T>(_entityMgr, config);
+            return new ConfigValue<T>(_configDao, config);
         } else {
             for (ScopedConfigStorage storage : _scopedStorage) {
                 if (storage.getScope() == config.scope()) {
-                    return new ConfigValue<T>(_entityMgr, config, storage);
+                    return new ConfigValue<T>(_configDao, config, storage);
                 }
             }
             throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope());
@@ -116,20 +123,23 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityC
     @Override
     public void check() {
         for (Configurable configurable : _configurables) {
+            s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
             for (ConfigKey<?> key : configurable.getConfigKeys()) {
-                if (_allKeys.containsKey(key.key())) {
-                    throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before: " + key.toString());
+                Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
+                if (previous != null && !previous.first().equals(configurable.getConfigComponentName())) {
+                    throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " + previous.first() +
+                                                    ": " + key.toString());
                 }
-                _allKeys.put(key.key(), key);
+                _allKeys.put(key.key(), new Pair<String, ConfigKey<?>>(configurable.getConfigComponentName(), key));
             }
         }
     }
 
     @Override
     public void inject(Field field, Object obj, String key) {
-        ConfigKey<?> configKey = _allKeys.get(key);
+        Pair<String, ConfigKey<?>> configKey = _allKeys.get(key);
         try {
-            field.set(obj, get(configKey));
+            field.set(obj, get(configKey.second()));
         } catch (IllegalArgumentException e) {
             throw new CloudRuntimeException("Unable to inject configuration due to ", e);
         } catch (IllegalAccessException e) {
@@ -139,10 +149,10 @@ class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityC
 
     @Override
     public ConfigValue<?> get(String name) {
-        ConfigKey<?> configKey = _allKeys.get(name);
+        Pair<String, ConfigKey<?>> configKey = _allKeys.get(name);
         if (configKey == null) {
             throw new CloudRuntimeException("Unable to find a registered config key for " + name);
         }
-        return get(configKey);
+        return get(configKey.second());
     }
 }

@@ -35,8 +35,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigurationVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.InvalidParameterValueException;

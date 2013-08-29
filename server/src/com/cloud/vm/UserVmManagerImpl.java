@@ -4887,14 +4887,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public String getConfigComponentName() {
-        // TODO Auto-generated method stub
-        return null;
+        return UserVmManager.class.getSimpleName();
     }
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        // TODO Auto-generated method stub
-        return null;
+        return new ConfigKey<?>[] {EnableDynamicallyScaleVm};
     }
-
 }

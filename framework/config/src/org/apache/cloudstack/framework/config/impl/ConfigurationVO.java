@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.config;
+package org.apache.cloudstack.framework.config.impl;
 
 import java.util.Date;
 
@@ -26,6 +26,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 

@@ -183,6 +183,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     
     @SuppressWarnings("unchecked")
     protected GenericDaoBase() {
+        super();
         Type t = getClass().getGenericSuperclass();
         if (t instanceof ParameterizedType) {
             _entityBeanType = (Class<T>)((ParameterizedType)t).getActualTypeArguments()[0];

@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -27,70 +28,74 @@ import com.cloud.utils.ReflectUtil;
 
 public class ComponentLifecycleBase implements ComponentLifecycle {
 
-	protected String _name;
-	protected int _runLevel;
+    protected String _name;
+    protected int _runLevel;
     protected Map<String, Object> _configParams = new HashMap<String, Object>();
     @Inject
     protected ConfigInjector _configInjector;
-	
-	public ComponentLifecycleBase() {
-		_name = this.getClass().getSimpleName();
-		_runLevel = RUN_LEVEL_COMPONENT;
 
-        for (Field field : ReflectUtil.getAllFieldsForClass(this.getClass(), Object.class)) {
-            InjectConfig config = field.getAnnotation(InjectConfig.class);
-            if (config != null) {
-                field.setAccessible(true);
-                _configInjector.inject(field, this, config.key());
+    public ComponentLifecycleBase() {
+        _name = this.getClass().getSimpleName();
+        _runLevel = RUN_LEVEL_COMPONENT;
+    }
+
+    @PostConstruct
+    protected void injectConfigs() {
+        if (_configInjector != null) {
+            for (Field field : ReflectUtil.getAllFieldsForClass(this.getClass(), Object.class)) {
+                InjectConfig config = field.getAnnotation(InjectConfig.class);
+                if (config != null) {
+                    field.setAccessible(true);
+                    _configInjector.inject(field, this, config.key());
+                }
             }
         }
-	}
-	
-	@Override
-	public String getName() {
-		return _name;
-	}
+    }
 
-	@Override
-	public void setName(String name) {
-		_name = name;
-	}
+    @Override
+    public String getName() {
+        return _name;
+    }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		_configParams = params;
-	}
+    @Override
+    public void setName(String name) {
+        _name = name;
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		return _configParams;
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        _configParams = params;
+    }
 
-	@Override
-	public int getRunLevel() {
-		return _runLevel;
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        return _configParams;
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		_runLevel = level;
-	}
+    @Override
+    public int getRunLevel() {
+        return _runLevel;
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
+    @Override
+    public void setRunLevel(int level) {
+        _runLevel = level;
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         _configParams = params;
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
 }

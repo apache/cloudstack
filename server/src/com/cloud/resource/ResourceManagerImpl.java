@@ -30,10 +30,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.gson.Gson;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -53,7 +54,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.TapAgentsAction;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -65,8 +65,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
-import com.cloud.agent.manager.AgentAttache;
-import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.Capacity;
@@ -1709,7 +1707,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance) {
         HostVO host = null;
-        AgentAttache attache = null;
         StartupCommand[] cmds = null;
         boolean hostExists = false;
 
@@ -1753,7 +1750,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
             if (host != null) {
-                attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
                 /* reload myself from database */
                 host = _hostDao.findById(host.getId());
             }
@@ -1764,13 +1760,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (cmds != null) {
                     resource.disconnected();
                 }
-            } else {
-                if (attache == null) {
-                    if (cmds != null) {
-                        resource.disconnected();
-                    }
-                    markHostAsDisconnected(host, cmds);
-                }
             }
         }
 
@@ -1780,7 +1769,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private Host createHostAndAgentDeferred(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
             boolean forRebalance) {
         HostVO host = null;
-        AgentAttache attache = null;
         StartupCommand[] cmds = null;
         boolean hostExists = false;
         boolean deferAgentCreation = true;
@@ -1826,30 +1814,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             host = null;
             GlobalLock addHostLock = GlobalLock.getInternLock("AddHostLock");
             try {
-                if (addHostLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) { // to
-                    // safely
-                    // determine
-                    // first
-                    // host
-                    // in
-                    // cluster
-                    // in
-                    // multi-MS
-                    // scenario
+                if (addHostLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                    // to safely determine first host in cluster in multi-MS scenario
                     try {
                         host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
                         if (host != null) {
-                            deferAgentCreation = !isFirstHostInCluster(host); // if
-                            // first
-                            // host
-                            // in
-                            // cluster
-                            // no
-                            // need
-                            // to
-                            // defer
-                            // agent
-                            // creation
+                            // if first host in cluster no need to defer agent creation
+                            deferAgentCreation = !isFirstHostInCluster(host);
                         }
                     } finally {
                         addHostLock.unlock();
@@ -1861,9 +1832,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             if (host != null) {
                 if (!deferAgentCreation) { // if first host in cluster then
-                    // create agent otherwise defer it to
-                    // scan task
-                    attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
                     host = _hostDao.findById(host.getId()); // reload
                 } else {
                     host = _hostDao.findById(host.getId()); // reload
@@ -1875,20 +1843,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     host.setLastPinged(0); // so that scan task can pick it up
                     _hostDao.update(host.getId(), host);
 
-                    // schedule a scan task immediately
-                    if (_agentMgr instanceof ClusteredAgentManagerImpl) {
-                        ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl) _agentMgr;
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Scheduling a host scan task");
-                        }
-                        // schedule host scan task on current MS
-                        clusteredAgentMgr.scheduleHostScanTask();
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Notifying all peer MS to schedule host scan task");
-                        }
-                        // notify peers to schedule a host scan task as well
-                        clusteredAgentMgr.notifyNodesInClusterToScheduleHostScanTask();
-                    }
                 }
             }
         } catch (Exception e) {
@@ -1899,7 +1853,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     resource.disconnected();
                 }
             } else {
-                if (!deferAgentCreation && attache == null) {
+                if (!deferAgentCreation) {
                     if (cmds != null) {
                         resource.disconnected();
                     }
@@ -1914,9 +1868,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
             boolean forRebalance) {
-        _agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Add);
         Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
-        _agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Del);
         return host;
     }
 

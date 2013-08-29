@@ -18,30 +18,28 @@ package org.apache.cloudstack.framework.config;
 
 import java.sql.Date;
 
-import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  *  This is a match set to ConfigKey.
  *
- * TODO: When we create a framework project for configuration, this should be
- * moved there.
  */
 public class ConfigValue<T> {
 
     ConfigKey<T> _config;
-    EntityManager _entityMgr;
+    ConfigurationDao _dao;
     T _value;
     ScopedConfigStorage _storage;
 
-    public ConfigValue(EntityManager entityMgr, ConfigKey<T> config) {
-        _entityMgr = entityMgr;
+    public ConfigValue(ConfigurationDao entityMgr, ConfigKey<T> config) {
+        _dao = entityMgr;
         _config = config;
     }
 
-    protected ConfigValue(EntityManager entityMgr, ConfigKey<T> key, ScopedConfigStorage storage) {
+    public ConfigValue(ConfigurationDao entityMgr, ConfigKey<T> key, ScopedConfigStorage storage) {
         this(entityMgr, key);
         _storage = storage;
     }
@@ -52,7 +50,7 @@ public class ConfigValue<T> {
 
     public T value() {
         if (_value == null || _config.isDynamic()) {
-            Configuration vo = _entityMgr.findById(Configuration.class, _config.key());
+            ConfigurationVO vo = _dao.findById(_config.key());
             _value = valueOf(vo != null ? vo.getValue() : _config.defaultValue());
         }
 
@@ -70,21 +68,25 @@ public class ConfigValue<T> {
 
     @SuppressWarnings("unchecked")
     protected T valueOf(String value) {
+        Number multiplier = 1;
+        if (_config.multiplier() != null) {
+            multiplier = (Number)_config.multiplier();
+        }
         Class<T> type = _config.type();
         if (type.isAssignableFrom(Boolean.class)) {
             return (T)Boolean.valueOf(value);
         } else if (type.isAssignableFrom(Integer.class)) {
-            return (T)new Integer((Integer.parseInt(value) * ((Number)_config.multiplier()).intValue()));
+            return (T)new Integer(Integer.parseInt(value) * multiplier.intValue());
         } else if (type.isAssignableFrom(Long.class)) {
-            return (T)new Long(Long.parseLong(value) * ((Number)_config.multiplier()).longValue());
+            return (T)new Long(Long.parseLong(value) * multiplier.longValue());
         } else if (type.isAssignableFrom(Short.class)) {
             return (T)new Short(Short.parseShort(value));
         } else if (type.isAssignableFrom(String.class)) {
             return (T)value;
         } else if (type.isAssignableFrom(Float.class)) {
-            return (T)new Float(Float.parseFloat(value) * ((Number)_config.multiplier()).floatValue());
+            return (T)new Float(Float.parseFloat(value) * multiplier.floatValue());
         } else if (type.isAssignableFrom(Double.class)) {
-            return (T)new Double(Double.parseDouble(value));
+            return (T)new Double(Double.parseDouble(value) * multiplier.doubleValue());
         } else if (type.isAssignableFrom(String.class)) {
             return (T)value;
         } else if (type.isAssignableFrom(Date.class)) {

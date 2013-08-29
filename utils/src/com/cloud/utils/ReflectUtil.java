@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.utils;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.collect.ImmutableSet;
-import org.apache.log4j.Logger;
-import org.reflections.Reflections;
+import static java.beans.Introspector.getBeanInfo;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -34,9 +33,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.beans.Introspector.getBeanInfo;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
+import org.apache.log4j.Logger;
+import org.reflections.Reflections;
+
+import com.google.common.collect.ImmutableSet;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ReflectUtil {
     
@@ -109,7 +111,7 @@ public class ReflectUtil {
         List<Field> fields = new ArrayList<Field>();
         Collections.addAll(fields, cmdClass.getDeclaredFields());
         Class<?> superClass = cmdClass.getSuperclass();
-        while (baseClass.isAssignableFrom(superClass)) {
+        while (baseClass.isAssignableFrom(superClass) && baseClass != superClass) {
             Field[] superClassFields = superClass.getDeclaredFields();
             if (superClassFields != null)
                 Collections.addAll(fields, superClassFields);

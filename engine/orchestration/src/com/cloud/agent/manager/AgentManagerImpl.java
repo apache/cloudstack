@@ -654,6 +654,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return resource;
     }
 
+    @Override
+    public void rescan() {
+    }
 
     protected boolean loadDirectlyConnectedHost(HostVO host, boolean forRebalance) {
         boolean initialized = false;
@@ -683,7 +686,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         if (forRebalance) {
+            tapLoadingAgents(host.getId(), TapAgentsAction.Add);
             Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, true);
+            tapLoadingAgents(host.getId(), TapAgentsAction.Del);
+
             return (h == null ? false : true);
         } else {
             _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails()));
@@ -1054,7 +1060,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
 
+                tapLoadingAgents(id, TapAgentsAction.Add);
                 _resourceMgr.createHostAndAgent(id, resource, details, false, null, false);
+                tapLoadingAgents(id, TapAgentsAction.Del);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
@@ -1302,7 +1310,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected AgentManagerImpl() {
     }
 
-    @Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         synchronized (_loadingAgents) {
             if (action == TapAgentsAction.Add) {
