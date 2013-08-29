@@ -372,8 +372,16 @@ def unmountSnapshotsDir(session, args):
 
     return "1"
 
-def getPrimarySRPath(primaryStorageSRUuid, isISCSI):
-    if isISCSI:
+def getPrimarySRPath(session, primaryStorageSRUuid, isISCSI):
+    sr = session.xenapi.SR.get_by_uuid(primaryStorageSRUuid)
+    srrec = session.xenapi.SR.get_record(sr)
+    srtype = srrec["type"]
+    if srtype == "file":
+        pbd = session.xenapi.SR.get_PBDs(sr)[0]
+        pbdrec = session.xenapi.PBD.get_record(pbd)
+        primarySRPath = pbdrec["device_config"]["location"]
+        return primarySRPath
+    elif isISCSI:
         primarySRDir = lvhdutil.VG_PREFIX + primaryStorageSRUuid
         return os.path.join(lvhdutil.VG_LOCATION, primarySRDir)
     else:
@@ -472,7 +480,7 @@ def getVhdParent(session, args):
     snapshotUuid              = args['snapshotUuid']
     isISCSI                   = getIsTrueString(args['isISCSI']) 
 
-    primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
+    primarySRPath = getPrimarySRPath(session, primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
 
     baseCopyUuid = getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI)
@@ -490,7 +498,7 @@ def backupSnapshot(session, args):
     isISCSI                   = getIsTrueString(args['isISCSI'])
     path = args['path']
     localMountPoint = args['localMountPoint']
-    primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
+    primarySRPath = getPrimarySRPath(session, primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
 
     baseCopyUuid = getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI)
