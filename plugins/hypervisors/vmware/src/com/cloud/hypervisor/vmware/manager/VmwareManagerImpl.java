@@ -767,7 +767,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         result = script.execute();
         if (result != null) {
             s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
-            return null;
         }
         return mountPoint;
     }
