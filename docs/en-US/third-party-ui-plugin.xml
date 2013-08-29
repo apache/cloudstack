@@ -4,7 +4,7 @@
 %BOOK_ENTITIES;
 ]>
    <chapter id="third-party-ui-plugin">
-      <!-- CS-17459 -->
+      <!-- CLOUDSTACK-883 -->
       <title>Third-Party UI Plugin Framework</title>
       <para>Using the new third-party plugin framework, you can write and install extensions to
         &PRODUCT;. The installed and enabled plugins will appear in the UI alongside the
