@@ -71,6 +71,7 @@ import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
@@ -1308,7 +1309,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     } else {
                         try{
                             vmMo.unmountToolsInstaller();
-                        }catch(Throwable e){
+                        } catch(Throwable e){
                             vmMo.detachIso(null);
                         }
                     }
@@ -1447,18 +1448,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.info("Executing resource DestroyCommand: " + _gson.toJson(cmd));
         }
 
-        /*
-         * DestroyCommand content example
-         *
-         * {"volume": {"id":5,"name":"Volume1", "mountPoint":"/export/home/kelven/vmware-test/primary",
-         * "path":"6bb8762f-c34c-453c-8e03-26cc246ceec4", "size":0,"type":"DATADISK","resourceType":
-         * "STORAGE_POOL","storagePoolType":"NetworkFilesystem", "poolId":0,"deviceId":0 } }
-         *
-         * {"volume": {"id":1, "name":"i-2-1-KY-ROOT", "mountPoint":"/export/home/kelven/vmware-test/primary",
-         * "path":"i-2-1-KY-ROOT","size":0,"type":"ROOT", "resourceType":"STORAGE_POOL", "storagePoolType":"NetworkFilesystem",
-         * "poolId":0,"deviceId":0 } }
-         */
-
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
@@ -1479,6 +1468,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
             if (vol.getVolumeType() == Volume.Type.ROOT) {
+            	
                 String vmName = vol.getVmName();
                 if (vmName != null) {
                     VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
@@ -1487,6 +1477,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
                         }
 
+                        // Remove all snapshots to consolidate disks for removal
+                        vmMo.removeAllSnapshots();
+                        
+                        VirtualMachineDiskInfo diskInfo = null;
+                        if(vol.getChainInfo() != null)
+                        	diskInfo = _gson.fromJson(vol.getChainInfo(), VirtualMachineDiskInfo.class);
+                        
+                        
                         HostMO hostMo = vmMo.getRunningHost();
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
@@ -1494,7 +1492,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         if (this.resource.getVmState(vmMo) != State.Stopped) {
                             vmMo.safePowerOff(_shutdown_waitMs);
                         }
-                        vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                        
+                        List<String> detachedDisks = vmMo.detachAllDisksExcept(vol.getPath(), diskInfo != null ? diskInfo.getDiskDeviceBusName() : null);
+                        VmwareStorageLayoutHelper.moveVolumeToRootFolder(new DatacenterMO(context, morDc), detachedDisks);
+
+                        // let vmMo.destroy to delete volume for us
+                        // vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                         vmMo.destroy();
 
                         for (NetworkDetails netDetails : networks) {
@@ -1506,10 +1509,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         }
                     }
 
-                    if (s_logger.isInfoEnabled())
+/*                    
+                    if (s_logger.isInfoEnabled()) {
                         s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
-                    
-                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));                   
+                    }
+
+                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));
+*/
                     return new Answer(cmd, true, "Success");
                 }
 

@@ -417,14 +417,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public List<Command> finalizeExpunge(VirtualMachine vm) {
-        UnregisterVMCommand unregisterVMCommand = new UnregisterVMCommand(vm.getInstanceName());
-        List<Command> commands = new ArrayList<Command>();
-        commands.add(unregisterVMCommand);
-        return commands;
-    }
-
-    @Override
     public List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics) {
         List<Command> commands = new ArrayList<Command>();
         List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
