@@ -166,14 +166,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setKeyPairName(userVm.getKeypairName());
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
-            DecimalFormat decimalFormat = new DecimalFormat("#.##");
             // stats calculation
-            String cpuUsed = null;
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
             if (vmStats != null) {
-                float cpuUtil = (float) vmStats.getCPUUtilization();
-                cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                userVmResponse.setCpuUsed(cpuUsed);
+                userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
 
                 userVmResponse.setNetworkKbsRead((long) vmStats.getNetworkReadKBs());
 
