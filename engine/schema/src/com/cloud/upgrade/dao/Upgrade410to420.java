@@ -689,7 +689,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     rsmem_global.close();
                 }
                 if (rscpu_global != null) {
-                    rsmem_global.close();
+                    rscpu_global.close();
                 }
                 if (pstmt != null) {
                     pstmt.close();
