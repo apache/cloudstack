@@ -33,7 +33,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 @Local(value={StorageNetworkIpRangeDao.class})
-@DB(txn=false)
+@DB
 public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkIpRangeVO, Long> implements StorageNetworkIpRangeDao {
 	protected final GenericSearchBuilder<StorageNetworkIpRangeVO, Long> countRanges;
 	

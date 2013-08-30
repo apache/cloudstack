@@ -34,7 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
-@Local(value=NetworkOfferingServiceMapDao.class) @DB(txn=false)
+@Local(value=NetworkOfferingServiceMapDao.class) @DB()
 public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOfferingServiceMapVO, Long> implements NetworkOfferingServiceMapDao {
 
 	final SearchBuilder<NetworkOfferingServiceMapVO> AllFieldsSearch;

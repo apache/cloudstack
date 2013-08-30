@@ -40,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = VersionDao.class)
-@DB(txn = false)
+@DB()
 public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements VersionDao {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImpl.class);
 

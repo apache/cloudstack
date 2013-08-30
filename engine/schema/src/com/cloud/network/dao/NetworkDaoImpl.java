@@ -40,10 +40,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -52,7 +50,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @Local(value = NetworkDao.class)
-@DB(txn = false)
+@DB()
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
     SearchBuilder<NetworkVO> AllFieldsSearch;
     SearchBuilder<NetworkVO> AccountSearch;

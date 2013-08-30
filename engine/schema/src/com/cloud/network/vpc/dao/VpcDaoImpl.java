@@ -42,7 +42,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = VpcDao.class)
-@DB(txn = false)
+@DB()
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;

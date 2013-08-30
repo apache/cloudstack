@@ -40,7 +40,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = StaticRouteDao.class)
-@DB(txn = false)
+@DB()
 public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> implements StaticRouteDao{
     protected final SearchBuilder<StaticRouteVO> AllFieldsSearch;
     protected final SearchBuilder<StaticRouteVO> NotRevokedSearch;

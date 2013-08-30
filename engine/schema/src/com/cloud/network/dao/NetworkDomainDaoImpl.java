@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NetworkDomainDao.class) @DB(txn=false)
+@Local(value=NetworkDomainDao.class) @DB()
 public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> implements NetworkDomainDao {
     final SearchBuilder<NetworkDomainVO> AllFieldsSearch;
     final SearchBuilder<NetworkDomainVO> DomainsSearch;

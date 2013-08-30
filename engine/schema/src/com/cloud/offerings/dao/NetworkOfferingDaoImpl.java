@@ -42,7 +42,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = NetworkOfferingDao.class)
-@DB(txn = false)
+@DB()
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;

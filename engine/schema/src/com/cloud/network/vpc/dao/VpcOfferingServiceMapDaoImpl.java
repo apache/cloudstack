@@ -33,7 +33,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
 @Local(value = VpcOfferingServiceMapDao.class)
-@DB(txn = false)
+@DB()
 public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao{
     final SearchBuilder<VpcOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<VpcOfferingServiceMapVO> MultipleServicesSearch;

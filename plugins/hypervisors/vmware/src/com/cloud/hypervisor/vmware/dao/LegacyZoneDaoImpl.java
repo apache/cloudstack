@@ -32,7 +32,7 @@
  import com.cloud.utils.db.SearchCriteria.Op;
 
  @Component
- @Local(value=LegacyZoneDao.class) @DB(txn=false)
+ @Local(value=LegacyZoneDao.class) @DB
  public class LegacyZoneDaoImpl extends GenericDaoBase<LegacyZoneVO, Long> implements LegacyZoneDao {
      protected static final Logger s_logger = Logger.getLogger(LegacyZoneDaoImpl.class);
 

@@ -17,9 +17,6 @@
 package com.cloud.certificate.dao;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.ejb.Local;
@@ -32,7 +29,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Component
-@Local(value={CertificateDao.class}) @DB(txn=false)
+@Local(value={CertificateDao.class}) @DB
 public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  implements CertificateDao {
 	
     private static final Logger s_logger = Logger.getLogger(CertificateDaoImpl.class);

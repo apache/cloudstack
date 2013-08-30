@@ -30,7 +30,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = VpcOfferingDao.class)
-@DB(txn = false)
+@DB()
 public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao{
     final SearchBuilder<VpcOfferingVO> AllFieldsSearch;
 

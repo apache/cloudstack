@@ -28,7 +28,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = NetworkServiceMapDao.class)
-@DB(txn = false)
+@DB()
 public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao{
 
     /* (non-Javadoc)

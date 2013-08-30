@@ -18,17 +18,13 @@ package com.cloud.dc.dao;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.StorageNetworkIpAddressVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -37,10 +33,11 @@ import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value={StorageNetworkIpAddressDao.class})
-@DB(txn=false)
+@DB
 public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetworkIpAddressVO, Long> implements StorageNetworkIpAddressDao {
 	protected final GenericSearchBuilder<StorageNetworkIpAddressVO, Long> countInUserIp;
 	protected final GenericSearchBuilder<StorageNetworkIpAddressVO, String> listInUseIp;

@@ -27,7 +27,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = VpcOfferingServiceMapDao.class)
-@DB(txn = false)
+@DB()
 public class MockVpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao{
 
     /* (non-Javadoc)

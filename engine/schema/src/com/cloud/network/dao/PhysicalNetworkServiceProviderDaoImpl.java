@@ -31,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=PhysicalNetworkServiceProviderDao.class) @DB(txn=false)
+@Local(value=PhysicalNetworkServiceProviderDao.class) @DB()
 public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<PhysicalNetworkServiceProviderVO, Long> implements PhysicalNetworkServiceProviderDao {
     final SearchBuilder<PhysicalNetworkServiceProviderVO> physicalNetworkSearch;
     final SearchBuilder<PhysicalNetworkServiceProviderVO> physicalNetworkServiceProviderSearch;

@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -41,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value={DataCenterLinkLocalIpAddressDaoImpl.class}) @DB(txn=false)
+@Local(value={DataCenterLinkLocalIpAddressDaoImpl.class}) @DB
 public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCenterLinkLocalIpAddressVO, Long> implements DataCenterLinkLocalIpAddressDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterLinkLocalIpAddressDaoImpl.class);
     
