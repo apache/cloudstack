@@ -340,11 +340,14 @@
                              });
                              if (useNexusDvs == true) {
                             	 trafficData.vSwitchType = 'nexusdvs';
+                            	 fields.vSwitchName.defaultValue = 'epp0';
                              } else {
                             	 trafficData.vSwitchType = 'vmwaredvs';
+                            	 fields.vSwitchName.defaultValue = 'dvSwitch0';
                              }   
                          } else { //useDvs == false
                         	 trafficData.vSwitchType = 'vmwaresvs';
+                        	 fields.vSwitchName.defaultValue = 'vSwitch0';
                          }                         
             		}
             		
