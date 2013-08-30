@@ -2969,27 +2969,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         	throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
         DatastoreMO dsMo = volumeDsDetails.second();
 
+        // we will honor vCenter's meta if it exists
+        if(diskInfoBuilder != null && diskInfoBuilder.getDiskCount() > 0) {
+        	// we will always on-disk info from vCenter in this case
+        	VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(deviceBusName);
+        	if(diskInfo != null) {
+        		if(s_logger.isInfoEnabled())
+        			s_logger.info("Volume " + volumeTO.getId() + " does not seem to exist on datastore. use on-disk chain: " + 
+        				_gson.toJson(diskInfo));
+        		
+        		return diskInfo.getDiskChain();
+        	} else {
+        		s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore. on-disk may be out of sync as well. disk device info: " + deviceBusName);
+        	}
+        }
+        
         String datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(
-        	dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
-
+            	dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
         if(!dsMo.fileExists(datastoreDiskPath)) {
     		if(s_logger.isInfoEnabled())
     			s_logger.info("Volume " + volumeTO.getId() + " does not seem to exist on datastore, out of sync? path: " + datastoreDiskPath);
     		
-            if(diskInfoBuilder != null && diskInfoBuilder.getDiskCount() > 0) {
-            	// we will always on-disk info from vCenter in this case
-            	VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(deviceBusName);
-            	if(diskInfo != null) {
-            		if(s_logger.isInfoEnabled())
-            			s_logger.info("Volume " + volumeTO.getId() + " does not seem to exist on datastore. use on-disk chain: " + 
-            				_gson.toJson(diskInfo));
-            		
-            		return diskInfo.getDiskChain();
-            	} else {
-            		s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore. on-disk may be out of sync as well. disk device info: " + deviceBusName);
-            	}
-            }
-            
             // last resort, try chain info stored in DB
             if(volumeTO.getChainInfo() != null) {
             	VirtualMachineDiskInfo diskInfo = _gson.fromJson(volumeTO.getChainInfo(), VirtualMachineDiskInfo.class);
@@ -2999,7 +2999,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             	}
             	
             	throw new Exception("Volume " + volumeTO.getId() + " does not seem to exist on datastore. Broken disk chain");
-            }
+            	}
     	}
         
     	return new String[] { datastoreDiskPath }; 
