@@ -178,8 +178,8 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
         } else {
             //scaling disallowed, set static memory target
-            if (s_logger.isDebugEnabled()) {
-                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling");
+            if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
+                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
             }
             vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
@@ -200,6 +200,13 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             vmr.platform = platform;
         }
 
+        String coresPerSocket = details.get("cpu.corespersocket");
+        if (coresPerSocket != null) {
+            Map<String, String> platform = vmr.platform;
+            platform.put("cores-per-socket", coresPerSocket);
+            vmr.platform = platform;
+        }
+
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
 
@@ -216,14 +223,15 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             int cpuWeight = _maxWeight; // cpu_weight
             int utilization = 0; // max CPU cap, default is unlimited
 
-            // weight based allocation
+            // weight based allocation, CPU weight is calculated per VCPU
             cpuWeight = (int) ((speed * 0.99) / _host.speed * _maxWeight);
             if (cpuWeight > _maxWeight) {
                 cpuWeight = _maxWeight;
             }
 
             if (vmSpec.getLimitCpuUse()) {
-                utilization = (int) ((speed * 0.99) / _host.speed * 100);
+                // CPU cap is per VM, so need to assign cap based on the number of vcpus
+                utilization = (int) ((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
             }
 
             vcpuParams.put("weight", Integer.toString(cpuWeight));

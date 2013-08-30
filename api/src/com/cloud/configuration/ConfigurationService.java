@@ -20,11 +20,6 @@ import java.util.List;
 
 import javax.naming.NamingException;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
@@ -48,17 +43,23 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import org.apache.cloudstack.region.PortableIp;
-import org.apache.cloudstack.region.PortableIpRange;
 
 public interface ConfigurationService {
 
@@ -252,29 +253,11 @@ public interface ConfigurationService {
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
 
-    NetworkOffering getNetworkOffering(long id);
-
-    Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId);
-
     Account getVlanAccount(long vlanId);
 
     List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly);
 
-    DataCenter getZone(long id);
-
-    ServiceOffering getServiceOffering(long serviceOfferingId);
-
     Long getDefaultPageSize();
-
-    Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId);
-
-    DiskOffering getDiskOffering(long diskOfferingId);
-
-    /**
-     * @param offering
-     * @return
-     */
-    boolean isOfferingForVpc(NetworkOffering offering);
 
     PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException;
 

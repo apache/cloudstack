@@ -24,46 +24,17 @@
 
 <section id="zone-add">
     <title>Adding a Zone</title>
-    <para>These steps assume you have already logged in to the &PRODUCT; UI. See <xref linkend="log-in" />.</para>
+    <para>When you add a new zone, you will be prompted to configure the zone’s physical network and add the first pod, cluster, host, primary storage, and secondary storage.</para>
     <orderedlist>
-        <listitem><para>(Optional) If you are going to use Swift for cloud-wide secondary storage, you need to add it before you add zones.</para>
-            <orderedlist numeration="loweralpha">
-                <listitem><para>Log in to the &PRODUCT; UI as administrator.</para></listitem>
-                <listitem><para>If this is your first time visiting the UI, you will see the guided tour splash screen. Choose “Experienced user.” The Dashboard appears.</para></listitem>
-                <listitem><para>In the left navigation bar, click Global Settings.</para></listitem>
-                <listitem><para>In the search box, type swift.enable and click the search button.</para></listitem>
-                <listitem><para>Click the edit button and set swift.enable to true. 
-                    <inlinemediaobject>
-                        <imageobject>
-                            <imagedata fileref="./images/edit-icon.png" />
-                        </imageobject>
-                        <textobject><phrase>edit-icon.png: button to modify data</phrase></textobject>
-                    </inlinemediaobject>
-                </para>
-                </listitem>
-                <listitem><para>Restart the Management Server.</para>
-                    <programlisting># service cloudstack-management restart</programlisting>
-                </listitem>
-                <listitem><para>Refresh the &PRODUCT; UI browser tab and log back in.</para></listitem>
-            </orderedlist>
-        </listitem>
+        <listitem><para>Log in to the &PRODUCT; UI as the root administrator. See <xref linkend="log-in" />.</para></listitem>
         <listitem><para>In the left navigation, choose Infrastructure.</para></listitem>
         <listitem><para>On Zones, click View More.</para></listitem>
-        <listitem><para>(Optional) If you are using Swift storage, click Enable Swift. Provide the following:</para>
-            <itemizedlist>
-                <listitem><para><emphasis role="bold">URL.</emphasis> The Swift URL.</para></listitem>
-                <listitem><para><emphasis role="bold">Account.</emphasis> The Swift account.</para></listitem>
-                <listitem><para><emphasis role="bold">Username.</emphasis> The Swift account’s username.</para></listitem>
-                <listitem><para><emphasis role="bold">Key.</emphasis> The Swift key.</para></listitem>
-            </itemizedlist>
-        </listitem>
         <listitem><para>Click Add Zone. The zone creation wizard will appear.</para></listitem>
         <listitem><para>Choose one of the following network types:</para>
             <itemizedlist>
                 <listitem><para><emphasis role="bold">Basic.</emphasis> For AWS-style networking. Provides a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering).</para></listitem>
                 <listitem><para><emphasis role="bold">Advanced.</emphasis> For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.</para></listitem>
             </itemizedlist>
-            <para>For more information about the network types, see <xref linkend="about-physical-networks" />.</para>
         </listitem>
         <listitem><para>The rest of the steps differ depending on whether you chose Basic or Advanced. Continue with the steps that apply to you:</para>
             <itemizedlist>

@@ -48,6 +48,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
@@ -57,6 +58,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -65,7 +67,6 @@ import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -73,6 +74,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -86,6 +88,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -238,6 +241,8 @@ public class TemplateServiceImpl implements TemplateService {
                 TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao
                         .findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                    associateTemplateToZone(template.getId(), dcId);
+                    s_logger.info("Downloading builtin template " + template.getUniqueName() + " to data center: " + dcId);
                     TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmplt, store, null);
                 }
@@ -252,184 +257,208 @@ public class TemplateServiceImpl implements TemplateService {
             return;
         }
         long storeId = store.getId();
-        Long zoneId = store.getScope().getScopeId();
 
-        Map<String, TemplateProp> templateInfos = listTemplate(store);
-        if (templateInfos == null) {
-            return;
-        }
+        // add lock to make template sync for a data store only be done once
+        String lockString = "templatesync.storeId:" + storeId;
+        GlobalLock syncLock = GlobalLock.getInternLock(lockString);
+        try {
+            if (syncLock.lock(3)) {
+                try{
+                    Long zoneId = store.getScope().getScopeId();
 
-        Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-        List<VMTemplateVO> allTemplates = null;
-        if (zoneId == null) {
-            // region wide store
-            allTemplates = _templateDao.listAllActive();
-        } else {
-            // zone wide store
-            allTemplates = _templateDao.listAllInZone(zoneId);
-        }
-        List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
-        List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
-
-        if (rtngTmplts != null) {
-            for (VMTemplateVO rtngTmplt : rtngTmplts) {
-                if (!allTemplates.contains(rtngTmplt)) {
-                    allTemplates.add(rtngTmplt);
-                }
-            }
-        }
-
-        if (defaultBuiltin != null) {
-            for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-                if (!allTemplates.contains(builtinTmplt)) {
-                    allTemplates.add(builtinTmplt);
-                }
-            }
-        }
-
-        toBeDownloaded.addAll(allTemplates);
-
-        for (VMTemplateVO tmplt : allTemplates) {
-            String uniqueName = tmplt.getUniqueName();
-            TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
-            if (templateInfos.containsKey(uniqueName)) {
-                TemplateProp tmpltInfo = templateInfos.remove(uniqueName);
-                toBeDownloaded.remove(tmplt);
-                if (tmpltStore != null) {
-                    s_logger.info("Template Sync found " + uniqueName + " already in the image store");
-                    if (tmpltStore.getDownloadState() != Status.DOWNLOADED) {
-                        tmpltStore.setErrorString("");
+                    Map<String, TemplateProp> templateInfos = listTemplate(store);
+                    if (templateInfos == null) {
+                        return;
                     }
-                    if (tmpltInfo.isCorrupted()) {
-                        tmpltStore.setDownloadState(Status.DOWNLOAD_ERROR);
-                        String msg = "Template " + tmplt.getName() + ":" + tmplt.getId()
-                                + " is corrupted on secondary storage " + tmpltStore.getId();
-                        tmpltStore.setErrorString(msg);
-                        s_logger.info("msg");
-                        if (tmplt.getUrl() == null) {
-                            msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath()
-                                    + "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
-                            s_logger.warn(msg);
-                        } else {
-                            toBeDownloaded.add(tmplt);
-                        }
 
+                    Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+                    List<VMTemplateVO> allTemplates = null;
+                    if (zoneId == null) {
+                        // region wide store
+                        allTemplates = _templateDao.listAllActive();
                     } else {
-                        tmpltStore.setDownloadPercent(100);
-                        tmpltStore.setDownloadState(Status.DOWNLOADED);
-                        tmpltStore.setInstallPath(tmpltInfo.getInstallPath());
-                        tmpltStore.setSize(tmpltInfo.getSize());
-                        tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
-                        tmpltStore.setLastUpdated(new Date());
-                        // update size in vm_template table
-                        VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
-                        tmlpt.setSize(tmpltInfo.getSize());
-                        _templateDao.update(tmplt.getId(), tmlpt);
+                        // zone wide store
+                        allTemplates = _templateDao.listAllInZone(zoneId);
+                    }
+                    List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+                    List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
-                        // Skipping limit checks for SYSTEM Account and for the templates created from volumes or snapshots
-                        // which already got checked and incremented during createTemplate API call.
-                        if (tmpltInfo.getSize() > 0 && tmplt.getAccountId() != Account.ACCOUNT_ID_SYSTEM && tmplt.getUrl() != null) {
-                            long accountId = tmplt.getAccountId();
-                            try {
-                                _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
-                                        com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                                        tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
-                            } catch (ResourceAllocationException e) {
-                                s_logger.warn(e.getMessage());
-                                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null,
-                                        e.getMessage(), e.getMessage());
-                            } finally {
-                                _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId)
-                                        .getDomainId(), com.cloud.configuration.Resource.ResourceType.secondary_storage
-                                        .getOrdinal());
+                    if (rtngTmplts != null) {
+                        for (VMTemplateVO rtngTmplt : rtngTmplts) {
+                            if (!allTemplates.contains(rtngTmplt)) {
+                                allTemplates.add(rtngTmplt);
                             }
                         }
                     }
-                    _vmTemplateStoreDao.update(tmpltStore.getId(), tmpltStore);
-                } else {
-                    tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED,
-                            null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
-                    tmpltStore.setSize(tmpltInfo.getSize());
-                    tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
-                    tmpltStore.setDataStoreRole(store.getRole());
-                    _vmTemplateStoreDao.persist(tmpltStore);
 
-                    // update size in vm_template table
-                    VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
-                    tmlpt.setSize(tmpltInfo.getSize());
-                    _templateDao.update(tmplt.getId(), tmlpt);
-                    associateTemplateToZone(tmplt.getId(), zoneId);
+                    if (defaultBuiltin != null) {
+                        for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+                            if (!allTemplates.contains(builtinTmplt)) {
+                                allTemplates.add(builtinTmplt);
+                            }
+                        }
+                    }
+
+                    toBeDownloaded.addAll(allTemplates);
+
+                    for (VMTemplateVO tmplt : allTemplates) {
+                        String uniqueName = tmplt.getUniqueName();
+                        TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
+                        if (templateInfos.containsKey(uniqueName)) {
+                            TemplateProp tmpltInfo = templateInfos.remove(uniqueName);
+                            toBeDownloaded.remove(tmplt);
+                            if (tmpltStore != null) {
+                                s_logger.info("Template Sync found " + uniqueName + " already in the image store");
+                                if (tmpltStore.getDownloadState() != Status.DOWNLOADED) {
+                                    tmpltStore.setErrorString("");
+                                }
+                                if (tmpltInfo.isCorrupted()) {
+                                    tmpltStore.setDownloadState(Status.DOWNLOAD_ERROR);
+                                    String msg = "Template " + tmplt.getName() + ":" + tmplt.getId()
+                                            + " is corrupted on secondary storage " + tmpltStore.getId();
+                                    tmpltStore.setErrorString(msg);
+                                    s_logger.info("msg");
+                                    if (tmplt.getUrl() == null) {
+                                        msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath()
+                                                + "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
+                                        s_logger.warn(msg);
+                                    } else {
+                                        s_logger.info("Removing template_store_ref entry for corrupted template " + tmplt.getName());
+                                        _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                        toBeDownloaded.add(tmplt);
+                                    }
+
+                                } else {
+                                    tmpltStore.setDownloadPercent(100);
+                                    tmpltStore.setDownloadState(Status.DOWNLOADED);
+                                    tmpltStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+                                    tmpltStore.setInstallPath(tmpltInfo.getInstallPath());
+                                    tmpltStore.setSize(tmpltInfo.getSize());
+                                    tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
+                                    tmpltStore.setLastUpdated(new Date());
+                                    // update size in vm_template table
+                                    VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
+                                    tmlpt.setSize(tmpltInfo.getSize());
+                                    _templateDao.update(tmplt.getId(), tmlpt);
+
+                                    // Skipping limit checks for SYSTEM Account and for the templates created from volumes or snapshots
+                                    // which already got checked and incremented during createTemplate API call.
+                                    if (tmpltInfo.getSize() > 0 && tmplt.getAccountId() != Account.ACCOUNT_ID_SYSTEM && tmplt.getUrl() != null) {
+                                        long accountId = tmplt.getAccountId();
+                                        try {
+                                            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
+                                                    com.cloud.configuration.Resource.ResourceType.secondary_storage,
+                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
+                                        } catch (ResourceAllocationException e) {
+                                            s_logger.warn(e.getMessage());
+                                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null,
+                                                    e.getMessage(), e.getMessage());
+                                        } finally {
+                                            _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId)
+                                                    .getDomainId(), com.cloud.configuration.Resource.ResourceType.secondary_storage
+                                                    .getOrdinal());
+                                        }
+                                    }
+                                }
+                                _vmTemplateStoreDao.update(tmpltStore.getId(), tmpltStore);
+                            } else {
+                                tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED,
+                                        null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
+                                tmpltStore.setSize(tmpltInfo.getSize());
+                                tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
+                                tmpltStore.setDataStoreRole(store.getRole());
+                                _vmTemplateStoreDao.persist(tmpltStore);
+
+                                // update size in vm_template table
+                                VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
+                                tmlpt.setSize(tmpltInfo.getSize());
+                                _templateDao.update(tmplt.getId(), tmlpt);
+                                associateTemplateToZone(tmplt.getId(), zoneId);
 
 
+                            }
+                        } else {
+                            s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId + ", may request download based on available hypervisor types");
+                            if (tmpltStore != null) {
+                                s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
+                                // remove those leftover entries
+                                _vmTemplateStoreDao.remove(tmpltStore.getId());
+                            }
+                        }
+                    }
+
+                    if (toBeDownloaded.size() > 0) {
+                        /* Only download templates whose hypervirsor type is in the zone */
+                        List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(zoneId);
+                        if (availHypers.isEmpty()) {
+                            /*
+                             * This is for cloudzone, local secondary storage resource
+                             * started before cluster created
+                             */
+                            availHypers.add(HypervisorType.KVM);
+                        }
+                        /* Baremetal need not to download any template */
+                        availHypers.remove(HypervisorType.BareMetal);
+                        availHypers.add(HypervisorType.None); // bug 9809: resume ISO
+                        // download.
+                        for (VMTemplateVO tmplt : toBeDownloaded) {
+                            if (tmplt.getUrl() == null) { // If url is null we can't
+                                s_logger.info("Skip downloading template " + tmplt.getUniqueName() + " since no url is specified.");
+                                continue;
+                            }
+                            // if this is private template, skip sync to a new image store
+                            if (!tmplt.isPublicTemplate() && !tmplt.isFeatured() && tmplt.getTemplateType() != TemplateType.SYSTEM) {
+                                s_logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
+                                continue;
+                            }
+
+                            if (availHypers.contains(tmplt.getHypervisorType())) {
+                                s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store "
+                                        + store.getName());
+                                associateTemplateToZone(tmplt.getId(), zoneId);
+                                TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
+                                createTemplateAsync(tmpl, store, null);
+                            } else {
+                                s_logger.info("Skip downloading template " + tmplt.getUniqueName() + " since current data center does not have hypervisor "
+                                        + tmplt.getHypervisorType().toString());
+                            }
+                        }
+                    }
+
+                    for (String uniqueName : templateInfos.keySet()) {
+                        TemplateProp tInfo = templateInfos.get(uniqueName);
+                        if (_tmpltMgr.templateIsDeleteable(tInfo.getId())) {
+                            // we cannot directly call deleteTemplateSync here to
+                            // reuse delete logic since in this case, our db does not have
+                            // this template at all.
+                            TemplateObjectTO tmplTO = new TemplateObjectTO();
+                            tmplTO.setDataStore(store.getTO());
+                            tmplTO.setPath(tInfo.getInstallPath());
+                            tmplTO.setId(tInfo.getId());
+                            DeleteCommand dtCommand = new DeleteCommand(tmplTO);
+                            EndPoint ep = _epSelector.select(store);
+                            Answer answer = ep.sendMessage(dtCommand);
+                            if (answer == null || !answer.getResult()) {
+                                s_logger.info("Failed to deleted template at store: " + store.getName());
+
+                            } else {
+                                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage "
+                                        + storeId;
+                                s_logger.info(description);
+                            }
+
+                        }
+                    }
                 }
-            } else {
-                if (tmpltStore != null) {
-                    s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId
-                            + ", may request download based on available hypervisor types");
-                    s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
-                    // remove those leftover entries
-                    _vmTemplateStoreDao.remove(tmpltStore.getId());
+                finally{
+                    syncLock.unlock();
                 }
             }
-        }
-
-        if (toBeDownloaded.size() > 0) {
-            /* Only download templates whose hypervirsor type is in the zone */
-            List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(zoneId);
-            if (availHypers.isEmpty()) {
-                /*
-                 * This is for cloudzone, local secondary storage resource
-                 * started before cluster created
-                 */
-                availHypers.add(HypervisorType.KVM);
+            else {
+                s_logger.info("Couldn't get global lock on " + lockString + ", another thread may be doing template sync on data store " + storeId + " now.");
             }
-            /* Baremetal need not to download any template */
-            availHypers.remove(HypervisorType.BareMetal);
-            availHypers.add(HypervisorType.None); // bug 9809: resume ISO
-            // download.
-            for (VMTemplateVO tmplt : toBeDownloaded) {
-                if (tmplt.getUrl() == null) { // If url is null we can't
-                    // initiate the download
-                    continue;
-                }
-
-                // if this is private template, skip
-                if (!tmplt.isPublicTemplate() && !tmplt.isFeatured()) {
-                    continue;
-                }
-                if (availHypers.contains(tmplt.getHypervisorType())) {
-                    s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store "
-                            + store.getName());
-                    associateTemplateToZone(tmplt.getId(), zoneId);
-                    TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
-                    createTemplateAsync(tmpl, store, null);
-                }
-            }
-        }
-
-        for (String uniqueName : templateInfos.keySet()) {
-            TemplateProp tInfo = templateInfos.get(uniqueName);
-            if (_tmpltMgr.templateIsDeleteable(tInfo.getId())) {
-                // we cannot directly call deleteTemplateSync here to
-                // reuse delete logic since in this case, our db does not have
-                // this template at all.
-                TemplateObjectTO tmplTO = new TemplateObjectTO();
-                tmplTO.setDataStore(store.getTO());
-                tmplTO.setPath(tInfo.getInstallPath());
-                tmplTO.setId(tInfo.getId());
-                DeleteCommand dtCommand = new DeleteCommand(tmplTO);
-                EndPoint ep = _epSelector.select(store);
-                Answer answer = ep.sendMessage(dtCommand);
-                if (answer == null || !answer.getResult()) {
-                    s_logger.info("Failed to deleted template at store: " + store.getName());
-
-                } else {
-                    String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage "
-                            + storeId;
-                    s_logger.info(description);
-                }
-
-            }
+        } finally {
+            syncLock.releaseRef();
         }
 
     }

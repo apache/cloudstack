@@ -113,19 +113,19 @@
           ports. Configure the switch port connected to the router in PVLAN promiscuous trunk mode,
           which would translate an isolated VLAN to primary VLAN for the PVLAN-unaware router. </para>
         <para>Note that only Cisco Catalyst 4500 has the PVLAN promiscuous trunk mode to connect
-          both normal VLAN and PVLAN to a PVLAN-unaware switch. For other Catalyst PVLAN support
-          switch, connect the switch to upper switch by using cables. The number of cables should be
-          greater than the number of PVLANs used.</para>
+          both normal VLAN and PVLAN to a PVLAN-unaware switch. For the other Catalyst PVLAN support
+          switch, connect the switch to upper switch by using cables, one each for a PVLAN
+          pair.</para>
       </listitem>
       <listitem>
         <para>Configure private VLAN on your physical switches out-of-band.</para>
       </listitem>
       <listitem>
-        <para>Before you use PVLAN on XenServer and KVM, enable Open vSwitch (OVS) .</para>
+        <para>Before you use PVLAN on XenServer and KVM, enable Open vSwitch (OVS).</para>
         <note>
-          <para>OVS on XenServer and KVM does not support PVLAN. Therefore, simulate PVLAN on OVS
-            for XenServer and KVM by modifying the flow table and tagging every traffic leaving
-            guest VMs with the secondary VLAN ID.</para>
+          <para>OVS on XenServer and KVM does not support PVLAN natively. Therefore, &PRODUCT;
+            managed to simulate PVLAN on OVS for XenServer and KVM by modifying the flow
+            table.</para>
         </note>
       </listitem>
     </itemizedlist>
@@ -134,7 +134,7 @@
     <title>Creating a PVLAN-Enabled Guest Network</title>
     <orderedlist>
       <listitem>
-        <para>Log in to the CloudPlatform UI as administrator.</para>
+        <para>Log in to the &PRODUCT; UI as administrator.</para>
       </listitem>
       <listitem>
         <para>In the left navigation, choose Infrastructure.</para>
@@ -176,8 +176,8 @@
             <para><emphasis role="bold">VLAN ID</emphasis>: The unique ID of the VLAN.</para>
           </listitem>
           <listitem>
-            <para><emphasis role="bold">Isolated VLAN ID</emphasis>: The unique ID of the Secondary
-              Isolated VLAN. </para>
+            <para><emphasis role="bold">Secondary Isolated VLAN ID</emphasis>: The unique ID of the
+              Secondary Isolated VLAN. </para>
             <para>For the description on Secondary Isolated VLAN, see <xref linkend="about-pvlan"
               />.</para>
           </listitem>
@@ -223,15 +223,15 @@
           <listitem>
             <para><emphasis role="bold">IP Range</emphasis>: A range of IP addresses that are
               accessible from the Internet and are assigned to the guest VMs.</para>
-            <para>If one NIC is used, these IPs should be in the same CIDR in the case of
-              IPv6.</para>
+            <!--<para>If one NIC is used, these IPs should be in the same CIDR in the case of
+              IPv6.</para> -->
           </listitem>
-          <listitem>
+          <!-- <listitem>
             <para><emphasis role="bold">IPv6 CIDR</emphasis>: The network prefix that defines the
               guest network subnet. This is the CIDR that describes the IPv6 addresses in use in the
               guest networks in this zone. To allot IP addresses from within a particular address
               block, enter a CIDR.</para>
-          </listitem>
+          </listitem> -->
           <listitem>
             <para><emphasis role="bold">Network Domain</emphasis>: A custom DNS suffix at the level
               of a network. If you want to assign a special domain name to the guest VM network,

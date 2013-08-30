@@ -33,13 +33,14 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -60,7 +61,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.AccountManager;
@@ -154,7 +154,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    VolumeManager volumeMgr;
+    VolumeOrchestrationService volumeMgr;
 
     String _instance;
     ScheduledExecutorService _executor;
@@ -866,12 +866,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     }
 
     @Override
-    public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
     }
 
     @Override
-    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-        for (ManagementServerHostVO node : nodeList) {
+    public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
+        for (ManagementServerHost node : nodeList) {
             _haDao.releaseWorkItems(node.getMsid());
         }
     }

@@ -25,21 +25,25 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -47,7 +51,9 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -56,8 +62,6 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
@@ -66,17 +70,19 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume.State;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.State;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -86,6 +92,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -147,6 +154,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     }
 
+    @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore) {
         DataStoreDriver dataStoreDriver = dataStore.getDriver();
 
@@ -287,15 +295,19 @@ public class VolumeServiceImpl implements VolumeService {
         CommandResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
         VolumeApiResult apiResult = new VolumeApiResult(vo);
-        if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed);
-            if (canVolumeBeRemoved(vo.getId())) {
-                s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
-                volDao.remove(vo.getId());
+        try {
+            if (result.isSuccess()) {
+                vo.processEvent(Event.OperationSuccessed);
+                if (canVolumeBeRemoved(vo.getId())) {
+                    s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
+                    volDao.remove(vo.getId());
+                }
+            } else {
+                vo.processEvent(Event.OperationFailed);
+                apiResult.setResult(result.getResult());
             }
-        } else {
-            vo.processEvent(Event.OperationFailed);
-            apiResult.setResult(result.getResult());
+        } catch (Exception e) {
+            s_logger.debug("ignore delete volume status update failure, it will be picked up by storage clean up thread later", e);
         }
         context.getFuture().complete(apiResult);
         return null;
@@ -494,6 +506,7 @@ public class VolumeServiceImpl implements VolumeService {
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
             CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
         DataObject vo = context.vo;
+        DataObject tmplOnPrimary = context.templateOnStore;
         CopyCommandResult result = callback.getResult();
         VolumeApiResult volResult = new VolumeApiResult((VolumeObject) vo);
 
@@ -502,8 +515,32 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
+            // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
+            // template_spool_ref entry here to NOT_DOWNLOADED and Allocated state
+            Answer ans = result.getAnswer();
+            if ( ans != null && ans instanceof CopyCmdAnswer && ans.getDetails().contains("request template reload")){
+                if (tmplOnPrimary != null){
+                    s_logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
+                    VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId());
+                    if (templatePoolRef != null) {
+                        long templatePoolRefId = templatePoolRef.getId();
+                        templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, 1200);
+                        if (templatePoolRef == null) {
+                            s_logger.warn("Reset Template State On Pool failed - unable to lock TemplatePoolRef " + templatePoolRefId);
+                        }
+                        
+                        try {
+                            templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+                            templatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                            _tmpltPoolDao.update(templatePoolRefId, templatePoolRef);
+                        } finally {
+                            _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
+                        }
+                    }
+                }
+            }
         }
-
+        
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
         future.complete(volResult);
         return null;
@@ -717,7 +754,7 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallFuture<VolumeApiResult> future = context.future;
         VolumeApiResult res = new VolumeApiResult(destVolume);
         try {
-            if (res.isFailed()) {
+            if (result.isFailed()) {
                 srcVolume.processEvent(Event.OperationFailed); // back to Ready state in Volume table
                 destVolume.processEventOnly(Event.OperationFailed);
                 res.setResult(result.getResult());
@@ -871,7 +908,7 @@ public class VolumeServiceImpl implements VolumeService {
                 future.complete(res);
             }
         } catch (Exception e) {
-            s_logger.error("Failed to process copy volume callback", e);
+            s_logger.error("Failed to process migrate volume callback", e);
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -992,12 +1029,41 @@ public class VolumeServiceImpl implements VolumeService {
                 vo.processEvent(Event.OperationFailed);
             } else {
                 vo.processEvent(Event.OperationSuccessed, result.getAnswer());
-            }
 
-            _resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage, vo.getSize());
+                if (vo.getSize() != null) {
+                    // publish usage events
+                    // get physical size from volume_store_ref table
+                    long physicalSize = 0;
+                    DataStore ds = vo.getDataStore();
+                    VolumeDataStoreVO volStore = _volumeStoreDao.findByStoreVolume(ds.getId(), vo.getId());
+                    if (volStore != null) {
+                        physicalSize = volStore.getPhysicalSize();
+                    } else {
+                        s_logger.warn("No entry found in volume_store_ref for volume id: " + vo.getId() + " and image store id: " + ds.getId()
+                                + " at the end of uploading volume!");
+                    }
+                    Scope dsScope = ds.getScope();
+                    if (dsScope.getScopeType() == ScopeType.ZONE) {
+                        if (dsScope.getScopeId() != null) {
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), dsScope.getScopeId(), vo.getId(), vo.getName(), null,
+                                    null, physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
+                        }
+                        else{
+                            s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
+                        }
+                    } else if (dsScope.getScopeType() == ScopeType.REGION) {
+                        // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), -1, vo.getId(), vo.getName(), null,
+                                null, physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
+
+                        _resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage, vo.getSize());
+                    }
+                }
+            }
             VolumeApiResult res = new VolumeApiResult(vo);
             context.future.complete(res);
             return null;
+
         } catch (Exception e) {
             s_logger.error("register volume failed: ", e);
             VolumeApiResult res = new VolumeApiResult(null);
@@ -1062,124 +1128,143 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public void handleVolumeSync(DataStore store) {
         if (store == null) {
-            s_logger.warn("Huh? ssHost is null");
+            s_logger.warn("Huh? image store is null");
             return;
         }
         long storeId = store.getId();
 
-        Map<Long, TemplateProp> volumeInfos = listVolume(store);
-        if (volumeInfos == null) {
-            return;
-        }
-
-        List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listByStoreId(storeId);
-        List<VolumeDataStoreVO> toBeDownloaded = new ArrayList<VolumeDataStoreVO>(dbVolumes);
-        for (VolumeDataStoreVO volumeStore : dbVolumes) {
-            VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
-            if (volume == null ){
-                s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId
-                        + ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
-                volumeStore.setDestroyed(true);
-                _volumeStoreDao.update(volumeStore.getId(), volumeStore);
-                continue;
-            }
-            // Exists then don't download
-            if (volumeInfos.containsKey(volume.getId())) {
-                TemplateProp volInfo = volumeInfos.remove(volume.getId());
-                toBeDownloaded.remove(volumeStore);
-                s_logger.info("Volume Sync found " + volume.getUuid() + " already in the volume image store table");
-                if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
-                    volumeStore.setErrorString("");
-                }
-                if (volInfo.isCorrupted()) {
-                    volumeStore.setDownloadState(Status.DOWNLOAD_ERROR);
-                    String msg = "Volume " + volume.getUuid() + " is corrupted on image store ";
-                    volumeStore.setErrorString(msg);
-                    s_logger.info("msg");
-                    if (volumeStore.getDownloadUrl() == null) {
-                        msg = "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath()
-                                + "is corrupted, please check in image store: " + volumeStore.getDataStoreId();
-                        s_logger.warn(msg);
-                    } else {
-                        toBeDownloaded.add(volumeStore);
+        // add lock to make template sync for a data store only be done once
+        String lockString = "volumesync.storeId:" + storeId;
+        GlobalLock syncLock = GlobalLock.getInternLock(lockString);
+        try {
+            if ( syncLock.lock(3)){
+                try {
+                    Map<Long, TemplateProp> volumeInfos = listVolume(store);
+                    if (volumeInfos == null) {
+                        return;
                     }
 
-                } else { // Put them in right status
-                    volumeStore.setDownloadPercent(100);
-                    volumeStore.setDownloadState(Status.DOWNLOADED);
-                    volumeStore.setInstallPath(volInfo.getInstallPath());
-                    volumeStore.setSize(volInfo.getSize());
-                    volumeStore.setPhysicalSize(volInfo.getPhysicalSize());
-                    volumeStore.setLastUpdated(new Date());
-                    _volumeStoreDao.update(volumeStore.getId(), volumeStore);
+                    List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listByStoreId(storeId);
+                    List<VolumeDataStoreVO> toBeDownloaded = new ArrayList<VolumeDataStoreVO>(dbVolumes);
+                    for (VolumeDataStoreVO volumeStore : dbVolumes) {
+                        VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
+                        if (volume == null ){
+                            s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId
+                                    + ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
+                            volumeStore.setDestroyed(true);
+                            _volumeStoreDao.update(volumeStore.getId(), volumeStore);
+                            continue;
+                        }
+                        // Exists then don't download
+                        if (volumeInfos.containsKey(volume.getId())) {
+                            TemplateProp volInfo = volumeInfos.remove(volume.getId());
+                            toBeDownloaded.remove(volumeStore);
+                            s_logger.info("Volume Sync found " + volume.getUuid() + " already in the volume image store table");
+                            if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
+                                volumeStore.setErrorString("");
+                            }
+                            if (volInfo.isCorrupted()) {
+                                volumeStore.setDownloadState(Status.DOWNLOAD_ERROR);
+                                String msg = "Volume " + volume.getUuid() + " is corrupted on image store ";
+                                volumeStore.setErrorString(msg);
+                                s_logger.info("msg");
+                                if (volumeStore.getDownloadUrl() == null) {
+                                    msg = "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath()
+                                            + "is corrupted, please check in image store: " + volumeStore.getDataStoreId();
+                                    s_logger.warn(msg);
+                                } else {
+                                    s_logger.info("Removing volume_store_ref entry for corrupted volume " + volume.getName());
+                                    _volumeStoreDao.remove(volumeStore.getId());
+                                    toBeDownloaded.add(volumeStore);
+                                }
 
-                    if (volume.getSize() == 0) {
-                        // Set volume size in volumes table
-                        volume.setSize(volInfo.getSize());
-                        _volumeDao.update(volumeStore.getVolumeId(), volume);
+                            } else { // Put them in right status
+                                volumeStore.setDownloadPercent(100);
+                                volumeStore.setDownloadState(Status.DOWNLOADED);
+                                volumeStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+                                volumeStore.setInstallPath(volInfo.getInstallPath());
+                                volumeStore.setSize(volInfo.getSize());
+                                volumeStore.setPhysicalSize(volInfo.getPhysicalSize());
+                                volumeStore.setLastUpdated(new Date());
+                                _volumeStoreDao.update(volumeStore.getId(), volumeStore);
+
+                                if (volume.getSize() == 0) {
+                                    // Set volume size in volumes table
+                                    volume.setSize(volInfo.getSize());
+                                    _volumeDao.update(volumeStore.getVolumeId(), volume);
+                                }
+
+                                if (volInfo.getSize() > 0) {
+                                    try {
+                                        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
+                                                com.cloud.configuration.Resource.ResourceType.secondary_storage, volInfo.getSize()
+                                                - volInfo.getPhysicalSize());
+                                    } catch (ResourceAllocationException e) {
+                                        s_logger.warn(e.getMessage());
+                                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED,
+                                                volume.getDataCenterId(), volume.getPodId(), e.getMessage(), e.getMessage());
+                                    } finally {
+                                        _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(),
+                                                com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
+                                    }
+                                }
+                            }
+                            continue;
+                        }
+                        // Volume is not on secondary but we should download.
+                        if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
+                            s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId
+                                    + ", will request download to start/resume shortly");
+                            toBeDownloaded.add(volumeStore);
+                        }
                     }
 
-                    if (volInfo.getSize() > 0) {
-                        try {
-                            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
-                                    com.cloud.configuration.Resource.ResourceType.secondary_storage, volInfo.getSize()
-                                    - volInfo.getPhysicalSize());
-                        } catch (ResourceAllocationException e) {
-                            s_logger.warn(e.getMessage());
-                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED,
-                                    volume.getDataCenterId(), volume.getPodId(), e.getMessage(), e.getMessage());
-                        } finally {
-                            _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(),
-                                    com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
+                    // Download volumes which haven't been downloaded yet.
+                    if (toBeDownloaded.size() > 0) {
+                        for (VolumeDataStoreVO volumeHost : toBeDownloaded) {
+                            if (volumeHost.getDownloadUrl() == null) { // If url is null we
+                                s_logger.info("Skip downloading volume " + volumeHost.getVolumeId() + " since no download url is specified.");
+                                continue;
+                            }
+                            s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
+                            // TODO: pass a callback later
+                            VolumeInfo vol = volFactory.getVolume(volumeHost.getVolumeId());
+                            createVolumeAsync(vol, store);
+                        }
+                    }
+
+                    // Delete volumes which are not present on DB.
+                    for (Long uniqueName : volumeInfos.keySet()) {
+                        TemplateProp tInfo = volumeInfos.get(uniqueName);
+
+                        //we cannot directly call expungeVolumeAsync here to
+                        // reuse delete logic since in this case, our db does not have
+                        // this template at all.
+                        VolumeObjectTO tmplTO = new VolumeObjectTO();
+                        tmplTO.setDataStore(store.getTO());
+                        tmplTO.setPath(tInfo.getInstallPath());
+                        tmplTO.setId(tInfo.getId());
+                        DeleteCommand dtCommand = new DeleteCommand(tmplTO);
+                        EndPoint ep = _epSelector.select(store);
+                        Answer answer = ep.sendMessage(dtCommand);
+                        if (answer == null || !answer.getResult()) {
+                            s_logger.info("Failed to deleted volume at store: " + store.getName());
+
+                        } else {
+                            String description = "Deleted volume " + tInfo.getTemplateName() + " on secondary storage " + storeId;
+                            s_logger.info(description);
                         }
                     }
                 }
-                continue;
-            }
-            // Volume is not on secondary but we should download.
-            if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId
-                        + ", will request download to start/resume shortly");
-                toBeDownloaded.add(volumeStore);
-            }
-        }
-
-        // Download volumes which haven't been downloaded yet.
-        if (toBeDownloaded.size() > 0) {
-            for (VolumeDataStoreVO volumeHost : toBeDownloaded) {
-                if (volumeHost.getDownloadUrl() == null) { // If url is null we
-                    // can't initiate the
-                    // download
-                    continue;
+                finally{
+                    syncLock.unlock();
                 }
-                s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
-                // TODO: pass a callback later
-                VolumeInfo vol = volFactory.getVolume(volumeHost.getVolumeId());
-                createVolumeAsync(vol, store);
             }
-        }
-
-        // Delete volumes which are not present on DB.
-        for (Long uniqueName : volumeInfos.keySet()) {
-            TemplateProp tInfo = volumeInfos.get(uniqueName);
-
-            //we cannot directly call expungeVolumeAsync here to
-            // reuse delete logic since in this case, our db does not have
-            // this template at all.
-            VolumeObjectTO tmplTO = new VolumeObjectTO();
-            tmplTO.setDataStore(store.getTO());
-            tmplTO.setPath(tInfo.getInstallPath());
-            tmplTO.setId(tInfo.getId());
-            DeleteCommand dtCommand = new DeleteCommand(tmplTO);
-            EndPoint ep = _epSelector.select(store);
-            Answer answer = ep.sendMessage(dtCommand);
-            if (answer == null || !answer.getResult()) {
-                s_logger.info("Failed to deleted volume at store: " + store.getName());
-
-            } else {
-                String description = "Deleted volume " + tInfo.getTemplateName() + " on secondary storage " + storeId;
-                s_logger.info(description);
+            else {
+                s_logger.info("Couldn't get global lock on " + lockString + ", another thread may be doing volume sync on data store " + storeId + " now.");
             }
+        } finally {
+            syncLock.releaseRef();
         }
     }
 
@@ -1208,7 +1293,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
         } catch (Exception e) {
-            s_logger.debug("Take snapshot: " + volume.getId() + " failed: " + e.toString());
+            s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
         } finally {
             if (snapshot != null) {
                 vol.stateTransit(Volume.Event.OperationSucceeded);

@@ -19,6 +19,7 @@ package com.cloud.utils.xmlobject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,10 +27,8 @@ import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 public class XmlObject {
-    private Map<String, Object> elements = new HashMap<String, Object>();
+    private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
 
@@ -46,14 +45,14 @@ public class XmlObject {
         }
         Object old = elements.get(key);
         if (old == null) {
-            System.out.println(String.format("no %s, add new", key));
+            //System.out.println(String.format("no %s, add new", key));
             elements.put(key, e);
         } else {
             if (old instanceof List) {
-                System.out.println(String.format("already list %s, add", key));
+                //System.out.println(String.format("already list %s, add", key));
                 ((List)old).add(e);
             } else {
-                System.out.println(String.format("not list list %s, add list", key));
+                //System.out.println(String.format("not list list %s, add list", key));
                 List lst = new ArrayList();
                 lst.add(old);
                 lst.add(e);

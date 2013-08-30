@@ -21,7 +21,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SiteLoadBalancerConfig;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -44,6 +43,7 @@ import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.dao.RegionDao;
 
@@ -664,7 +664,6 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         for (Pair<Long,Long> zoneId: gslbSiteIds) {
 
             List<SiteLoadBalancerConfig> slbs = new ArrayList<SiteLoadBalancerConfig>();
-
             // set site as 'local' for the site in that zone
             for (Pair<Long,Long> innerLoopZoneId: gslbSiteIds) {
                 SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(innerLoopZoneId.first());
@@ -673,6 +672,14 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             gslbConfigCmd.setSiteLoadBalancers(slbs);
+            gslbConfigCmd.setForRevoke(revoke);
+
+            // revoke GSLB configuration completely on the site GSLB provider for the sites that no longer
+            // are participants of a GSLB rule
+            SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(zoneId.first());
+            if (siteLb.forRevoke()) {
+                gslbConfigCmd.setForRevoke(true);
+            }
 
             try {
                 _gslbProvider.applyGlobalLoadBalancerRule(zoneId.first(), zoneId.second(), gslbConfigCmd);

@@ -26,7 +26,7 @@
     <title>Getting the release</title>
     <para>
         You can download the latest &PRODUCT; release from the 
-        <ulink url="http://incubator.apache.org/cloudstack/downloads.html">
+        <ulink url="http://cloudstack.apache.org/downloads.html">
         Apache CloudStack project download page</ulink>. 
     </para>
     <para>Prior releases are available via archive.apache.org as well. See the downloads page for more information on archived releases.</para>

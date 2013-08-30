@@ -145,8 +145,9 @@ known_categories = {
     'addImageStore': 'Image Store',
     'listImageStore': 'Image Store',
     'deleteImageStore': 'Image Store',
-    'createCacheStore': 'Image Store',
-    'listCacheStores': 'Image Store',
+    'createSecondaryStagingStore': 'Image Store',
+    'deleteSecondaryStagingStore': 'Image Store',
+    'listSecondaryStagingStores': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
     'PortableIp': 'Portable IP',
@@ -154,7 +155,9 @@ known_categories = {
     'releaseDedicatedHost': 'Dedicate Resources',
     'Baremetal' : 'Baremetal',
     'UCS' : 'UCS',
-    'Ucs' : 'UCS'
+    'Ucs' : 'UCS',
+    'CacheStores' : 'Cache Stores',
+    'CacheStore' : 'Cache Store'
     }
 
 

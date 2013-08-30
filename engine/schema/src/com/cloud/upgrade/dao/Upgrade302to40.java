@@ -64,7 +64,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        updateVmWareSystemVms(conn);
+        //updateVmWareSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         correctVRProviders(conn);
         correctMultiplePhysicaNetworkSetups(conn);
         addHostDetailsUniqueKey(conn);
@@ -74,6 +74,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         setupExternalNetworkDevices(conn);
         fixZoneUsingExternalDevices(conn);
         encryptConfig(conn);
+        encryptClusterDetails(conn);
     }
 
     @Override
@@ -84,54 +85,6 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         }
 
         return new File[] { new File(script) };
-    }
-
-    private void updateVmWareSystemVms(Connection conn){
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        boolean VMware = false;
-        try {
-            pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
-            rs = pstmt.executeQuery();
-            while(rs.next()){
-                if("VMware".equals(rs.getString(1))){
-                    VMware = true;
-                }
-            }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Error while iterating through list of hypervisors in use", e);
-        }
-        // Just update the VMware system template. Other hypervisor templates are unchanged from previous 3.0.x versions.
-        s_logger.debug("Updating VMware System Vms");
-        try {
-            //Get 4.0 VMware system Vm template Id
-            pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-4.0' and removed is null");
-            rs = pstmt.executeQuery();
-            if(rs.next()){
-                long templateId = rs.getLong(1);
-                rs.close();
-                pstmt.close();
-                // change template type to SYSTEM
-                pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                pstmt.setLong(1, templateId);
-                pstmt.executeUpdate();
-                pstmt.close();
-                // update templete ID of system Vms
-                pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
-                pstmt.setLong(1, templateId);
-                pstmt.executeUpdate();
-                pstmt.close();
-            } else {
-                if (VMware){
-                    throw new CloudRuntimeException("4.0 VMware SystemVm template not found. Cannot upgrade system Vms");
-                } else {
-                    s_logger.warn("4.0 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
-                }
-            }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
-        }
-        s_logger.debug("Updating System Vm Template IDs Complete");
     }
 
     private void correctVRProviders(Connection conn) {
@@ -1119,5 +1072,43 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             }
         }
         s_logger.debug("Done encrypting Config values");
+    }
+
+    private void encryptClusterDetails(Connection conn) {
+        s_logger.debug("Encrypting cluster details");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, value from `cloud`.`cluster_details` where name = 'password'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String value = rs.getString(2);
+                if (value == null) {
+                    continue;
+                }
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement("update `cloud`.`cluster_details` set value=? where id=?");
+                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting cluster_details");
     }
 }

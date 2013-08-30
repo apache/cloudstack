@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,10 +31,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.server.ConfigurationServer;
+import com.google.gson.Gson;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -53,10 +55,12 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.PropagateResourceEventCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
@@ -72,10 +76,10 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -115,11 +119,12 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
-import com.cloud.service.ServiceOfferingVO;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -130,7 +135,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -142,9 +146,11 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -164,6 +170,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Local({ ResourceManager.class, ResourceService.class })
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
     private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
+
+    Gson _gson;
 
     @Inject
     AccountManager _accountMgr;
@@ -187,8 +195,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected CapacityDao _capacityDao;
     @Inject
     protected HostDao _hostDao;
-    @Inject
-    protected S3Manager _s3Mgr;
     @Inject
     protected HostDetailsDao _hostDetailsDao;
     @Inject
@@ -215,8 +221,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     PlannerHostReservationDao _plannerHostReserveDao;
     @Inject
     protected DedicatedResourceDao           _dedicatedDao;
-    @Inject
-    protected ConfigurationServer _configServer;
 
     protected List<? extends Discoverer> _discoverers;
 
@@ -258,6 +262,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private HypervisorType _defaultSystemVMHypervisor;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds
+
+    private GenericSearchBuilder<HostVO, String> _hypervisorsInDC;
 
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -375,8 +381,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Check if the zone exists in the system
         DataCenterVO zone = _dcDao.findById(dcId);
         if (zone == null) {
-			InvalidParameterValueException ex = new InvalidParameterValueException(
-					"Can't find zone by the id specified");
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Can't find zone by the id specified");
             ex.addProxyObject(String.valueOf(dcId), "dcId");
             throw ex;
         }
@@ -400,8 +406,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         // check if pod belongs to the zone
         if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-			InvalidParameterValueException ex = new InvalidParameterValueException(
-					"Pod with specified id doesn't belong to the zone " + dcId);
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Pod with specified id doesn't belong to the zone " + dcId);
             ex.addProxyObject(pod.getUuid(), "podId");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
@@ -462,7 +468,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         List<ClusterVO> result = new ArrayList<ClusterVO>();
 
-        long clusterId = 0;
         ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
         cluster.setHypervisorType(hypervisorType.toString());
 
@@ -479,15 +484,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
-        clusterId = cluster.getId();
         result.add(cluster);
 
-        ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", _configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), null, null));
-        ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", _configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), null, null));
-        _clusterDetailsDao.persist(cluster_detail_cpu);
-        _clusterDetailsDao.persist(cluster_detail_ram);
-
         if (clusterType == Cluster.ClusterType.CloudManaged) {
+            Map<String, String> details = new HashMap<String, String>();
+            details.put("cpuOvercommitRatio", _configDao.getValue(Config.CPUOverprovisioningFactor.key()));
+            details.put("memoryOvercommitRatio", _configDao.getValue(Config.MemOverprovisioningFactor.key()));
+            _clusterDetailsDao.persist(cluster.getId(), details);
             return result;
         }
 
@@ -496,6 +499,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("url", url);
         details.put("username", username);
         details.put("password", password);
+        details.put("cpuOvercommitRatio", _configDao.getValue(Config.CPUOverprovisioningFactor.key()));
+        details.put("memoryOvercommitRatio", _configDao.getValue(Config.MemOverprovisioningFactor.key()));
         _clusterDetailsDao.persist(cluster.getId(), details);
 
         boolean success = false;
@@ -515,7 +520,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             List<HostVO> hosts = new ArrayList<HostVO>();
             Map<? extends ServerResource, Map<String, String>> resources = null;
-            resources = discoverer.find(dcId, podId, clusterId, uri, username, password, null);
+            resources = discoverer.find(dcId, podId, cluster.getId(), uri, username, password, null);
 
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
@@ -536,8 +541,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new DiscoveryException("Unable to add the external cluster");
         } finally {
             if (!success) {
-                _clusterDetailsDao.deleteDetails(clusterId);
-                _clusterDao.remove(clusterId);
+                _clusterDetailsDao.deleteDetails(cluster.getId());
+                _clusterDao.remove(cluster.getId());
             }
         }
     }
@@ -545,8 +550,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
         for (Discoverer discoverer : _discoverers) {
-            if (discoverer.getHypervisorType() == hypervisorType)
+            if (discoverer.getHypervisorType() == hypervisorType) {
                 return discoverer;
+            }
         }
         return null;
     }
@@ -572,8 +578,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (clusterId != null) {
             ClusterVO cluster = _clusterDao.findById(clusterId);
             if (cluster == null) {
-				InvalidParameterValueException ex = new InvalidParameterValueException(
-						"can not find cluster for specified clusterId");
+                InvalidParameterValueException ex = new InvalidParameterValueException(
+                        "can not find cluster for specified clusterId");
                 ex.addProxyObject(clusterId.toString(), "clusterId");
                 throw ex;
             } else {
@@ -595,7 +601,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
+    InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
         return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false);
@@ -628,11 +634,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
             // check if pod belongs to the zone
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-				InvalidParameterValueException ex = new InvalidParameterValueException(
-						"Pod with specified podId"
-								+ podId
-								+ " doesn't belong to the zone with specified zoneId"
-								+ dcId);
+                InvalidParameterValueException ex = new InvalidParameterValueException(
+                        "Pod with specified podId"
+                                + podId
+                                + " doesn't belong to the zone with specified zoneId"
+                                + dcId);
                 ex.addProxyObject(pod.getUuid(), "podId");
                 ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
@@ -691,11 +697,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } catch (Exception e) {
                 cluster = _clusterDao.findBy(clusterName, podId);
                 if (cluster == null) {
-					CloudRuntimeException ex = new CloudRuntimeException(
-							"Unable to create cluster "
-									+ clusterName
-									+ " in pod with specified podId and data center with specified dcID",
-							e);
+                    CloudRuntimeException ex = new CloudRuntimeException(
+                            "Unable to create cluster "
+                                    + clusterName
+                                    + " in pod with specified podId and data center with specified dcID",
+                                    e);
                     ex.addProxyObject(pod.getUuid(), "podId");
                     ex.addProxyObject(zone.getUuid(), "dcId");
                     throw ex;
@@ -818,13 +824,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
             throw new CloudRuntimeException("Host " + host.getUuid() + " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
         }
-        /*
-         * TODO: check current agent status and updateAgentStatus to removed. If
-         * it was already removed, that means someone is deleting host
-         * concurrently, return. And consider the situation of CloudStack
-         * shutdown during delete. A global lock?
-         */
-        AgentAttache attache = _agentMgr.findAttache(hostId);
         // Get storage pool host mappings here because they can be removed as a
         // part of handleDisconnect later
         // TODO: find out the bad boy, what's a buggy logic!
@@ -879,6 +878,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Delete the associated entries in host ref table
         _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
 
+        // Make sure any VMs that were marked as being on this host are cleaned up
+        List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+        for (VMInstanceVO vm : vms) {
+            // this is how VirtualMachineManagerImpl does it when it syncs VM states
+            vm.setState(State.Stopped);
+            vm.setHostId(null);
+            _vmDao.persist(vm);
+        }
+
         // For pool ids you got, delete local storage host entries in pool table
         // where
         for (StoragePoolHostVO pool : pools) {
@@ -911,7 +919,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
         try {
-            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
+            Boolean result = propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
             if (result != null) {
                 return result;
             }
@@ -967,11 +975,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
                     _clusterVSMMapDao.removeByClusterId(cmd.getId());
                 }
-				// remove from dedicated resources
-				DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
-				if (dr != null) {
-				    _dedicatedDao.remove(dr.getId());
-				}
+                // remove from dedicated resources
+                DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
+                if (dr != null) {
+                    _dedicatedDao.remove(dr.getId());
+                }
             }
 
             txn.commit();
@@ -1225,7 +1233,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean maintain(final long hostId) throws AgentUnavailableException {
-        Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
+        Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
         if (result != null) {
             return result;
         }
@@ -1332,6 +1340,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _defaultSystemVMHypervisor = HypervisorType.getType(_configDao.getValue(Config.SystemVMDefaultHypervisor.toString()));
+        _gson = GsonHelper.getGson();
+
+        _hypervisorsInDC = _hostDao.createSearchBuilder(String.class);
+        _hypervisorsInDC.select(null, Func.DISTINCT, _hypervisorsInDC.entity().getHypervisorType());
+        _hypervisorsInDC.and("hypervisorType", _hypervisorsInDC.entity().getHypervisorType(), SearchCriteria.Op.NNULL);
+        _hypervisorsInDC.and("dataCenter", _hypervisorsInDC.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        _hypervisorsInDC.and("id", _hypervisorsInDC.entity().getId(), SearchCriteria.Op.NEQ);
+        _hypervisorsInDC.and("type", _hypervisorsInDC.entity().getType(), SearchCriteria.Op.EQ);
+        _hypervisorsInDC.done();
+
         return true;
     }
 
@@ -1402,6 +1420,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (defaultHype == HypervisorType.None) {
             List<HypervisorType> supportedHypes = getSupportedHypervisorTypes(zoneId, false, null);
             if (supportedHypes.size() > 0) {
+                Collections.shuffle(supportedHypes);
                 defaultHype = supportedHypes.get(0);
             }
         }
@@ -1435,8 +1454,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             Iterator<Map.Entry<String, ResourceStateAdapter>> it = _resourceStateAdapters.entrySet().iterator();
             Object result = null;
             while (it.hasNext()) {
-				Map.Entry<String, ResourceStateAdapter> item = it
-						.next();
+                Map.Entry<String, ResourceStateAdapter> item = it
+                        .next();
                 ResourceStateAdapter adapter = item.getValue();
 
                 String msg = new String("Dispatching resource state event " + event + " to " + item.getKey());
@@ -1679,7 +1698,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private void markHostAsDisconnected(HostVO host, StartupCommand[] cmds) {
         if (host == null) { // in case host is null due to some errors, try
-                            // reloading the host from db
+            // reloading the host from db
             if (cmds != null) {
                 StartupCommand firstCmd = cmds[0];
                 host = findHostByGuid(firstCmd.getGuid());
@@ -1729,13 +1748,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     host = findHostByGuid(firstCmd.getGuidWithoutResource());
                 }
                 if (host != null && host.getRemoved() == null) { // host already
-                                                                 // added, no
-                                                                 // need to add
-                                                                 // again
+                    // added, no
+                    // need to add
+                    // again
                     s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
                     hostExists = true; // ensures that host status is left
-                                       // unchanged in case of adding same one
-                                       // again
+                    // unchanged in case of adding same one
+                    // again
                     return null;
                 }
             }
@@ -1801,13 +1820,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     host = findHostByGuid(firstCmd.getGuidWithoutResource());
                 }
                 if (host != null && host.getRemoved() == null) { // host already
-                                                                 // added, no
-                                                                 // need to add
-                                                                 // again
+                    // added, no
+                    // need to add
+                    // again
                     s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
                     hostExists = true; // ensures that host status is left
-                                       // unchanged in case of adding same one
-                                       // again
+                    // unchanged in case of adding same one
+                    // again
                     return null;
                 }
             }
@@ -1816,29 +1835,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             GlobalLock addHostLock = GlobalLock.getInternLock("AddHostLock");
             try {
                 if (addHostLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) { // to
-                                                                                     // safely
-                                                                                     // determine
-                                                                                     // first
-                                                                                     // host
-                                                                                     // in
-                                                                                     // cluster
-                                                                                     // in
-                                                                                     // multi-MS
-                                                                                     // scenario
+                    // safely
+                    // determine
+                    // first
+                    // host
+                    // in
+                    // cluster
+                    // in
+                    // multi-MS
+                    // scenario
                     try {
                         host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
                         if (host != null) {
                             deferAgentCreation = !isFirstHostInCluster(host); // if
-                                                                              // first
-                                                                              // host
-                                                                              // in
-                                                                              // cluster
-                                                                              // no
-                                                                              // need
-                                                                              // to
-                                                                              // defer
-                                                                              // agent
-                                                                              // creation
+                            // first
+                            // host
+                            // in
+                            // cluster
+                            // no
+                            // need
+                            // to
+                            // defer
+                            // agent
+                            // creation
                         }
                     } finally {
                         addHostLock.unlock();
@@ -1850,8 +1869,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             if (host != null) {
                 if (!deferAgentCreation) { // if first host in cluster then
-                                           // create agent otherwise defer it to
-                                           // scan task
+                    // create agent otherwise defer it to
+                    // scan task
                     attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
                     host = _hostDao.findById(host.getId()); // reload
                 } else {
@@ -2112,6 +2131,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             // for kvm, need to log into kvm host, restart cloudstack-agent
             if (host.getHypervisorType() == HypervisorType.KVM) {
+
+                boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
+                if (!sshToAgent) {
+                    s_logger.info("Configuration tells us not to SSH into Agents. Please restart the Agent (" + hostId + ")  manually");
+                    return true;
+                }
+
                 _hostDao.loadDetails(host);
                 String password = host.getDetail("password");
                 String username = host.getDetail("username");
@@ -2141,7 +2167,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private boolean cancelMaintenance(long hostId) {
         try {
-            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
+            Boolean result = propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
 
             if (result != null) {
                 return result;
@@ -2189,7 +2215,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean umanageHost(long hostId) {
         try {
-            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.Unmanaged);
+            Boolean result = propagateResourceEvent(hostId, ResourceState.Event.Unmanaged);
 
             if (result != null) {
                 return result;
@@ -2202,8 +2228,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     private boolean doUpdateHostPassword(long hostId) {
-        AgentAttache attache = _agentMgr.findAttache(hostId);
-        if (attache == null) {
+        if (_agentMgr.isAgentAttached(hostId)) {
             return false;
         }
 
@@ -2212,7 +2237,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         nv = _hostDetailsDao.findDetail(hostId, ApiConstants.PASSWORD);
         String password = nv.getValue();
         UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
-        attache.updatePassword(cmd);
+        _agentMgr.easySend(hostId, cmd);
         return true;
     }
 
@@ -2221,7 +2246,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (cmd.getClusterId() == null) {
             // update agent attache password
             try {
-                Boolean result = _clusterMgr.propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+                Boolean result = propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
                 }
@@ -2238,7 +2263,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                      * FIXME: this is a buggy logic, check with alex. Shouldn't
                      * return if propagation return non null
                      */
-                    Boolean result = _clusterMgr.propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
+                    Boolean result = propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
                     if (result != null) {
                         return result;
                     }
@@ -2250,6 +2275,45 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             return true;
         }
+    }
+
+    public String getPeerName(long agentHostId) {
+
+        HostVO host = _hostDao.findById(agentHostId);
+        if (host != null && host.getManagementServerId() != null) {
+            if (_clusterMgr.getSelfPeerName().equals(Long.toString(host.getManagementServerId()))) {
+                return null;
+            }
+
+            return Long.toString(host.getManagementServerId());
+        }
+        return null;
+    }
+
+    public Boolean propagateResourceEvent(long agentId, ResourceState.Event event) throws AgentUnavailableException {
+        final String msPeer = getPeerName(agentId);
+        if (msPeer == null) {
+            return null;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Propagating agent change request event:" + event.toString() + " to agent:" + agentId);
+        }
+        Command[] cmds = new Command[1];
+        cmds[0] = new PropagateResourceEventCommand(agentId, event);
+
+        String AnsStr = _clusterMgr.execute(msPeer, agentId, _gson.toJson(cmds), true);
+        if (AnsStr == null) {
+            throw new AgentUnavailableException(agentId);
+        }
+
+        Answer[] answers = _gson.fromJson(AnsStr, Answer[].class);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Result for agent change is " + answers[0].getResult());
+        }
+
+        return answers[0].getResult();
     }
 
     @Override
@@ -2366,21 +2430,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        SearchCriteria<String> sc = _hypervisorsInDC.create();
         if (zoneId != null) {
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+            sc.setParameters("dataCenter", zoneId);
         }
         if (hostId != null) {
-            sc.addAnd(sc.getEntity().getId(), Op.EQ, hostId);
+            // exclude the given host, since we want to check what hypervisor is already handled
+            // in adding this new host
+            sc.setParameters("id", hostId);
         }
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
-        List<HostVO> hosts = sc.list();
+        sc.setParameters("type", Host.Type.Routing);
 
-        List<HypervisorType> hypers = new ArrayList<HypervisorType>(5);
-        for (HostVO host : hosts) {
-            hypers.add(host.getHypervisorType());
+        // The search is not able to return list of enums, so getting
+        // list of hypervisors as strings and then converting them to enum
+        List<String> hvs = _hostDao.customSearch(sc, null);
+        List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
+        for (String hv : hvs) {
+            hypervisors.add(HypervisorType.getType(hv));
         }
-        return hypers;
+        return hypervisors;
     }
 
     @Override
@@ -2405,7 +2473,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId,
+    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc, long accountId,
             Set<Long> avoids) {
         for (PodAllocator allocator : _podAllocators) {
             final Pair<Pod, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
@@ -2490,7 +2558,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
         sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
-	}
+    }
 
     @Override
     @DB

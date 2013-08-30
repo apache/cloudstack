@@ -18,7 +18,6 @@
 package com.cloud.usage;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.usage.UsageManagerTestConfiguration.Library;
 import com.cloud.usage.dao.*;
@@ -26,7 +25,9 @@ import com.cloud.usage.parser.*;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

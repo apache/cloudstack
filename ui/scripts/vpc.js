@@ -17,16 +17,7 @@
 (function($, cloudStack) {
     var aclMultiEdit = {
         noSelect: true,
-        fieldPreFilter: function(args) {
-            var context = args.context;
-            var hiddenFields = [];
-
-            if (context.networks) { // from tier detail view
-                hiddenFields.push('networkid');
-            }
-
-            return hiddenFields; // Returns fields to be hidden
-        },
+       
         reorder: {
             moveDrag: {
                 action: function(args) {
@@ -358,8 +349,6 @@
                         protocol: args.data.protocolnumber
                     });
                     delete args.data.protocolnumber;
-                    delete args.data.startport;
-                    delete args.data.endport;
                     delete args.data.icmptype;
                     delete args.data.icmpcode;
                 } else {
@@ -1153,7 +1142,7 @@
                                 forloadbalancing: true
                             },
                             success: function(json) {
-                                var items = json.listpublicipaddressesresponse;
+                                var items = json.listpublicipaddressesresponse.publicipaddress;
                                 args.response.success({
                                     data: items
                                 });
@@ -2258,6 +2247,9 @@
                                                 select: function(args) {
                                                     $.ajax({
                                                         url: createURL('listNetworkACLLists'),
+                                                        data: {
+                                                            vpcid: args.context.vpc[0].id
+                                                        },
                                                         dataType: 'json',
                                                         async: true,
                                                         success: function(json) {
@@ -2265,11 +2257,18 @@
                                                             var items = [];
 
                                                             $(objs).each(function() {
+                                                                if (this.id == args.context.vpcGateways[0].aclid) {
+                                                                    return true;
+                                                                }
+                                                                
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.name
                                                                 });
+
+                                                                return true;
                                                             });
+                                                            
                                                             args.response.success({
                                                                 data: items
                                                             });
@@ -2294,7 +2293,7 @@
                                                             getUpdatedItem: function(json) {
                                                                 var item = json.queryasyncjobresultresponse.jobresult.aclid;
                                                                 return {
-                                                                    data: item
+                                                                    aclid: args.data.aclid
                                                                 };
                                                             }
                                                         }
@@ -2362,8 +2361,11 @@
                                                 return str ? 'Yes' : 'No';
                                             }
                                         },
+                                        aclName: {
+                                            label: 'ACL Name'
+                                        },
                                         aclid: {
-                                            label: 'ACL id'
+                                            label: 'ACL ID'
                                         }
 
 
@@ -2377,6 +2379,25 @@
                                             },
                                             success: function(json) {
                                                 var item = json.listprivategatewaysresponse.privategateway[0];
+
+
+                                                // Get ACL name
+                                                $.ajax({
+                                                    url: createURL('listNetworkACLLists'),
+                                                    async: false,
+                                                    data: {
+                                                        vpcid: args.context.vpc[0].id
+                                                    },
+                                                    success: function(json) {
+                                                        var objs = json.listnetworkacllistsresponse.networkacllist;
+                                                        var acl = $.grep(objs, function(obj) {
+                                                            return obj.id === args.context.vpcGateways[0].aclid;                                                            
+                                                        });
+                                                        
+                                                        item.aclName = acl[0] ? acl[0].name : 'None';
+                                                    }
+                                                });
+                                                
                                                 args.response.success({
                                                     data: item,
                                                     actionFilter: function(args) {
@@ -3304,32 +3325,30 @@
                 },
 
                 tabFilter: function(args) {
-                    var networkOfferingHavingELB = false;
-                    $.ajax({
-                        url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {
-                            var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
-                            $(networkoffering.service).each(function() {
-                                var thisService = this;
-                                if (thisService.name == "Lb") {
-                                    $(thisService.capability).each(function() {
-                                        if (this.name == "ElasticLb" && this.value == "true") {
-                                            networkOfferingHavingELB = true;
-                                            return false; //break $.each() loop
-                                        }
-                                    });
-                                    return false; //break $.each() loop
-                                }
-                            });
-                        }
-                    });
-
-                    var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
-
-                    if (networkOfferingHavingELB == false)
+                	var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
+                	
+                	var networkOfferingHavingELB = false;                                       
+                    var services = args.context.networks[0].service;
+                    if(services != null) {
+                    	for(var i = 0; i < services.length; i++) {                    		
+                    		if (services[i].name == "Lb") {
+                    			var capabilities = services[i].capability;
+                    			if(capabilities != null) {
+                    				for(var k = 0; k < capabilities.length; k++) {
+                    					if(capabilities[k].name == "ElasticLb") {
+                    						networkOfferingHavingELB = true;
+                    						break;                    					
+                    					}
+                    				}
+                    			}  
+                                break;
+                            }                    		
+                    	}
+                    }   
+                    if (networkOfferingHavingELB == false) {
                         hiddenTabs.push("addloadBalancer");
+                    }
+                    
                     return hiddenTabs;
                 },
 
@@ -3444,20 +3463,13 @@
                                             });
                                         }
                                     });
-                                    $.ajax({
-                                        url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid), //include currently selected network offeirng to dropdown
-                                        dataType: "json",
-                                        async: false,
-                                        success: function(json) {
-                                            var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                                            $(networkOfferingObjs).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.displaytext
-                                                });
-                                            });
-                                        }
-                                    });
+                                   
+                                    //include currently selected network offeirng to dropdown
+                                    items.push({
+                                        id: args.context.networks[0].networkofferingid,
+                                        description: args.context.networks[0].networkofferingdisplaytext
+                                    });                             
+                                    
                                     args.response.success({
                                         data: items
                                     });

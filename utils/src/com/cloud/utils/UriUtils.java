@@ -108,24 +108,29 @@ public class UriUtils {
         HttpsURLConnection httpsConn = null;
         try {
             URI uri = new URI(url);
-            if(uri.getScheme().equalsIgnoreCase("http")) {
+            if (uri.getScheme().equalsIgnoreCase("http")) {
                 httpConn = (HttpURLConnection) uri.toURL().openConnection();
-                remoteSize = Long.parseLong(httpConn.getHeaderField("content-length"));
-            }
-            else if(uri.getScheme().equalsIgnoreCase("https")) {
+                if (httpConn != null) {
+                    String contentLength = httpConn.getHeaderField("content-length");
+                    if (contentLength != null) {
+                        remoteSize = Long.parseLong(contentLength);
+                    }
+                    httpConn.disconnect();
+                }
+            } else if (uri.getScheme().equalsIgnoreCase("https")) {
                 httpsConn = (HttpsURLConnection) uri.toURL().openConnection();
-                remoteSize = Long.parseLong(httpsConn.getHeaderField("content-length"));
+                if (httpsConn != null) {
+                    String contentLength = httpsConn.getHeaderField("content-length");
+                    if (contentLength != null) {
+                        remoteSize = Long.parseLong(contentLength);
+                    }
+                    httpsConn.disconnect();
+                }
             }
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to establish connection with URL " + url);
-        } finally {
-            if (httpConn != null) {
-                httpConn.disconnect();
-            } else if (httpsConn != null) {
-                httpsConn.disconnect();
-            }
         }
         return remoteSize;
     }

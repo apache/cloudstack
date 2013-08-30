@@ -16,7 +16,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -25,17 +25,8 @@
       <artifactId>cloud-engine-storage-volume</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>

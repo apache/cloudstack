@@ -43,6 +43,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
     private SearchBuilder<VolumeDataStoreVO> volumeSearch;
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
+    private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
 
     @Override
@@ -53,6 +54,12 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSearch.and("destroyed", storeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeSearch.done();
+
+        cacheSearch = createSearchBuilder();
+        cacheSearch.and("store_id", cacheSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        cacheSearch.and("destroyed", cacheSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        cacheSearch.and("ref_cnt", cacheSearch.entity().getRefCnt(), SearchCriteria.Op.NEQ);
+        cacheSearch.done();
 
         volumeSearch = createSearchBuilder();
         volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -99,14 +106,14 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
                 str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
-                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
-                        .append(dbVol.getUpdated());
+                .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                .append(dbVol.getUpdated());
                 str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState)
-                        .append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
-                        .append("; updatedTime=").append(dataObj.getUpdated());
+                .append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
+                .append("; updatedTime=").append(dataObj.getUpdated());
                 str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState)
-                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
-                        .append("; updatedTime=").append(oldUpdatedTime);
+                .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                .append("; updatedTime=").append(oldUpdatedTime);
             } else {
                 s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId()
                         + ", as there is no such object exists in the database anymore");
@@ -120,6 +127,15 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VolumeDataStoreVO> listActiveOnCache(long id) {
+        SearchCriteria<VolumeDataStoreVO> sc = cacheSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("destroyed", false);
+        sc.setParameters("ref_cnt", 0);
         return listIncludingRemovedBy(sc);
     }
 
@@ -156,10 +172,11 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         sc.setParameters("store_id", storeId);
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("destroyed", false);
-        if (!lock)
+        if (!lock) {
             return findOneIncludingRemovedBy(sc);
-        else
+        } else {
             return lockOneRandomRow(sc, true);
+        }
     }
 
     @Override

@@ -190,6 +190,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
+        self.cleanup = []
         self.cleanup.insert(0, self.account)
         return
 

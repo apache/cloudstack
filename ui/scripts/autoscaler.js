@@ -1421,7 +1421,7 @@
                     url: createURL('listTemplates'),
                     data: {
                         id: args.data.templateNames,
-                        templatefilter: 'all'
+                        templatefilter: 'executable'
                     },
                     async: false,
                     success: function(json) {

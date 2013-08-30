@@ -24,6 +24,8 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -72,7 +74,7 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "type")
     Type type;
 
-    @Column(name = GenericDao.REMOVED)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
@@ -121,8 +123,12 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="display_offering")
     boolean displayOffering = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "state")
+    State state;
+
     public DiskOfferingVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized,
@@ -132,20 +138,21 @@ public class DiskOfferingVO implements DiskOffering {
         this.displayText = displayText;
         this.diskSize = diskSize;
         this.tags = tags;
-        this.recreatable = false;
-        this.type = Type.Disk;
-        this.useLocalStorage = false;
-        this.customized = isCustomized;
-        this.uuid = UUID.randomUUID().toString();
-        this.customizedIops = isCustomizedIops;
+        recreatable = false;
+        type = Type.Disk;
+        useLocalStorage = false;
+        customized = isCustomized;
+        uuid = UUID.randomUUID().toString();
+        customizedIops = isCustomizedIops;
         this.minIops = minIops;
         this.maxIops = maxIops;
+        state = State.Active;
     }
 
     public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable,
             boolean useLocalStorage, boolean systemUse, boolean customized) {
-        this.domainId = null;
-        this.type = Type.Service;
+        domainId = null;
+        type = Type.Service;
         this.name = name;
         this.displayText = displayText;
         this.tags = tags;
@@ -153,14 +160,15 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = useLocalStorage;
         this.systemUse = systemUse;
         this.customized = customized;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
+        state = State.Active;
     }
 
     // domain specific offerings constructor (null domainId implies public
     // offering)
     public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable,
             boolean useLocalStorage, boolean systemUse, boolean customized, Long domainId) {
-        this.type = Type.Service;
+        type = Type.Service;
         this.name = name;
         this.displayText = displayText;
         this.tags = tags;
@@ -169,7 +177,17 @@ public class DiskOfferingVO implements DiskOffering {
         this.systemUse = systemUse;
         this.customized = customized;
         this.domainId = domainId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
+        state = State.Active;
+    }
+
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override
@@ -235,6 +253,7 @@ public class DiskOfferingVO implements DiskOffering {
         return type;
     }
 
+    @Override
     public boolean isRecreatable() {
         return recreatable;
     }
@@ -299,7 +318,7 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     public void setUniqueName(String name) {
-        this.uniqueName = name;
+        uniqueName = name;
     }
 
     @Override
@@ -355,7 +374,7 @@ public class DiskOfferingVO implements DiskOffering {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -382,34 +401,42 @@ public class DiskOfferingVO implements DiskOffering {
         this.displayOffering = displayOffering;
     }
 
+    @Override
     public void setBytesReadRate(Long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }
 
+    @Override
     public Long getBytesReadRate() {
         return bytesReadRate;
     }
 
+    @Override
     public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
     }
 
+    @Override
     public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
 
+    @Override
     public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
     }
 
+    @Override
     public Long getIopsReadRate() {
         return iopsReadRate;
     }
 
+    @Override
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
 
+    @Override
     public Long getIopsWriteRate() {
         return iopsWriteRate;
     }

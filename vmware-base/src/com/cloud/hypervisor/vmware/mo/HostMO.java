@@ -60,7 +60,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
 import com.vmware.vim25.NasDatastoreInfo;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);

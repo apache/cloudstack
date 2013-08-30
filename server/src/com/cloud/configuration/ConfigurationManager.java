@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,7 +42,6 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -51,7 +49,16 @@ import com.cloud.vm.VirtualMachine;
  * configuration values
  * 
  */
-public interface ConfigurationManager extends ConfigurationService, Manager {
+public interface ConfigurationManager {
+    /**
+     * @param offering
+     * @return
+     */
+    boolean isOfferingForVpc(NetworkOffering offering);
+
+    Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId);
+
+    Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId);
 
     /**
      * Updates a configuration entry with a new value
@@ -168,22 +175,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      */
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
-    /**
-     * Converts a comma separated list of tags to a List
-     * 
-     * @param tags
-     * @return List of tags
-     */
-    List<String> csvTagsToList(String tags);
-
-    /**
-     * Converts a List of tags to a comma separated list
-     * 
-     * @param tags
-     * @return String containing a comma separated list of tags
-     */
-    String listToCsvTags(List<String> tags);
-
     void checkZoneAccess(Account caller, DataCenter zone);
 
     void checkDiskOfferingAccess(Account caller, DiskOffering dof);
@@ -225,10 +216,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 
-    HostPodVO getPod(long id);
-
-    ClusterVO getCluster(long id);
-
     boolean releaseAccountSpecificVirtualRanges(long accountId);
 
     /**
@@ -252,11 +239,4 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	AllocationState findPodAllocationState(HostPodVO pod);
 
 	AllocationState findClusterAllocationState(ClusterVO cluster);
-
-    /**
-     * @param tags
-     * @return
-     */
-    String cleanupTags(String tags);
-
 }

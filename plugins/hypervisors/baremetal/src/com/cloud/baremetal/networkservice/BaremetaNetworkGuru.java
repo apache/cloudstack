@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,8 +23,9 @@ import java.net.URI;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -41,6 +42,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.AddressFormat;
@@ -54,7 +56,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = { NetworkGuru.class })
@@ -74,6 +75,8 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     PodVlanMapDao _podVlanDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
@@ -106,7 +109,7 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
                     txn.start();
 
                     // release the old ip here
-                    _networkMgr.markIpAsUnavailable(ipVO.getId());
+                    _ipAddrMgr.markIpAsUnavailable(ipVO.getId());
                     _ipAddressDao.unassignIpAddress(ipVO.getId());
 
                     txn.commit();
@@ -154,7 +157,7 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
             s_logger.debug(String.format("Requiring ip address: %s", nic.getIp4Address()));
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), requiredIp, false);
+            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), requiredIp, false);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setFormat(AddressFormat.Ip4);
             nic.setGateway(ip.getGateway());

@@ -16,16 +16,14 @@
 // under the License.
 package com.cloud.async;
 
+import org.apache.cloudstack.jobs.JobInfo;
+
 import com.cloud.api.ApiSerializerHelper;
 
 public class AsyncJobResult {
-	public static final int STATUS_IN_PROGRESS = 0;
-	public static final int STATUS_SUCCEEDED = 1;
-	public static final int STATUS_FAILED = 2;
 	
-	private String cmdOriginator;
 	private long jobId;
-	private int jobStatus;
+    private JobInfo.Status jobStatus;
 	private int processStatus;
 	private int resultCode;
 	private String result;
@@ -33,18 +31,10 @@ public class AsyncJobResult {
 
 	public AsyncJobResult(long jobId) {
 		this.jobId = jobId;
-		jobStatus = STATUS_IN_PROGRESS;
+		jobStatus = JobInfo.Status.IN_PROGRESS;
 		processStatus = 0;
 		resultCode = 0;
 		result = "";
-	}
-	
-	public String getCmdOriginator() {
-		return cmdOriginator;
-	}
-	
-	public void setCmdOriginator(String cmdOriginator) {
-		this.cmdOriginator = cmdOriginator;
 	}
 	
 	public long getJobId() {
@@ -56,18 +46,18 @@ public class AsyncJobResult {
 	}
 	
 	public String getUuid() {
-		return this.uuid;
+		return uuid;
 	}
 	
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
 	
-	public int getJobStatus() {
+    public JobInfo.Status getJobStatus() {
 		return jobStatus;
 	}
 	
-	public void setJobStatus(int jobStatus) {
+    public void setJobStatus(JobInfo.Status jobStatus) {
 		this.jobStatus = jobStatus;
 	}
 	
@@ -100,14 +90,14 @@ public class AsyncJobResult {
 	}
 	
 	public void setResultObject(Object result) {
-		this.result = ApiSerializerHelper.toSerializedStringOld(result);
+		this.result = ApiSerializerHelper.toSerializedString(result);
 	}
 	
 	@Override
     public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("AsyncJobResult {jobId:").append(getJobId());
-		sb.append(", jobStatus: ").append(getJobStatus());
+        sb.append(", jobStatus: ").append(getJobStatus().ordinal());
 		sb.append(", processStatus: ").append(getProcessStatus());
 		sb.append(", resultCode: ").append(getResultCode());
 		sb.append(", result: ").append(result);

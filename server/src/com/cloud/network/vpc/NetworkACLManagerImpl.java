@@ -16,6 +16,16 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -33,30 +43,20 @@ import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.context.CallContext;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.List;
-
-
-@Component
 @Local(value = { NetworkACLManager.class})
 public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager{
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -178,7 +178,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean replaceNetworkACL(NetworkACL acl, NetworkVO network) throws ResourceUnavailableException {
 
-        NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        NetworkOffering guestNtwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
         if (guestNtwkOff == null) {
             throw new InvalidParameterValueException("Can't find network offering associated with network: "+network.getUuid());
@@ -247,6 +247,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         return _networkACLItemDao.findById(ruleId);
     }
 
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_DELETE, eventDescription = "revoking network acl", async = true)
     public boolean revokeNetworkACLItem(long ruleId) {
 

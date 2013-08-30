@@ -329,7 +329,7 @@ public abstract class AgentAttache {
     public boolean equals(Object obj) {
         try {
             AgentAttache that = (AgentAttache) obj;
-            return this._id == that._id;
+            return _id == that._id;
         } catch (ClassCastException e) {
             assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to AgentAttache.equals()? ";
         return false;
@@ -484,12 +484,6 @@ public abstract class AgentAttache {
      * @throws AgentUnavailableException
      */
     public abstract void send(Request req) throws AgentUnavailableException;
-
-    /**
-     * Update password.
-     * @param new/changed password.
-     */
-    public abstract void updatePassword(Command new_password);
 
     /**
      * Process disconnect.

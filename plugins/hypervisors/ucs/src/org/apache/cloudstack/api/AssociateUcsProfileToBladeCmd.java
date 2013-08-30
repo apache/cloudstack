@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -36,8 +37,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="associatesUcsProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
-public class AssociateUcsProfileToBladeCmd extends BaseCmd {
+@APICommand(name="associateUcsProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
+public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
 
     @Inject
@@ -95,5 +96,15 @@ public class AssociateUcsProfileToBladeCmd extends BaseCmd {
 
     public void setBladeId(Long bladeId) {
         this.bladeId = bladeId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_UCS_ASSOCIATED_PROFILE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "associating a ucs profile to blade";
     }
 }

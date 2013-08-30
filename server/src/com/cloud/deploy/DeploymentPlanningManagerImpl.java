@@ -38,28 +38,23 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-
 import org.apache.log4j.Logger;
-
-
-
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -98,8 +93,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -462,57 +455,24 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         if (!isExplicit && vm.getType() == VirtualMachine.Type.User) {
             //add explicitly dedicated resources in avoidList
             DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
-            if (dedicatedZone != null) {
-                long accountDomainId = vmProfile.getOwner().getDomainId();
-                long accountId = vmProfile.getOwner().getAccountId();
-                if (dedicatedZone.getDomainId() != null && !dedicatedZone.getDomainId().equals(accountDomainId)) {
-                    throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
-                }
-
-                // If a zone is dedicated to an account then all hosts in this zone will be explicitly dedicated to
-                // that account. So there won't be any shared hosts in the zone, the only way to deploy vms from that
-                // account will be to use explicit dedication affinity group.
-                if (dedicatedZone.getAccountId() != null) {
-                    if (dedicatedZone.getAccountId().equals(accountId)) {
-                        throw new CloudRuntimeException("Failed to deploy VM. There are no shared hosts available in" +
-                                " this dedicated zone.");
-                    } else {
-                        throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
-                    }
-                }
+            if (dedicatedZone != null && dedicatedZone.getDomainId() != null) {
+                throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated . Please use Explicit Dedication Affinity Group");
             }
 
-            List<HostPodVO> podsInDc = _podDao.listByDataCenterId(dc.getId());
-            for (HostPodVO pod : podsInDc) {
-                DedicatedResourceVO dedicatedPod = _dedicatedDao.findByPodId(pod.getId());
-                if (dedicatedPod != null) {
-                    avoids.addPod(dedicatedPod.getPodId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cannot use this dedicated pod " + pod.getName() + ".");
-                    }
-                }
-            }
+            List<Long> allPodsInDc = _podDao.listAllPods(dc.getId());
+            List<Long> allDedicatedPods = _dedicatedDao.listAllPods();
+            allPodsInDc.retainAll(allDedicatedPods);
+            avoids.addPodList(allPodsInDc);
 
-            List<ClusterVO> clusterInDc = _clusterDao.listClustersByDcId(dc.getId());
-            for (ClusterVO cluster : clusterInDc) {
-                DedicatedResourceVO dedicatedCluster = _dedicatedDao.findByClusterId(cluster.getId());
-                if (dedicatedCluster != null) {
-                    avoids.addCluster(dedicatedCluster.getClusterId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cannot use this dedicated Cluster " + cluster.getName() + ".");
-                    }
-                }
-            }
-            List<HostVO> hostInDc = _hostDao.listByDataCenterId(dc.getId());
-            for (HostVO host : hostInDc) {
-                DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(host.getId());
-                if (dedicatedHost != null) {
-                    avoids.addHost(dedicatedHost.getHostId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cannot use this dedicated host " + host.getName() + ".");
-                    }
-                }
-            }
+            List<Long> allClustersInDc = _clusterDao.listAllCusters(dc.getId());
+            List<Long> allDedicatedClusters = _dedicatedDao.listAllClusters();
+            allClustersInDc.retainAll(allDedicatedClusters);
+            avoids.addClusterList(allClustersInDc);
+
+            List<Long> allHostsInDc = _hostDao.listAllHosts(dc.getId());
+            List<Long> allDedicatedHosts = _dedicatedDao.listAllHosts();
+            allHostsInDc.retainAll(allDedicatedHosts);
+            avoids.addHostList(allHostsInDc);
         }
     }
 

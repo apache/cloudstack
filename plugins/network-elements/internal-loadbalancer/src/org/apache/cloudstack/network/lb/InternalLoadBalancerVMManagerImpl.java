@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.lb;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,15 +29,15 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
@@ -44,7 +45,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -61,6 +61,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -71,7 +72,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -130,6 +130,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     private String _mgmtCidr;
     private long _internalLbVmOfferingId = 0L;
     
+    @Inject
+    IpAddressManager _ipAddrMgr;
     @Inject VirtualMachineManager _itMgr;
     @Inject DomainRouterDao _internalLbVmDao;
     @Inject ConfigurationDao _configDao;
@@ -330,7 +332,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
     }
 
     @Override
@@ -454,7 +456,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
                 _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork),
                 _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(), guestNetwork));
 
-        NetworkOffering offering =_networkOfferingDao.findById(guestNetworkId);
+        NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn= null;
         if (offering.getConcurrentConnections() == null) {
             maxconn =  _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
@@ -612,7 +614,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
                 return internalLbVms;
             }
 
-            List<Pair<NetworkVO, NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
+            LinkedHashMap<Network, NicProfile> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation
             DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, _internalLbVmOfferingId, guestNetwork.getVpcId(),
                 networks, false);
@@ -648,11 +650,11 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         return internalLbProvider.getId();
     }
     
-    protected List<Pair<NetworkVO, NicProfile>> createInternalLbVmNetworks(Network guestNetwork, DeploymentPlan plan, Ip guestIp) throws ConcurrentOperationException,
+    protected LinkedHashMap<Network, NicProfile> createInternalLbVmNetworks(Network guestNetwork, DeploymentPlan plan, Ip guestIp) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
 
         //Form networks
-        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
+        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
         
         //1) Guest network - default
         if (guestNetwork != null) {
@@ -661,7 +663,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             if (guestIp != null) {
                 guestNic.setIp4Address(guestIp.addr());
             } else {
-                guestNic.setIp4Address(_ntwkMgr.acquireGuestIpAddress(guestNetwork, null));
+                guestNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
             }
             guestNic.setGateway(guestNetwork.getGateway());
             guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
@@ -671,15 +673,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             String gatewayCidr = guestNetwork.getCidr();
             guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
             guestNic.setDefaultNic(true);
-            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
+            networks.put(guestNetwork, guestNic);
         }
 
         //2) Control network
         s_logger.debug("Adding nic for Internal LB vm in Control network ");
         List<? extends NetworkOffering> offerings = _ntwkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
-        NetworkVO controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
-        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+        Network controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, null);
 
         return networks;
     }
@@ -713,7 +715,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     
     protected DomainRouterVO deployInternalLbVm(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             long internalLbProviderId, long svcOffId, Long vpcId,
-            List<Pair<NetworkVO, NicProfile>> networks, boolean startVm) throws ConcurrentOperationException,
+        LinkedHashMap<Network, NicProfile> networks,
+        boolean startVm) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -876,7 +879,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
     
     protected boolean sendLBRules(VirtualRouter internalLbVm, List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createApplyLoadBalancingRulesCommands(rules, internalLbVm, cmds, guestNetworkId);
         return sendCommandsToInternalLbVm(internalLbVm, cmds);
     }

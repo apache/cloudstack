@@ -241,7 +241,7 @@
           <para>For information on Elastic IP, see <xref linkend="elastic-ip"/>.</para>
         </listitem>
         <listitem>
-          <para><emphasis role="bold">Redundant router capability</emphasis>. Available only when
+          <para><emphasis role="bold">Redundant router capability</emphasis>: Available only when
             Virtual Router is selected as the Source NAT provider. Select this option if you want to
             use two virtual routers in the network for uninterrupted connection: one operating as
             the master virtual router and the other as the backup. The master virtual router
@@ -251,7 +251,7 @@
             reliability if one host is down.</para>
         </listitem>
         <listitem>
-          <para><emphasis role="bold">Conserve mode</emphasis>. Indicate whether to use conserve
+          <para><emphasis role="bold">Conserve mode</emphasis>: Indicate whether to use conserve
             mode. In this mode, network resources are allocated only when the first virtual machine
             starts in the network. When conservative mode is off, the public IP can only be used for
             a single service. For example, a public IP used for a port forwarding rule cannot be
@@ -264,8 +264,17 @@
           </note>
         </listitem>
         <listitem>
-          <para><emphasis role="bold">Tags</emphasis>. Network tag to specify which physical network
+          <para><emphasis role="bold">Tags</emphasis>: Network tag to specify which physical network
             to use.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Default egress policy</emphasis>: Configure the default policy
+            for firewall egress rules. Options are Allow and Deny. Default is Allow if no egress
+            policy is specified, which indicates that all the egress traffic is accepted when a
+            guest network is created from this offering. </para>
+          <para>To block the egress traffic for a guest network, select Deny. In this case, when you
+            configure an egress rules for an isolated guest network, rules are added to allow the
+            specified traffic.</para>
         </listitem>
       </itemizedlist>
     </listitem>

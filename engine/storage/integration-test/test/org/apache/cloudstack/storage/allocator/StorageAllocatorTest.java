@@ -24,13 +24,6 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,10 +32,21 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigurationVO;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -54,15 +58,17 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.DB;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -87,6 +93,8 @@ public class StorageAllocatorTest {
     StoragePoolDetailsDao poolDetailsDao;
     @Inject
     DataStoreProviderManager providerMgr;
+    @Inject
+    ConfigurationDao configDao;
     Long dcId = 1l;
     Long podId = 1l;
     Long clusterId = 1l;
@@ -98,7 +106,13 @@ public class StorageAllocatorTest {
     StoragePoolVO storage = null;
 
     @Before
+    @DB
     public void setup() throws Exception {
+        ConfigurationVO cfg = configDao.findByName(Config.VmAllocationAlgorithm.key());
+        if (cfg == null) {
+            ConfigurationVO configVO = new ConfigurationVO("test", "DEFAULT", "test", Config.VmAllocationAlgorithm.key(), "userdispersing", null);
+            configDao.persist(configVO);
+        }
         ComponentContext.initComponentsLifeCycle();
 
     }
@@ -120,7 +134,7 @@ public class StorageAllocatorTest {
         cluster = clusterDao.persist(cluster);
         clusterId = cluster.getId();
 
-        DataStoreProvider provider = providerMgr.getDataStoreProvider("cloudstack primary data store provider");
+        DataStoreProvider provider = providerMgr.getDataStoreProvider(DataStoreProvider.DEFAULT_PRIMARY);
         storage = new StoragePoolVO();
         storage.setDataCenterId(dcId);
         storage.setPodId(podId);
@@ -163,7 +177,7 @@ public class StorageAllocatorTest {
         try {
             createDb();
 
-            DataStoreProvider provider = providerMgr.getDataStoreProvider("cloudstack primary data store provider");
+            DataStoreProvider provider = providerMgr.getDataStoreProvider(DataStoreProvider.DEFAULT_PRIMARY);
             storage = new StoragePoolVO();
             storage.setDataCenterId(dcId);
             storage.setPodId(podId);
@@ -312,7 +326,10 @@ public class StorageAllocatorTest {
             createDb();
 
             StoragePoolVO pool = storagePoolDao.findById(storagePoolId);
+            pool.setHypervisor(HypervisorType.KVM);
             pool.setScope(ScopeType.ZONE);
+            pool.setClusterId(null);
+            pool.setPodId(null);
             storagePoolDao.update(pool.getId(), pool);
 
             DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.KVM);
@@ -321,6 +338,51 @@ public class StorageAllocatorTest {
             Mockito.when(
                     storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
                             Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughIops(Matchers.anyListOf(Volume.class),
+                    Matchers.any(StoragePool.class))).thenReturn(true);
+            DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
+            int foundAcct = 0;
+            for (StoragePoolAllocator allocator : allocators) {
+                List<StoragePool> pools = allocator.allocateToPool(profile, vmProfile, plan, new ExcludeList(), 1);
+                if (!pools.isEmpty()) {
+                    Assert.assertEquals(pools.get(0).getId(), storage.getId());
+                    foundAcct++;
+                }
+            }
+
+            if (foundAcct > 1 || foundAcct == 0) {
+                Assert.fail();
+            }
+        } catch (Exception e) {
+            cleanDb();
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void testCLOUDSTACK3481() {
+        try {
+            createDb();
+
+            StoragePoolVO pool = storagePoolDao.findById(storagePoolId);
+            pool.setHypervisor(HypervisorType.KVM);
+            pool.setScope(ScopeType.ZONE);
+            pool.setClusterId(null);
+            pool.setPodId(null);
+            storagePoolDao.update(pool.getId(), pool);
+
+
+            DiskProfile profile = new DiskProfile(volume, diskOffering, HypervisorType.KVM);
+            VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+            Account account = Mockito.mock(Account.class);
+            Mockito.when(account.getAccountId()).thenReturn(1L);
+            Mockito.when(vmProfile.getHypervisorType()).thenReturn(HypervisorType.KVM);
+            Mockito.when(vmProfile.getOwner()).thenReturn(account);
+            Mockito.when(
+                    storageMgr.storagePoolHasEnoughSpace(Matchers.anyListOf(Volume.class),
+                            Matchers.any(StoragePool.class))).thenReturn(true);
+            Mockito.when(storageMgr.storagePoolHasEnoughIops(Matchers.anyListOf(Volume.class),
+                    Matchers.any(StoragePool.class))).thenReturn(true);
             DeploymentPlan plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
             int foundAcct = 0;
             for (StoragePoolAllocator allocator : allocators) {

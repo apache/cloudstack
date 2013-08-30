@@ -981,7 +981,7 @@
                                         return 'label.action.download.volume';
                                     },
                                     complete: function(args) {
-                                        var url = decodeURIComponent(args.url);
+                                        var url = args.url;
                                         var htmlMsg = _l('message.download.volume');
                                         var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);
                                         //$infoContainer.find("#info").html(htmlMsg2);
@@ -1864,9 +1864,21 @@
             return ["remove"];
         }
 
-        if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
-            allowedActions.push("takeSnapshot");
-            allowedActions.push("recurringSnapshot");
+        if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
+        	if (jsonObj.hypervisor == 'KVM') { 
+        		if (g_KVMsnapshotenabled == true) {
+        			allowedActions.push("takeSnapshot");
+    	            allowedActions.push("recurringSnapshot");
+        		} else {        			
+        			if(jsonObj.vmstate == 'Stopped') {
+        				allowedActions.push("takeSnapshot");
+        			}
+        		}
+        	} else {
+        		allowedActions.push("takeSnapshot");
+	            allowedActions.push("recurringSnapshot");
+        	}
+        	            
             if (jsonObj.type == "DATADISK") {
                 allowedActions.push("resize");
             }

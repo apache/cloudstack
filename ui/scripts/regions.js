@@ -908,7 +908,8 @@
                                     $.ajax({
                                         url: createURL('removeFromGlobalLoadBalancerRule'),
                                         data: {
-                                            id: args.context.lbUnderGSLB[0].id
+                                        	id: args.context.GSLB[0].id,
+                                        	loadbalancerrulelist: args.context.lbUnderGSLB[0].id
                                         },
                                         success: function(json) {
                                             var jid = json.removefromloadbalancerruleresponse.jobid;

@@ -19,11 +19,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-console-proxy</artifactId>
-  <name>Apache CloudStack Console Proxy</name>
+  <name>Apache CloudStack Console Proxy - Server</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-service-console-proxy</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <properties>
@@ -33,17 +33,14 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>${cs.log4j.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>${cs.gson.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>${cs.codec.version}</version>
     </dependency>
     <!-- required deps for the systemvm -->
     <dependency>
@@ -64,8 +61,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
     <resources>
       <resource>
         <directory>certs</directory>
@@ -151,6 +146,10 @@
             <filesets>
                 <fileset>
                     <directory>dist</directory>
+                    <followSymlinks>false</followSymlinks>
+                </fileset>
+                <fileset>
+                    <directory>target</directory>
                     <followSymlinks>false</followSymlinks>
                 </fileset>
             </filesets>

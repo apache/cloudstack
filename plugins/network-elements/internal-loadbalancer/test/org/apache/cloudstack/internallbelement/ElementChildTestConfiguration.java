@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,9 +18,6 @@ package org.apache.cloudstack.internallbelement;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -31,15 +28,20 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.DomainRouterDao;
 
@@ -53,7 +55,7 @@ import com.cloud.vm.dao.DomainRouterDao;
     )
 
 public class ElementChildTestConfiguration {
-    public static class Library implements TypeFilter { 
+    public static class Library implements TypeFilter {
         @Bean
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
@@ -81,6 +83,10 @@ public class ElementChildTestConfiguration {
             return Mockito.mock(NetworkManager.class);
         }
 
+        @Bean
+        public IpAddressManager ipAddressManager() {
+            return Mockito.mock(IpAddressManager.class);
+        }
         
         @Bean
         public PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao() {
@@ -102,6 +108,10 @@ public class ElementChildTestConfiguration {
             return Mockito.mock(ConfigurationManager.class);
         }
         
+        @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
+        }
         
         @Bean
         public ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao() {

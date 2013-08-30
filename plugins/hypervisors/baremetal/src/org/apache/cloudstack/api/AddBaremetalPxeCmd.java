@@ -20,6 +20,7 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
+import com.cloud.baremetal.networkservice.BaremetalPxeResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -43,7 +44,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 public class AddBaremetalPxeCmd extends BaseAsyncCmd {
-    private static final String s_name = "addexternalpxeresponse";
+    private static final String s_name = "addbaremetalpxeresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalPxeCmd.class);
     
     @Inject BaremetalPxeManager pxeMgr;
@@ -83,6 +84,9 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
             ResourceAllocationException, NetworkRuleConflictException {
         try {
             BaremetalPxeVO vo = pxeMgr.addPxeServer(this);
+            BaremetalPxeResponse rsp = pxeMgr.getApiResponse(vo);
+            rsp.setResponseName(getCommandName());
+            this.setResponseObject(rsp);
         } catch (Exception e) {
             s_logger.warn("Unable to add external pxe server with url: " + getUrl(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage()); 

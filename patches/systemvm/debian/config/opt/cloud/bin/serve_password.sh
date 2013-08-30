@@ -62,7 +62,7 @@ do
 		break
 	fi
 
-	request=$(echo $input | grep "DomU_Request:" | cut -d: -f2 | sed 's/^[ \t]*//')
+	request=$(echo "$input" | grep "DomU_Request:" | cut -d: -f2 | sed 's/^[ \t]*//')
 
 	if [ "$request" != "" ]
 	then

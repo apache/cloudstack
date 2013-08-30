@@ -18,18 +18,21 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
-import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.exception.CloudRuntimeException;
-import edu.emory.mathcs.backport.java.util.Collections;
+import java.util.Collections;
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
-import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.List;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DataStoreManagerImpl implements DataStoreManager {
@@ -87,6 +90,16 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Override
     public List<DataStore> getImageCacheStores(Scope scope) {
         return imageDataStoreMgr.listImageCacheStores(scope);
+    }
+
+    @Override
+    public DataStore getImageCacheStore(long zoneId) {
+        List<DataStore> stores = getImageCacheStores(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(stores);
+        return stores.get(0);
     }
 
     @Override

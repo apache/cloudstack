@@ -66,7 +66,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 
     VMTemplateVO findSystemVMTemplate(long zoneId);
 
-    VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType);
+    VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType);
 
     VMTemplateVO findRoutingTemplate(HypervisorType type, String templateName);
 

@@ -25,6 +25,7 @@
 <section id="runtime-behavior-of-primary-storage">
     <title>Runtime Behavior of Primary Storage</title>
     <para>Root volumes are created automatically when a virtual machine is created. Root volumes are deleted when the VM is destroyed. Data volumes can be created and dynamically attached to VMs. <!-- (although, when the Oracle VM hypervisor is used, the VM must be stopped before an additional volume can be attached)--> Data volumes are not deleted when VMs are destroyed.</para>
-    <para>Administrators should monitor the capacity of primary storage devices and add additional primary storage as needed.  See the Advanced Installation Guide.</para>            
-    <para>Administrators add primary storage to the system by creating a &PRODUCT; storage pool. Each storage pool is associated with a cluster.</para>
+    <para>Administrators should monitor the capacity of primary storage devices and add additional primary storage as needed. See the Advanced Installation Guide.</para>
+    <para>Administrators add primary storage to the system by creating a &PRODUCT; storage pool. Each storage pool is associated with a cluster or a zone.</para>
+    <para>With regards to data disks, when a user executes a Disk Offering to create a data disk, the information is initially written to the CloudStack database only. Upon the first request that the data disk be attached to a VM, CloudStack determines what storage to place the volume on and space is taken from that storage (either from preallocated storage or from a storage system (ex. a SAN), depending on how the primary storage was added to CloudStack).</para>
 </section>

@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -163,7 +164,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         }
 
         if (zoneId != null) {
-            DataCenter zone = _configService.getZone(zoneId);
+            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
                 if (networks.size() == 0) {
@@ -315,7 +316,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             if (account != null) {
                 return account.getId();
             } else {
-                throw new InvalidParameterValueException("Unable to find account " + account + " in domain id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId);
             }
         } else {
             throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or publicIpId");
@@ -381,5 +382,14 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         return ApiCommandJobType.FirewallRule;
     }
 
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getNetworkId();
+    }
 }
 

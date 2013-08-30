@@ -27,6 +27,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -34,8 +37,8 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListCacheStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
@@ -79,10 +82,8 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -125,7 +126,6 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
@@ -710,7 +710,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // cmd.getPageSizeVal()); //version without default sorting
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
         c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.NAME, cmd.getInstanceName());
+        c.addCriteria(Criteria.NAME, cmd.getName());
         c.addCriteria(Criteria.STATE, cmd.getState());
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
@@ -782,7 +782,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
@@ -840,7 +840,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (keyword != null) {
             SearchCriteria<UserVmJoinVO> ssc = _userVmJoinDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
 
@@ -1132,11 +1132,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (keyword != null) {
             SearchCriteria<DomainRouterJoinVO> ssc = _routerJoinDao.createSearchCriteria();
-            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
-            sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("instanceName", SearchCriteria.Op.SC, ssc);
         }
 
         if (name != null) {
@@ -1970,6 +1970,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
+        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
 
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
 
@@ -2107,7 +2108,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public ListResponse<ImageStoreResponse> searchForCacheStores(ListCacheStoresCmd cmd) {
+    public ListResponse<ImageStoreResponse> searchForSecondaryStagingStores(ListSecondaryStagingStoresCmd cmd) {
         Pair<List<ImageStoreJoinVO>, Integer> result = searchForCacheStoresInternal(cmd);
         ListResponse<ImageStoreResponse> response = new ListResponse<ImageStoreResponse>();
 
@@ -2117,7 +2118,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return response;
     }
 
-    private Pair<List<ImageStoreJoinVO>, Integer> searchForCacheStoresInternal(ListCacheStoresCmd cmd) {
+    private Pair<List<ImageStoreJoinVO>, Integer> searchForCacheStoresInternal(ListSecondaryStagingStoresCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object id = cmd.getId();
@@ -2687,6 +2688,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria,
             Map<String, String> tags) {
+
+        // check if zone is configured, if not, just return empty list
+        List<HypervisorType> hypers = null;
+        if (!isIso) {
+            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            if (hypers == null || hypers.isEmpty()) {
+                return new Pair<List<TemplateJoinVO>, Integer>(new ArrayList<TemplateJoinVO>(), 0);
+            }
+        }
+
         VMTemplateVO template = null;
 
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
@@ -2736,10 +2747,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
             }
 
-            List<HypervisorType> hypers = null;
-            if (!isIso) {
-                hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-            }
+            // List<HypervisorType> hypers = null;
+            // if (!isIso) {
+            // hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            // }
 
             // add criteria for project or not
             if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {

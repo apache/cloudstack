@@ -45,7 +45,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 @APICommand(name="addBaremetalDhcp", description="adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
-    private static final String s_name = "addexternaldhcpresponse";
+    private static final String s_name = "addbaremetaldhcpresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalDhcpCmd.class);
     
     @Inject BaremetalDhcpManager mgr;
@@ -55,9 +55,6 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
-    
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class, required = true, description="Pod Id")
-    private Long podId;
     
     @Parameter(name=ApiConstants.DHCP_SERVER_TYPE, type=CommandType.STRING, required = true, description="Type of dhcp device")
     private String dhcpType;
@@ -87,7 +84,6 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
         try {
             BaremetalDhcpVO vo = mgr.addDchpServer(this);
             BaremetalDhcpResponse response = mgr.generateApiResponse(vo);
-            response.setObjectName(s_name);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (Exception e) {
@@ -104,14 +100,6 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public void setPodId(Long podId) {
-        this.podId = podId;
     }
 
     public String getDhcpType() {

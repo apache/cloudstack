@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementService;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="listUcsProfile", description="List profile in ucs manager", responseObject=UcsProfileResponse.class)
+@APICommand(name="listUcsProfiles", description="List profile in ucs manager", responseObject=UcsProfileResponse.class)
 public class ListUcsProfileCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsProfileCmd.class);
 

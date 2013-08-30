@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listLoadBalancerRuleInstances", description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
@@ -70,11 +72,17 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends UserVm> result = _lbService.listLoadBalancerInstances(this);
+        Pair<List<? extends UserVm>, List<String>> vmServiceMap =  _lbService.listLoadBalancerInstances(this);
+        List<? extends UserVm> result = vmServiceMap.first();
+        List<String> serviceStates  = vmServiceMap.second();
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         if (result != null) {
             vmResponses = _responseGenerator.createUserVmResponse("loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
+        }
+
+        for (int i=0;i<result.size(); i++) {
+            vmResponses.get(i).setServiceState(serviceStates.get(i));
         }
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());

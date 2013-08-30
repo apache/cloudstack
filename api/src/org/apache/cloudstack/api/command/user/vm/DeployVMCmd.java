@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -45,8 +47,6 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -443,7 +443,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
         }
@@ -455,17 +455,17 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             //Verify that all objects exist before passing them to the service
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
-            DataCenter zone = _configService.getZone(zoneId);
+            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone == null) {
                 throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
             }
 
-            ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
+            ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
             if (serviceOffering == null) {
                 throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
             }
 
-            VirtualMachineTemplate template = _templateService.getTemplate(templateId);
+            VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
                 throw new InvalidParameterValueException("Unable to use template " + templateId);
@@ -473,7 +473,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
             DiskOffering diskOffering = null;
             if (diskOfferingId != null) {
-                diskOffering = _configService.getDiskOffering(diskOfferingId);
+                diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
                 if (diskOffering == null) {
                     throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
                 }
@@ -495,19 +495,19 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
                     vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                            displayName, diskOfferingId, size, group, getHypervisor(), this.getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
+                            displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
                 }
             } else {
                 if (zone.isSecurityGroupEnabled())  {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                            owner, name, displayName, diskOfferingId, size, group, getHypervisor(), this.getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
+                            owner, name, displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
 
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                         throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                            diskOfferingId, size, group, getHypervisor(), this.getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
+                            diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
 
                 }
             }

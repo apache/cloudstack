@@ -35,11 +35,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.UsageTypes;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -53,6 +55,7 @@ import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
+import com.cloud.usage.dao.UsageVMSnapshotDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.usage.dao.UsageVolumeDao;
@@ -64,6 +67,7 @@ import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
@@ -74,7 +78,6 @@ import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
-
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -116,7 +119,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
-
+    @Inject private UsageVMSnapshotDao m_usageVMSnapshotDao;
+    
     private String m_version = null;
     private final Calendar m_jobExecTime = Calendar.getInstance();
     private int m_aggregationDuration = 0;
@@ -236,7 +240,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         // use the configured exec time and aggregation duration for scheduling the job
-        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
+        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis()  - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
 
         m_heartbeat = m_heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15*1000, /* check database every minute*/60*1000, TimeUnit.MILLISECONDS);
         
@@ -857,6 +861,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VPN user usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = VMSnapshotUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
     }
 
@@ -884,6 +894,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createVPNUserEvent(event);
         } else if (isSecurityGroupEvent(eventType)) {
             createSecurityGroupEvent(event);
+        } else if (isVmSnapshotEvent(eventType)){
+            createVMSnapshotEvent(event);
         }
     }
 
@@ -951,7 +963,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         return (eventType.equals(EventTypes.EVENT_SECURITY_GROUP_ASSIGN) ||
                 eventType.equals(EventTypes.EVENT_SECURITY_GROUP_REMOVE));
     }
-    
+
+    private boolean isVmSnapshotEvent(String eventType){
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_CREATE) ||
+                eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+    }
     private void createVMHelperEvent(UsageEventVO event) {
 
         // One record for handling VM.START and VM.STOP
@@ -1078,6 +1095,51 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             String hypervisorType = event.getResourceType();
             // add this VM to the usage helper table
             UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
+                    soId, templateId, hypervisorType, event.getCreateDate(), null);
+            m_usageInstanceDao.persist(usageInstanceNew);
+        } else if (EventTypes.EVENT_VM_DYNAMIC_SCALE.equals(event.getType())) {
+            // Ending the running vm event
+            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+            sc.addAnd("endDate", SearchCriteria.Op.NULL);
+            sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
+            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            if (usageInstances != null) {
+                if (usageInstances.size() > 1) {
+                    s_logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
+                }
+                for (UsageVMInstanceVO usageInstance : usageInstances) {
+                    usageInstance.setEndDate(event.getCreateDate());
+                    m_usageInstanceDao.update(usageInstance);
+                }
+            }
+
+            sc = m_usageInstanceDao.createSearchCriteria();
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+            sc.addAnd("endDate", SearchCriteria.Op.NULL);
+            sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
+            usageInstances = m_usageInstanceDao.search(sc, null);
+            if (usageInstances == null || (usageInstances.size() == 0)) {
+                s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+            } else if (usageInstances.size() == 1) {
+                UsageVMInstanceVO usageInstance = usageInstances.get(0);
+                if(usageInstance.getSerivceOfferingId() != soId){
+                    //Service Offering changed after Vm creation
+                    //End current Allocated usage and create new Allocated Vm entry with new soId
+                    usageInstance.setEndDate(event.getCreateDate());
+                    m_usageInstanceDao.update(usageInstance);
+                    usageInstance.setServiceOfferingId(soId);
+                    usageInstance.setStartDate(event.getCreateDate());
+                    usageInstance.setEndDate(null);
+                    m_usageInstanceDao.persist(usageInstance);
+                }
+            }
+
+            Long templateId = event.getTemplateId();
+            String hypervisorType = event.getResourceType();
+
+            // add this VM to the usage helper table with new service offering Id
+            UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName,
                     soId, templateId, hypervisorType, event.getCreateDate(), null);
             m_usageInstanceDao.persist(usageInstanceNew);
         }
@@ -1573,7 +1635,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
     }
-    
+
+    private void createVMSnapshotEvent(UsageEventVO event){
+        Long vmId = event.getResourceId();
+        Long volumeId = event.getTemplateId();
+        Long offeringId = event.getOfferingId();
+        Long zoneId = event.getZoneId();
+        Long accountId = event.getAccountId();
+        long size = event.getSize();
+        Date created = event.getCreateDate();
+        Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = acct.getDomainId();
+        UsageVMSnapshotVO vsVO  = new UsageVMSnapshotVO(volumeId,zoneId,accountId,
+                domainId,vmId,offeringId, size, created, null);
+        m_usageVMSnapshotDao.persist(vsVO);
+    }
+
     private class Heartbeat implements Runnable {
         public void run() {
             Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);

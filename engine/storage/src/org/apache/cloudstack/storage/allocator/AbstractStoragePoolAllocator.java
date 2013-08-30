@@ -31,9 +31,9 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
@@ -180,14 +180,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Disk needed for ROOT volume, but StoragePoolType is Iscsi, skipping this and trying other available pools");
             }
-            return false;
-        }
-
-
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(dskCh.getDiskOfferingId());
-        if (diskOffering.getSystemUse() && pool.getPoolType() == StoragePoolType.RBD) {
-            s_logger.debug("Skipping RBD pool " + pool.getName()
-                    + " as a suitable pool. RBD is not supported for System VM's");
             return false;
         }
 

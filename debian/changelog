@@ -1,3 +1,9 @@
+cloudstack (4.3.0) unstable; urgency=low
+
+  * Update the version to 4.3.0.snapshot
+
+ -- Chip Childers <chipchilders@apache.org>  Thu, 1 Aug 2013 12:00:00 -0400
+
 cloudstack (4.2.0) unstable; urgency=low
 
   * Update the version to 4.2.0 to be in sync with Maven (again)

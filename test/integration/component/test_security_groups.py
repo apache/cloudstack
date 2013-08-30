@@ -1111,7 +1111,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Deleting Security group should raise exception
-        security_group.delete(self.apiclient)
+        with self.assertRaises(Exception):
+            security_group.delete(self.apiclient)
 
         #sleep to ensure that Security group is deleted properly
         time.sleep(self.services["sleep"])

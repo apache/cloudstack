@@ -59,24 +59,29 @@
                     actions: {
                         // Remove multiple events
                         remove: {
-                            label: 'Delete Events',
+                            label: 'label.delete.events',
                             isHeader: true,
                             addRow: false,
                             messages: {
                                 notification: function(args) {
-                                    return 'Events Deleted';
+                                    return 'label.delete.events';
                                 }
                             },
                             createForm: {
-                                title: 'Delete Events',
+                                title: 'label.delete.events',
                                 desc: '',
                                 fields: {
                                     type: {
-                                        label: 'By event type',
+                                        label: 'label.by.event.type',
                                         docID: 'helpEventsDeleteType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'label.by.date.start',
+                                        docID: 'helpEventsDeleteDate',
+                                        isDatepicker: true
+                                    },
+                                    enddate: {
+                                        label: 'label.by.date.end',
                                         docID: 'helpEventsDeleteDate',
                                         isDatepicker: true
                                     }
@@ -91,52 +96,54 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
-
                                     url: createURL("deleteEvents"),
                                     data: data,
-                                    dataType: 'json',
-                                    async: false,
-
                                     success: function(data) {
-
                                         args.response.success();
-
                                     }
                                 });
-                                // Reloads window with events removed
-                                $(window).trigger('cloudStack.fullRefresh');
                             }
                         },
 
                         // Archive multiple events
                         archive: {
-                            label: 'Archive Events',
+                            label: 'label.archive.events',
                             isHeader: true,
                             addRow: false,
                             messages: {
                                 notification: function(args) {
-                                    return 'Archive events';
+                                    return 'label.archive.events';
                                 }
                             },
                             createForm: {
-                                title: 'Archive Events',
+                                title: 'label.archive.events',
                                 desc: '',
                                 fields: {
                                     type: {
-                                        label: 'By event type',
+                                        label: 'label.by.event.type',
                                         docID: 'helpEventsArchiveType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'label.by.date.start',
                                         docID: 'helpEventsArchiveDate',
                                         isDatepicker: true
                                     },
+                                    enddate: {
+                                        label: 'label.by.date.end',
+                                        docID: 'helpEventsArchiveDate',
+                                        isDatepicker: true
+                                    }
                                 }
                             },
                             action: function(args) {
@@ -147,27 +154,27 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
-
                                     url: createURL("archiveEvents"),
                                     data: data,
                                     dataType: 'json',
                                     async: false,
 
                                     success: function(data) {
-
                                         args.response.success();
-
                                     }
                                 });
 
-                                // Reloads window with events removed
-                                $(window).trigger('cloudStack.fullRefresh');
                             }
                         }
 
@@ -249,17 +256,6 @@
                                     return true;
                             }
                         }
-                        /*
-						,
-            startdate: {
-              label: 'Start Date',
-							isDatepicker: true
-            },
-            enddate: {
-              label: 'End Date',
-							isDatepicker: true
-            }
-            */
                     },
 
                     dataProvider: function(args) {
@@ -297,9 +293,8 @@
                                     $.ajax({
                                         url: createURL("deleteEvents&ids=" + args.context.events[0].id),
                                         success: function(json) {
-
                                             args.response.success();
-
+                                            $(window).trigger('cloudStack.fullRefresh');
                                         }
 
                                     });
@@ -322,16 +317,10 @@
                                     $.ajax({
                                         url: createURL("archiveEvents&ids=" + args.context.events[0].id),
                                         success: function(json) {
-
                                             args.response.success();
-
+                                            $(window).trigger('cloudStack.fullRefresh');
                                         }
-
                                     });
-
-
-                                    // Reloads window with item archived
-                                    $(window).trigger('cloudStack.fullRefresh');
                                 }
                             }
                         },
@@ -408,24 +397,29 @@
                     actions: {
                         // Remove multiple Alerts
                         remove: {
-                            label: 'Delete Alerts',
+                            label: 'label.delete.alerts',
                             isHeader: true,
                             addRow: false,
                             messages: {
                                 notification: function(args) {
-                                    return 'Alerts Deleted';
+                                    return 'label.delete.alerts';
                                 }
                             },
                             createForm: {
-                                title: 'Delete Alerts',
+                                title: 'label.delete.alerts',
                                 desc: '',
                                 fields: {
                                     type: {
-                                        label: 'By Alert type',
+                                        label: 'label.by.alert.type',
                                         docID: 'helpAlertsDeleteType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'label.by.date.start',
+                                        docID: 'helpAlertsDeleteDate',
+                                        isDatepicker: true
+                                    },
+                                    enddate: {
+                                        label: 'label.by.date.end',
                                         docID: 'helpAlertsDeleteDate',
                                         isDatepicker: true
                                     }
@@ -440,52 +434,58 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
-
                                     url: createURL("deleteAlerts"),
                                     data: data,
                                     dataType: 'json',
                                     async: false,
 
                                     success: function(data) {
-
                                         args.response.success();
-
                                     }
                                 });
-                                // Reloads window with events removed
-                                $(window).trigger('cloudStack.fullRefresh');
                             }
                         },
 
                         // Archive multiple Alerts
                         archive: {
-                            label: 'Archive Alerts',
+                            label: 'label.archive.alerts',
                             isHeader: true,
                             addRow: false,
                             messages: {
                                 notification: function(args) {
-                                    return 'Alerts Archived';
+                                    return 'label.archive.alerts';
                                 }
                             },
                             createForm: {
-                                title: 'Archive Alerts',
+                                title: 'label.archive.alerts',
                                 desc: '',
                                 fields: {
                                     type: {
-                                        label: 'By Alert type',
+                                        label: 'label.by.alert.type',
                                         docID: 'helpAlertsArchiveType'
                                     },
-                                    date: {
-                                        label: 'By date (older than)',
+                                    startdate: {
+                                        label: 'label.by.date.start',
+                                        docID: 'helpAlertsArchiveDate',
+                                        isDatepicker: true
+                                    },
+                                    enddate: {
+                                        label: 'label.by.date.end',
                                         docID: 'helpAlertsArchiveDate',
                                         isDatepicker: true
                                     }
+
                                 }
                             },
                             action: function(args) {
@@ -496,30 +496,28 @@
                                         type: args.data.type
                                     });
 
-                                if (args.data.date != "")
+                                if (args.data.startdate != "")
                                     $.extend(data, {
-                                        olderthan: args.data.date
+                                        startdate: args.data.startdate
+                                    });
+
+                                if (args.data.enddate != "")
+                                    $.extend(data, {
+                                        enddate: args.data.enddate
                                     });
 
                                 $.ajax({
-
                                     url: createURL("archiveAlerts"),
                                     data: data,
                                     dataType: 'json',
                                     async: false,
 
                                     success: function(data) {
-
                                         args.response.success();
-
                                     }
                                 });
-
-                                // Reloads window with events removed
-                                $(window).trigger('cloudStack.fullRefresh');
                             }
                         }
-
                     },
 
                     dataProvider: function(args) {
@@ -558,13 +556,10 @@
                                     $.ajax({
                                         url: createURL("deleteAlerts&ids=" + args.context.alerts[0].id),
                                         success: function(json) {
-
                                             args.response.success();
-
+                                            $(window).trigger('cloudStack.fullRefresh');
                                         }
-
                                     });
-                                    $(window).trigger('cloudStack.fullRefresh');
 
                                 }
                             },
@@ -584,16 +579,10 @@
                                     $.ajax({
                                         url: createURL("archiveAlerts&ids=" + args.context.alerts[0].id),
                                         success: function(json) {
-
                                             args.response.success();
-
+                                            $(window).trigger('cloudStack.fullRefresh');
                                         }
-
                                     });
-
-
-                                    // Reloads window with item archived
-                                    $(window).trigger('cloudStack.fullRefresh');
                                 }
                             }
 

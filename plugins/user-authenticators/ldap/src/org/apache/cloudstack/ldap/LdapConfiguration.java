@@ -23,7 +23,7 @@ import javax.naming.directory.SearchControls;
 
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 
-import com.cloud.configuration.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.utils.Pair;
 
 public class LdapConfiguration {

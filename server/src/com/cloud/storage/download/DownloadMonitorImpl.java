@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +55,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Storage.ImageFormat;
@@ -102,10 +103,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     @Inject
     DataStoreManager storeMgr;
-
-    final Map<TemplateDataStoreVO, DownloadListener> _listenerTemplateMap = new ConcurrentHashMap<TemplateDataStoreVO, DownloadListener>();
-    final Map<VolumeDataStoreVO, DownloadListener> _listenerVolMap = new ConcurrentHashMap<VolumeDataStoreVO, DownloadListener>();
-
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
@@ -189,15 +186,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
 
-            DownloadListener old = null;
-            synchronized (_listenerTemplateMap) {
-                old = _listenerTemplateMap.put(vmTemplateStore, dl);
-            }
-            if (old != null) {
-                s_logger.info("abandon obsolete download listener");
-                old.abandon();
-            }
-
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
@@ -269,13 +257,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
             if (downloadJobExists) {
                 dl.setCurrState(volumeHost.getDownloadState());
-            }
-            DownloadListener old = null;
-            synchronized (_listenerVolMap) {
-                old = _listenerVolMap.put(volumeHost, dl);
-            }
-            if (old != null) {
-                old.abandon();
             }
 
             try {

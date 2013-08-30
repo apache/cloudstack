@@ -75,6 +75,8 @@ public class SolidFireUtil
     public static final String CHAP_TARGET_USERNAME = "chapTargetUsername";
     public static final String CHAP_TARGET_SECRET = "chapTargetSecret";
 
+    public static final String USE_MUTUAL_CHAP_FOR_VMWARE = "useMutualChapForVMware";
+
     public static long createSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
             String strSfVolumeName, long lSfAccountId, long lTotalSize, boolean bEnable512e,
             long lMinIops, long lMaxIops, long lBurstIops)

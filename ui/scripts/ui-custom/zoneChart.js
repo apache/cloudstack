@@ -18,7 +18,7 @@
     /**
      * Zone details chart
      */
-    cloudStack.uiCustom.systemChart = function(chartID) {
+    cloudStack.uiCustom.systemChart = function(chartID, chartFunc) {
         /**
          * Make view all button
          */
@@ -446,7 +446,10 @@
             // Fix zone context naming
             args.context.zones = args.context.physicalResources;
 
-            var $chart = charts[chartID](args).addClass('system-chart').addClass(chartID);
+            if (chartFunc == null)
+                chartFunc = charts[chartID];
+
+            var $chart = chartFunc(args).addClass('system-chart').addClass(chartID);
 
             return $chart;
         };

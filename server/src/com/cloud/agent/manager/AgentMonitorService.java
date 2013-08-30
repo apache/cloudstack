@@ -20,9 +20,7 @@ import com.cloud.agent.Listener;
 
 public interface AgentMonitorService extends Listener {
 
-	public Boolean isAgentBehindOnPing(long agentId);
     public Long getAgentPingTime(long agentId);
     public void pingBy(long agentId);
     public void signalStop();
-    public void startMonitoring(long pingTimeout);
 }

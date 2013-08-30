@@ -150,6 +150,12 @@ public class VolumeVO implements Volume {
     @Column(name = "iscsi_name")
     private String _iScsiName;
 
+    @Column(name = "vm_snapshot_chain_size")
+    private Long vmSnapshotChainSize;
+
+    @Column(name = "iso_id")
+    private long isoId;
+    
     @Transient
     // @Column(name="reservation")
     String reservationId;
@@ -232,6 +238,7 @@ public class VolumeVO implements Volume {
         this.chainInfo = that.getChainInfo();
         this.templateId = that.getTemplateId();
         this.deviceId = that.getDeviceId();
+        this.format = that.getFormat();
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -549,5 +556,21 @@ public class VolumeVO implements Volume {
 
     public void setFormat(Storage.ImageFormat format) {
         this.format = format;
+    }
+    
+    public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
+        this.vmSnapshotChainSize = vmSnapshotChainSize;
+    }
+
+    public Long getVmSnapshotChainSize(){
+        return this.vmSnapshotChainSize;
+    }
+
+    public Long getIsoId() {
+        return this.isoId;
+    }
+
+    public void setIsoId(long isoId) {
+        this.isoId =isoId;
     }
 }

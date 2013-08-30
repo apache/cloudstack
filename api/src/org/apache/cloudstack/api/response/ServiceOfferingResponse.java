@@ -18,7 +18,11 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import javax.persistence.Column;
+
+import com.google.gson.annotations.SerializedName;
+
+import java.util.Map;
+
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -26,7 +30,6 @@ import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ServiceOffering.class)
 public class ServiceOfferingResponse extends BaseResponse {
@@ -102,6 +105,10 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.DEPLOYMENT_PLANNER) @Param(description="deployment strategy used to deploy VM.")
     private String deploymentPlanner;
 
+    @SerializedName(ApiConstants.SERVICE_OFFERING_DETAILS)
+    @Param(description = "additional key/value details tied with this service offering", since = "4.2.0")
+    private Map<String, String> details;
+
     public String getId() {
         return id;
     }
@@ -141,7 +148,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     }
 
     public void setSystemVmType(String vmtype) {
-        this.vm_type = vmtype;
+        vm_type = vmtype;
     }
 
 
@@ -275,5 +282,9 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

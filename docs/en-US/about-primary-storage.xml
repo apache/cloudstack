@@ -24,9 +24,12 @@
 
 <section id="about-primary-storage">
     <title>About Primary Storage</title>
-    <para>Primary storage is associated with a cluster, and it stores the disk volumes for all the VMs running on hosts in that cluster. You can add multiple primary storage servers to a cluster. At least one is required. It is typically located close to the hosts for increased performance.</para>
+    <para>Primary storage is associated with a cluster and/or a zone. It stores the disk volumes for all of the VMs running on hosts in that cluster. You can add multiple primary storage servers to a cluster or a zone (at least one is required at the cluster level). Primary storage is typically located close to the hosts for increased performance. &PRODUCT; manages the allocation of guest virtual disks to particular primary storage devices.</para>
+    <para>Primary storage uses the concept of a storage tag. A storage tag is a label that is used to identify the primary storage. Each primary storage can be associated with zero, one, or more storage tags. When a VM is spun up or a data disk attached to a VM for the first time, these tags, if supplied, are used to determine which primary storage can support the VM or data disk (ex. say you need to guarantee a certain number of IOPS to a particular volume).</para>
+    <para>Primary storage can be either static or dynamic. Static primary storage is what CloudStack has traditionally supported. In this model, the administrator must present CloudStack with a certain amount of preallocated storage (ex. a volume from a SAN) and CloudStack can place many of its volumes on this storage. In the newer, dynamic model, the administrator can present CloudStack with a storage system itself (ex. a SAN). CloudStack, working in concert with a plug-in developed for that storage system, can dynamically create volumes on the storage system. A valuable use for this ability is Quality of Service (QoS). If a volume created in CloudStack can be backed by a dedicated volume on a SAN (i.e. a one-to-one mapping between a SAN volume and a CloudStack volume) and the SAN provides QoS, then CloudStack can provide QoS.</para>
     <para>&PRODUCT; is designed to work with all standards-compliant iSCSI and NFS servers that are supported by the underlying hypervisor, including, for example:</para>
     <itemizedlist>
+        <listitem><para>SolidFire for iSCSI</para></listitem>
         <listitem><para>Dell EqualLogic™ for iSCSI</para></listitem>
         <listitem><para>Network Appliances filers for NFS and iSCSI</para></listitem>
         <listitem><para>Scale Computing for NFS</para></listitem>

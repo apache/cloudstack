@@ -16,11 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class CapabilitiesResponse extends BaseResponse {
@@ -45,6 +46,9 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
             "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
+
+    @SerializedName("regionsecondaryenabled") @Param(description = "true if region wide secondary is enabled, false otherwise")
+    private boolean regionSecondaryEnabled;
 
     @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
     private Integer apiLimitInterval;
@@ -79,6 +83,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setDiskOffMaxSize(Long diskOffMaxSize) {
         this.diskOffMaxSize = diskOffMaxSize;
+    }
+
+    public void setRegionSecondaryEnabled(boolean regionSecondaryEnabled){
+        this.regionSecondaryEnabled = regionSecondaryEnabled;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {

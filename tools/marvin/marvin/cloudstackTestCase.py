@@ -17,6 +17,7 @@
 
 import unittest
 
+
 def user(Name, DomainName, AcctType):
     def wrapper(cls):
         orig_init = cls.__init__
@@ -33,9 +34,6 @@ def user(Name, DomainName, AcctType):
 
 class cloudstackTestCase(unittest.case.TestCase):
     clstestclient = None
-
-    def __init__(self, args):
-        unittest.case.TestCase.__init__(self, args)
 
     @classmethod
     def getClsTestClient(cls):

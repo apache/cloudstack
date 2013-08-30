@@ -19,7 +19,8 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.configuration.Configuration;
+import org.apache.cloudstack.config.Configuration;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -69,7 +70,7 @@ public class EventTypes {
     public static final String EVENT_VM_REBOOT = "VM.REBOOT";
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
-    public static final String EVENT_VM_SCALE = "VM.SCALE";
+    public static final String EVENT_VM_DYNAMIC_SCALE = "VM.DYNAMIC.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
@@ -92,7 +93,6 @@ public class EventTypes {
     public static final String EVENT_PROXY_STOP = "PROXY.STOP";
     public static final String EVENT_PROXY_REBOOT = "PROXY.REBOOT";
     public static final String EVENT_PROXY_HA = "PROXY.HA";
-    public static final String EVENT_PROXY_SCALE = "PROXY.SCALE";
 
 
     // VNC Console Events
@@ -217,7 +217,6 @@ public class EventTypes {
     public static final String EVENT_SSVM_STOP = "SSVM.STOP";
     public static final String EVENT_SSVM_REBOOT = "SSVM.REBOOT";
     public static final String EVENT_SSVM_HA = "SSVM.HA";
-    public static final String EVENT_SSVM_SCALE = "SSVM.SCALE";
 
     // Service Offerings
     public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";
@@ -443,6 +442,8 @@ public class EventTypes {
     public static final String EVENT_DEDICATE_RESOURCE_RELEASE = "DEDICATE.RESOURCE.RELEASE";
 
     public static final String EVENT_CLEANUP_VM_RESERVATION = "VM.RESERVATION.CLEANUP";
+    
+    public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
     static {
 

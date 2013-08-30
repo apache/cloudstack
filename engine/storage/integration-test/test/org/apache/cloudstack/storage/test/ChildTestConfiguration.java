@@ -19,12 +19,15 @@ package org.apache.cloudstack.storage.test;
 import java.io.IOException;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
 import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -40,7 +43,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.dc.ClusterDetailsDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
@@ -62,7 +64,6 @@ import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.OCFS2ManagerImpl;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
@@ -76,7 +77,6 @@ import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
@@ -172,8 +172,8 @@ public class ChildTestConfiguration extends TestConfiguration {
     }
 
     @Bean
-    public VolumeManager volumeMgr() {
-        return Mockito.mock(VolumeManager.class);
+    public VolumeOrchestrationService volumeMgr() {
+        return Mockito.mock(VolumeOrchestrationService.class);
     }
 
     @Bean
@@ -186,10 +186,6 @@ public class ChildTestConfiguration extends TestConfiguration {
         return Mockito.mock(VirtualMachineManager.class);
     }
 
-    @Bean
-    public S3Manager s3Mgr() {
-        return Mockito.mock(S3Manager.class);
-    }
 
     @Bean
     public SnapshotManager snapshotMgr() {

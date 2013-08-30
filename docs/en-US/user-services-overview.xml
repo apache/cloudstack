@@ -24,7 +24,7 @@
 
 <chapter id="user-services-overview">
     <title>User Services Overview</title>
-  <para>In addition to the physical and logical infrastructure of your cloud,
+  <para>In addition to the physical and logical infrastructure of your cloud
     and the &PRODUCT; software and servers, you also need a layer of user
     services so that people can actually make use of the cloud. This means
     not just a user UI, but a set of options and resources that users can
@@ -48,8 +48,8 @@
         root disk, and other choices. See Creating a New Compute Offering.</para>
       </listitem>
       <listitem><para>Disk Offerings, defined by the &PRODUCT; administrator,
-        provide a choice of disk size for primary data storage. See Creating a
-        New Disk Offering.</para>
+        provide a choice of disk size and IOPS (Quality of Service) for primary
+        data storage. See Creating a New Disk Offering.</para>
       </listitem>
       <listitem><para>Network Offerings, defined by the &PRODUCT; administrator,
         describe the feature set that is available to end users from the virtual

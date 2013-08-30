@@ -22,12 +22,16 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
+
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 
 import com.cloud.agent.api.Answer;
@@ -35,7 +39,6 @@ import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -58,13 +61,13 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     }
 
     @Override
-    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         // find an endpoint to send command
         EndPoint ep = _epSelector.select(store);
         // Create Symlink at ssvm
         String path = installPath;
         String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
-        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), path, uuid);
+        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), path, uuid, dataObject.getTO());
         Answer ans = ep.sendMessage(cmd);
         if (ans == null || !ans.getResult()) {
             String errorString = "Unable to create a link for entity at " + installPath + " on ssvm," + ans.getDetails();

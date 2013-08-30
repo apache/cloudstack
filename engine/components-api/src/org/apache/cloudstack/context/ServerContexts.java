@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.context;
 
-import com.cloud.async.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+
 import com.cloud.utils.db.Transaction;
 
 /**

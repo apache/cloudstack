@@ -26,6 +26,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.Host;
+import com.cloud.host.Status;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -58,13 +62,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
     private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
-    private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
+    private final Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject
     HostDao hostDao;
     @Inject
     ClusterDao clusterDao;
     @Inject
     ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    HostDao _hostDao;
+    protected StateMachine2<Status, Event, Host> _statusStateMachine = Status.getStateMachine();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -223,12 +230,6 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public Answer sendTo(Long dcId, HypervisorType type, Command cmd) {
         // TODO Auto-generated method stub
         return null;
@@ -249,14 +250,12 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
 
     @Override
     public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public AgentAttache findAttache(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+        } catch (NoTransitionException e1) {
+            e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return true;
     }
 
     @Override
@@ -284,15 +283,9 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public Answer sendToSSVM(Long dcId, Command cmd) {
+    public boolean isAgentAttached(long hostId) {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void disconnectWithInvestigation(long hostId, Event event) {
-        // TODO Auto-generated method stub
-
+        return false;
     }
 
 }

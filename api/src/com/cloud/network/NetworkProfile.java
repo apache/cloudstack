@@ -23,68 +23,70 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 
 public class NetworkProfile implements Network {
-    private long id;
-    private String uuid;
-    private long dataCenterId;
-    private long ownerId;
-    private long domainId;
+    private final long id;
+    private final String uuid;
+    private final long dataCenterId;
+    private final long ownerId;
+    private final long domainId;
     private String dns1;
     private String dns2;
     private URI broadcastUri;
-    private State state;
-    private String name;
-    private Mode mode;
-    private BroadcastDomainType broadcastDomainType;
+    private final State state;
+    private final String name;
+    private final Mode mode;
+    private final BroadcastDomainType broadcastDomainType;
     private TrafficType trafficType;
-    private String gateway;
-    private String cidr;
-    private String networkCidr;
-    private String ip6Gateway;
-    private String ip6Cidr;
-    private long networkOfferingId;
-    private long related;
-    private String displayText;
-    private String reservationId;
-    private String networkDomain;
-    private Network.GuestType guestType;
+    private final String gateway;
+    private final String cidr;
+    private final String networkCidr;
+    private final String ip6Gateway;
+    private final String ip6Cidr;
+    private final long networkOfferingId;
+    private final long related;
+    private final String displayText;
+    private final String reservationId;
+    private final String networkDomain;
+    private final Network.GuestType guestType;
     private Long physicalNetworkId;
-    private ACLType aclType;
-    private boolean restartRequired;
-    private boolean specifyIpRanges;
-    private Long vpcId;
-    private boolean displayNetwork;
+    private final ACLType aclType;
+    private final boolean restartRequired;
+    private final boolean specifyIpRanges;
+    private final Long vpcId;
+    private final boolean displayNetwork;
     private Long networkAclId;
+    private final String guruName;
 
     public NetworkProfile(Network network) {
-        this.id = network.getId();
-        this.uuid = network.getUuid();
-        this.broadcastUri = network.getBroadcastUri();
-        this.dataCenterId = network.getDataCenterId();
-        this.ownerId = network.getAccountId();
-        this.state = network.getState();
-        this.name = network.getName();
-        this.mode = network.getMode();
-        this.broadcastDomainType = network.getBroadcastDomainType();
-        this.trafficType = network.getTrafficType();
-        this.gateway = network.getGateway();
-        this.cidr = network.getCidr();
-        this.networkCidr = network.getNetworkCidr();
-        this.ip6Gateway = network.getIp6Gateway();
-        this.ip6Cidr = network.getIp6Cidr();
-        this.networkOfferingId = network.getNetworkOfferingId();
-        this.related = network.getRelated();
-        this.displayText = network.getDisplayText();
-        this.reservationId = network.getReservationId();
-        this.networkDomain = network.getNetworkDomain();
-        this.domainId = network.getDomainId();
-        this.guestType = network.getGuestType();
-        this.physicalNetworkId = network.getPhysicalNetworkId();
-        this.aclType = network.getAclType();
-        this.restartRequired = network.isRestartRequired();
-        this.specifyIpRanges = network.getSpecifyIpRanges();
-        this.vpcId = network.getVpcId();
-        this.displayNetwork = network.getDisplayNetwork();
-        this.networkAclId = network.getNetworkACLId();
+        id = network.getId();
+        uuid = network.getUuid();
+        broadcastUri = network.getBroadcastUri();
+        dataCenterId = network.getDataCenterId();
+        ownerId = network.getAccountId();
+        state = network.getState();
+        name = network.getName();
+        mode = network.getMode();
+        broadcastDomainType = network.getBroadcastDomainType();
+        trafficType = network.getTrafficType();
+        gateway = network.getGateway();
+        cidr = network.getCidr();
+        networkCidr = network.getNetworkCidr();
+        ip6Gateway = network.getIp6Gateway();
+        ip6Cidr = network.getIp6Cidr();
+        networkOfferingId = network.getNetworkOfferingId();
+        related = network.getRelated();
+        displayText = network.getDisplayText();
+        reservationId = network.getReservationId();
+        networkDomain = network.getNetworkDomain();
+        domainId = network.getDomainId();
+        guestType = network.getGuestType();
+        physicalNetworkId = network.getPhysicalNetworkId();
+        aclType = network.getAclType();
+        restartRequired = network.isRestartRequired();
+        specifyIpRanges = network.getSpecifyIpRanges();
+        vpcId = network.getVpcId();
+        displayNetwork = network.getDisplayNetwork();
+        networkAclId = network.getNetworkACLId();
+        guruName = network.getGuruName();
     }
 
     public String getDns1() {
@@ -101,6 +103,11 @@ public class NetworkProfile implements Network {
 
     public void setDns2(String dns2) {
         this.dns2 = dns2;
+    }
+
+    @Override
+    public String getGuruName() {
+        return guruName;
     }
 
     public void setBroadcastUri(URI broadcastUri) {
@@ -252,12 +259,12 @@ public class NetworkProfile implements Network {
 
     @Override
     public void setNetworkACLId(Long networkACLId) {
-        this.networkAclId = networkACLId;
+        networkAclId = networkACLId;
     }
 
     @Override
     public void setTrafficType(TrafficType type) {
-        this.trafficType = type;
+        trafficType = type;
     }
 
 	@Override

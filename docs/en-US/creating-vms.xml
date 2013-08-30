@@ -30,7 +30,9 @@
       started as part of the VM deployment. A request parameter, startVM, in the deployVm API
       provides this feature. For more information, see the Developer's Guide</para>
   </note>
-  <para>To create a VM from a template:</para>
+  <para/>
+  <section id="creating-vm-from-template">
+    <title>Creating a VM from a template</title>
   <orderedlist>
     <listitem>
       <para>Log in to the &PRODUCT; UI as an administrator or user.</para>
@@ -54,18 +56,21 @@
     <listitem>
       <para>Click Submit and your VM will be created and started.</para>
       <note>
-        <para>For security reason, the internal name of the VM is visible only to the root
-          admin.</para>
+        <para>For security reasons, the internal name of the VM is visible only to the root
+            admin.</para>
       </note>
     </listitem>
   </orderedlist>
-  <para>To create a VM from an ISO:</para>
+  </section>
+  <section id="creating-vm-from-iso">
+  <title>Creating a VM from an ISO</title>
   <note>
     <para>(XenServer) Windows VMs running on XenServer require PV drivers, which may be provided in
       the template or added after the VM is created. The PV drivers are necessary for essential
       management functions such as mounting additional volumes and ISO images, live migration, and
       graceful shutdown.</para>
   </note>
+  <para/>
   <orderedlist>
     <listitem>
       <para>Log in to the &PRODUCT; UI as an administrator or user.</para>
@@ -87,4 +92,26 @@
     </listitem>
     <!-- <listitem><para>(Oracle VM only) After ISO installation, the installer reboots into the operating system. Due to a known issue in OVM, the reboot will place the VM in the Stopped state. In the &PRODUCT; UI, detach the ISO from the VM (so that the VM will not boot from the ISO again), then click the Start button to restart the VM.</para></listitem> -->
   </orderedlist>
+</section>
+<section id="vmware-configure-linked-clones">
+  <!-- CS-17387 -->
+  <title>Configuring Usage of Linked Clones on VMware</title>
+  <para>(For ESX hypervisor in conjunction with vCenter)</para>
+  <para>VMs can be created as either linked clones or full clones on VMware.</para>
+  <para>For a full description of clone types, refer to VMware documentation. In summary: A
+    full clone is a copy of an existing virtual machine which, once created, does not depend
+    in any way on the original virtual machine. A linked clone is also a copy of an existing
+    virtual machine, but it has ongoing dependency on the original. A linked clone shares the
+    virtual disk of the original VM, and retains access to all files that were present at the
+    time the clone was created.</para>
+  <para>The use of these different clone types involves some side effects and tradeoffs, so it
+    is to the administrator's advantage to be able to choose which of the two types will be
+    used in a &PRODUCT; deployment.</para>
+  <para>A new global configuration setting has been added, vmware.create.full.clone. When the
+    administrator sets this to true, end users can create guest VMs only as full clones. The
+    default value is false. </para>
+  <para>It is not recommended to change the value of vmware.create.full.clone in a cloud with
+    running VMs. However, if the value is changed, existing VMs are not affected. Only VMs
+    created after the setting is put into effect are subject to the restriction.</para>
+</section>
 </section>

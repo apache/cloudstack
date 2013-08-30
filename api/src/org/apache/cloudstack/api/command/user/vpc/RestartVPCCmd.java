@@ -106,4 +106,14 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     public String getEventDescription() {
         return "restarting VPC id=" + getId();
     }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getId();
+    }
 }

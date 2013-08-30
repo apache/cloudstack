@@ -28,12 +28,12 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;

@@ -84,6 +84,13 @@
                     var css = basePath + id + '.css';
                     var configJS = type == 'plugins' ? basePath + 'config' : null;
 
+                    var pluginDictionary;
+                    var locale;
+                    if (type == 'plugins') {
+                        pluginDictionary = basePath + 'dictionary';
+                        locale = $.cookie('lang');
+                    }
+
                     if (configJS) {
                         // Load config metadata
                         require([configJS]);
@@ -99,6 +106,29 @@
                             }
                         })
                     );
+
+                    if (pluginDictionary) {
+                        // Callback for extending the dictionary with new entries
+                        var addToDictionary = function() {
+                            var additions = cloudStack[type][id].dictionary;
+                            $.extend(dictionary, additions);
+                        };
+
+                        // Only add a suffix if the locale is defined and not english/US
+                        var suffix = '';
+                        if (locale && (locale != '' && locale != 'en' & locale != 'en_US'))
+                            suffix = '_'+locale;
+
+                        // Attempt to load the locale's dictionary
+                        require([pluginDictionary+suffix], addToDictionary, function() {
+                            // If the load failed and there was no suffix, don't try again
+                            if (!suffix)
+                                return;
+
+                            // Otherwise try to load the default dictionary
+                            require([pluginDictionary], addToDictionary);
+                        });
+                    }
 
                     loadedPlugins = loadedPlugins + 1;
 

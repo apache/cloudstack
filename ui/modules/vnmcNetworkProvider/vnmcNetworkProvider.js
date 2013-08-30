@@ -376,15 +376,14 @@
                                                 jobid: jid
                                             },
                                             success: function (json) {
-                                                var result = json.queryasyncjobresultresponse;
+                                                var result = json.queryasyncjobresultresponse;                                                
                                                 if (result.jobstatus == 0) {
                                                     return; //Job has not completed
                                                 } else {
+                                                	clearInterval(enableVnmcProviderIntervalID);
                                                     if (result.jobstatus == 1) {
                                                         args.response.success({
-                                                            data: {
-                                                                state: 'Enabled'
-                                                            }
+                                                            data: result.jobresult.networkserviceprovider
                                                         });
                                                     } else if (result.jobstatus == 2) {
                                                         args.response.error(_s(result.jobresult.errortext));
@@ -419,13 +418,7 @@
                                 }
                             });
                         }
-                    },
-
-                    notification: {
-                        poll: function (args) {
-                            args.complete();
-                        }
-                    }
+                    }                    
                 },
 
                 disable: {
@@ -475,16 +468,14 @@
                                                 jobid: jid
                                             },
                                             success: function (json) {
-                                                var result = json.queryasyncjobresultresponse;
+                                                var result = json.queryasyncjobresultresponse;                                             
                                                 if (result.jobstatus == 0) {
                                                     return; //Job has not completed
                                                 } else {
                                                     clearInterval(disableVnmcProviderIntervalID);
                                                     if (result.jobstatus == 1) {
                                                         args.response.success({
-                                                            data: {
-                                                                state: 'Disabled'
-                                                            }
+                                                            data: result.jobresult.networkserviceprovider
                                                         });
                                                     } else if (result.jobstatus == 2) {
                                                         args.response.error(_s(result.jobresult.errortext));
@@ -519,13 +510,7 @@
                                 }
                             });
                         }
-                    },
-
-                    notification: {
-                        poll: function (args) {
-                            args.complete();
-                        }
-                    }
+                    }                    
                 }
             },
             tabs: {
@@ -563,7 +548,8 @@
                                 var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                                 if (items != null && items.length > 0) {
                                     args.response.success({
-                                        data: items[0]
+                                        data: items[0],
+                                        actionFilter: vnmcActionFilter
                                     });
                                 } else {
                                     args.response.success({

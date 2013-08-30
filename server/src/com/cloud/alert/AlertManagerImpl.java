@@ -38,8 +38,10 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +55,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -77,6 +78,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
+
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -573,7 +575,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         for( ClusterVO cluster : clusterList){
             for (Short capacityType : clusterCapacityTypes){
                 List<SummedCapacity> capacity = new ArrayList<SummedCapacity>();
-                float overProvFactor = getOverProvisioningFactor(cluster.getId(), capacityType);
                 capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
 
                 // cpu and memory allocated capacity notification threshold can be defined at cluster level, so getting the value if they are defined at cluster level
@@ -599,7 +600,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                     continue;
                 }
 
-                double totalCapacity = capacity.get(0).getTotalCapacity() * overProvFactor; 
+                double totalCapacity = capacity.get(0).getTotalCapacity();
                 double usedCapacity =  capacity.get(0).getUsedCapacity() + capacity.get(0).getReservedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > threshold){
                     generateEmailAlert(ApiDBUtils.findZoneById(cluster.getDataCenterId()), ApiDBUtils.findPodById(cluster.getPodId()), cluster,

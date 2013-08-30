@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -34,5 +34,8 @@
     <module>rest</module>
     <module>events</module>
     <module>jobs</module>
+    <module>cluster</module>
+    <module>db</module>
+    <module>config</module>
   </modules>
 </project>

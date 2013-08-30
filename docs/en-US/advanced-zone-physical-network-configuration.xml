@@ -26,4 +26,5 @@
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="configure-public-traffic-in-an-advanced-zone.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="creating-shared-network.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

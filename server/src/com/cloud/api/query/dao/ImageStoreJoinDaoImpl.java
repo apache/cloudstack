@@ -24,11 +24,12 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.ImageStoreDetailResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ImageStoreJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.ImageStore;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

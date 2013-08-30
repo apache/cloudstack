@@ -34,6 +34,11 @@ import com.cloud.storage.Storage.TemplateType;
 public class TemplateEntityImpl implements TemplateEntity {
     protected TemplateInfo templateInfo;
 
+    @Override
+    public State getState() {
+        return templateInfo.getState();
+    }
+
     public TemplateEntityImpl(TemplateInfo templateInfo) {
         this.templateInfo = templateInfo;
     }
@@ -47,17 +52,17 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     public TemplateInfo getTemplateInfo() {
-        return this.templateInfo;
+        return templateInfo;
     }
 
     @Override
     public String getUuid() {
-        return this.templateInfo.getUuid();
+        return templateInfo.getUuid();
     }
 
     @Override
     public long getId() {
-        return this.templateInfo.getId();
+        return templateInfo.getId();
     }
 
     public String getExternalId() {

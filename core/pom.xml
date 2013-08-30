@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -35,30 +35,10 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-api</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-schema</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-      <version>${cs.httpclient.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-codec</artifactId>
-          <groupId>commons-codec</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+    </dependency>    
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>${cs.codec.version}</version>
     </dependency>
   </dependencies>
-  <build>
-    <defaultGoal>install</defaultGoal>
-  </build>
 </project>

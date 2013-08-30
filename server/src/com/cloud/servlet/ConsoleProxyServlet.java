@@ -605,7 +605,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = Base64.encodeBase64URLSafeString(encryptedBytes);
+            String computedSignature = Base64.encodeBase64String(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
                 s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);

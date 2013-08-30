@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,8 +18,6 @@ package org.apache.cloudstack.lb;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,8 +28,11 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
-import com.cloud.dc.dao.AccountVlanMapDaoImpl;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -59,6 +60,11 @@ import com.cloud.utils.net.NetUtils;
                 return Mockito.mock(ApplicationLoadBalancerRuleDao.class);
             }
             
+        @Bean
+        IpAddressManager ipAddressManager() {
+            return Mockito.mock(IpAddressManager.class);
+        }
+
             @Bean
             public NetworkModel networkModel() {
                 return Mockito.mock(NetworkModel.class);

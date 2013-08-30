@@ -213,6 +213,13 @@ Install needed packages:
     $ yum install cloud-agent                        # agent (kvm)
     $ yum install cloud-usage                        # usage server
 
+## Installing CloudMonkey CLI
+
+CloudMonkey is a CLI for Apache CloudStack. It was earlier in `tools/cli` within
+the source code but now it has its own repository:
+
+    https://git-wip-us.apache.org/repos/asf?p=cloudstack-cloudmonkey.git
+
 ## Notes
 
 If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloud.com.s3.amazonaws.com/tools/vhd-util)

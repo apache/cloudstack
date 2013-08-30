@@ -35,8 +35,6 @@ public interface StoragePoolResource {
     Answer execute(DestroyCommand cmd);
     
     CopyVolumeAnswer execute(CopyVolumeCommand cmd);
-    
-    CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd);
 
     CreateAnswer execute(CreateCommand cmd);
 }

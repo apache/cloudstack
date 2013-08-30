@@ -116,6 +116,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbStickyPolicy,
                                cls
@@ -129,30 +130,32 @@ class TestLbStickyPolicy(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-
-        cls.network_offering = NetworkOffering.create(
+        try:
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+           cls._cleanup.append(cls.netscaler)
+           cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=True
                                             )
-        # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
+           # Enable Network offering
+           cls.network_offering.update(cls.api_client, state='Enabled')
+           cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+           cls.services["virtual_machine"]["template"] = cls.template.id
 
-        cls.service_offering = ServiceOffering.create(
+           cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.account = Account.create(
+           cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
                                      admin=True,
                                      domainid=cls.domain.id
                                      )
-
-        # Creating network using the network offering created
-        cls.network = Network.create(
+           cls._cleanup.insert(0,cls.account)
+           # Creating network using the network offering created
+           cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
@@ -161,8 +164,8 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     zoneid=cls.zone.id
                                     )
 
-        # Spawn an instance in that network
-        cls.virtual_machine = VirtualMachine.create(
+           # Spawn an instance in that network
+           cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
@@ -170,17 +173,16 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
-        cls.public_ip = PublicIPAddress.create(
+           cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account
-                        ]
+        except Exception as e:
+           cls.tearDownClass()
+           raise Exception ("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -188,17 +190,6 @@ class TestLbStickyPolicy(cloudstackTestCase):
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            interval = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            cls.network_offering.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

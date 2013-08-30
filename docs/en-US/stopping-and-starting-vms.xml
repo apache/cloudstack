@@ -24,6 +24,6 @@
 
 <section id="stopping-and-starting-vms">
 	<title>Stopping and Starting VMs</title>
-    <para>Once a VM instance is created, you can stop, restart, or delete it as needed. In the &PRODUCT; UI, click Instances, select the VM, and use the Stop, Start, Reboot, and Destroy links.</para>
+    <para>Once a VM instance is created, you can stop, restart, or delete it as needed. In the &PRODUCT; UI, click Instances, select the VM, and use the Stop, Start, Reboot, and Destroy buttons.</para>
 </section>
 

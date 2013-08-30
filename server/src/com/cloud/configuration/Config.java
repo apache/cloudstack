@@ -49,7 +49,6 @@ public enum Config {
 	AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
 	AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
 	AlertSMTPUsername("Alert", ManagementServer.class, String.class, "alert.smtp.username", null, "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
-	AlertWait("Alert", AgentManager.class, Integer.class, "alert.wait", null, "Seconds to wait before alerting on a disconnected agent", null),
 	CapacityCheckPeriod("Alert", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
 	StorageAllocatedCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.storage.allocated.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", null, ConfigurationParameterScope.cluster.toString()),
 	StorageCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.storage.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", null, ConfigurationParameterScope.cluster.toString()),
@@ -72,7 +71,7 @@ public enum Config {
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null, ConfigurationParameterScope.zone.toString()),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
-    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unsed data on cache storage (in days).", null),
+    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unused data on cache storage (in days).", null),
     StorageCacheReplacementEnabled("Storage", ManagementServer.class, Boolean.class, "storage.cache.replacement.enabled", "true", "enable or disable cache storage replacement algorithm.", null),
     StorageCacheReplacementInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.interval", "86400", "time interval between cache replacement threads (in seconds).", null),
     MaxUploadVolumeSize("Storage",  ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),
@@ -144,14 +143,12 @@ public enum Config {
     SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum monthly snapshots for a volume", null),
     SnapshotPollInterval("Snapshots", SnapshotManager.class, Integer.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    BackupSnapshotAferTakingSnapshot("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.backup.rightafter", "true", "backup snapshot right after snapshot is taken", null),
-    KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "KVM.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
+    BackupSnapshotAfterTakingSnapshot("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.backup.rightafter", "true", "backup snapshot right after snapshot is taken", null),
+    KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
 	// Advanced
     JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
     JobCancelThresholdMinutes("Advanced", ManagementServer.class, String.class, "job.cancel.threshold.minutes", "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", null),
-    SwiftEnable("Advanced", ManagementServer.class, Boolean.class, "swift.enable", "false", "enable swift ", null),
-    S3Enable("Advanced", ManagementServer.class, Boolean.class, "s3.enable", "false", "enable s3 ", null),
     EventPurgeInterval("Advanced", ManagementServer.class, Integer.class, "event.purge.interval", "86400", "The interval (in seconds) to wait before running the event purge thread", null),
 	AccountCleanupInterval("Advanced", ManagementServer.class, Integer.class, "account.cleanup.interval", "86400", "The interval (in seconds) between cleanup for removed accounts", null),
 	AllowPublicUserTemplates("Advanced", ManagementServer.class, Integer.class, "allow.public.user.templates", "true", "If false, users will not be able to create public templates.", null, ConfigurationParameterScope.account.toString()),
@@ -167,10 +164,7 @@ public enum Config {
 	IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Defaul API port", null),
 	InvestigateRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "investigate.retry.interval", "60", "Time (in seconds) between VM pings when agent is disconnected", null),
 	MigrateRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "migrate.retry.interval", "120", "Time (in seconds) between migration retries", null),
-	PingInterval("Advanced", AgentManager.class, Integer.class, "ping.interval", "60", "Ping interval in seconds", null),
-	PingTimeout("Advanced", AgentManager.class, Float.class, "ping.timeout", "2.5", "Multiplier to ping.interval before announcing an agent has timed out", null),
-	ClusterDeltaSyncInterval("Advanced", AgentManager.class, Integer.class, "sync.interval", "60", "Cluster Delta sync interval in seconds", null),
-	Port("Advanced", AgentManager.class, Integer.class, "port", "8250", "Port to listen on for agent connection.", null),
+    ClusterDeltaSyncInterval("Advanced", AgentManager.class, Integer.class, "sync.interval", "60", "Cluster Delta sync interval in seconds", null),
 	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ), "Default CPU speed (MHz) for router VM.", null),
 	RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time (in seconds) between retries to restart a vm", null),
 	RouterStatsInterval("Advanced", NetworkManager.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
@@ -193,7 +187,6 @@ public enum Config {
 	Wait("Advanced", AgentManager.class, Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return", null),
 	XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "600", "Time (in seconds) to wait for XAPI to return", null),
 	MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
-	Workers("Advanced", AgentManager.class, Integer.class, "workers", "5", "Number of worker threads.", null),
 	HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
 	MountParent("Advanced", ManagementServer.class, String.class, "mount.parent", "/var/cloudstack/mnt", "The mount point on the Management Server for Secondary Storage.", null),
 //	UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
@@ -309,6 +302,8 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
+    KvmSshToAgentEnabled("Advanced", ManagementServer.class, Boolean.class, "kvm.ssh.to.agent", "true", "Specify whether or not the management server is allowed to SSH into KVM Agents", null),
+
 	// Usage
 	UsageExecutionTimezone("Usage", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
 	UsageStatsJobAggregationRange("Usage", ManagementServer.class, Integer.class, "usage.stats.job.aggregation.range", "1440", "The range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly.", null),
@@ -339,7 +334,6 @@ public enum Config {
 	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds"),
 
 	DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
-    DirectAgentPoolSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.pool.size", "500", "Default size for DirectAgentPool", null),
 
 	TaskCleanupRetryInterval("Advanced", ManagementServer.class, Integer.class, "task.cleanup.retry.interval", "600", "Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.", "Seconds"),
 
@@ -357,11 +351,8 @@ public enum Config {
 	DefaultMaxAccountSecondaryStorage("Account Defaults", ManagementServer.class, Long.class, "max.account.secondary.storage", "400", "The default maximum secondary storage space (in GiB) that can be used for an account", null),
 
 	ResourceCountCheckInterval("Advanced", ManagementServer.class, Long.class, "resourcecount.check.interval", "0", "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task", "Seconds"),
-	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
-    DirectAgentScanInterval("Advanced", ManagementServer.class, Integer.class, "direct.agent.scan.interval", "90", "Time interval (in seconds) to run the direct agent scan task", null),
 
 	//disabling lb as cluster sync does not work with distributed cluster
-	AgentLbEnable("Advanced", ManagementServer.class, Boolean.class, "agent.lb.enabled", "false", "If agent load balancing enabled in cluster setup", null),
 	SubDomainNetworkAccess("Advanced", NetworkManager.class, Boolean.class, "allow.subdomain.network.access", "true", "Allow subdomains to use networks dedicated to their parent domain(s)", null),
 	UseExternalDnsServers("Advanced", NetworkManager.class, Boolean.class, "use.external.dns", "false", "Bypass internal dns, use external dns1 and dns2", null, ConfigurationParameterScope.zone.toString()),
 	EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do URL encoding for the api response, false by default", null),
@@ -585,7 +576,9 @@ public enum Config {
             return "TemplateManager";
         } else if (_componentClass == VpcManager.class) {
             return "VpcManager";
-        }else {
+        } else if (_componentClass == SnapshotManager.class) {
+            return "SnapshotManager";
+        } else {
             return "none";
         }
     }

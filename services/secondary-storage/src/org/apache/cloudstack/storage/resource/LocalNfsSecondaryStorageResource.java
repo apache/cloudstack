@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -44,12 +45,13 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;

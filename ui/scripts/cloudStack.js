@@ -168,6 +168,16 @@
                             expires: 1
                         });
 
+                        g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
+                        $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
+                            expires: 1
+                        });                        
+                                               
+                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
+                        $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
+                            expires: 1
+                        }); 
+                                              
                         if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                             g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                             $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
@@ -197,40 +207,7 @@
                         return true;
                     }
                 });
-
-                if (userValid && isAdmin()) {
-                    $.ajax({
-                        url: createURL("listImageStores"),
-                        data: {
-                            provider: 'Swift'
-                        },
-                        async: false,
-                        success: function(json) {
-                            var items = json.listimagestoreresponse.imagestore;
-                            if (items != null && items.length > 0)
-                                havingSwift = true;
-                        }
-                    });
-                    if (havingSwift == false) {
-                        $.ajax({
-                            url: createURL("listImageStores"),
-                            data: {
-                                provider: 'S3'
-                            },
-                            async: false,
-                            success: function(json) {
-                                var items = json.listimagestoreresponse.imagestore;
-                                if (items != null && items.length > 0) {
-                                    havingS3 = true;
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    havingSwift = false;
-                    havingS3 = false;
-                }
-
+               
                 return userValid ? {
                     user: {
                         userid: g_userid,
@@ -332,6 +309,16 @@
                                     expires: 1
                                 });
 
+                                g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
+                                $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
+                                    expires: 1
+                                });   
+                                
+                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
+                                $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
+                                    expires: 1
+                                }); 
+                                
                                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
                                     g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                                     $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
@@ -367,40 +354,7 @@
                                 args.response.error();
                             }
                         });
-
-                        if (isAdmin()) {
-                            $.ajax({
-                                url: createURL("listImageStores"),
-                                data: {
-                                    provider: 'Swift'
-                                },
-                                async: false,
-                                success: function(json) {
-                                    var items = json.listimagestoreresponse.imagestore;
-                                    if (items != null && items.length > 0)
-                                        havingSwift = true;
-                                }
-                            });
-                            if (havingSwift = false) {
-                                $.ajax({
-                                    url: createURL("listImageStores"),
-                                    data: {
-                                        provider: 'S3'
-                                    },
-                                    async: false,
-                                    success: function(json) {
-                                        var items = json.listimagestoreresponse.imagestore;
-                                        if (items != null && items.length > 0) {
-                                            havingS3 = true;
-                                        }
-                                    }
-                                });
-                            }
-                        } else {
-                            havingSwift = false;
-                            havingS3 = false;
-                        }
-
+                       
                         // Get project configuration
                         // TEMPORARY -- replace w/ output of capability response, etc., once implemented
                         window.g_projectsInviteRequired = false;
@@ -432,6 +386,8 @@
                         g_timezoneoffset = null;
                         g_timezone = null;
                         g_supportELB = null;
+                        g_KVMsnapshotenabled = null;
+                        g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
 
                         $.cookie('JSESSIONID', null);

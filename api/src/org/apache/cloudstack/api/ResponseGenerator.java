@@ -16,81 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import com.cloud.async.AsyncJob;
-import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Configuration;
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceLimit;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.dc.StorageNetworkIpRange;
-import com.cloud.dc.Vlan;
-import com.cloud.domain.Domain;
-import com.cloud.event.Event;
-import com.cloud.host.Host;
-import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.network.GuestVlan;
-import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
-import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.IsolationType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VpnUser;
-import com.cloud.network.as.AutoScalePolicy;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.network.as.Condition;
-import com.cloud.network.as.Counter;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.HealthCheckPolicy;
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StickinessPolicy;
-import com.cloud.network.security.SecurityGroup;
-import com.cloud.network.security.SecurityRule;
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectAccount;
-import com.cloud.projects.ProjectInvitation;
-import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.server.ResourceTag;
-import com.cloud.storage.GuestOS;
-import com.cloud.storage.S3;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Swift;
-import com.cloud.storage.Volume;
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.cloud.storage.snapshot.SnapshotSchedule;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Ip;
-import com.cloud.vm.InstanceGroup;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicSecondaryIp;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.snapshot.VMSnapshot;
+
+import java.text.DecimalFormat;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -150,7 +81,6 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.S3Response;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
@@ -163,7 +93,6 @@ import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
@@ -181,17 +110,85 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceLimit;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.dc.StorageNetworkIpRange;
+import com.cloud.dc.Vlan;
+import com.cloud.domain.Domain;
+import com.cloud.event.Event;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.network.GuestVlan;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.VpnUser;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmProfile;
+import com.cloud.network.as.Condition;
+import com.cloud.network.as.Counter;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.HealthCheckPolicy;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityRule;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectInvitation;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
+import com.cloud.server.ResourceTag;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.ImageStore;
-import java.text.DecimalFormat;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.storage.snapshot.SnapshotSchedule;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Ip;
+import com.cloud.vm.InstanceGroup;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -301,8 +298,6 @@ public interface ResponseGenerator {
 
     String toSerializedString(CreateCmdResponse response, String responseType);
 
-    AsyncJobResponse createAsyncJobResponse(AsyncJob job);
-
     EventResponse createEventResponse(Event event);
 
     //List<EventResponse> createEventResponse(EventJoinVO... events);
@@ -331,7 +326,7 @@ public interface ResponseGenerator {
 
     List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
 
-   // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
     //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
@@ -347,10 +342,6 @@ public interface ResponseGenerator {
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
-
-    SwiftResponse createSwiftResponse(Swift swift);
-
-    S3Response createS3Response(S3 result);
 
     PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
 

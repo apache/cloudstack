@@ -256,7 +256,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Createing firewall rule for Ip: " + ip.getAddress() + " for protocol:" + this.getProtocol());
+        return ("Creating firewall rule for Ip: " + ip.getAddress() + " for protocol:" + this.getProtocol());
     }
 
     @Override

@@ -39,6 +39,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleApplier;
@@ -106,21 +107,22 @@ public class FirewallManagerTest {
     @Test
     public void testApplyRules() {
         List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
-        FirewallRuleVO rule = 
-                new FirewallRuleVO("rule1", 1, 80, "TCP", 1, 2, 1, 
+        FirewallRuleVO rule =
+                new FirewallRuleVO("rule1", 1, 80, "TCP", 1, 2, 1,
                         FirewallRule.Purpose.Firewall, null, null, null, null);
         ruleList.add(rule);
         FirewallManagerImpl firewallMgr = (FirewallManagerImpl)_firewallMgr;
 
         NetworkManager netMgr = mock(NetworkManager.class);
+        IpAddressManager addrMgr = mock(IpAddressManager.class);
         firewallMgr._networkMgr = netMgr;
 
         try {
             firewallMgr.applyRules(ruleList, false, false);
-            verify(netMgr)
-            .applyRules(any(List.class), 
-                    any(FirewallRule.Purpose.class), 
-                    any(NetworkRuleApplier.class), 
+            verify(addrMgr)
+            .applyRules(any(List.class),
+                    any(FirewallRule.Purpose.class),
+                    any(NetworkRuleApplier.class),
                     anyBoolean());
 
         } catch (ResourceUnavailableException e) {
@@ -131,14 +133,14 @@ public class FirewallManagerTest {
     @Test
     public void testApplyFWRules() {
         List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
-        FirewallRuleVO rule = 
-                new FirewallRuleVO("rule1", 1, 80, "TCP", 1, 2, 1, 
+        FirewallRuleVO rule =
+                new FirewallRuleVO("rule1", 1, 80, "TCP", 1, 2, 1,
                         FirewallRule.Purpose.Firewall, null, null, null, null);
         ruleList.add(rule);
         FirewallManagerImpl firewallMgr = (FirewallManagerImpl)_firewallMgr;
-        VirtualRouterElement virtualRouter =  
+        VirtualRouterElement virtualRouter =
                 mock(VirtualRouterElement.class);
-        VpcVirtualRouterElement vpcVirtualRouter =                  
+        VpcVirtualRouterElement vpcVirtualRouter =
                 mock(VpcVirtualRouterElement.class);
 
         List<FirewallServiceProvider> fwElements = new ArrayList<FirewallServiceProvider>();

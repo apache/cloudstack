@@ -84,7 +84,7 @@ public class ApiServlet extends HttpServlet {
         String[] paramsInQueryString = req.getQueryString().split("&");
         if (paramsInQueryString != null) {
             for (String param : paramsInQueryString) {
-                String[] paramTokens = param.split("=");
+                String[] paramTokens = param.split("=", 2);
                 if (paramTokens != null && paramTokens.length == 2) {
                     String name = paramTokens[0];
                     String value = paramTokens[1];
@@ -124,8 +124,8 @@ public class ApiServlet extends HttpServlet {
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         if (s_logger.isDebugEnabled()) {
-            reqStr = auditTrailSb.toString() + " " + req.getQueryString();
-            s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
+            reqStr = auditTrailSb.toString() + " " + StringUtils.cleanString(req.getQueryString());
+            s_logger.debug("===START=== " + reqStr);
         }
 
         try {
@@ -333,9 +333,9 @@ public class ApiServlet extends HttpServlet {
             s_logger.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            s_accessLogger.info(StringUtils.cleanString(auditTrailSb.toString()));
+            s_accessLogger.info(auditTrailSb.toString());
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
+                s_logger.debug("===END=== " + reqStr);
             }
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();

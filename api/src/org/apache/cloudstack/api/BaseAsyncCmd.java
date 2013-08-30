@@ -16,10 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.user.User;
 
 /**
@@ -33,7 +31,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalacner";
 
-    private AsyncJob job;
+    private Object job;
 
     @Parameter(name = "starteventid", type = CommandType.LONG)
     private Long startEventId;
@@ -56,16 +54,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
      */
     public abstract String getEventDescription();
 
-    public ResponseObject getResponse(long jobId) {
-        AsyncJobResponse response = new AsyncJobResponse();
 
-        AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
-        response.setJobId(job.getUuid());
-        response.setResponseName(getCommandName());
-        return response;
-    }
-
-    public void setJob(AsyncJob job) {
+    public void setJob(Object job) {
         this.job = job;
     }
 
@@ -100,7 +90,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return null;
     }
 
-    public AsyncJob getJob() {
+    public Object getJob() {
         return job;
     }
 

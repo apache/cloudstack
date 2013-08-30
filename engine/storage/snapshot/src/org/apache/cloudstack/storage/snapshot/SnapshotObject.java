@@ -107,6 +107,7 @@ public class SnapshotObject implements SnapshotInfo {
                 .create(SnapshotDataStoreVO.class);
         sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, this.store.getId());
         sc.addAnd(sc.getEntity().getRole(), Op.EQ, this.store.getRole());
+        sc.addAnd(sc.getEntity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
         sc.addAnd(sc.getEntity().getParentSnapshotId(), Op.EQ, this.getId());
         SnapshotDataStoreVO vo = sc.find();
         if (vo == null) {
@@ -159,7 +160,7 @@ public class SnapshotObject implements SnapshotInfo {
             throw new CloudRuntimeException("Failed to update state: " + e.toString());
         } finally {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -266,13 +267,14 @@ public class SnapshotObject implements SnapshotInfo {
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }
         this.processEvent(event);
     }
 
+    @Override
     public void incRefCount() {
         if (this.store == null) {
             return;

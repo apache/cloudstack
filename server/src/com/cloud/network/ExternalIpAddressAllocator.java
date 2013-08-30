@@ -30,7 +30,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.utils.component.AdapterBase;

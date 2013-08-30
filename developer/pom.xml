@@ -18,29 +18,26 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <!-- specify the dependent jdbc driver here -->
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
+	  <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>commons-dbcp</groupId>
       <artifactId>commons-dbcp</artifactId>
-      <version>${cs.dbcp.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-pool</groupId>
       <artifactId>commons-pool</artifactId>
-      <version>${cs.pool.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jasypt</groupId>
       <artifactId>jasypt</artifactId>
-      <version>${cs.jasypt.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -54,7 +51,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

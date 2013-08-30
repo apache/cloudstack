@@ -26,27 +26,25 @@
   <para>Use the following steps to begin the Linux OS installation:</para>
   <orderedlist>
     <listitem>
-      <para>Download the script file cloud-set-guest-password:</para>
+      <para>Download the script file <filename>cloud-set-guest-password</filename>:</para>
       <itemizedlist>
         <listitem>
-          <para>Linux: <ulink url="
-				http://cloudstack.org/dl/cloud-set-guest-password
-				"/>
+          <para>Linux: <ulink
+              url="http://download.cloud.com/templates/4.2/bindir/cloud-set-guest-password.in"/>
           </para>
         </listitem>
         <listitem>
           <para>Windows: <ulink
-              url="
-				http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download
-				"
+              url="http://sourceforge.net/projects/cloudstack/files/Password%20Management%20Scripts/CloudInstanceManager.msi/download"
             />
           </para>
         </listitem>
       </itemizedlist>
     </listitem>
     <listitem>
-      <para>Copy this file to /etc/init.d.</para>
-      <para>On some Linux distributions, copy the file to /etc/rc.d/init.d.</para>
+      <para>Copy this file to <filename>/etc/init.d</filename>.</para>
+      <para>On some Linux distributions, copy the file to
+        <filename>/etc/rc.d/init.d</filename>.</para>
     </listitem>
     <listitem>
       <para>Run the following command to make the script executable:</para>
@@ -54,18 +52,35 @@
     </listitem>
     <listitem>
       <para>Depending on the Linux distribution, continue with the appropriate step.</para>
-      <para>On Fedora, CentOS/RHEL, and Debian, run:</para>
-      <programlisting>chkconfig --add cloud-set-guest-password</programlisting>
-      <para condition="community">On Ubuntu with VMware tools, link the script file to the
-        /etc/network/if-up and /etc/network/if-down folders, and run the script:</para>
-      <programlisting condition="community">#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-up/cloud-set-guest-password
+      <itemizedlist condition="community">
+        <listitem>
+          <para>On Fedora, CentOS/RHEL, and Debian, run:</para>
+          <programlisting>chkconfig --add cloud-set-guest-password</programlisting>
+        </listitem>
+        <listitem>
+          <para condition="community">On Ubuntu with VMware tools, link the script file to the
+              <filename>/etc/network/if-up</filename> and <filename>/etc/network/if-down</filename>
+            folders, and run the script:</para>
+          <programlisting condition="community">#ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-up/cloud-set-guest-password
 #ln -s /etc/init.d/cloud-set-guest-password /etc/network/if-down/cloud-set-guest-password</programlisting>
-      <para condition="community">If you are using Ubuntu 11.04, start by creating a directory
-        called /var/lib/dhcp3 on your Ubuntu machine (works around a known issue with this version
-        of Ubuntu). On all Ubuntu versions: Run “sudo update-rc.d cloud-set-guest-password defaults
-        98”. To test, run "mkpasswd" and check that it is generating a new password. If the
-        “mkpasswd” command does not exist, run "sudo apt-get install whois" (or sudo apt-get install
-        mkpasswd, depending on your Ubuntu version) and repeat.</para>
+        </listitem>
+        <listitem>
+          <para condition="community">If you are using Ubuntu 11.04, create a directory called
+              <filename>/var/lib/dhcp3</filename> on your Ubuntu machine.</para>
+          <para condition="community">This is to work around a known issue with this version of
+            Ubuntu. </para>
+          <para condition="community">Run the following command:</para>
+          <programlisting>sudo update-rc.d cloud-set-guest-password defaults 98</programlisting>
+        </listitem>
+        <listitem>
+          <para condition="community">On all Ubuntu versions, run:</para>
+          <programlisting>sudo update-rc.d cloud-set-guest-password defaults 98</programlisting>
+          <para condition="community">To test, run <command>mkpasswd</command> and check whether a
+            new password is generated. If the <command>mkpasswd</command> command does not exist,
+            run <command>sudo apt-get install whois</command> or <command>sudo apt-get install
+              mkpasswd</command>, depending on your Ubuntu version.</para>
+        </listitem>
+      </itemizedlist>
     </listitem>
   </orderedlist>
 </section>

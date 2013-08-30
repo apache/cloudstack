@@ -19,8 +19,6 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
-import java.util.Map;
-
 import com.cloud.storage.DataStoreRole;
 
 public interface DataStoreManager {
@@ -35,6 +33,8 @@ public interface DataStoreManager {
     DataStore getImageStore(long zoneId);
 
     List<DataStore> getImageCacheStores(Scope scope);
+
+    DataStore getImageCacheStore(long zoneId);
 
     List<DataStore> listImageStores();
 }

@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.concurrent.*;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -40,11 +39,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.to.DhcpTO;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -107,6 +108,14 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+
+import org.apache.cloudstack.engine.orchestration.VolumeOrchestrator;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -236,18 +245,15 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
-import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -300,12 +306,10 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeManagerImpl;
 import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
-import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.storage.resource.VmwareStorageProcessor;
+import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -325,12 +329,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
 
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -342,7 +340,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected final int _shutdown_waitMs = 300000;		// wait up to 5 minutes for shutdown
 
     @Inject
-    protected VolumeManager volMgr;
+    protected VolumeOrchestrationService volMgr;
 
     // out an operation
     protected final int _retry = 24;
@@ -474,10 +472,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((DeleteStoragePoolCommand) cmd);
             } else if (clz == CopyVolumeCommand.class) {
                 answer = execute((CopyVolumeCommand) cmd);
-            } else if (clz == CreateVolumeOVACommand.class) {
-                answer = execute((CreateVolumeOVACommand) cmd);
-            } else if (clz == PrepareOVAPackingCommand.class)  {
-                answer = execute((PrepareOVAPackingCommand) cmd);
             } else if (clz == AttachVolumeCommand.class) {
                 answer = execute((AttachVolumeCommand) cmd);
             } else if (clz == AttachIsoCommand.class) {
@@ -1009,7 +1003,97 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
+    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        File keyFile = mgr.getSystemVMKeyFile();
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        assert(controlIp != null);
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+
+        String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+
+        try {
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
+
+            try {
+                String[][] rules = cfgtr.generateFwRules(cmd);
+
+                String[] addRules = rules[LoadBalancerConfigurator.ADD];
+                String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+                String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+                String args = "";
+                String ip = cmd.getNic().getIp();
+                args += " -i " + ip;
+                StringBuilder sb = new StringBuilder();
+                if (addRules.length > 0) {
+                    for (int i = 0; i < addRules.length; i++) {
+                        sb.append(addRules[i]).append(',');
+                    }
+
+                    args += " -a " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (removeRules.length > 0) {
+                    for (int i = 0; i < removeRules.length; i++) {
+                        sb.append(removeRules[i]).append(',');
+                    }
+
+                    args += " -d " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (statRules.length > 0) {
+                    for (int i = 0; i < statRules.length; i++) {
+                        sb.append(statRules[i]).append(',');
+                    }
+
+                    args += " -s " + sb.toString();
+                }
+
+                // Invoke the command
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_loadbalancer.sh " + args);
+
+                if (!result.first()) {
+                    String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+
+                    return new Answer(cmd, false, msg);
+                }
+
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("VPCLoadBalancerConfigCommand on domain router " + routerIp + " completed");
+                }
+            } finally {
+                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "rm " + tmpCfgFilePath);
+            }
+            return new Answer(cmd);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "VPCLoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+        }
+
+
+    }
+
+
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
+
+        if ( cmd.getVpcId() != null ) {
+            return VPCLoadBalancerConfig(cmd);
+        }
+
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         File keyFile = mgr.getSystemVMKeyFile();
 
@@ -2592,7 +2676,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 ManagedObjectReference environmentBrowser =
                         context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
                 HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
-                if (hostCapability.isNestedHVSupported()) {
+                Boolean nestedHvSupported = hostCapability.isNestedHVSupported();
+                if (nestedHvSupported == null) {
+                    // nestedHvEnabled property is supported only since VMware 5.1. It's not defined for earlier versions.
+                    s_logger.warn("Hypervisor doesn't support nested virtualization, unable to set config for VM " +vmSpec.getName());
+                } else if (nestedHvSupported.booleanValue()) {
                     s_logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
                     vmConfigSpec.setNestedHVEnabled(true);
                 }
@@ -3159,6 +3247,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     // return Pair<switch name, vlan tagging>
     private Pair<String, String> getTargetSwitch(NicTO nicTo) throws Exception {
+        if (nicTo.getType() == Networks.TrafficType.Guest) {
+            return new Pair<String, String>(_guestTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
+        } else if (nicTo.getType() == Networks.TrafficType.Public) {
+            return new Pair<String, String>(_publicTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
+        }
+
         if(nicTo.getName() != null && !nicTo.getName().isEmpty()) {
             String[] tokens = nicTo.getName().split(",");
             // Format of network traffic label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
@@ -3175,12 +3269,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         }
 
-        if (nicTo.getType() == Networks.TrafficType.Guest) {
-            return new Pair<String, String>(_guestTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
-        } else if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
+        if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
             return new Pair<String, String>(_privateNetworkVSwitchName, Vlan.UNTAGGED);
-        } else if (nicTo.getType() == Networks.TrafficType.Public) {
-            return new Pair<String, String>(_publicTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Storage) {
             return new Pair<String, String>(_privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
@@ -3633,9 +3723,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // find VM through datacenter (VM is not at the target host yet)
             VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist in VMware datacenter";
-                s_logger.error(msg);
-                throw new Exception(msg);
+                s_logger.info("VM " + vmName + " was not found in the cluster of host " + hyperHost.getHyperHostName() + ". Looking for the VM in datacenter.");
+                ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), dcMor);
+                vmMo = dcMo.findVm(vmName);
+                if (vmMo == null) {
+                    String msg = "VM " + vmName + " does not exist in VMware datacenter";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
             }
 
             NicTO[] nics = vm.getNics();
@@ -3928,8 +4024,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             srcDsName = volMgr.getStoragePoolOfVolume(cmd.getVolumeId());
             tgtDsName = poolTo.getUuid().replace("-", "");
 
-            // find VM through datacenter (VM is not at the target host yet)
-            vmMo = srcHyperHost.findVmOnPeerHyperHost(vmName);
+            // find VM in this datacenter not just in this cluster.
+            DatacenterMO dcMo = new DatacenterMO(getServiceContext(), morDc);
+            vmMo = dcMo.findVm(vmName);
+
             if (vmMo == null) {
                 String msg = "VM " + vmName + " does not exist in VMware datacenter " + morDc.getValue();
                 s_logger.error(msg);
@@ -4062,6 +4160,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return str.replace('/', '-');
     }
 
+    private String trimIqn(String iqn) {
+        String[] tmp = iqn.split("/");
+
+        if (tmp.length != 3) {
+            String msg = "Wrong format for iScsi path: " + iqn + ". It should be formatted as '/targetIQN/LUN'.";
+
+            s_logger.warn(msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+
+        return tmp[1].trim();
+    }
+
     @Override
     public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
             String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
@@ -4069,9 +4181,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
         ManagedObjectReference morDs = createVmfsDatastore(hyperHost, getDatastoreName(iqn),
-                storageHost, storagePort, iqn,
-                initiatorUsername, initiatorPassword,
-                targetUsername, targetPassword);
+                                                           storageHost, storagePort, trimIqn(iqn),
+                                                           initiatorUsername, initiatorPassword,
+                                                           targetUsername, targetPassword);
 
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
@@ -4100,7 +4212,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, iqn);
+        deleteVmfsDatastore(hyperHost, getDatastoreName(iqn), storageHost, storagePort, trimIqn(iqn));
     }
 
     protected Answer execute(AttachVolumeCommand cmd) {
@@ -4313,10 +4425,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         auth.setChapAuthenticationType(strAuthType);
         auth.setChapName(chapName);
         auth.setChapSecret(chapSecret);
-        auth.setMutualChapInherited(false);
-        auth.setMutualChapAuthenticationType(strAuthType);
-        auth.setMutualChapName(mutualChapName);
-        auth.setMutualChapSecret(mutualChapSecret);
+
+        if (StringUtils.isNotBlank(mutualChapName) &&
+            StringUtils.isNotBlank(mutualChapSecret)) {
+            auth.setMutualChapInherited(false);
+            auth.setMutualChapAuthenticationType(strAuthType);
+            auth.setMutualChapName(mutualChapName);
+            auth.setMutualChapSecret(mutualChapSecret);
+        }
 
         target.setAuthenticationProperties(auth);
 
@@ -5139,49 +5255,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    @Override
-    public CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CreateVolumeOVACommand: " + _gson.toJson(cmd));
-        }
-
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            return (CreateVolumeOVAAnswer) mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "CreateVolumeOVACommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CreateVolumeOVAAnswer(cmd, false, msg);
-        }
-    }
-
-    protected Answer execute(PrepareOVAPackingCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PrepareOVAPackingCommand: " + _gson.toJson(cmd));
-        }
-
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            return mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String details = "PrepareOVAPacking for template failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details, e);
-            return new PrepareOVAPackingAnswer(cmd, false, details);
-        }
-    }
     private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
             String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
 
@@ -6188,7 +6261,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _guestTrafficInfo = (VmwareTrafficLabel) params.get("guestTrafficInfo");
         _publicTrafficInfo = (VmwareTrafficLabel) params.get("publicTrafficInfo");
         VmwareContext context = getServiceContext();
-        volMgr = ComponentContext.inject(VolumeManagerImpl.class);
+        volMgr = ComponentContext.inject(VolumeOrchestrator.class);
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             mgr.setupResourceStartupParams(params);
@@ -6263,9 +6336,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
         VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr,
-                timeout, this, _shutdown_waitMs
+                timeout, this, _shutdown_waitMs, null
                 );
-        storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+        storageHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
 
         return true;
     }
@@ -6393,8 +6466,49 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public Answer execute(DestroyCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource DestroyCommand to evict template from storage pool: " + _gson.toJson(cmd));
+        }
+
+        try {
+            VmwareContext context = getServiceContext(null);
+            VmwareHypervisorHost hyperHost = getHyperHost(context, null);
+            VolumeTO vol = cmd.getVolume();
+ 
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vol.getPoolUuid());
+            if (morDs == null) {
+                String msg = "Unable to find datastore based on volume mount point " + vol.getMountPoint();
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+            ClusterMO clusterMo = new ClusterMO(context, morCluster);
+
+            VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
+            if (vmMo != null) {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Destroy template volume " + vol.getPath());
+                }
+                vmMo.destroy();
+            }
+            else{
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Template volume " + vol.getPath() + " is not found, no need to delete.");
+                }                
+            }
+            return new Answer(cmd, true, "Success");
+
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext(null);
+            }
+
+            String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
     }
     private boolean isVMWareToolsInstalled(VirtualMachineMO vmMo) throws Exception{
         GuestInfo guestInfo = vmMo.getVmGuestInfo();

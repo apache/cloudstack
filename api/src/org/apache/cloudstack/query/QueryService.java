@@ -20,7 +20,7 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListCacheStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
@@ -81,7 +81,7 @@ public interface QueryService {
 
     public ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd);
 
-    public ListResponse<ImageStoreResponse> searchForCacheStores(ListCacheStoresCmd cmd);
+    public ListResponse<ImageStoreResponse> searchForSecondaryStagingStores(ListSecondaryStagingStoresCmd cmd);
 
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 

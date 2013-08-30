@@ -193,19 +193,18 @@ class TestVPCNetwork(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
         return
 
     @classmethod
@@ -1051,19 +1050,18 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -1555,19 +1553,18 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -2135,6 +2132,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls._cleanup = []
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2152,6 +2150,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                      admin=True,
                                      domainid=cls.domain.id
                                      )
+        cls._cleanup.append(cls.account)
 
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
         cls.vpc = VPC.create(
@@ -2243,12 +2242,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                 services=cls.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
-        cls._cleanup = [
-                        cls.account,
-                        cls.service_offering,
-                        cls.vpc_off,
-                        cls.nw_off
-                        ]
         return
 
     @classmethod
@@ -2287,7 +2280,9 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                   )
         for vm in vms:
             if vm.state == "Stopped":
-                vm.start(self.apiclient)
+                cmd = startVirtualMachine.startVirtualMachineCmd()
+                cmd.id = vm.id
+                self.apiclient.startVirtualMachine(cmd)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -2342,8 +2337,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_01_wait_network_gc(self):
-        """ Test stop all the Vms that are part of the a Network
-            (Wait for network GC).Start 1 Vm from the network.
+        """ Test network gc after shutdown of vms in the network
         """
 
         # Validate the following
@@ -2360,7 +2354,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.debug("Waiting for network garbage collection thread to run")
         # Wait for the network garbage collection thread to run
         wait_for_cleanup(self.apiclient,
-                         ["network.gc.interval", "network.gc.wait"])
+                         ["network.gc.interval", "network.gc.wait"]*2)
         self.debug("Check if the VPC router is in stopped state?")
         routers = Router.list(
                               self.apiclient,
@@ -2378,13 +2372,13 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.assertEqual(
                     router.state,
                     "Stopped",
-                    "Router state should be stopped after netwrok.gc.interval"
+                    "Router state should be stopped after network gc"
                  )
         return
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_start_vm_network_gc(self):
-        """ Test network rules after starting an instance in VPC
+        """ Test network rules after starting a VpcVr that was shutdown after network.gc
         """
 
         # Validate the following

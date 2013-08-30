@@ -31,6 +31,8 @@ public interface ObjectInDataStoreManager {
 
     public boolean delete(DataObject dataObj);
 
+    public boolean deleteIfNotReady(DataObject dataObj);
+
     public DataObject get(DataObject dataObj, DataStore store);
 
     public boolean update(DataObject vo, Event event) throws NoTransitionException, ConcurrentOperationException;

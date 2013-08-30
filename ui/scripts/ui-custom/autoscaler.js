@@ -357,6 +357,9 @@
                     click: function() {
                         var data = cloudStack.serializeForm($('.ui-dialog .autoscaler form'));
 
+                        // Fix for missing formData, when editing existing rules;
+                        if (!formData) formData = data;
+
                         // Pass VPC data
                         if (formData.tier) {
                             data.tier = formData.tier;

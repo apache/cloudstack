@@ -52,19 +52,34 @@ def apply_flows(bridge, this_vif_ofport, vif_ofports):
     pluginlib.add_flow(bridge, priority=1100,
                        nw_dst='224.0.0.0/24', actions=action)
 
+def clear_rules(vif):
+    try:
+        delcmd = "/sbin/ebtables -t nat -L PREROUTING | grep " + vif
+        delcmds = pluginlib.do_cmd(['/bin/bash', '-c', delcmd]).split('\n')
+        for cmd in delcmds:
+            try:
+                cmd = '/sbin/ebtables -t nat -D PREROUTING ' + cmd
+                pluginlib.do_cmd(['/bin/bash', '-c', cmd])
+            except:
+                pass
+    except:
+        pass
+
 
 def main(command, vif_raw):
     if command not in ('online', 'offline'):
-        return
-    # Make sure the networking stack is not linux bridge!
-    net_stack = pluginlib.do_cmd(['cat', '/etc/xensource/network.conf'])
-    if net_stack.lower() == "bridge":
-        # Nothing to do here!
         return
 
     vif_name, dom_id, vif_index = vif_raw.split('-')
     # validate vif and dom-id
     this_vif = "%s%s.%s" % (vif_name, dom_id, vif_index)
+    # Make sure the networking stack is not linux bridge!
+    net_stack = pluginlib.do_cmd(['cat', '/etc/xensource/network.conf'])
+    if net_stack.lower() == "bridge":
+        if command == 'offline':
+            clear_rules(this_vif)
+        # Nothing to do here!
+        return
 
     bridge = pluginlib.do_cmd([pluginlib.VSCTL_PATH, 'iface-to-br', this_vif])
     

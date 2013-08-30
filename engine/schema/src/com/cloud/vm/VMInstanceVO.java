@@ -146,6 +146,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Enumerated(value=EnumType.STRING)
     protected HypervisorType hypervisorType;
 
+    @Column(name = "dynamically_scalable")
+    protected boolean dynamicallyScalable;
 
 /*
     @Column(name="tags")
@@ -490,5 +492,13 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	public Long getDiskOfferingId() {
 		return diskOfferingId;
 	}
+
+    public void setDynamicallyScalable(boolean dynamicallyScalable) {
+        this.dynamicallyScalable = dynamicallyScalable;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return this.dynamicallyScalable;
+    }
 
 }

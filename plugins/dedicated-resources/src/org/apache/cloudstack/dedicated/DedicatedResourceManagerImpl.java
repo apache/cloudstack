@@ -43,12 +43,12 @@ import org.apache.cloudstack.api.response.DedicateHostResponse;
 import org.apache.cloudstack.api.response.DedicatePodResponse;
 import org.apache.cloudstack.api.response.DedicateZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;

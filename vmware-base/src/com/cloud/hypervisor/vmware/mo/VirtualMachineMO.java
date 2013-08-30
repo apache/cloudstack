@@ -100,7 +100,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
@@ -2200,7 +2200,13 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public int getCoresPerSocket() throws Exception {
-        return (Integer)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.numCoresPerSocket");
+        // number of cores per socket is 1 in case of ESXi. It's not defined explicitly and the property is support since vSphere API 5.0.
+        String apiVersion = HypervisorHostHelper.getVcenterApiVersion(_context);
+        if (apiVersion.compareTo("5.0") < 0) {
+            return 1;
+        }
+        Integer coresPerSocket = (Integer) _context.getVimClient().getDynamicProperty(_mor, "config.hardware.numCoresPerSocket");
+        return coresPerSocket != null? coresPerSocket : 1;
     }
 
     public int getVirtualHardwareVersion() throws Exception {

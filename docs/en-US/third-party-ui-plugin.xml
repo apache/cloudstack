@@ -1,0 +1,364 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+   <chapter id="third-party-ui-plugin">
+      <!-- CLOUDSTACK-883 -->
+      <title>Third-Party UI Plugin Framework</title>
+      <para>Using the new third-party plugin framework, you can write and install extensions to
+        &PRODUCT;. The installed and enabled plugins will appear in the UI alongside the
+        other features.
+        The code for the plugin is simply placed in a special directory
+        within &PRODUCT;’s installed code at any time after &PRODUCT; installation. The new plugin
+        appears only when it is enabled by the cloud administrator.</para>
+     <mediaobject>
+       <imageobject>
+         <imagedata fileref="./images/plugin_intro.jpg"/>
+       </imageobject>
+       <textobject>
+         <phrase>plugin_intro.jpg: New plugin button in product navbar</phrase>
+       </textobject>
+     </mediaobject>
+     <para>The left navigation bar of the &PRODUCT; UI has a new Plugins button to help you work with UI plugins.</para>
+      <section id="plugin-howto-overview">
+        <title>How to Write a Plugin: Overview</title>
+        <para>The basic procedure for writing a plugin is:</para>
+        <orderedlist>
+          <listitem>
+            <para>Write the code and create the other files needed. You will need the plugin code
+              itself (in Javascript), a thumbnail image, the plugin listing, and a CSS file.</para>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="./images/plugin1.jpg"/>
+              </imageobject>
+              <textobject>
+                <phrase>plugin1.jpg: Write the plugin code</phrase>
+              </textobject>
+            </mediaobject>
+            <para>All UI plugins have the following set of files:</para>
+            <programlisting>+-- cloudstack/
+  +-- ui/
+    +-- plugins/
+      +-- csMyFirstPlugin/
+        +-- config.js            --> Plugin metadata (title, author, vendor URL, etc.)
+        +-- icon.png             --> Icon, shown on side nav bar and plugin listing
+                                     (should be square, and ~50x50px)
+        +-- csMyFirstPlugin.css  --> CSS file, loaded automatically when plugin loads
+        +-- csMyFirstPlugin.js   --> Main JS file, containing plugin code              
+            </programlisting>
+            <para>The same files must also be present at /tomcat/webapps/client/plugins.</para>
+          </listitem>
+          <listitem>
+            <para>The &PRODUCT; administrator adds the folder containing your plugin code under the
+              &PRODUCT; PLUGINS folder.</para>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="./images/plugin2.jpg"/>
+              </imageobject>
+              <textobject>
+                <phrase>plugin2.jpg: The plugin code is placed in the PLUGINS folder</phrase>
+              </textobject>
+            </mediaobject>
+          </listitem>
+          <listitem>
+            <para>The administrator also adds the name of your plugin to the plugin.js file in the
+              PLUGINS folder.</para>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="./images/plugin3.jpg"/>
+              </imageobject>
+              <textobject>
+                <phrase>plugin3.jpg: The plugin name is added to plugin.js in the PLUGINS
+                  folder</phrase>
+              </textobject>
+            </mediaobject>
+          </listitem>
+          <listitem>
+            <para>The next time the user refreshes the UI in the browser, your plugin will appear in
+              the left navigation bar.</para>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="./images/plugin4.jpg"/>
+              </imageobject>
+              <textobject>
+                <phrase>plugin4.jpg: The plugin appears in the UI</phrase>
+              </textobject>
+            </mediaobject>
+          </listitem>
+        </orderedlist>
+      </section>
+      <section id="plugin-howto-details">
+        <title>How to Write a Plugin: Implementation Details</title>
+        <para>This section requires an understanding of JavaScript and the &PRODUCT; API. You don't
+          need knowledge of specific frameworks for this tutorial (jQuery, etc.), since the
+          &PRODUCT; UI handles the front-end rendering for you.</para>
+        <para>There is much more to the &PRODUCT; UI framework than can be described here. The UI is
+          very flexible to handle many use cases, so there are countless options and variations. The
+          best reference right now is to read the existing code for the main UI, which is in the /ui
+          folder. Plugins are written in a very similar way to the main UI.</para>
+        <orderedlist>
+          <listitem>
+            <para><emphasis role="bold">Create the directory to hold your plugin.</emphasis></para>
+            <para>All plugins are composed of set of required files in the directory
+              /ui/plugins/pluginID, where pluginID is a short name for your plugin. It's recommended
+              that you prefix your folder name (for example, bfMyPlugin) to avoid naming conflicts
+              with other people's plugins.</para>
+            <para>In this example, the plugin is named csMyFirstPlugin.</para>
+            <programlisting>$ cd cloudstack/ui/plugins
+$ mkdir csMyFirstPlugin
+$ ls -l
+
+total 8
+drwxr-xr-x  2 bgregory  staff   68 Feb 11 14:44 csMyFirstPlugin
+-rw-r--r--  1 bgregory  staff  101 Feb 11 14:26 plugins.js
+          </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Change to your new plugin directory.</emphasis></para>
+            <programlisting>$ cd csMyFirstPlugin
+            </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Set up the listing.</emphasis></para>
+            <para>Add the file config.js, using your favorite editor.</para>
+            <programlisting>$ vi config.js</programlisting>
+            <para>Add the following content to config.js. This information will be displayed on the
+              plugin listing page in the UI:</para>
+            <programlisting>(function (cloudStack) {
+  cloudStack.plugins.csMyFirstPlugin.config = {
+    title: 'My first plugin',
+    desc: 'Tutorial plugin',
+    externalLink: 'http://www.cloudstack.org/',
+    authorName: 'Test Plugin Developer',
+    authorEmail: 'plugin.developer@example.com'
+  };
+}(cloudStack));            
+          </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Add a new main section.</emphasis></para>
+            <para>Add the file csMyFirstPlugin.js, using your favorite editor.</para>
+            <programlisting>$ vi csMyFirstPlugin.js</programlisting>
+            <para>Add the following content to csMyFirstPlugin.js:</para>
+            <programlisting>(function (cloudStack) {
+  cloudStack.plugins.csMyFirstPlugin = function(plugin) {
+    plugin.ui.addSection({
+      id: 'csMyFirstPlugin',
+      title: 'My Plugin',
+      preFilter: function(args) {
+        return isAdmin();
+      },
+      show: function() {
+        return $('&lt;div&gt;').html('Content will go here');
+      }
+    });
+  };
+}(cloudStack));            
+          </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Register the plugin.</emphasis></para>
+            <para>You now have the minimal content needed to run the plugin, so you can activate the
+              plugin in the UI by adding it to plugins.js. First, edit the file:</para>
+            <programlisting>$ cd cloudstack/ui/plugins
+$ vi plugins.js              
+            </programlisting>
+            <para>Now add the following to plugins.js:</para>
+            <programlisting>(function($, cloudStack) {
+  cloudStack.plugins = [
+    'csMyFirstPlugin'
+  ];
+}(jQuery, cloudStack));            
+          </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Check the plugin in the UI.</emphasis></para>
+            <para>First, copy all the plugin code that you have created so far to
+              /tomcat/webapps/client/plugins. Then refresh the browser and click Plugins in the side
+              navigation bar. You should see your new plugin.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Make the plugin do something.</emphasis></para>
+            <para>Right now, you just have placeholder content in the new plugin. It's time to add
+              real code. In this example, you will write a basic list view, which renders data from
+              an API call. You will list all virtual machines owned by the logged-in user. To do
+              this, replace the 'show' function in the plugin code with a 'listView' block,
+              containing the required syntax for a list view. To get the data, use the
+              listVirtualMachines API call. Without any parameters, it will return VMs only for your
+              active user. Use the provided 'apiCall' helper method to handle the server call. Of
+              course, you are free to use any other method for making the AJAX call (for example,
+              jQuery's $.ajax method).</para>
+            <para>First, open your plugin's JavaScript source file in your favorite editor:</para>
+            <programlisting>$ cd csMyFirstPlugin
+$ vi csMyFirstPlugin.js              
+            </programlisting>
+            <para>Add the following code in csMyFirstPlugin.js:</para>
+            <programlisting>(function (cloudStack) {
+  cloudStack.plugins.csMyFirstPlugin = function(plugin) {
+    plugin.ui.addSection({
+      id: 'csMyFirstPlugin',
+      title: 'My Plugin',
+      preFilter: function(args) {
+        return isAdmin();
+      },
+
+      // Render page as a list view
+      listView: {
+        id: 'testPluginInstances',
+        fields: {
+          name: { label: 'label.name' },
+          instancename: { label: 'label.internal.name' },
+          displayname: { label: 'label.display.name' },
+          zonename: { label: 'label.zone.name' }
+        },
+        dataProvider: function(args) {
+          // API calls go here, to retrive the data asynchronously
+          //
+          // On successful retrieval, call
+          // args.response.success({ data: [data array] });
+          plugin.ui.apiCall('listVirtualMachines', {
+            success: function(json) {
+              var vms = json.listvirtualmachinesresponse.virtualmachine;
+
+              args.response.success({ data: vms });
+            },
+            error: function(errorMessage) {
+              args.response.error(errorMessage)
+            }
+          });
+        }
+      }
+    });
+  };
+}(cloudStack));            
+          </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Test the plugin.</emphasis></para>
+            <para>First, copy all the plugin code that you have created so far to
+              /tomcat/webapps/client/plugins. Then refresh the browser. You can see that your
+              placeholder content was replaced with a list table, containing 4 columns of virtual
+              machine data.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Add an action button.</emphasis></para>
+            <para>Let's add an action button to the list view, which will reboot the VM. To do this,
+              add an actions block under listView. After specifying the correct format, the actions
+              will appear automatically to the right of each row of data.</para>
+            <programlisting>$ vi csMyFirstPlugin.js              
+            </programlisting>
+            <para>Now add the following new code in csMyFirstPlugin.js. (The dots ... show where we
+              have omitted some existing code for the sake of space. Don't actually cut and paste
+              that part):</para>
+            <programlisting>...
+      listView: {
+        id: 'testPluginInstances',
+        ...
+
+        actions: {
+          // The key/ID you specify here will determine what icon is
+          // shown in the UI for this action,
+          // and will be added as a CSS class to the action's element
+          // (i.e., '.action.restart')
+          //
+          // -- here, 'restart' is a predefined name in &PRODUCT; that will
+          // automatically show a 'reboot' arrow as an icon;
+          // this can be changed in csMyFirstPlugin.css
+          restart: {
+            label: 'Restart VM',
+            messages: {
+              confirm: function() { return 'Are you sure you want to restart this VM?' },
+              notification: function() { return 'Rebooted VM' }
+            },
+            action: function(args) {
+              // Get the instance object of the selected row from context
+              //
+              // -- all currently loaded state is stored in 'context' as objects,
+              //    such as the selected list view row, 
+              //    the selected section, and active user
+              //
+              // -- for list view actions, the object's key will be the same as
+              //    listView.id, specified above;
+              //    always make sure you specify an 'id' for the listView,
+              //     or else it will be 'undefined!'
+              var instance = args.context.testPluginInstances[0];
+
+              plugin.ui.apiCall('rebootVirtualMachine', {
+                // These will be appended to the API request
+                //
+                // i.e., rebootVirtualMachine&amp;id=...
+                data: {
+                  id: instance.id
+                },
+                success: function(json) {
+                  args.response.success({
+                    // This is an async job, so success here only indicates
+                    // that the job was initiated.
+                    //
+                    // To pass the job ID to the notification UI
+                    // (for checking to see when action is completed),
+                    // '_custom: { jobID: ... }' needs to always be passed on success,
+                    // in the same format as below
+                    _custom: { jobId: json.rebootvirtualmachineresponse.jobid }
+                  });
+                },
+                
+                
+                error: function(errorMessage) {
+                  args.response.error(errorMessage); // Cancel action, show error message returned
+                }
+              });
+            },
+
+            // Because rebootVirtualMachine is an async job, we need to add
+            // a poll function, which will perodically check
+            // the management server to see if the job is ready
+            // (via pollAsyncJobResult API call)
+            //
+            // The plugin API provides a helper function, 'plugin.ui.pollAsyncJob',
+            /  which will work for most jobs
+            // in &PRODUCT;
+            notification: {
+              poll: plugin.ui.pollAsyncJob
+            }
+          }
+        },
+
+        dataProvider: function(args) {
+          ...
+...             
+           </programlisting>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Add the thumbnail icon.</emphasis></para>
+            <para>Create an icon file; it should be square, about 50x50 pixels, and named icon.png.
+              Copy it into the same directory with your plugin code:
+              cloudstack/ui/plugins/csMyFirstPlugin/icon.png.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">Add the stylesheet.</emphasis></para>
+            <para>Create a CSS file, with the same name as your .js file. Copy it into the same
+              directory with your plugin code:
+              cloudstack/ui/plugins/csMyFirstPlugin/csMyFirstPlugin.css.</para>
+          </listitem>
+        </orderedlist>
+      </section>
+    </chapter>

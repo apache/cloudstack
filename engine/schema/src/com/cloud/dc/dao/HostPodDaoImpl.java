@@ -44,6 +44,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 
     protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
     protected SearchBuilder<HostPodVO> DataCenterIdSearch;
+    protected GenericSearchBuilder<HostPodVO, Long> PodIdSearch;
 
     public HostPodDaoImpl() {
         DataCenterAndNameSearch = createSearchBuilder();
@@ -54,6 +55,12 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         DataCenterIdSearch = createSearchBuilder();
         DataCenterIdSearch.and("dcId", DataCenterIdSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DataCenterIdSearch.done();
+
+        PodIdSearch = createSearchBuilder(Long.class);
+        PodIdSearch.selectField(PodIdSearch.entity().getId());
+        PodIdSearch.and("dataCenterId", PodIdSearch.entity().getDataCenterId(), Op.EQ);
+        PodIdSearch.and("allocationState", PodIdSearch.entity().getAllocationState(), Op.EQ);
+        PodIdSearch.done();
     }
 
     @Override
@@ -118,17 +125,16 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 
     @Override
     public List<Long> listDisabledPods(long zoneId) {
-        GenericSearchBuilder<HostPodVO, Long> podIdSearch = createSearchBuilder(Long.class);
-        podIdSearch.selectField(podIdSearch.entity().getId());
-        podIdSearch.and("dataCenterId", podIdSearch.entity().getDataCenterId(), Op.EQ);
-        podIdSearch.and("allocationState", podIdSearch.entity().getAllocationState(), Op.EQ);
-        podIdSearch.done();
-
-
-        SearchCriteria<Long> sc = podIdSearch.create();
+        SearchCriteria<Long> sc = PodIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         sc.addAnd("allocationState", SearchCriteria.Op.EQ, Grouping.AllocationState.Disabled);
         return customSearch(sc, null);
     }
 
+    @Override
+    public List<Long> listAllPods(long zoneId) {
+        SearchCriteria<Long> sc = PodIdSearch.create();
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        return customSearch(sc, null);
+    }
 }

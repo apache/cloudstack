@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.agent;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
@@ -28,7 +26,6 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
@@ -37,10 +34,6 @@ import com.cloud.utils.component.Manager;
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager extends Manager {
-    public enum OnError {
-        Continue, Stop
-    }
-
     public enum TapAgentsAction {
         Add,
         Del,
@@ -133,8 +126,6 @@ public interface AgentManager extends Manager {
      */
     void unregisterForHostEvents(int id);
 
-    public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
-
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
 
@@ -145,7 +136,7 @@ public interface AgentManager extends Manager {
 
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
 
-    public AgentAttache findAttache(long hostId);
+    boolean isAgentAttached(long hostId);
 
     void disconnectWithoutInvestigation(long hostId, Status.Event event);
 
@@ -154,7 +145,4 @@ public interface AgentManager extends Manager {
     public void pullAgentOutMaintenance(long hostId);
 
 	boolean reconnect(long hostId);
-    Answer sendToSSVM(Long dcId, final Command cmd);
-
-    void disconnectWithInvestigation(final long hostId, final Status.Event event);
 }

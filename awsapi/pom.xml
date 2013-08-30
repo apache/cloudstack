@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -73,6 +73,16 @@
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>${cs.log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-syslog-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-snmp-alerts</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.neethi</groupId>
@@ -271,7 +281,6 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -289,6 +298,11 @@
       <artifactId>javassist</artifactId>
       <version>3.9.0.GA</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-db</artifactId>
+      <version>${project.version}</version>
+    </dependency>    
   </dependencies>
   <build>
     <resources>

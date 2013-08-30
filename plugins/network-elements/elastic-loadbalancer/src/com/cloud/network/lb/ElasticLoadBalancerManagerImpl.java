@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -38,11 +39,11 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
@@ -50,7 +51,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -75,6 +75,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.ElasticLbVmMapVO;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -115,7 +116,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -164,6 +164,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     protected ClusterDao _clusterDao;
     @Inject
     DataCenterDao _dcDao = null;
+    @Inject
+    IpAddressManager _ipAddrMgr;
     @Inject
     protected NetworkDao _networkDao;
     @Inject
@@ -327,7 +329,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
 
     protected boolean applyLBRules(DomainRouterVO elbVm,
             List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
+        Commands cmds = new Commands(Command.OnError.Continue);
         createApplyLoadBalancingRulesCommands(rules, elbVm, cmds, guestNetworkId);
         // Send commands to elbVm
         return sendCommandsToRouter(elbVm, cmds);
@@ -489,13 +491,13 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
  
                 List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
                 NetworkOffering controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+                Network controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
-                List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
+                LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(2);
                 NicProfile guestNic = new NicProfile();
                 guestNic.setDefaultNic(true);
-                networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
+                networks.put(controlConfig, null);
+                networks.put(guestNetwork, guestNic);
 
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 
@@ -586,7 +588,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        PublicIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
+        PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
         IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
         _ipAddressDao.update(ipvo.getId(), ipvo);
@@ -601,7 +603,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null);
         _ipAddressDao.update(ipvo.getId(), ipvo);
-       _networkMgr.disassociatePublicIpAddress(ipId, userId, caller);
+        _ipAddrMgr.disassociatePublicIpAddress(ipId, userId, caller);
        _ipAddressDao.unassignIpAddress(ipId);
     }
 
@@ -939,7 +941,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
         if (answer != null) {
             DomainRouterVO elbVm = _routerDao.findById(profile.getVirtualMachine().getId());
             processStopOrRebootAnswer(elbVm, answer);

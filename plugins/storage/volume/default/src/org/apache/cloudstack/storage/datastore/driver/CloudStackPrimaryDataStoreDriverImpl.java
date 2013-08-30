@@ -30,13 +30,14 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -61,7 +63,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Inject
     StorageManager storageMgr;
     @Inject
-    VolumeManager volumeMgr;
+    VolumeOrchestrationService volumeMgr;
     @Inject
     VMInstanceDao vmDao;
     @Inject
@@ -90,7 +92,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
         CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
         EndPoint ep = epSelector.select(volume);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if ( ep == null ){
+            String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else{
+            answer = ep.sendMessage(cmd);
+        }
         return answer;
     }
 
@@ -103,9 +112,18 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         String errMsg = null;
         Answer answer = null;
+        CreateCmdResult result = new CreateCmdResult(null, null);
         if (data.getType() == DataObjectType.VOLUME) {
             try {
                 answer = createVolume((VolumeInfo) data);
+                if ((answer == null) || (!answer.getResult())) {
+                    result.setSuccess(false);
+                    if (answer != null) {
+                        result.setResult(answer.getDetails());
+                    }
+                } else {
+                    result.setAnswer(answer);
+                }
             } catch (StorageUnavailableException e) {
                 s_logger.debug("failed to create volume", e);
                 errMsg = e.toString();
@@ -114,7 +132,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 errMsg = e.toString();
             }
         }
-        CreateCmdResult result = new CreateCmdResult(null, answer);
         if (errMsg != null) {
             result.setResult(errMsg);
         }
@@ -129,9 +146,15 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = epSelector.select(data);
-            Answer answer = ep.sendMessage(cmd);
-            if (answer != null && !answer.getResult()) {
-                result.setResult(answer.getDetails());
+            if ( ep == null ){
+                String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                result.setResult(errMsg);
+            } else {
+                Answer answer = ep.sendMessage(cmd);
+                if (answer != null && !answer.getResult()) {
+                    result.setResult(answer.getDetails());
+                }
             }
         } catch (Exception ex) {
             s_logger.debug("Unable to destoy volume" + data.getId(), ex);
@@ -158,7 +181,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = this.epSelector.select(snapshot);
-            Answer answer = ep.sendMessage(cmd);
+            Answer answer = null;
+            if ( ep == null ){
+                String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                answer = new Answer(cmd, false, errMsg);
+            } else{
+                answer = ep.sendMessage(cmd);
+            }
 
             result = new CreateCmdResult(null, answer);
             if (answer != null && !answer.getResult()) {

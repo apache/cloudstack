@@ -31,5 +31,98 @@
         <listitem><para>The Management Server cluster runs low on CPU, memory, or storage resources</para></listitem>
         <listitem><para>The Management Server loses heartbeat from a Host for more than 3 minutes</para></listitem>
         <listitem><para>The Host cluster runs low on CPU, memory, or storage resources</para></listitem>
-    </itemizedlist>      
+    </itemizedlist>
+    <section id="external-snmp-manager">
+        <!-- CLOUDSTACK-680 -->
+        <title>Sending Alerts to External SNMP and Syslog Managers</title>
+        <para>In addition to showing administrator alerts on the Dashboard in the &PRODUCT; UI and
+            sending them in email, &PRODUCT; can also send the same alerts to external SNMP or
+            Syslog management software. This is useful if you prefer to use an SNMP or Syslog
+            manager to monitor your cloud.</para>
+        <para>The alerts which can be sent are listed in <xref linkend="alerts"/>. You can also
+            display the most up to date list by calling the API command listAlerts.</para>
+        <section id="snmp-alert-details">
+            <title>SNMP Alert Details</title>
+            <para>The supported protocol is SNMP version 2.</para>
+            <para>Each SNMP trap contains the following information: message, podId, dataCenterId, clusterId, and generationTime.</para>
+        </section>
+        <section id="syslog-alert-details">
+            <title>Syslog Alert Details</title>
+            <para>&PRODUCT; generates a syslog message for every alert. Each syslog message incudes
+                the fields alertType, message, podId, dataCenterId, and clusterId, in the following
+                format. If any field does not have a valid value, it will not be included.</para>
+            <programlisting>Date severity_level Management_Server_IP_Address/Name  alertType:: value dataCenterId:: value  podId:: value  clusterId:: value  message:: value</programlisting>
+            <para>For example:</para>
+            <programlisting>Mar  4 10:13:47    WARN    localhost    alertType:: managementNode message:: Management server node 127.0.0.1 is up</programlisting>
+        </section>
+        <section id="snmp-syslog-config">
+            <title>Configuring SNMP and Syslog Managers</title>
+            <para>To configure one or more SNMP managers or Syslog managers to receive alerts from
+                &PRODUCT;:</para>
+            <orderedlist>
+                <listitem><para>For an SNMP manager, install the &PRODUCT; MIB file on your SNMP manager system.
+                    This maps the SNMP OIDs to trap types that can be more easily read by users.
+                    The file must be publicly available.
+                    For more information on how to install this file, consult the documentation provided with the SNMP manager.</para></listitem>
+                <listitem>
+                    <para>Edit the file /etc/cloudstack/management/log4j-cloud.xml.</para>
+                    <programlisting># vi /etc/cloudstack/management/log4j-cloud.xml</programlisting>
+                </listitem>
+                <listitem>
+                    <para>Add an entry using the syntax shown below. Follow the appropriate example
+                        depending on whether you are adding an SNMP manager or a Syslog manager. To specify
+                        multiple external managers, separate the IP addresses and other configuration values
+                        with commas (,).</para>
+                    <note>
+                        <para>The recommended maximum number of SNMP or Syslog managers is 20 for
+                            each.</para>
+                    </note>
+                    <para/>
+                    <para>The following example shows how to configure two SNMP managers at IP addresses
+                        10.1.1.1 and 10.1.1.2. Substitute your own IP addresses, ports, and communities. Do
+                        not change the other values (name, threshold, class, and layout values).</para>
+                    <programlisting>&lt;appender name="SNMP" class="org.apache.cloudstack.alert.snmp.SnmpTrapAppender"&gt;
+  &lt;param name="Threshold" value="WARN"/&gt;  &lt;!-- Do not edit. The alert feature assumes WARN. --&gt;
+  &lt;param name="SnmpManagerIpAddresses" value="10.1.1.1,10.1.1.2"/&gt;
+  &lt;param name="SnmpManagerPorts" value="162,162"/&gt;
+  &lt;param name="SnmpManagerCommunities" value="public,public"/&gt;
+  &lt;layout class="org.apache.cloudstack.alert.snmp.SnmpEnhancedPatternLayout"&gt; &lt;!-- Do not edit -->
+    &lt;param name="PairDelimeter" value="//"/&gt;
+    &lt;param name="KeyValueDelimeter" value="::"/&gt;
+  &lt;/layout&gt;
+&lt;/appender&gt;</programlisting>
+                    <para>The following example shows how to configure two Syslog managers at IP
+                        addresses 10.1.1.1 and 10.1.1.2. Substitute your own IP addresses. You can
+                        set Facility to any syslog-defined value, such as LOCAL0 - LOCAL7. Do not
+                        change the other values.</para>
+                    <programlisting>&lt;appender name="ALERTSYSLOG"&gt;
+  &lt;param name="Threshold" value="WARN"/&gt;
+  &lt;param name="SyslogHosts" value="10.1.1.1,10.1.1.2"/&gt;
+  &lt;param name="Facility" value="LOCAL6"/&gt;   
+  &lt;layout&gt;
+    &lt;param name="ConversionPattern" value=""/&gt;
+  &lt;/layout&gt;
+&lt;/appender&gt;</programlisting>
+                </listitem>
+                <listitem>
+                    <para>If your cloud has multiple Management Server nodes, repeat these steps to edit
+                        log4j-cloud.xml on every instance.</para>
+                </listitem>
+                <listitem>
+                    <para>If you have made these changes while the Management Server is running, wait a
+                        few minutes for the change to take effect.</para>
+                </listitem>
+            </orderedlist>
+            <para><emphasis role="bold">Troubleshooting:</emphasis> If no alerts appear at the
+                configured SNMP or Syslog manager after a reasonable amount of time, it is likely that
+                there is an error in the syntax of the &lt;appender&gt; entry in log4j-cloud.xml. Check
+                to be sure that the format and settings are correct.</para>
+        </section>
+        <section id="delete-snmp-syslog-manager">
+            <title>Deleting an SNMP or Syslog Manager</title>
+            <para>To remove an external SNMP manager or Syslog manager so that it no longer receives
+                alerts from &PRODUCT;, remove the corresponding entry from the file
+                /etc/cloudstack/management/log4j-cloud.xml.</para>
+        </section>
+    </section>
 </section>

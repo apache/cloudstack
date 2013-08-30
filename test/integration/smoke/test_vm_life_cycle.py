@@ -116,7 +116,7 @@ class Services:
                     "name": "Cent OS Template",
                     "passwordenabled": True,
                 },
-            "diskdevice": ['/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
+            "diskdevice": ['/dev/vdc',  '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
             # Disk device where ISO is attached to instance
             "mount_dir": "/mnt/tmp",
             "sleep": 60,
@@ -696,7 +696,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "needle"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 
@@ -732,15 +732,6 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.virtualmachineid = self.virtual_machine.id
         self.apiclient.attachIso(cmd)
 
-        #determine device type from hypervisor
-        hosts = Host.list(self.apiclient, id=self.virtual_machine.hostid)
-        self.assertTrue(isinstance(hosts, list))
-        self.assertTrue(len(hosts) > 0)
-        self.debug("Found %s host" % hosts[0].hypervisor)
-
-        if hosts[0].hypervisor.lower() == "kvm":
-            self.services["diskdevice"] = "/dev/vdb"
-
         try:
             ssh_client = self.virtual_machine.get_ssh_client()
         except Exception as e:
@@ -756,18 +747,12 @@ class TestVMLifeCycle(cloudstackTestCase):
                 self.services["mount"] = diskdevice
                 break
         else:
-            self.skipTest("No mount points matched. Mount was unsuccessful")
+            self.fail("No mount points matched. Mount was unsuccessful")
 
-        c = "fdisk -l|grep %s|head -1" % self.services["mount"]
+        c = "mount |grep %s|head -1" % self.services["mount"]
         res = ssh_client.execute(c)
-        self.debug("Found a mount point at %s" % res)
-
-        # Res may contain more than one strings depending on environment
-        # Split strings to form new list which is used for assertion on ISO size 
-        result = []
-        for i in res:
-            for k in i.split():
-                result.append(k)
+        size = ssh_client.execute("du %s | tail -1" % self.services["mount"])
+        self.debug("Found a mount point at %s with size %s" % (res, size))
 
         # Get ISO size
         iso_response = list_isos(
@@ -779,13 +764,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        iso_size = iso_response[0].size
 
-        self.assertEqual(
-                         str(iso_size) in result,
-                         True,
-                         "Check size of the attached ISO"
-                         )
         try:
             #Unmount ISO
             command = "umount %s" % self.services["mount_dir"]

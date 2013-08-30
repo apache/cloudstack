@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -26,10 +26,12 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -45,7 +47,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -183,6 +184,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     ExternalFirewallDeviceDao _externalFirewallDeviceDao;
     @Inject
     protected HostPodDao _podDao = null;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
@@ -506,7 +509,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                             // acquire a public IP to associate with lb appliance (used as subnet IP to make the
 // appliance part of private network)
-                            PublicIp publicIp = _networkMgr.assignPublicIpAddress(guestConfig.getDataCenterId(), null, _accountMgr.getSystemAccount(), VlanType.VirtualNetwork, null, null, false);
+                            PublicIp publicIp = _ipAddrMgr.assignPublicIpAddress(guestConfig.getDataCenterId(),
+                                null,
+                                _accountMgr.getSystemAccount(),
+                                VlanType.VirtualNetwork,
+                                null,
+                                null,
+                                false);
                             String publicIPNetmask = publicIp.getVlanNetmask();
                             String publicIPgateway = publicIp.getVlanGateway();
                             String publicIPVlanTag = publicIp.getVlanTag();
@@ -543,7 +552,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                         // release the public & private IP back to dc pool, as the load balancer
 // appliance is now destroyed
                                         _dcDao.releasePrivateIpAddress(lbIP, guestConfig.getDataCenterId(), null);
-                                        _networkMgr.disassociatePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+                                        _ipAddrMgr.disassociatePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                                     }
                                 } catch (Exception e) {
                                     s_logger.warn("Failed to destroy load balancer appliance created for the network" + guestConfig.getId() + " due to " + e.getMessage());
@@ -695,7 +704,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     // release the public IP allocated for this LB appliance
                     DetailVO publicIpDetail = _hostDetailDao.findDetail(lbHost.getId(), "publicip");
                     IPAddressVO ipVo = _ipAddressDao.findByIpAndDcId(guestConfig.getDataCenterId(), publicIpDetail.toString());
-                    _networkMgr.disassociatePublicIpAddress(ipVo.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+                    _ipAddrMgr.disassociatePublicIpAddress(ipVo.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                 } else {
                     deviceMapLock.unlock();
                 }
@@ -733,13 +742,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     };
     
     private class MappingNic {
-        private NicVO nic;
+        private Nic nic;
         private MappingState state;
 
-        public NicVO getNic() {
+        public Nic getNic() {
             return nic;
     }
-        public void setNic(NicVO nic) {
+
+        public void setNic(Nic nic) {
             this.nic = nic;
         }
         public MappingState getState() {
@@ -753,7 +763,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     private MappingNic getLoadBalancingIpNic(DataCenterVO zone, Network network, long sourceIpId, boolean revoked, String existedGuestIp) throws ResourceUnavailableException {
         String srcIp = _networkModel.getIp(sourceIpId).getAddress().addr();
         InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(srcIp);
-        NicVO loadBalancingIpNic = null;
+        Nic loadBalancingIpNic = null;
         MappingNic nic = new MappingNic();
         nic.setState(MappingState.Unchanged);
         if (!revoked) {
@@ -762,7 +772,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 String loadBalancingIpAddress = existedGuestIp;
                 
                 if (loadBalancingIpAddress == null) {
-                    loadBalancingIpAddress = _networkMgr.acquireGuestIpAddress(network, null);
+                    loadBalancingIpAddress = _ipAddrMgr.acquireGuestIpAddress(network, null);
                 }
 
                 if (loadBalancingIpAddress == null) {
@@ -802,7 +812,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 // Find the NIC that the mapping refers to
                 loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
 
-                int count = _networkMgr.getRuleCountForIp(sourceIpId, Purpose.LoadBalancing, FirewallRule.State.Active);
+                int count = _ipAddrMgr.getRuleCountForIp(sourceIpId, Purpose.LoadBalancing, FirewallRule.State.Active);
                 if (count == 0) {
                     // On the firewall provider for the network, delete the static NAT rule between the source IP
                     // address and the load balancing IP address
@@ -870,7 +880,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 long ipId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
                 MappingNic nic = getLoadBalancingIpNic(zone, network, ipId, revoked, null);
                 mappingStates.add(nic.getState());
-                NicVO loadBalancingIpNic = nic.getNic();
+                Nic loadBalancingIpNic = nic.getNic();
                 if (loadBalancingIpNic == null) {
                 	continue;
                 }
@@ -983,7 +993,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
 
             // Acquire a self-ip address from the guest network IP address range
-            selfIp = _networkMgr.acquireGuestIpAddress(guestConfig, null);
+            selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
             if (selfIp == null) {
                 String msg = "failed to acquire guest IP address so not implementing the network on the external load balancer ";
                 s_logger.error(msg);
@@ -1152,7 +1162,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 long sourceIpId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
                 MappingNic nic = getLoadBalancingIpNic(zone, network, sourceIpId, revoked, null);
                 mappingStates.add(nic.getState());
-                NicVO loadBalancingIpNic = nic.getNic();
+                Nic loadBalancingIpNic = nic.getNic();
                 if (loadBalancingIpNic == null) {
                     continue;
                 }

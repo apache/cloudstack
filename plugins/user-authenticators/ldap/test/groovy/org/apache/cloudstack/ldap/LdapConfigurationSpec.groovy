@@ -16,7 +16,7 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import com.cloud.configuration.dao.ConfigurationDao
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.utils.Pair
 import org.apache.cloudstack.api.ServerApiException
 import org.apache.cloudstack.ldap.LdapConfiguration

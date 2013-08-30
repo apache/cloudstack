@@ -55,8 +55,8 @@ count=0
 
 
 # fetching the dns Ips from the command line.
-dns1=$(echo "$CMDLINE" | grep -o " dns1=.* " | sed -e 's/dns1=//' | awk '{print $1}')
-dns2=$(echo "$CMDLINE" | grep -o " dns2=.* "  | sed -e 's/dns2=//' | awk '{print $1}')
+dns1=$(echo "$CMDLINE" | grep -o " dns1=[[:digit:]].* " | sed -e 's/dns1=//' | awk '{print $1}')
+dns2=$(echo "$CMDLINE" | grep -o " dns2=[[:digit:]].* "  | sed -e 's/dns2=//' | awk '{print $1}')
 
 dns_servers="${dns1}"
 if [ -n "$dns2" ]
@@ -89,19 +89,18 @@ done
 
 #logging the configuration being removed.
 log=""
-log="${log}"`grep "^dhcp-option=6.*" "$DHCP_CONFIG_MAIN"`"\n"
-log="${log}"`grep "^dhcp-option=option:router.*" "$DHCP_CONFIG_MAIN"`"\n"
-log="${log}"`grep "^dhcp-range=.*" "$DHCP_CONFIG_MAIN"`"\n"
-echo -e "$log" > log.dnsmasq.txt
+log="${log}"`grep "^dhcp-option=6" "$DHCP_CONFIG_MAIN"`"\n"
+log="${log}"`grep "^dhcp-option=option:router" "$DHCP_CONFIG_MAIN"`"\n"
+log="${log}"`grep "^dhcp-range=" "$DHCP_CONFIG_MAIN"`"\n"
 
 if [ "$log" != '\n\n\n' ]
 then
  #Cleaning the existing dhcp confgiuration
  logger -t cloud "dnsmasq.sh: remvoing the primaryip confg from dnsmasq.conf and adding it to /etc/dnsmaq.d/multiple_ranges.conf"
  logger -t cloud "dnsmasq.sh: config removed from dnsmasq.conf is $log"
- sed -i -e '/dhcp-option=6.*/d'  "$DHCP_CONFIG_MAIN"
- sed -i -e '/dhcp-option=option:router.*/d' "$DHCP_CONFIG_MAIN"
- sed -i -e '/dhcp-range=.*/d' "$DHCP_CONFIG_MAIN"
+ sed -i -e '/dhcp-option=6/d'  "$DHCP_CONFIG_MAIN"
+ sed -i -e '/dhcp-option=option:router/d' "$DHCP_CONFIG_MAIN"
+ sed -i -e '/^dhcp-range=/d' "$DHCP_CONFIG_MAIN"
 fi
 
 #wrting the new config into the config file.

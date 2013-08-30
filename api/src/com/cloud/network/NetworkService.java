@@ -87,7 +87,7 @@ public interface NetworkService {
             Long startIndex, Long pageSize, String name);
 
     PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags,
-                                          String newVnetRangeString, String state, String removeVlan);
+                                          String newVnetRangeString, String state);
 
     boolean deletePhysicalNetwork(Long id);
 

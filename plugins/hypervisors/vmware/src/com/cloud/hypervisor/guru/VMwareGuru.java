@@ -28,7 +28,13 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.host.Host;
+import com.cloud.storage.Storage;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -48,10 +54,9 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -100,7 +105,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject HostDao _hostDao;
     @Inject HostDetailsDao _hostDetailsDao;
     @Inject CommandExecLogDao _cmdExecLogDao;
-    @Inject ClusterManager _clusterMgr;
     @Inject VmwareManager _vmwareMgr;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject NetworkModel _networkMgr;
@@ -297,6 +301,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
 
+        //NOTE: the hostid can be a hypervisor host, or a ssvm agent. For copycommand, if it's for volume upload, the hypervisor
+        //type is empty, so we need to check the format of volume at first.
         if (cmd instanceof CopyCommand) {
             CopyCommand cpyCommand = (CopyCommand)cmd;
             DataTO srcData = cpyCommand.getSrcTO();
@@ -304,7 +310,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             DataTO destData = cpyCommand.getDestTO();
             DataStoreTO destStoreTO = destData.getDataStore();
 
-            if (!(HypervisorType.VMware == srcData.getHypervisorType() ||
+            if (srcData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;
+                if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
+                    needDelegation = true;
+                }
+            }
+
+            if (!needDelegation && !(HypervisorType.VMware == srcData.getHypervisorType() ||
                     HypervisorType.VMware == destData.getHypervisorType()
             )) {
                 return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
@@ -316,15 +329,24 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             } else {
                 needDelegation = true;
             }
+        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+            DataTO srcData = ((CreateEntityDownloadURLCommand) cmd).getData();
+            if ((HypervisorType.VMware == srcData.getHypervisorType())) {
+                needDelegation = true;
+            }
+            if (srcData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;
+                if (Storage.ImageFormat.OVA == volumeObjectTO.getFormat()) {
+                    needDelegation = true;
+                }
+            }
         }
 
         if(!needDelegation) {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }
-
         HostVO host = _hostDao.findById(hostId);
         long dcId = host.getDataCenterId();
-
         Pair<HostVO, SecondaryStorageVmVO> cmdTarget = _secStorageMgr.assignSecStorageVm(dcId, cmd);
         if(cmdTarget != null) {
             // TODO, we need to make sure agent is actually connected too

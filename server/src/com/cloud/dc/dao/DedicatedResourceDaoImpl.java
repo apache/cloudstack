@@ -23,11 +23,14 @@ import javax.ejb.Local;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
@@ -58,6 +61,10 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     protected SearchBuilder<DedicatedResourceVO> ListByDomainId;
 
     protected SearchBuilder<DedicatedResourceVO> ZoneByDomainIdsSearch;
+
+    protected GenericSearchBuilder<DedicatedResourceVO, Long> ListPodsSearch;
+    protected GenericSearchBuilder<DedicatedResourceVO, Long> ListClustersSearch;
+    protected GenericSearchBuilder<DedicatedResourceVO, Long> ListHostsSearch;
 
     protected DedicatedResourceDaoImpl() {
         PodSearch = createSearchBuilder();
@@ -169,6 +176,21 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
         ZoneByDomainIdsSearch.and("zoneId", ZoneByDomainIdsSearch.entity().getDataCenterId(), SearchCriteria.Op.NNULL);
         ZoneByDomainIdsSearch.and("domainId", ZoneByDomainIdsSearch.entity().getDomainId(), SearchCriteria.Op.NIN);
         ZoneByDomainIdsSearch.done();
+
+        ListPodsSearch = createSearchBuilder(Long.class);
+        ListPodsSearch.select(null, Func.DISTINCT, ListPodsSearch.entity().getPodId());
+        ListPodsSearch.and("podId", ListPodsSearch.entity().getPodId(), Op.NNULL);
+        ListPodsSearch.done();
+
+        ListClustersSearch = createSearchBuilder(Long.class);
+        ListClustersSearch.select(null, Func.DISTINCT, ListClustersSearch.entity().getClusterId());
+        ListClustersSearch.and("clusterId", ListClustersSearch.entity().getClusterId(), Op.NNULL);
+        ListClustersSearch.done();
+
+        ListHostsSearch = createSearchBuilder(Long.class);
+        ListHostsSearch.select(null, Func.DISTINCT, ListHostsSearch.entity().getHostId());
+        ListHostsSearch.and("hostId", ListHostsSearch.entity().getHostId(), Op.NNULL);
+        ListHostsSearch.done();
     }
 
     @Override
@@ -206,7 +228,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId){
         SearchCriteria<DedicatedResourceVO> sc = ListAllZonesSearch.create();
         if (dataCenterId != null) {
-            sc.setParameters("dataCenterId", dataCenterId);
+            sc.setParameters("zoneId", dataCenterId);
         }
         if(domainId != null) {
             sc.setParameters("domainId", domainId);
@@ -300,5 +322,23 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+
+    @Override
+    public List<Long> listAllPods() {
+        SearchCriteria<Long> sc = ListPodsSearch.create();
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listAllClusters() {
+        SearchCriteria<Long> sc = ListClustersSearch.create();
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listAllHosts() {
+        SearchCriteria<Long> sc = ListHostsSearch.create();
+        return customSearch(sc, null);
     }
 }

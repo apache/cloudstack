@@ -31,9 +31,9 @@ under the License.
     <orderedlist>
         <listitem>
             <para>To build the Non-OSS plugins, you'll need to have the requisite JARs installed under the <filename>deps</filename> directory.</para>
-            <para>Because these modules require dependencies that can't be distributed with &PRODUCT; you'll need to download them yourself. Links to the most recent dependencies are listed on the <ulink url="https://cwiki.apache.org/CLOUDSTACK/how-to-build-on-master-branch.html"><emphasis>How to build on master branch</emphasis></ulink> page on the wiki.</para></listitem>
+            <para>Because these modules require dependencies that can't be distributed with &PRODUCT; you'll need to download them yourself. Links to the most recent dependencies are listed on the <ulink url="https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+CloudStack"><emphasis>How to build CloudStack</emphasis></ulink> page on the wiki.</para></listitem>
         <listitem>
-            <para>You may also need to download <ulink url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink>, which was removed due to licensing issues. You'll copy vhd-util to the <filename>scripts/vm/hypervisor/xenserver/</filename> directory.</para>
+            <para>You may also need to download <ulink url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink> when using XenServer hypervisors, which was removed due to licensing issues. You'll copy vhd-util to the <filename>scripts/vm/hypervisor/xenserver/</filename> directory.</para>
         </listitem>
         <listitem>
             <para>Once you have all the dependencies copied over, you'll be able to build &PRODUCT; with the <command>nonoss</command> option:</para>

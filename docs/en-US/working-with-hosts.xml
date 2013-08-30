@@ -34,6 +34,6 @@
     <xi:include href="re-install-hosts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="maintain-hypervisors-on-hosts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="change-host-password.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="host-allocation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="over-provisioning-service-offering-limits.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="vlan-provisioning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

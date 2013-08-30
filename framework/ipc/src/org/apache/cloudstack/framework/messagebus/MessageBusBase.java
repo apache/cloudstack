@@ -30,10 +30,10 @@ import org.apache.cloudstack.framework.serializer.MessageSerializer;
 
 public class MessageBusBase implements MessageBus {
 
-	private Gate _gate;
-	private List<ActionRecord> _pendingActions;
+	private final Gate _gate;
+	private final List<ActionRecord> _pendingActions;
 	
-	private SubscriptionNode _subscriberRoot;
+	private final SubscriptionNode _subscriberRoot;
 	private MessageSerializer _messageSerializer; 
 	
 	public MessageBusBase() {
@@ -77,7 +77,7 @@ public class MessageBusBase implements MessageBus {
 				if(current != null)
 					current.removeSubscriber(subscriber, false);
 			} else {
-				this._subscriberRoot.removeSubscriber(subscriber, true);
+				_subscriberRoot.removeSubscriber(subscriber, true);
 			}
 			_gate.leave();
 		} else {
@@ -151,11 +151,10 @@ public class MessageBusBase implements MessageBus {
 	private void onGateOpen() {
 		synchronized(_pendingActions) {
 			ActionRecord record = null;
-			if(_pendingActions.size() > 0) {
-				while((record = _pendingActions.remove(0)) != null) {
+            while (_pendingActions.size() > 0) {
+                record = _pendingActions.remove(0);
 					switch(record.getType()) {
-					case Subscribe :
-						{
+                case Subscribe: {
 							SubscriptionNode current = locate(record.getSubject(), null, true);
 							assert(current != null);
 							current.addSubscriber(record.getSubscriber());
@@ -168,7 +167,7 @@ public class MessageBusBase implements MessageBus {
 							if(current != null)
 								current.removeSubscriber(record.getSubscriber(), false);
 						} else {
-							this._subscriberRoot.removeSubscriber(record.getSubscriber(), true);
+                        _subscriberRoot.removeSubscriber(record.getSubscriber(), true);
 						}
 						break;
 					
@@ -188,7 +187,6 @@ public class MessageBusBase implements MessageBus {
 				}
 			}
 		}
-	}
 	
 	private SubscriptionNode locate(String subject, List<SubscriptionNode> chainFromTop,
 		boolean createPath) {
@@ -223,7 +221,7 @@ public class MessageBusBase implements MessageBus {
 		}
 		
 		if(subjectPathTokens.length > 1) {
-			return locate((String[])Arrays.copyOfRange(subjectPathTokens, 1, subjectPathTokens.length),
+			return locate(Arrays.copyOfRange(subjectPathTokens, 1, subjectPathTokens.length),
 				next, chainFromTop, createPath);
 		} else {
 			return next;
@@ -242,9 +240,9 @@ public class MessageBusBase implements MessageBus {
 	}
 	
 	private static class ActionRecord {
-		private ActionType _type;
-		private String _subject;
-		private MessageSubscriber _subscriber;
+		private final ActionType _type;
+		private final String _subject;
+		private final MessageSubscriber _subscriber;
 		
 		public ActionRecord(ActionType type, String subject, MessageSubscriber subscriber) {
 			_type = type;
@@ -320,10 +318,10 @@ public class MessageBusBase implements MessageBus {
 	}
 	
 	private static class SubscriptionNode {
-		private String _nodeKey;
-		private List<MessageSubscriber> _subscribers;
-		private Map<String, SubscriptionNode> _children;
-		private SubscriptionNode _parent;
+		private final String _nodeKey;
+		private final List<MessageSubscriber> _subscribers;
+		private final Map<String, SubscriptionNode> _children;
+		private final SubscriptionNode _parent;
 		
 		public SubscriptionNode(SubscriptionNode parent, String nodeKey, MessageSubscriber subscriber) {
 			assert(nodeKey != null);

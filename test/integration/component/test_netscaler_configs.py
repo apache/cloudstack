@@ -66,8 +66,8 @@ class Services:
                                 "username": 'nsroot',
                                 "password": 'nsroot',
                                 "networkdevicetype": 'NetscalerVPXLoadBalancer',
-                                "publicinterface": '1/3',
-                                "privateinterface": '1/2',
+                                "publicinterface": '0/1',
+                                "privateinterface": '1/1',
                                 "numretries": 2,
                                 "lbdevicededicated": False,
                                 "lbdevicecapacity": 50,
@@ -78,8 +78,8 @@ class Services:
                                 "username": 'nsroot',
                                 "password": 'nsroot',
                                 "networkdevicetype": 'NetscalerVPXLoadBalancer',
-                                "publicinterface": '1/3',
-                                "privateinterface": '1/2',
+                                "publicinterface": '0/1',
+                                "privateinterface": '1/1',
                                 "numretries": 2,
                                 "lbdevicededicated": True,
                                 "port": 22,
@@ -1239,21 +1239,21 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
         self.network_3 = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account_3.account.name,
-                            domainid=self.account_3.account.domainid,
+                            accountid=self.account_3.name,
+                            domainid=self.account_3.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
         self.debug("Created network with ID: %s" % self.network_3.id)
 
-        self.debug("Deploying VM in account: %s" % self.account_3.account.name)
+        self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
             virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account_3.account.name,
-                                  domainid=self.account_3.account.domainid,
+                                  accountid=self.account_3.name,
+                                  domainid=self.account_3.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_3.id)]
                                   )
@@ -1513,21 +1513,21 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
         self.network_3 = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account_3.account.name,
-                            domainid=self.account_3.account.domainid,
+                            accountid=self.account_3.name,
+                            domainid=self.account_3.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
         self.debug("Created network with ID: %s" % self.network_3.id)
 
-        self.debug("Deploying VM in account: %s" % self.account_3.account.name)
+        self.debug("Deploying VM in account: %s" % self.account_3.name)
         with self.assertRaises(Exception):
             # Spawn an instance in that network
             virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account_3.account.name,
-                                  domainid=self.account_3.account.domainid,
+                                  accountid=self.account_3.name,
+                                  domainid=self.account_3.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_3.id)]
                                   )
@@ -2095,6 +2095,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestGuestNetworkShutDown,
                                cls
@@ -2108,30 +2109,32 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-
-        cls.network_offering = NetworkOffering.create(
+        try:
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls._cleanup.append(cls.netscaler)
+           cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
                                             conservemode=True
                                             )
-        # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
+           # Enable Network offering
+           cls.network_offering.update(cls.api_client, state='Enabled')
+           cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+           cls.services["virtual_machine"]["template"] = cls.template.id
 
-        cls.service_offering = ServiceOffering.create(
+           cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.account = Account.create(
+           cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
                                      admin=True,
                                      domainid=cls.domain.id
                                      )
-
-        # Creating network using the network offering created
-        cls.network = Network.create(
+           cls._cleanup.insert(0,cls.account)
+           # Creating network using the network offering created
+           cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
                                     accountid=cls.account.name,
@@ -2140,8 +2143,8 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     zoneid=cls.zone.id
                                     )
 
-        # Spawn few instances in that network
-        cls.vm_1 = VirtualMachine.create(
+           # Spawn few instances in that network
+           cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
@@ -2149,7 +2152,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
-        cls.vm_2 = VirtualMachine.create(
+           cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
@@ -2157,25 +2160,25 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
-        cls.public_ip = PublicIPAddress.create(
+           cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.domainid,
                                 networkid=cls.network.id
                                 )
-        cls.lb_rule = LoadBalancerRule.create(
+           cls.lb_rule = LoadBalancerRule.create(
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip.ipaddress.id,
                                     accountid=cls.account.name,
                                     networkid=cls.network.id
                                 )
-        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account
-                        ]
+           cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
+        except Exception as e:
+           cls.tearDownClass()
+           raise Exception ("Warning: Exception in setUpClass: %s" % e)
+
         return
 
     @classmethod
@@ -2183,17 +2186,6 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            interval = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    cls.api_client,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            cls.network_offering.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

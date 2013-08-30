@@ -78,6 +78,11 @@ def optional_str_value(value, default):
     return default
 
 
+def is_blank(value):
+
+    return not is_not_blank(value)
+
+
 def is_not_blank(value):
 
     if to_none(value) is None or not isinstance(value, basestring):
@@ -104,7 +109,7 @@ def echo(fn):
         name = fn.__name__
         log("enter %s ####" % name)
         res = fn(*v, **k)
-        log("exit %s with result %s" % name, res)
+        log("exit %s with result %s" % (name, res))
         return res
     return wrapped
 
@@ -179,7 +184,12 @@ class S3Client(object):
             max_error_retry, self.DEFAULT_MAX_ERROR_RETRY)
 
     def build_canocialized_resource(self, bucket, key):
-        return "/" + join([bucket, key], '/')
+        if not key.startswith("/"):
+            uri = bucket + "/" + key
+        else:
+            uri = bucket + key
+
+        return "/" + uri
 
     def noop_send_body(connection):
         pass
@@ -200,9 +210,6 @@ class S3Client(object):
         headers['Date'] = request_date
 
         def perform_request():
-            print "method=", method, ", uri=", uri, ", headers=", headers,
-            " endpoint=", self.end_point
-
             connection = None
             if self.https_flag:
                 connection = HTTPSConnection(self.end_point)
@@ -220,7 +227,7 @@ class S3Client(object):
                 fn_send_body(connection)
 
                 response = connection.getresponse()
-                log("Sent " + method + " request to " + self.end_point + "/" +
+                log("Sent " + method + " request to " + self.end_point +
                     uri + " with headers " + str(headers) +
                     ".  Received response status " + str(response.status) +
                     ": " + response.reason)
@@ -256,10 +263,14 @@ class S3Client(object):
 
     def put(self, bucket, key, src_filename):
 
+        if not os.path.isfile(src_filename):
+            raise Exception(
+                "Attempt to put " + src_filename + " that does not exist.")
+
         headers = {
             self.HEADER_CONTENT_MD5: compute_md5(src_filename),
             self.HEADER_CONTENT_TYPE: 'application/octet-stream',
-            self.HEADER_CONTENT_LENGTH: os.stat(src_filename).st_size,
+            self.HEADER_CONTENT_LENGTH: str(os.stat(src_filename).st_size),
         }
 
         def send_body(connection):
@@ -306,7 +317,7 @@ def parseArguments(args):
     # the com.cloud.utils.S3Utils#ClientOptions interface
     client = S3Client(
         args['accessKey'], args['secretKey'], args['endPoint'],
-        args['isHttps'], args['connectionTimeout'], args['socketTimeout'])
+        args['https'], args['connectionTimeout'], args['socketTimeout'])
 
     operation = args['operation']
     bucket = args['bucket']
@@ -343,7 +354,7 @@ def s3(session, args):
             client.delete(bucket, key, filename)
         else:
             raise RuntimeError(
-                "S3 plugin does not support operation {0}.".format(operation))
+                "S3 plugin does not support operation " + operation)
 
         return 'true'
 

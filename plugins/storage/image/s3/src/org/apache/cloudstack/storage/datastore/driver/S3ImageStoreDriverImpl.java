@@ -21,20 +21,24 @@ package org.apache.cloudstack.storage.datastore.driver;
 import java.net.URL;
 import java.util.Date;
 import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 
 public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
@@ -68,7 +72,7 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
 
 
     @Override
-    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         // for S3, no need to do anything, just return template url for
         // extract template. but we need to set object acl as public_read to
         // make the url accessible
@@ -78,7 +82,11 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
         s_logger.info("Generating pre-signed s3 entity extraction URL.");
         Date expiration = new Date();
         long milliSeconds = expiration.getTime();
-        milliSeconds += 1000 * 60 * 60; // expired after one hour.
+        
+        // get extract url expiration interval set in global configuration (in seconds)
+        String urlExpirationInterval = _configDao.getValue(Config.ExtractURLExpirationInterval.toString());
+        int expirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
+        milliSeconds += 1000 * expirationInterval; // expired after configured interval (in milliseconds)
         expiration.setTime(milliSeconds);
 
         URL s3url = S3Utils.generatePresignedUrl(s3, s3.getBucketName(), key, expiration);

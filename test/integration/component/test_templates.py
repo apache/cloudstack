@@ -174,67 +174,69 @@ class TestCreateTemplate(cloudstackTestCase):
         #    tar bzip template.
         # 6. Verify VMs & Templates is up and in ready state
 
-        for k, v in self.services["templates"].items():
+        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
+        self.services["templates"][0]["url"] = builtin_info[0]
+        self.services["templates"][0]["hypervisor"] = builtin_info[1]
+        self.services["templates"][0]["format"] = builtin_info[2]
 
-            # Register new template
-            template = Template.register(
+        # Register new template
+        template = Template.register(
                                         self.apiclient,
-                                        v,
+                                        self.services["templates"][0],
                                         zoneid=self.zone.id,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
-            self.debug(
+        self.debug(
                 "Registered a template of format: %s with ID: %s" % (
-                                                                v["format"],
+                                                                self.services["templates"][0]["format"],
                                                                 template.id
                                                                 ))
-            # Wait for template to download
-            template.download(self.apiclient)
-            self.cleanup.append(template)
+        # Wait for template to download
+        template.download(self.apiclient)
+        self.cleanup.append(template)
 
-            # Wait for template status to be changed across
-            time.sleep(self.services["sleep"])
-            timeout = self.services["timeout"]
-            while True:
-                list_template_response = list_templates(
+        # Wait for template status to be changed across
+        time.sleep(self.services["sleep"])
+        timeout = self.services["timeout"]
+        while True:
+            list_template_response = list_templates(
                                     self.apiclient,
-                                    templatefilter=\
-                                    self.services["templatefilter"],
+                                    templatefilter='all',
                                     id=template.id,
                                     zoneid=self.zone.id,
                                     account=self.account.name,
                                     domainid=self.account.domainid
                                     )
-                if isinstance(list_template_response, list):
-                    break
-                elif timeout == 0:
-                    raise Exception("List template failed!")
+            if isinstance(list_template_response, list):
+                break
+            elif timeout == 0:
+                raise Exception("List template failed!")
 
-                time.sleep(5)
-                timeout = timeout - 1
-            #Verify template response to check whether template added successfully
-            self.assertEqual(
+            time.sleep(5)
+            timeout = timeout - 1
+        #Verify template response to check whether template added successfully
+        self.assertEqual(
                         isinstance(list_template_response, list),
                         True,
                         "Check for list template response return valid data"
                         )
 
-            self.assertNotEqual(
+        self.assertNotEqual(
                             len(list_template_response),
                             0,
                             "Check template available in List Templates"
                         )
 
-            template_response = list_template_response[0]
-            self.assertEqual(
+        template_response = list_template_response[0]
+        self.assertEqual(
                             template_response.isready,
                             True,
                             "Check display text of newly created template"
                         )
 
-            # Deploy new virtual machine using template
-            virtual_machine = VirtualMachine.create(
+        # Deploy new virtual machine using template
+        virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=template.id,
@@ -243,26 +245,26 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
-            self.debug("creating an instance with template ID: %s" % template.id)
-            vm_response = list_virtual_machines(
+        self.debug("creating an instance with template ID: %s" % template.id)
+        vm_response = list_virtual_machines(
                                         self.apiclient,
                                         id=virtual_machine.id,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
-            self.assertEqual(
+        self.assertEqual(
                              isinstance(vm_response, list),
                              True,
                              "Check for list VMs response after VM deployment"
                              )
             #Verify VM response to check whether VM deployment was successful
-            self.assertNotEqual(
+        self.assertNotEqual(
                             len(vm_response),
                             0,
                             "Check VMs available in List VMs response"
                         )
-            vm = vm_response[0]
-            self.assertEqual(
+        vm = vm_response[0]
+        self.assertEqual(
                             vm.state,
                             'Running',
                             "Check the state of VM created from Template"

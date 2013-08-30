@@ -46,8 +46,14 @@
             var createLabel = _l(args.form.createLabel);
 
             // Description text
+            var formDesc;
+            if (typeof(args.form.desc) == 'function') {            	
+            	formDesc = args.form.desc(args);
+            } else { //typeof(args.form.desc) == 'string' or 'undefined'
+            	formDesc = args.form.desc;
+            }              
             $('<span>').addClass('message').prependTo($formContainer).html(
-                _l(args.form.desc)
+                _l(formDesc)
             );
 
             // Submit button
@@ -67,10 +73,10 @@
                 $('.overlay').remove();
 
                 return $formContainer.dialog({
-                    dialogClass: args.form.bigSize ? 'create-form big' : 'create-form',
+                    dialogClass: 'create-form',
                     closeOnEscape: false,
                     draggable: false,
-                    width: args.form.bigSize ? 800 : 400,
+                    width: 400,
                     title: _l(args.form.title),
                     open: function() {
                         if (args.form.preFilter) {
@@ -249,7 +255,11 @@
                         response: {
                             success: function(args) {
                                 $(args.data).each(function() {
-                                    var id = this.id !== undefined ? this.id : this.name;
+                                    var id;
+                                    if (field.valueField)
+                                        id = this[field.valueField];
+                                    else
+                                        id = this.id !== undefined ? this.id : this.name;
                                     var description = this.description;
 
                                     if (args.descriptionField)
@@ -264,7 +274,7 @@
                                 });
 
                                 if (field.defaultValue) {
-                                    $input.val(_s(field.defaultValue));
+                                    $input.val(_s(strOrFunc(field.defaultValue, args.data)));
                                 }
 
                                 $input.trigger('change');
@@ -369,7 +379,7 @@
                             type: 'checkbox'
                         }).appendTo($value);
                         if (field.isChecked) {
-                            $input.attr('checked', 'checked');
+                            $input.attr('checked', strOrFunc(field.isChecked));
                         } else {
                             // This is mainly for IE compatibility
                             setTimeout(function() {
@@ -423,7 +433,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(field.defaultValue);
+                        $input.val(strOrFunc(field.defaultValue));
                     }
                 } else if (field.isDatepicker) { //jQuery datepicker
                     $input = $('<input>').attr({
@@ -432,7 +442,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(field.defaultValue);
+                        $input.val(strOrFunc(field.defaultValue));
                     }
                     if (field.id) {
                         $input.attr('id', field.id);
@@ -461,6 +471,65 @@
                     $input.wrap($('<div>').addClass('range-item'));
                     $input.addClass("disallowSpecialCharacters");
 
+                } else if (field.has_units) { // An input box and a drop down with unit options
+                    var textbox = $('<input>')
+                        .attr({
+                            type: 'text',
+                            name: key
+                        })
+                        .css('width', 'auto');
+                    var unitSelect = $('<select>')
+                        .attr({
+                            name: key+'_unit'
+                        })
+                        .data('key', key)
+                        .css('width', 'auto');
+
+                    $input = textbox;
+
+                    textbox.appendTo($value);
+                    unitSelect.appendTo($value);
+
+                    $.each(field.units, function() {
+                        var id = this.id;
+                        var text = this.text;
+                        var toBase = this.toBase;
+                        var fromBase = this.fromBase;
+
+                        var option = $('<option>')
+                                .appendTo(unitSelect)
+                                .val(_s(id))
+                                .html(_s(text))
+                                .data('toBase', toBase)
+                                .data('fromBase', fromBase);
+                    });
+
+                    unitSelect.focus(function() {
+                        this.oldUnit = this.value;
+                    });
+
+                    unitSelect.change(function() {
+                        if ($(this).parent().length == 0)
+                            return;
+
+                        var oldUnit = this.oldUnit;
+                        var newUnit = this.value;
+                        var key = $(this).data('key');
+                        var value = $(this).closest('form').find('input[name='+key+']').attr('value');
+
+                        if (!value || value.length === 0 || !oldUnit || oldUnit == newUnit)
+                            return;
+
+                        var toBase = $(this).closest('form').find('option[value='+oldUnit+']').data('toBase');
+                        var fromBase = $(this).closest('form').find('option[value='+newUnit+']').data('fromBase');
+
+                        var baseValue = toBase(value);
+                        var newValue = fromBase(baseValue);
+
+                        $(this).closest('form').find('input[name='+key+']').attr('value', newValue);
+
+                        this.oldUnit = newUnit;
+                    })
                 } else { //text field
                     $input = $('<input>').attr({
                         name: key,
@@ -468,7 +537,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(field.defaultValue);
+                        $input.val(strOrFunc(field.defaultValue));
                     }
                     if (field.id) {
                         $input.attr('id', field.id);

@@ -55,6 +55,7 @@ import com.cloud.hypervisor.xen.resource.XenServer56SP2Resource;
 import com.cloud.hypervisor.xen.resource.XenServer600Resource;
 import com.cloud.hypervisor.xen.resource.XenServer602Resource;
 import com.cloud.hypervisor.xen.resource.XenServer610Resource;
+import com.cloud.hypervisor.xen.resource.XenServer620Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -438,33 +439,30 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XcpServer16Resource();
         } // Citrix Xenserver group of hypervisors
         else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
-    		return new XenServer56Resource();
+            return new XenServer56Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
-    		return new XenServer600Resource();
+            return new XenServer600Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
-    		return new XenServer602Resource();
+            return new XenServer602Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.83"))
-            return new XenServer610Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0"))
-            return new XenServer610Resource();
+            return new XenServer620Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
-    		String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
+            String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
             if ("5.6 SP2".equals(prodVersionTextShort)) {
-    			return new XenServer56SP2Resource();
+                return new XenServer56SP2Resource();
             } else if ("5.6 FP1".equals(prodVersionTextShort)) {
-    			return new XenServer56FP1Resource();
-    		}
+                return new XenServer56FP1Resource();
+            }
         } else if (prodBrand.equals("XCP_Kronos")) {
             return new XcpOssResource();
         }
-    	
-        String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.1.83, 6.2.0 but this one is " + prodBrand + " " + prodVersion;
-    	_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
-    	s_logger.debug(msg);
-    	throw new RuntimeException(msg);
 
+        String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " + prodBrand + " " + prodVersion;
+        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+        s_logger.debug(msg);
+        throw new RuntimeException(msg);
     }
 
     protected void serverConfig() {
@@ -600,10 +598,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             resource = XenServer602Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0")) {
             resource = XenServer610Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.83")) {
-            resource = XenServer610Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
-            resource = XenServer610Resource.class.getName();
+            resource = XenServer620Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
             String prodVersionTextShort = details.get("product_version_text_short").trim();
             if ("5.6 SP2".equals(prodVersionTextShort)) {
@@ -616,7 +612,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 
         if( resource == null ){
-            String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2, 6.1.0, 6.1.83, 6.2.0 but this one is " + prodBrand + " " + prodVersion;
+            String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2, 6.1.0, 6.2.0 but this one is " + prodBrand + " " + prodVersion;
             s_logger.debug(msg);
             throw new RuntimeException(msg);
         }

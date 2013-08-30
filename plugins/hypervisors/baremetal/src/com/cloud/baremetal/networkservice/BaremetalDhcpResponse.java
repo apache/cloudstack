@@ -41,6 +41,9 @@ public class BaremetalDhcpResponse extends BaseResponse {
     @SerializedName(ApiConstants.DHCP_SERVER_TYPE) @Param(description="name of the provider")
     private String deviceType;
 
+    @SerializedName(ApiConstants.URL) @Param(description="url")
+    private String url;
+
     public String getId() {
 		return id;
 	}
@@ -71,5 +74,13 @@ public class BaremetalDhcpResponse extends BaseResponse {
 
     public void setDeviceType(String deviceType) {
         this.deviceType = deviceType;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

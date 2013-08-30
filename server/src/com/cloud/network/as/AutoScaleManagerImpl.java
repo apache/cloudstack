@@ -24,7 +24,11 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,15 +48,12 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCm
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
@@ -86,9 +87,9 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.JoinBuilder;
@@ -98,14 +99,12 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-@Component
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
 public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     AccountDao _accountDao;
     @Inject
@@ -267,7 +266,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
         int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
 
-        VirtualMachineTemplate template = _templateMgr.getTemplate(templateId);
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Unable to use the given template.");
@@ -313,15 +312,15 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
-        Long autoscaleUserId = cmd.getAutoscaleUserId();
+        long autoscaleUserId = cmd.getAutoscaleUserId();
 
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id");
         }
 
-        ServiceOffering serviceOffering = _configMgr.getServiceOffering(serviceOfferingId);
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id");
         }
@@ -337,10 +336,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
          * will be throwing an error.
          */
         ApiDispatcher.processParameters(new DeployVMCmd(), deployParams);
-
-        if (autoscaleUserId == null) {
-            autoscaleUserId = CallContext.current().getCallingUserId();
-        }
 
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);

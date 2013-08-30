@@ -25,7 +25,7 @@
     OSS deployment component configuration
   -->
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
-  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl"/>
+  <bean id="configurationDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl"/>
 
   <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
     <property name="name" value="Simulator Agent"/>
@@ -251,4 +251,34 @@
     <property name="name" value="ExplicitDedicationProcessor"/>
     <property name="type" value="ExplicitDedication"/>
   </bean>
+  <!--
+    RPC/Async/EventBus
+  -->
+
+  <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
+    init-method="scan" >
+    <property name="packages">
+      <list>
+        <value>org.apache.cloudstack.framework</value>
+      </list>
+    </property>
+  </bean>
+  
+  <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
+    <property name="onwireClassRegistry" ref="onwireRegistry" />
+  </bean>
+
+  <bean id="transportProvider" class="org.apache.cloudstack.framework.server.ServerTransportProvider"  init-method="initialize">
+    <property name="workerPoolSize" value="5" />
+    <property name="nodeId" value="Node1" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+  
+  <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
+    <constructor-arg ref="transportProvider" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+
+  <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
+  <bean id="configDepot" class = "org.apache.cloudstack.framework.config.ConfigDepotImpl" />
 </beans>

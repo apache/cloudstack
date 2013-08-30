@@ -63,7 +63,7 @@ public class VpcGatewayVO implements VpcGateway {
     long zoneId;
     
     @Column(name="network_id")
-    Long networkId;
+    long networkId;
     
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
@@ -110,7 +110,7 @@ public class VpcGatewayVO implements VpcGateway {
      * @param account_id
      * @param sourceNat
      */
-    public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId, String vlanTag, 
+    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String vlanTag, 
             String gateway, String netmask, long accountId, long domainId, boolean sourceNat, long networkACLId) {
         this.ip4Address = ip4Address;
         this.type = type;
@@ -160,7 +160,7 @@ public class VpcGatewayVO implements VpcGateway {
     }
 
     @Override
-    public Long getNetworkId() {
+    public long getNetworkId() {
         return networkId;
     }
     

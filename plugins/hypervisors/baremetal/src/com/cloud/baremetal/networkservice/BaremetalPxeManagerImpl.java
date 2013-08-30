@@ -36,7 +36,9 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
-import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -44,7 +46,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.baremetal.database.BaremetalPxeVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
@@ -179,8 +180,8 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
     }
 
     @Override
-    public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxePingServersCmd cmd) {
-        return getServiceByType(BaremetalPxeManager.BaremetalPxeType.PING.toString()).listPxeServers(cmd);
+    public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd) {
+        return getServiceByType(BaremetalPxeType.KICK_START.toString()).listPxeServers(cmd);
     }
 
     @Override
@@ -247,7 +248,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 	    List<Class<?>> cmds = new ArrayList<Class<?>>();
 	    cmds.add(AddBaremetalKickStartPxeCmd.class);
 	    cmds.add(AddBaremetalPxePingServerCmd.class);
-	    cmds.add(ListBaremetalPxePingServersCmd.class);
+	    cmds.add(ListBaremetalPxeServersCmd.class);
 		return cmds;
 	}
 }

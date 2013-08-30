@@ -2998,4 +2998,15 @@ Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
                </by-organisation>
         </with-license>
     </within>
+    <within dir='utils/src/org/apache/commons/httpclient/contrib/ssl'>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2007 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id="apache.org.2">
+                <resource name="EasySSLProtocolSocketFactory.java" />
+                <resource name="EasyX509TrustManager.java" />
+            </by-organisation>
+        </with-license>
+    </within>
 </manifest>

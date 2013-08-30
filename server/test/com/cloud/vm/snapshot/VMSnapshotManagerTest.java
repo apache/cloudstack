@@ -31,7 +31,9 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -39,12 +41,12 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import com.amazonaws.services.ec2.model.HypervisorType;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;

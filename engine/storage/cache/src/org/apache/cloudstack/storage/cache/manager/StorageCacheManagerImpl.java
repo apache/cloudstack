@@ -19,7 +19,6 @@
 package org.apache.cloudstack.storage.cache.manager;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
@@ -29,16 +28,20 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;

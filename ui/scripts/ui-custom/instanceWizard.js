@@ -90,7 +90,7 @@
                     });
                 };
 
-                var makeSelects = function(name, data, fields, options, selectedObj) {
+                var makeSelects = function(name, data, fields, options, selectedObj, selectedObjNonEditable) {
                     var $selects = $('<div>');
                     options = options ? options : {};
 
@@ -123,10 +123,15 @@
                                             $select.siblings('.single-select:visible').find('input[type=checkbox]')
                                                 .attr('checked', false);
 
-                                            if (!$('input[name=new-network]:visible').is(':checked')) {
+                                            var $checkedOtherSelect = $otherSelects.filter(function() {
+                                                return $(this).not('.single-select') &&
+                                                    $(this).find('input[type=checkbox]:checked').size() &&
+                                                    $(this).find('input[type=radio]:checked').size();
+                                            });
+
+                                            if (!$checkedOtherSelect.size() &&
+                                                !$('.new-network:visible input[type=radio]:checked').size()) {
                                                 $(this).closest('.select').find('input[type=radio]').click();
-                                            } else {
-                                                $newNetwork.find('input[type=radio]').click();
                                             }
                                         }
 
@@ -158,6 +163,14 @@
 
                         if (selectedObj != null && selectedObj.id == item.id) {
                             $select.find('input[type=checkbox]').attr('checked', 'checked');
+
+                            if (selectedObjNonEditable) {
+                                $select.find('input[type=checkbox]').attr('disabled', 'disabled');
+                                $select.find('input[type=checkbox]').clone().attr({
+                                    type: 'hidden',
+                                    disabled: false
+                                }).appendTo($selects);
+                            }
                         }
 
                         $selects.append($select);
@@ -516,7 +529,8 @@
                                                     type: 'checkbox',
                                                     'wizard-field': 'affinity-groups'
                                                 },
-                                                args.data.selectedObj
+                                                args.data.selectedObj,
+                                                args.data.selectedObjNonEditable
                                             )
                                         );
                                     } else {

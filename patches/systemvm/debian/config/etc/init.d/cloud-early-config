@@ -194,6 +194,122 @@ patch() {
   return 0
 }
 
+patch_log4j() {
+log_it "Updating log4j-cloud.xml"
+cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+
+   <!-- ================================= -->
+   <!-- Preserve messages in a local file -->
+   <!-- ================================= -->
+
+   <appender name="FILE1" class="org.apache.log4j.RollingFileAppender">
+      <param name="File" value="/var/log/cloud.log"/>
+      <param name="MaxFileSize" value="10000KB"/>
+      <param name="MaxBackupIndex" value="4"/>
+
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+      <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
+
+    <appender name="FILE2" class="org.apache.log4j.RollingFileAppender">
+       <param name="File" value="/var/log/cloud/cloud.out"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+
+    <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+    </layout>
+    </appender>
+
+     <appender name="FILE3" class="org.apache.log4j.rolling.RollingFileAppender">
+       <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
+
+   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
+      <param name="Append" value="true"/>
+      <param name="Threshold" value="DEBUG"/>
+      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+        <param name="FileNamePattern" value="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz"/>
+        <param name="ActiveFileName" value="/var/log/cloud/api-server.log"/>
+      </rollingPolicy>
+
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %m%n"/>
+      </layout>
+   </appender>
+
+   <!-- ============================== -->
+   <!-- Append messages to the console -->
+   <!-- ============================== -->
+
+   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+      <param name="Target" value="System.out"/>
+      <param name="Threshold" value="INFO"/>
+
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
+      </layout>
+   </appender>
+
+   <!-- ================ -->
+   <!-- Limit categories -->
+   <!-- ================ -->
+
+   <category name="com.cloud">
+     <priority value="DEBUG"/>
+   </category>
+
+   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
+   <category name="org.apache">
+      <priority value="INFO"/>
+   </category>
+
+   <category name="org">
+      <priority value="INFO"/>
+   </category>
+
+   <category name="net">
+     <priority value="INFO"/>
+   </category>
+
+   <category name="apiserver.com.cloud">
+     <priority value="DEBUG"/>
+   </category>
+
+   <logger name="apiserver.com.cloud" additivity="false">
+      <level value="DEBUG"/>
+      <appender-ref ref="APISERVER"/>
+   </logger>
+
+   <!-- ======================= -->
+   <!-- Setup the Root category -->
+   <!-- ======================= -->
+
+   <root>
+      <level value="INFO"/>
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE1"/>
+      <appender-ref ref="FILE2"/>
+      <appender-ref ref="FILE3"/>
+   </root>
+
+</log4j:configuration>
+EOF
+mv /usr/local/cloud/systemvm/conf/temp.xml /usr/local/cloud/systemvm/conf/log4j-cloud.xml
+}
 setup_interface() {
   local intfnum=$1
   local ip=$2
@@ -368,7 +484,7 @@ disable_hvc() {
 
 enable_vpc_rpsrfs() {
     local enable=$1
-    if [ $eanble -eq 0]
+    if [ $enable -eq 0 ]
     then
         echo 0 > /etc/rpsrfsenable
     else
@@ -381,7 +497,7 @@ enable_vpc_rpsrfs() {
 enable_rpsrfs() {
   local enable=$1
 
-  if [ $eanble -eq 0]
+  if [ $enable -eq 0 ]
   then
       echo 0 > /etc/rpsrfsenable
       return 0
@@ -518,6 +634,9 @@ setup_common() {
 
 setup_dnsmasq() {
   log_it "Setting up dnsmasq"
+
+  touch /etc/dhcpopts.txt
+
   [ -z $DHCP_RANGE ] && [ $ETH0_IP ] && DHCP_RANGE=$ETH0_IP
   [ $ETH0_IP6 ] && DHCP_RANGE_IP6=$ETH0_IP6
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
@@ -598,6 +717,8 @@ setup_dnsmasq() {
   [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
   [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
 #adding the name data-server to the /etc/hosts for allowing the access to user-data service and ssh-key reset in every subnet.
+  //removing the existing entires to avoid duplicates on restarts.
+  sed -i  '/data-server/d' /etc/hosts
   if [ -n "$ETH0_IP" ]
           then
            echo "$ETH0_IP data-server" >> /etc/hosts
@@ -605,6 +726,15 @@ setup_dnsmasq() {
   if [ -n "$ETH0_IP6" ]
       then
        echo "$ETH0_IP6 data-server" >> /etc/hosts
+  fi
+#add the dhcp-client-update only if dnsmasq version is 2.6 and above
+  dnsmasqVersion=$(dnsmasq -v |  grep version -m 1 | grep -o  "[[:digit:]]\.[[:digit:]]")
+  major=$(echo "$dnsmasqVersion" | cut -d '.' -f 1)
+  minor=$(echo "$dnsmasqVersion" | cut -d '.' -f 2)
+  if [ "$major" -eq '2' -a  "$minor" -ge '6' ] || [ "$major" -gt '2' ]
+  then
+      sed -i -e "/^dhcp-client-update/d" /etc/dnsmasq.conf
+      echo 'dhcp-client-update' >> /etc/dnsmasq.conf
   fi
 }
 
@@ -636,7 +766,15 @@ setup_vpc_apache2() {
 }
 
 
+clean_ipalias_config() {
+rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
+rm -f /etc/apache2/sites-available/ipAlias*
+rm -f /etc/apache2/sites-enabled/ipAlias*
+rm -rf /etc/failure_config
+}
+
 setup_apache2() {
+  clean_ipalias_config
   log_it "Setting up apache web server"
   local ip=$1
   [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
@@ -873,6 +1011,12 @@ EOF
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
   echo "" > /etc/dnsmasq.d/dhcphosts.txt
   echo "dhcp-hostsfile=/etc/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf
+
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  #DNS server will append $DOMAIN to local queries
+  sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+  #answer all local domain queries
+  sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
 }
 
 
@@ -1048,6 +1192,7 @@ start() {
   log_it "Detected that we are running inside $hyp guest"
   get_boot_params
   patch
+  patch_log4j
   parse_cmd_line
   change_password
   case $TYPE in 

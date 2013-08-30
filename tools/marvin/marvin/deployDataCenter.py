@@ -22,6 +22,7 @@ import cloudstackTestClient
 import logging
 from cloudstackAPI import *
 from os import path
+from time import sleep
 from optparse import OptionParser
 
 
@@ -87,8 +88,26 @@ specify a valid config file" % cfgFile)
             if cluster.hypervisor.lower() != "vmware":
                 self.addHosts(cluster.hosts, zoneId, podId, clusterId,
                               cluster.hypervisor)
+            self.wait_for_host(zoneId, clusterId)
             self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId,
                                        clusterId)
+
+    def wait_for_host(self, zoneId, clusterId):
+        """
+        Wait for the hosts in the zoneid, clusterid to be up
+
+        2 retries with 30s delay
+        """
+        retry, timeout = 2, 30
+        cmd = listHosts.listHostsCmd()
+        cmd.clusterid, cmd.zoneid = clusterId, zoneId
+        hosts = self.apiClient.listHosts(cmd)
+        while retry != 0:
+            for host in hosts:
+                if host.state != 'Up':
+                    break
+            sleep(timeout)
+            retry = retry - 1
 
     def createPrimaryStorages(self, primaryStorages, zoneId, podId, clusterId):
         if primaryStorages is None:
@@ -159,7 +178,8 @@ specify a valid config file" % cfgFile)
             secondarycmd.provider = secondary.provider
             secondarycmd.details = []
 
-            if secondarycmd.provider == 'S3' or secondarycmd.provider == "Swift":
+            if secondarycmd.provider == 'S3' \
+                    or secondarycmd.provider == "Swift":
                 for key, value in vars(secondary.details).iteritems():
                     secondarycmd.details.append({
                                                 'key': key,
@@ -173,7 +193,8 @@ specify a valid config file" % cfgFile)
         if cacheStorages is None:
             return
         for cache in cacheStorages:
-            cachecmd = createCacheStore.createCacheStoreCmd()
+            cachecmd = createSecondaryStagingStore.\
+                createSecondaryStagingStoreCmd()
             cachecmd.url = cache.url
             cachecmd.provider = cache.provider
             cachecmd.zoneid = zoneId
@@ -185,7 +206,7 @@ specify a valid config file" % cfgFile)
                                             'key': key,
                                             'value': value
                                             })
-            self.apiClient.createCacheStore(cachecmd)
+            self.apiClient.createSecondaryStagingStore(cachecmd)
 
     def createnetworks(self, networks, zoneId):
         if networks is None:

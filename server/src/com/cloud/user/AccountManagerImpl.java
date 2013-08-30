@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
 import com.cloud.api.ApiDBUtils;
@@ -60,7 +61,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
@@ -82,6 +82,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
@@ -110,7 +111,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeManager;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -225,7 +226,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     Site2SiteVpnManager _vpnMgr;
     @Inject
     private AutoScaleManager _autoscaleMgr;
-    @Inject VolumeManager volumeMgr;
+    @Inject
+    VolumeApiService volumeService;
     @Inject
     private AffinityGroupDao _affinityGroupDao;
     @Inject
@@ -246,6 +248,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserAuthenticator> _userAuthenticators;
     List<UserAuthenticator> _userPasswordEncoders;
+
+    protected IpAddressManager _ipAddrMgr;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -623,7 +627,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (VolumeVO volume : volumes) {
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
-                        volumeMgr.deleteVolume(volume.getId(), caller);
+                        volumeService.deleteVolume(volume.getId(), caller);
                     } catch (Exception ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
@@ -695,7 +699,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                    if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                    if (!_ipAddrMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
                     s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
                     accountCleanupNeeded = true;
                     }
@@ -739,7 +743,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<? extends IpAddress> portableIpsToRelease = _ipAddressDao.listByAccount(accountId);
             for (IpAddress ip : portableIpsToRelease) {
                 s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                _networkMgr.releasePortableIpAddress(ip.getId());
+                _ipAddrMgr.releasePortableIpAddress(ip.getId());
             }
             //release dedication if any
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByAccountId(accountId);

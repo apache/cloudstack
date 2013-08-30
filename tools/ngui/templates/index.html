@@ -1,0 +1,142 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+
+<!DOCTYPE html>
+<html lang="en" ng-app="cloudstack">
+<head>
+    <meta charset="utf-8">
+    <title>CloudStack</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+ 
+    <!-- Le styles -->
+    <link href="static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/css/app.css" rel="stylesheet">
+    <link href="static/bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+ 
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+ 
+</head>
+ 
+<body ng-controller="AppCtrl" ng-cloak>
+    <!-- Temporary ajax loader-->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container-fluid">
+                <a class="brand" ng-href="/#/">
+                    <span>CloudStack <img ng-show="loading" src="static/images/ajax-inverse.gif" width="17px" height="17px"></span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid"> 
+        <div class="row-fluid">
+            <div class="span2" ng-controller="NavCtrl">
+                <ul class="nav nav-tabs nav-stacked">
+                    <li ng-class="isActive('/')"><a href="/#/" >Dashboard</a></li>
+                    <li ng-class="isActive('instances')"><a href="/#/instances">Instances</a></li>
+                    <li ng-class="isActive('volumes')"><a href="/#/volumes">Storage</a></li>
+                    <li ng-class="isActive('networks')"><a href="/#/networks">Networks</a></li>
+                    <li ng-class="isActive('templates')"><a href="/#/templates">Templates</a></li>
+                    <li ng-class="isActive('events')"><a href="/#/events">Events</a></li>
+                    <li ng-class="isActive('accounts')"><a href="/#/accounts">Accounts</a></li>
+                    <li ng-class="isActive('domains')"><a href="/#/domains">Domains</a></li>
+                    <li ng-class="isActive('infrastructure')"><a href="/#/infrastructure">Infrastructure</a></li>
+                    <li ng-class="isActive('projects')"><a href="/#/projects">Projects</a></li>
+                    <li ng-class="isActive('configurations')"><a href="/#/configurations">Global Settings</a></li>
+                    <li ng-class="isActive('serviceofferings')"><a href="/#/serviceofferings">Service Offerings</a></li>
+                </ul>
+            </div>
+            <div class="span10">
+                <div class="notifications">
+                    <alert ng-repeat="notification in notifications.getAll()" type="notification.type" close="notifications.remove(notification)">{{notification.msg}}</alert>
+                </div>
+                <ul class="breadcrumb">
+                    <!--breadcrumbs is in AppCtrl-->
+                    <li ng-repeat="breadcrumb in breadcrumbs.getAll()">
+                        <a ng-hide="$last" href="{{breadcrumb.url}}">{{breadcrumb.name}}</a>
+                        <span ng-show="$last">{{breadcrumb.name}}</span>
+                        <span class="divider" ng-hide="$last">/</span>
+                    </li>
+                </ul>
+                <div id="main" ng-view>
+                </div>
+            </div>
+        </div>
+    </div> <!-- /container -->
+
+    <script type="text/ng-template" id="default.html">
+        <div style="text-align:center">
+            <img src="http://cloudstack.apache.org/images/cloudmonkey-fp.png" style="margin-top: 100px;margin-bottom: 100px;" alt="CloudStack Logo">
+            <h3>CloudStack UI using Angular.js and Twitter Bootstrap</h3>
+        </div>
+    </script>
+    <script type="text/ng-template" id="table.html">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th ng-repeat="attribute in toDisplay"> {{dictionary.labels[attribute]}} </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="model in collection">
+                    <td ng-repeat="attribute in toDisplay">{{model[attribute]}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </script>
+
+    <script type="text/javascript" src="static/js/lib/jquery-1.7.2.js"></script>
+    <script type="text/javascript" src="static/js/lib/angular.js"></script>
+    <script type="text/javascript" src="static/js/app/app.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/virtualmachines.js"></script>
+    <script type="text/javascript" src="static/js/app/instances/instances.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/volumes.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/snapshots.js"></script>
+    <script type="text/javascript" src="static/js/app/storage/storage.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/networks.js"></script>
+    <script type="text/javascript" src="static/js/app/networks/networks.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/templates.js"></script>
+    <script type="text/javascript" src="static/js/app/templates/templates.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/events.js"></script>
+    <script type="text/javascript" src="static/js/app/events/events.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/accounts.js"></script>
+    <script type="text/javascript" src="static/js/app/accounts/accounts.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/domains.js"></script>
+    <script type="text/javascript" src="static/js/app/domains/domains.js"></script>
+    <script type="text/javascript" src="static/js/app/globalsettings/globalsettings.js"></script>
+    <script type="text/javascript" src="static/js/app/serviceofferings/serviceofferings.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/serviceofferings.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/projects.js"></script>
+    <script type="text/javascript" src="static/js/app/projects/projects.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/configurations.js"></script>
+    <script type="text/javascript" src="static/js/common/services/breadcrumbs.js"></script>
+    <script type="text/javascript" src="static/js/common/services/helperfunctions.js"></script>
+    <script type="text/javascript" src="static/js/common/services/requester.js"></script>
+    <script type="text/javascript" src="static/js/common/services/notifications.js"></script>
+    <script type="text/javascript" src="static/js/common/directives/confirm.js"></script>
+    <script type="text/javascript" src="static/js/common/directives/modal-form.js"></script>
+    <script type="text/javascript" src="static/js/common/directives/label.js"></script>
+    <script type="text/javascript" src="static/js/common/directives/edit-in-place.js"></script>
+    <script type="text/javascript" src="static/js/common/dictionary.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/zones.js"></script>
+    <script type="text/javascript" src="static/js/common/resources/diskofferings.js"></script>
+    <script type="text/javascript" src="static/js/lib/angular-ui.min.js"></script>
+</body>
+</html>

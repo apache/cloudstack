@@ -23,19 +23,13 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>  
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-      <version>${org.springframework.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -44,112 +38,66 @@
     <dependency>
       <groupId>cglib</groupId>
       <artifactId>cglib-nodep</artifactId>
-      <version>${cs.cglib.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-dbcp</groupId>
-      <artifactId>commons-dbcp</artifactId>
-      <version>${cs.dbcp.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-pool</artifactId>
-          <groupId>commons-pool</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>net.sf.ehcache</groupId>
-      <artifactId>ehcache</artifactId>
-      <version>${cs.ehcache.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-pool</groupId>
-      <artifactId>commons-pool</artifactId>
-      <version>${cs.pool.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>${cs.codec.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk16</artifactId>
-      <version>${cs.bcprov.version}</version>
     </dependency>
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
-      <version>${cs.jsch.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.persistence</groupId>
-      <artifactId>javax.persistence</artifactId>
-      <version>${cs.jpa.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jasypt</groupId>
       <artifactId>jasypt</artifactId>
-      <version>${cs.jasypt.version}</version>
     </dependency>
     <dependency>
       <groupId>com.trilead</groupId>
       <artifactId>trilead-ssh2</artifactId>
-      <version>${cs.trilead.version}</version>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk</artifactId>
-      <version>${cs.aws.sdk.version}</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>apache-log4j-extras</artifactId>
-      <version>${cs.log4j.extras.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>log4j</artifactId>
-          <groupId>log4j</groupId>
-        </exclusion>
-      </exclusions>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>javax.ejb</groupId>
       <artifactId>ejb-api</artifactId>
-      <version>${cs.ejb.version}</version>
     </dependency>
     <dependency>
         <groupId>com.googlecode.java-ipv6</groupId>
         <artifactId>java-ipv6</artifactId>
-        <version>${cs.java-ipv6.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
-      <version>${cs.configuration.version}</version>
     </dependency>
     <!-- Test dependency in mysql for db tests -->
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-        <version>${cs.commons-io.version}</version>
         <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
-      <version>${cs.reflections.version}</version>
     </dependency>
     <dependency>
       <groupId>org.owasp.esapi</groupId>
       <artifactId>esapi</artifactId>
-      <version>2.0.1</version>
     </dependency>
   </dependencies>
   <build>

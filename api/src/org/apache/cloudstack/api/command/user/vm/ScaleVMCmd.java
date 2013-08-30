@@ -87,8 +87,17 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_UPGRADE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "upgrading vm: " + getId() + " to service offering: " + getServiceOfferingId();
+    }
+
+    @Override
     public void execute(){
-        //UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result;
         try {
             result = _userVmService.upgradeVirtualMachine(this);
@@ -113,15 +122,5 @@ public class ScaleVMCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale vm");
         }
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_SCALE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return  "scaling volume: " + getId() + " to service offering: " + getServiceOfferingId();
     }
 }

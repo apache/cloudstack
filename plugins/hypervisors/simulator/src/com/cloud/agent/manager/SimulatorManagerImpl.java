@@ -86,6 +86,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.api.commands.ConfigureSimulatorCmd;
 import com.cloud.resource.SimulatorStorageProcessor;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
@@ -96,6 +97,7 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -110,12 +112,14 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
 @Local(value = { SimulatorManager.class })
-public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager {
+public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     @Inject
     MockVmManager _mockVmMgr;
@@ -166,6 +170,13 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     @Override
     public MockAgentManager getAgentMgr() {
         return _mockAgentMgr;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(ConfigureSimulatorCmd.class);
+        return cmdList;
     }
 
     @DB
@@ -415,6 +426,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             txn.rollback();
             throw new CloudRuntimeException("Unable to configure simulator because of " + ex.getMessage(), ex);
         } finally {
+            txn.close();
+            txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
         return true;

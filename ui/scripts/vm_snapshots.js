@@ -111,7 +111,7 @@
                         },
                         dataProvider: function(args) {
                             $.ajax({
-                                url: createURL("listVMSnapshot&listAll=true&id=" + args.context.vmsnapshots[0].id),
+                                url: createURL("listVMSnapshot&listAll=true&vmsnapshotid=" + args.context.vmsnapshots[0].id),
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {

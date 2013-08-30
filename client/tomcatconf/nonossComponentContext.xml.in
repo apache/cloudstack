@@ -52,7 +52,7 @@
   <!--
     DAO with customized configuration under non-OSS deployment
   -->
-  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
+  <bean id="configurationDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl">
     <property name="configParams">
       <map>
         <entry key="premium" value="true" />
@@ -271,6 +271,7 @@
           <ref bean="VmwareInvestigator"/>
           <ref bean="UserVmDomRInvestigator"/>
           <ref bean="ManagementIPSystemVMInvestigator"/>
+          <ref bean="KVMInvestigator"/>
       </list>
     </property>
   </bean>
@@ -321,7 +322,6 @@
           <ref bean="LocalStoragePoolAllocator"/>
           <ref bean="clusterScopeStoragePoolAllocator"/>
           <ref bean="zoneWideStoragePoolAllocator"/>
-          <ref bean="garbageCollectingStoragePoolAllocator"/>
       </list>
     </property>
   </bean>

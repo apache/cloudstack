@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,8 +18,6 @@ package org.apache.cloudstack.internallbvmmgr;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,10 +28,13 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
@@ -46,11 +47,11 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.user.dao.AccountDao;
 
 
 @Configuration
@@ -123,6 +124,11 @@ import com.cloud.user.dao.AccountDao;
             }
             
             @Bean
+        public IpAddressManager ipAddressManager() {
+            return Mockito.mock(IpAddressManager.class);
+        }
+
+        @Bean
             public ServiceOfferingDao serviceOfferingDao() {
                 return Mockito.mock(ServiceOfferingDao.class);
             }

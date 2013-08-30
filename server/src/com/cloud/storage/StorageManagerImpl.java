@@ -46,10 +46,11 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -65,7 +66,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -73,12 +73,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -99,17 +101,13 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -152,6 +150,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -166,11 +165,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -205,6 +201,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected VMInstanceDao _vmInstanceDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao = null;
+    @Inject
+    protected StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject
     protected ImageStoreDao _imageStoreDao = null;
     @Inject
@@ -261,16 +259,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private TemplateService _imageSrv;
     @Inject
     EndPointSelector _epSelector;
-
-    protected List<StoragePoolAllocator> _storagePoolAllocators;
-
-    public List<StoragePoolAllocator> getStoragePoolAllocators() {
-        return _storagePoolAllocators;
-    }
-
-    public void setStoragePoolAllocators(List<StoragePoolAllocator> _storagePoolAllocators) {
-        this._storagePoolAllocators = _storagePoolAllocators;
-    }
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -397,27 +385,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return false;
-    }
-
-    @Override
-    public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, Pod pod, Long clusterId, Long hostId, VMInstanceVO vm,
-                                       final Set<StoragePool> avoid) {
-
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-
-            ExcludeList avoidList = new ExcludeList();
-            for (StoragePool pool : avoid) {
-                avoidList.addPool(pool.getId());
-            }
-            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), clusterId, hostId, null, null);
-
-            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
-            if (poolList != null && !poolList.isEmpty()) {
-                return (StoragePool) dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
-            }
-        }
-        return null;
     }
 
     @Override
@@ -559,7 +526,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return _configMgr.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
+        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
     }
 
     @Override
@@ -625,7 +592,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
             }
 
-            HostScope scope = new HostScope(host.getId(), host.getDataCenterId());
+            HostScope scope = new HostScope(host.getId(), host.getClusterId(), host.getDataCenterId());
             lifeCycle.attachHost(store, scope, pInfo);
         } catch (Exception e) {
             s_logger.warn("Unable to setup the local storage pool for " + host, e);
@@ -638,7 +605,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     @SuppressWarnings("rawtypes")
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -767,7 +734,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        Map<String, String> updatedDetails = new HashMap<String, String>();
+
         if (tags != null) {
+            Map<String, String> existingDetails = _storagePoolDetailsDao.getDetails(id);
+            Set<String> existingKeys = existingDetails.keySet();
+
+            Map<String, String> existingDetailsToKeep = new HashMap<String, String>();
+
+            for (String existingKey : existingKeys) {
+                String existingValue = existingDetails.get(existingKey);
+
+                if (!Boolean.TRUE.toString().equalsIgnoreCase(existingValue)) {
+                    existingDetailsToKeep.put(existingKey, existingValue);
+                }
+            }
+
             Map<String, String> details = new HashMap<String, String>();
             for (String tag : tags) {
                 tag = tag.trim();
@@ -776,10 +758,58 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            _storagePoolDao.updateDetails(id, details);
+            Set<String> existingKeysToKeep = existingDetailsToKeep.keySet();
+
+            for (String existingKeyToKeep : existingKeysToKeep) {
+                String existingValueToKeep = existingDetailsToKeep.get(existingKeyToKeep);
+
+                if (details.containsKey(existingKeyToKeep)) {
+                    throw new CloudRuntimeException("Storage tag '" + existingKeyToKeep + "' conflicts with a stored property of this primary storage. No changes were made.");
+                }
+
+                details.put(existingKeyToKeep, existingValueToKeep);
+            }
+
+            updatedDetails.putAll(details);
         }
 
-        return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+        Long updatedCapacityBytes = null;
+        Long capacityBytes = cmd.getCapacityBytes();
+
+        if (capacityBytes != null) {
+            if (capacityBytes > pool.getCapacityBytes()) {
+                updatedCapacityBytes = capacityBytes;
+            }
+            else if (capacityBytes < pool.getCapacityBytes()) {
+                throw new CloudRuntimeException("The value of 'Capacity bytes' cannot be reduced in this version.");
+            }
+        }
+
+        Long updatedCapacityIops = null;
+        Long capacityIops = cmd.getCapacityIops();
+
+        if (capacityIops != null) {
+            if (capacityIops > pool.getCapacityIops()) {
+                updatedCapacityIops = capacityIops;
+            }
+            else if (capacityIops < pool.getCapacityIops()) {
+                throw new CloudRuntimeException("The value of 'Capacity IOPS' cannot be reduced in this version.");
+            }
+        }
+
+        if (updatedDetails.size() > 0) {
+            _storagePoolDao.updateDetails(id, updatedDetails);
+        }
+
+        if (updatedCapacityBytes != null) {
+            _storagePoolDao.updateCapacityBytes(id, capacityBytes);
+        }
+
+        if (updatedCapacityIops != null) {
+            _storagePoolDao.updateCapacityIops(id, capacityIops);
+        }
+
+        return (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 
     @Override
@@ -1148,6 +1178,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
+                        _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
                         _snapshotStoreDao.remove(destroyedSnapshotStoreVO.getId());
                     }
 
@@ -1194,7 +1225,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     @DB
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
         Account account = CallContext.current().getCallingAccount();
@@ -1271,14 +1302,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
-        for (ManagementServerHostVO vo : nodeList) {
+    public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
+        for (ManagementServerHost vo : nodeList) {
             if (vo.getMsid() == _serverId) {
                 s_logger.info("Cleaning up storage maintenance jobs associated with Management server: " + vo.getMsid());
                 List<Long> poolIds = _storagePoolWorkDao.searchForPoolIdsForPendingWorkJobs(vo.getMsid());
@@ -1288,8 +1319,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         // check if pool is in an inconsistent state
                         if (pool != null
                                 && (pool.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)
-                                || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(
-                                StoragePoolStatus.CancelMaintenance))) {
+                                        || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(
+                                                StoragePoolStatus.CancelMaintenance))) {
                             _storagePoolWorkDao.removePendingJobsOnMsRestart(vo.getMsid(), poolId);
                             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
                             _storagePoolDao.update(poolId, pool);
@@ -1501,7 +1532,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean storagePoolHasEnoughIops(List<Volume> requestedVolumes,
-                                            StoragePool pool) {
+            StoragePool pool) {
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
@@ -1533,19 +1564,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long futureIops = currentIops + requestedIops;
-        
+
         // getCapacityIops returns a Long so we need to check for null
         if (pool.getCapacityIops() == null) {
             s_logger.warn("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply Iops capacity, assuming enough capacity");
             return true;
         }
-        
+
         return futureIops <= pool.getCapacityIops();
     }
 
     @Override
     public boolean storagePoolHasEnoughSpace(List<Volume> volumes,
-                                             StoragePool pool) {
+            StoragePool pool) {
         if (volumes == null || volumes.isEmpty()){
             return false;
         }
@@ -1788,7 +1819,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // we are not actually deleting record from main
         // image_data_store table, so delete cascade will not work
         _imageStoreDetailsDao.deleteDetails(storeId);
-        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
         _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
         _templateStoreDao.deletePrimaryRecordsForStore(storeId);
         _imageStoreDao.remove(storeId);
@@ -1797,7 +1828,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore createCacheStore(CreateCacheStoreCmd cmd) {
+    public ImageStore createSecondaryStagingStore(CreateSecondaryStagingStoreCmd cmd) {
         String providerName = cmd.getProviderName();
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -1862,6 +1893,48 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.ImageCache);
+    }
+
+    @Override
+    public boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd) {
+        long storeId = cmd.getId();
+        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        // Verify that cache store exists
+        ImageStoreVO store = _imageStoreDao.findById(storeId);
+        if (store == null) {
+            throw new InvalidParameterValueException("Cache store with id " + storeId + " doesn't exist");
+        }
+        _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), store.getDataCenterId());
+
+        // Verify that there are no live snapshot, template, volume on the cache
+        // store that is currently referenced
+        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listActiveOnCache(storeId);
+        if (snapshots != null && snapshots.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete cache store with staging snapshots currently in use!");
+        }
+        List<VolumeDataStoreVO> volumes = _volumeStoreDao.listActiveOnCache(storeId);
+        if (volumes != null && volumes.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete cache store with staging volumes currently in use!");
+        }
+
+        List<TemplateDataStoreVO> templates = _templateStoreDao.listActiveOnCache(storeId);
+        if (templates != null && templates.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete cache store with staging templates currently in use!");
+        }
+
+        // ready to delete
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        // first delete from image_store_details table, we need to do that since
+        // we are not actually deleting record from main
+        // image_data_store table, so delete cascade will not work
+        _imageStoreDetailsDao.deleteDetails(storeId);
+        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
+        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+        _imageStoreDao.remove(storeId);
+        txn.commit();
+        return true;
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate

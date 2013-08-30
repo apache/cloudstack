@@ -16,10 +16,33 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -38,6 +61,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -87,6 +111,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -100,34 +125,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
-import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
-import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 
 @Component
 @Local(value = { VpcManager.class, VpcService.class, VpcProvisioningService.class })
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService{
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     VpcOfferingDao _vpcOffDao;
     @Inject
@@ -184,6 +188,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     ConfigurationServer _configServer;
     @Inject
     NetworkACLDao _networkAclDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -218,7 +224,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     svcProviderMap.put(svc, defaultProviders);
                 }
             }
-            createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, 
+            createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
                     true, State.Enabled);
         }
 
@@ -314,8 +320,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         if (!sourceNatSvc) {
-            s_logger.debug("Automatically adding source nat service to the list of VPC services");
-            svcProviderMap.put(Service.SourceNat, defaultProviders);
+            throw new InvalidParameterValueException("SourceNat service is required by VPC offering");
         }
         
         if (!firewallSvs) {
@@ -360,7 +365,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     
     @DB
-    protected VpcOffering createVpcOffering(String name, String displayText, Map<Network.Service, 
+    protected VpcOffering createVpcOffering(String name, String displayText, Map<Network.Service,
             Set<Network.Provider>> svcProviderMap, boolean isDefault, State state) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -507,7 +512,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         VpcOfferingVO offering = _vpcOffDao.findById(offId);
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find vpc offering " + offId);
-        } 
+        }
 
         // Don't allow to delete default vpc offerings
         if (offering.isDefault() == true) {
@@ -572,7 +577,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create=true)
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, 
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr,
             String networkDomain) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(vpcOwnerId);
@@ -597,7 +602,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
        
         //Validate zone
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Can't find zone by id specified");
         }
@@ -625,7 +630,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     
     @DB
-    protected Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
+    protected Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr,
             String networkDomain) {
         
         //Validate CIDR
@@ -649,7 +654,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        VpcVO vpc = new VpcVO (zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, 
+        VpcVO vpc = new VpcVO (zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr,
                 networkDomain);
         vpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(zoneId, vpcOffId));
         _resourceLimitMgr.incrementResourceCount(vpcOwner.getId(), ResourceType.vpc);
@@ -657,7 +662,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         s_logger.debug("Created VPC " + vpc);
 
-        return vpc; 
+        return vpc;
     }
 
     private Map<String, String> finalizeServicesAndProvidersForVpc(long zoneId, long offeringId) {
@@ -798,13 +803,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
 
     @Override
-    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, 
+    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr,
             String cidr, Long vpcOffId, String state, String accountName, Long domainId, String keyword,
             Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired, Map<String, String> tags, Long projectId) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
         
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
                 listAll, false);
@@ -839,7 +844,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         
         // now set the SC criteria...
         SearchCriteria<VpcVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<VpcVO> ssc = _vpcDao.createSearchCriteria();
@@ -863,7 +868,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
-            }   
+            }
        }
 
         if (id != null) {
@@ -942,7 +947,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
     
     @Override
-    public boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException, 
+    public boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
@@ -959,10 +964,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         //permission check
         _accountMgr.checkAccess(caller, null, false, vpc);
         
-        DataCenter dc = _configMgr.getZone(vpc.getZoneId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
      
         DeployDestination dest = new DeployDestination(dc, null, null, null);
-        ReservationContext context = new ReservationContextImpl(null, null, callerUser, 
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser,
                 _accountMgr.getAccount(vpc.getAccountId()));
         
         boolean result = true;
@@ -988,7 +993,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return result;
     }
 
-    protected boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
+    protected boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         //deploy provider
         boolean success = true;
@@ -1043,10 +1048,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
     @DB
     @Override
-    public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, 
+    public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr,
             String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId) {
         
-        NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(newNtwkOffId);
+        NetworkOffering guestNtwkOff = _entityMgr.findById(NetworkOffering.class, newNtwkOffId);
         
         if (guestNtwkOff == null) {
             throw new InvalidParameterValueException("Can't find network offering by id specified");
@@ -1054,7 +1059,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         
         if (networkId == null) {
             //1) Validate attributes that has to be passed in when create new guest network
-            validateNewVpcGuestNetwork(newCidr, gateway, networkOwner, vpc, newNetworkDomain); 
+            validateNewVpcGuestNetwork(newCidr, gateway, networkOwner, vpc, newNetworkDomain);
         }
 
         //2) validate network offering attributes
@@ -1068,7 +1073,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             String pr = nSvcVO.getProvider();
             String service = nSvcVO.getService();
             if (_vpcOffServiceDao.findByServiceProviderAndOfferingId(service, pr, vpc.getVpcOfferingId()) == null) {
-                throw new InvalidParameterValueException("Service/provider combination " + service + "/" + 
+                throw new InvalidParameterValueException("Service/provider combination " + service + "/" +
                         pr + " is not supported by VPC " + vpc);
             }
         }
@@ -1081,7 +1086,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     //skip my own network
                     continue;
                 } else {
-                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    NetworkOffering otherOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                     if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
                         throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
@@ -1103,13 +1108,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<Provider> providers = _ntwkModel.getNtwkOffDistinctProviders(guestNtwkOff.getId());
         for (Provider provider : providers) {
             if (!supportedProviders.contains(provider) ) {
-                throw new InvalidParameterValueException("Provider of type " + provider.getName() 
+                throw new InvalidParameterValueException("Provider of type " + provider.getName()
                         + " is not supported for network offerings that can be used in VPC");
             }
         }
         
         //2) Only Isolated networks with Source nat service enabled can be added to vpc
-        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
+        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated
                 && supportedSvcs.contains(Service.SourceNat))) {
 
             throw new InvalidParameterValueException("Only network offerings of type " + GuestType.Isolated + " with service "
@@ -1147,7 +1152,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         try {
             //check number of active networks in vpc
             if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                throw new CloudRuntimeException("Number of networks per VPC can't extend " 
+                throw new CloudRuntimeException("Number of networks per VPC can't extend "
                         + _maxNetworks + "; increase it using global config " + Config.VpcMaxNetworks);
             }
             
@@ -1167,9 +1172,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             for (Network ntwk : ntwks) {
                 assert (cidr != null) : "Why the network cidr is null when it belongs to vpc?";
                 
-                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), cidr) 
+                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), cidr)
                         || NetUtils.isNetworkAWithinNetworkB(cidr, ntwk.getCidr())) {
-                    throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + ntwk + 
+                    throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + ntwk +
                             " belonging to the same vpc " + vpc);
                 }
             }
@@ -1217,7 +1222,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return _vpcDao.listByAccountId(accountId);
     }
     
-    public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) 
+    public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId)
             throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.debug("Cleaning up resources for vpc id=" + vpcId);
         boolean success = true;
@@ -1240,12 +1245,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 _ipAddressDao.update(ipToRelease.getId(), ipToRelease);
                 s_logger.debug("Portable IP address " + ipToRelease + " is no longer associated with any VPC");
             } else {
-                success = success && _ntwkMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
+                success = success && _ipAddrMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
                 if (!success) {
                     s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
                 }
             }
-        } 
+        }
         
         if (success) {
             s_logger.debug("Released ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
@@ -1282,7 +1287,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
-    public boolean restartVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+    public boolean restartVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException,
                                         InsufficientCapacityException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -1319,7 +1324,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             VpcVO vo = _vpcDao.findById(vpcId);
             vo.setRestartRequired(restartRequired);
             _vpcDao.update(vpc.getId(), vo);
-        }  
+        }
     }
     
 
@@ -1387,7 +1392,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         s_logger.debug("Creating Private gateway for VPC " + vpc);
         //1) create private network
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
-        Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
+        Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId,
                 vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
 
         long networkAclId = NetworkACL.DEFAULT_DENY;
@@ -1412,7 +1417,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         
         txn.commit();
         
-        return getVpcPrivateGateway(gatewayVO.getId());     
+        return getVpcPrivateGateway(gatewayVO.getId());
     }
 
 
@@ -1450,9 +1455,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     } else {
                         s_logger.warn("Failed to destroy vpc " + vo + " that failed to start");
                     }
-                }    
+                }
             }
-        }      
+        }
     }
 
     @Override
@@ -1467,7 +1472,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new ConcurrentOperationException("Unable to lock gateway " + gatewayId);
         }
 
-        try { 
+        try {
             //don't allow to remove gateway when there are static routes associated with it
             long routeCount = _staticRouteDao.countRoutesByGateway(gatewayVO.getId());
             if (routeCount > 0) {
@@ -1499,7 +1504,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (gatewayVO != null) {
                 _vpcGatewayDao.releaseFromLockTable(gatewayId);
             }
-        } 
+        }
     }
     
     @DB
@@ -1554,7 +1559,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Long projectId = cmd.getProjectId();
 
         Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
                 listAll, false);
@@ -1572,7 +1577,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         SearchCriteria<VpcGatewayVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
@@ -1643,11 +1648,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         s_logger.debug("Marked route " + route + " with state " + StaticRoute.State.Active);
                     }
                 }
-            }            
+            }
         }
 
         return success;
-    }   
+    }
     
     protected boolean applyStaticRoutes(List<StaticRouteProfile> routes) throws ResourceUnavailableException{
         if (routes.isEmpty()) {
@@ -1803,7 +1808,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Map<String, String> tags = cmd.getTags();
         Long projectId = cmd.getProjectId();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
                 listAll, false);
@@ -1832,7 +1837,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         SearchCriteria<StaticRouteVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
@@ -1853,7 +1858,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
-            }   
+            }
         }
         
         Pair<List<StaticRouteVO>, Integer> result = _staticRouteDao.searchAndCount(sc, searchFilter);
@@ -1920,7 +1925,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
                     for (VpcVO vpc : inactiveVpcs) {
                         s_logger.debug("Cleaning up " + vpc);
-                        destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM); 
+                        destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                     }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
@@ -1940,7 +1945,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
-    public IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, 
+    public IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
@@ -1978,7 +1983,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _ipAddressDao.update(ipId, ip);
 
         //mark ip as allocated
-        _ntwkMgr.markPublicIpAsAllocated(ip);
+        _ipAddrMgr.markPublicIpAsAllocated(ip);
         txn.commit();
 
         s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
@@ -2004,9 +2009,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         boolean success = false;
         try {
             //unassign ip from the VPC router
-            success = _ntwkMgr.applyIpAssociations(_ntwkModel.getNetwork(networkId), true);
+            success = _ipAddrMgr.applyIpAssociations(_ntwkModel.getNetwork(networkId), true);
         } catch (ResourceUnavailableException ex) {
-            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
+            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId +
                     " as a part of unassigning ip " + ipId + " from vpc", ex);
         }
 
@@ -2015,7 +2020,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _ipAddressDao.update(ipId, ip);
             s_logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
         } else {
-            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
+            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId +
                     " as a part of unassigning ip " + ipId + " from vpc");
         }
         s_logger.debug("Successfully released VPC ip address " + ip + " back to VPC pool ");
@@ -2023,7 +2028,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
     @Override
     public boolean isIpAllocatedToVpc(IpAddress ip) {
-        return (ip != null && ip.getVpcId() != null && 
+        return (ip != null && ip.getVpcId() != null &&
                 (ip.isOneToOneNat() || !_firewallDao.listByIp(ip.getId()).isEmpty()));
     }
     
@@ -2084,7 +2089,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
             "account=" + ownerId + "; vpcId=" + vpcId;
-        } 
+        }
 
         return sourceNatIp;
     }
@@ -2114,7 +2119,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (sourceNatIp != null) {
             ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
-            ipToReturn = _ntwkMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
+            ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
         }
 
         return ipToReturn;

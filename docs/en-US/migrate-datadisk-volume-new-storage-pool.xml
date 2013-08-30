@@ -23,13 +23,56 @@
 -->
 
 <section id="migrate-datadisk-volume-new-storage-pool">
-    <title>Migrating a Data Disk Volume to a New Storage Pool</title>
-            <orderedlist>
-                <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-                <listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
-                <listitem><para>Call the &PRODUCT; API command migrateVolume and pass in the volume ID and the ID of any storage pool in the zone.</para></listitem>
-                <listitem><para>Watch for the volume status to change to Migrating, then back to Ready.</para></listitem>
-                <listitem><para>Attach the volume to any desired VM running in the same cluster as the new storage server. See Attaching a Volume <xref linkend="attaching-volume"/> </para></listitem>
-            </orderedlist>
+    <title>Migrating a Data Volume to a New Storage Pool</title>
+    <para>There are two situations when you might want to migrate a disk:</para>
+    <itemizedlist>
+        <listitem><para>Move the disk to new storage, but leave it attached to the same running VM.</para></listitem>
+        <listitem><para>Detach the disk from its current VM, move it to new storage, and attach it to a new VM.</para></listitem>
+    </itemizedlist>
+    <section id="migrate-storage-same-vm">
+        <title>Migrating Storage For a Running VM</title>
+        <para>(Supported on XenServer and VMware)</para>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+            <listitem><para>In the left navigation bar, click Instances, click the VM name, and click View Volumes.</para></listitem>
+            <listitem><para>Click the volume you want to migrate.</para></listitem>
+            <listitem><para>Detach the disk from the VM.
+                See <xref linkend="detach-move-volumes"/> but skip the “reattach” step at the end. You
+                will do that after migrating to new storage.</para></listitem>
+            <listitem><para>Click the Migrate Volume button<inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/migrate-instance.png"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Migrateinstance.png: button to migrate a volume</phrase>
+                </textobject>
+            </inlinemediaobject>
+                and choose the destination from the dropdown list.</para></listitem>
+            <listitem><para>Watch for the volume status to change to Migrating, then back to Ready.</para></listitem>
+        </orderedlist>
     </section>
-
+    <section id="migrate-storage-change-vm">
+        <title>Migrating Storage and Attaching to a Different VM</title>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+            <listitem><para>Detach the disk from the VM.
+                See <xref linkend="detach-move-volumes"/> but skip the “reattach” step at the end. You
+                will do that after migrating to new storage.</para></listitem>
+            <listitem><para>Click the Migrate Volume button<inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/migrate-instance.png"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Migrateinstance.png: button to migrate a volume</phrase>
+                </textobject>
+            </inlinemediaobject>
+                and choose the destination from the dropdown list.</para></listitem>
+            <listitem><para>Watch for the volume status to change to Migrating, then back to Ready. You can find the
+                volume by clicking Storage in the left navigation bar. Make sure that Volumes is
+                displayed at the top of the window, in the Select View dropdown.</para></listitem>
+            <listitem><para>Attach the volume to any desired VM running in the same cluster as the new storage server. See
+                <xref linkend="attaching-volume"/>
+            </para></listitem>
+        </orderedlist>
+    </section>
+</section>

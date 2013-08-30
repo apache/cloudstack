@@ -31,9 +31,10 @@ public interface Region  {
 	public void setName(String name);
 
 	public String getEndPoint();
-	
 
     public boolean checkIfServiceEnabled(Service service);
+
+    public void enableService(Service service);
 
     /**
      * A region level service, is a service that constitute services across one or more zones in the region or a service
@@ -45,6 +46,7 @@ public interface Region  {
         private static List<Service> regionServices = new ArrayList<Service>();
 
         public static final Service Gslb = new Service("Gslb");
+        public static final Service PortableIp = new Service("PortableIp");
 
         public Service(String name ) {
             this.name = name;

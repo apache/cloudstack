@@ -23,6 +23,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -70,7 +71,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     protected void configure(VMTemplateVO template, DataStore dataStore) {
-        this.imageVO = template;
+        imageVO = template;
         this.dataStore = dataStore;
     }
 
@@ -81,31 +82,36 @@ public class TemplateObject implements TemplateInfo {
     }
 
     public void setSize(Long size) {
-        this.imageVO.setSize(size);
+        imageVO.setSize(size);
     }
 
     public VMTemplateVO getImage() {
-        return this.imageVO;
+        return imageVO;
     }
 
     @Override
     public DataStore getDataStore() {
-        return this.dataStore;
+        return dataStore;
     }
 
     @Override
     public String getUniqueName() {
-        return this.imageVO.getUniqueName();
+        return imageVO.getUniqueName();
     }
 
     @Override
     public long getId() {
-        return this.imageVO.getId();
+        return imageVO.getId();
+    }
+
+    @Override
+    public State getState() {
+        return imageVO.getState();
     }
 
     @Override
     public String getUuid() {
-        return this.imageVO.getUuid();
+        return imageVO.getUuid();
     }
 
     @Override
@@ -113,7 +119,7 @@ public class TemplateObject implements TemplateInfo {
         if ( url != null ){
             return url;
         }
-        VMTemplateVO image = imageDao.findById(this.imageVO.getId());
+        VMTemplateVO image = imageDao.findById(imageVO.getId());
 
         return image.getUrl();
 
@@ -121,8 +127,8 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public Long getSize() {
-        if (this.dataStore == null) {
-            return this.imageVO.getSize();
+        if (dataStore == null) {
+            return imageVO.getSize();
         }
 
         /*
@@ -142,7 +148,7 @@ public class TemplateObject implements TemplateInfo {
          * templateSize = templateHostVO.getSize(); } totalAllocatedSize +=
          * (templateSize + _extraBytesPerVolume); }
          */
-        VMTemplateVO image = imageDao.findById(this.imageVO.getId());
+        VMTemplateVO image = imageDao.findById(imageVO.getId());
         return image.getSize();
     }
 
@@ -153,7 +159,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public ImageFormat getFormat() {
-        return this.imageVO.getFormat();
+        return imageVO.getFormat();
     }
 
     @Override
@@ -167,7 +173,7 @@ public class TemplateObject implements TemplateInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -175,35 +181,43 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            if (this.getDataStore().getRole() == DataStoreRole.Primary) {
+            if (getDataStore().getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
                     TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
-                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(this.getDataStore()
-                            .getId(), this.getId());
+                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore()
+                            .getId(), getId());
                     templatePoolRef.setDownloadPercent(100);
                     templatePoolRef.setDownloadState(Status.DOWNLOADED);
                     templatePoolRef.setLocalDownloadPath(newTemplate.getPath());
                     templatePoolRef.setInstallPath(newTemplate.getPath());
                     templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
                 }
-            } else if (this.getDataStore().getRole() == DataStoreRole.Image
-                    || this.getDataStore().getRole() == DataStoreRole.ImageCache) {
+            } else if (getDataStore().getRole() == DataStoreRole.Image
+                    || getDataStore().getRole() == DataStoreRole.ImageCache) {
                 if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
                     TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
-                    TemplateDataStoreVO templateStoreRef = this.templateStoreDao.findByStoreTemplate(this
-                            .getDataStore().getId(), this.getId());
+                    TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(getDataStore().getId(), getId());
                     templateStoreRef.setInstallPath(newTemplate.getPath());
                     templateStoreRef.setDownloadPercent(100);
                     templateStoreRef.setDownloadState(Status.DOWNLOADED);
                     templateStoreRef.setSize(newTemplate.getSize());
+                    if (newTemplate.getPhysicalSize() != null) {
+                        templateStoreRef.setPhysicalSize(newTemplate.getPhysicalSize());
+                    }
                     templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
-                    if (this.getDataStore().getRole() == DataStoreRole.Image) {
-                        VMTemplateVO templateVO = this.imageDao.findById(this.getId());
-                        templateVO.setFormat(newTemplate.getFormat());
+                    if (getDataStore().getRole() == DataStoreRole.Image) {
+                        VMTemplateVO templateVO = imageDao.findById(getId());
+                        if (newTemplate.getFormat() != null) {
+                            templateVO.setFormat(newTemplate.getFormat());
+                        }
+                        if (newTemplate.getName() != null ){
+                            // For template created from snapshot, template name is determine by resource code.
+                            templateVO.setUniqueName(newTemplate.getName());
+                        }
                         templateVO.setSize(newTemplate.getSize());
-                        this.imageDao.update(templateVO.getId(), templateVO);
+                        imageDao.update(templateVO.getId(), templateVO);
                     }
                 }
             }
@@ -218,19 +232,19 @@ public class TemplateObject implements TemplateInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
 
     @Override
     public void incRefCount() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return;
         }
 
-        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), this.getId());
+        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             templateStoreDao.update(store.getId(), store);
@@ -239,11 +253,11 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public void decRefCount() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), this.getId());
+        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             templateStoreDao.update(store.getId(), store);
@@ -252,11 +266,11 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public Long getRefCount() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return null;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), this.getId());
+        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), getId());
             return store.getRefCnt();
         }
         return null;
@@ -265,10 +279,10 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public DataTO getTO() {
         DataTO to = null;
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             to = new TemplateObjectTO(this);
         } else {
-            to = this.dataStore.getDriver().getTO(this);
+            to = dataStore.getDriver().getTO(this);
             if (to == null) {
                 to = new TemplateObjectTO(this);
             }
@@ -279,91 +293,91 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getInstallPath() {
-        if (this.dataStore == null) {
+        if (dataStore == null) {
             return null;
         }
-        DataObjectInStore obj = objectInStoreMgr.findObject(this, this.dataStore);
+        DataObjectInStore obj = objectInStoreMgr.findObject(this, dataStore);
         return obj.getInstallPath();
     }
 
     @Override
     public long getAccountId() {
-        return this.imageVO.getAccountId();
+        return imageVO.getAccountId();
     }
 
     @Override
     public boolean isFeatured() {
-        return this.imageVO.isFeatured();
+        return imageVO.isFeatured();
     }
 
     @Override
     public boolean isPublicTemplate() {
-        return this.imageVO.isPublicTemplate();
+        return imageVO.isPublicTemplate();
     }
 
     @Override
     public boolean isExtractable() {
-        return this.imageVO.isExtractable();
+        return imageVO.isExtractable();
     }
 
     @Override
     public String getName() {
-        return this.imageVO.getName();
+        return imageVO.getName();
     }
 
     @Override
     public boolean isRequiresHvm() {
-        return this.imageVO.isRequiresHvm();
+        return imageVO.isRequiresHvm();
     }
 
     @Override
     public String getDisplayText() {
-        return this.imageVO.getDisplayText();
+        return imageVO.getDisplayText();
     }
 
     @Override
     public boolean getEnablePassword() {
-        return this.imageVO.getEnablePassword();
+        return imageVO.getEnablePassword();
     }
 
     @Override
     public boolean getEnableSshKey() {
-        return this.imageVO.getEnableSshKey();
+        return imageVO.getEnableSshKey();
     }
 
     @Override
     public boolean isCrossZones() {
-        return this.imageVO.isCrossZones();
+        return imageVO.isCrossZones();
     }
 
     @Override
     public Date getCreated() {
-        return this.imageVO.getCreated();
+        return imageVO.getCreated();
     }
 
     @Override
     public long getGuestOSId() {
-        return this.imageVO.getGuestOSId();
+        return imageVO.getGuestOSId();
     }
 
     @Override
     public boolean isBootable() {
-        return this.imageVO.isBootable();
+        return imageVO.isBootable();
     }
 
     @Override
     public TemplateType getTemplateType() {
-        return this.imageVO.getTemplateType();
+        return imageVO.getTemplateType();
     }
 
     @Override
     public HypervisorType getHypervisorType() {
-        return this.imageVO.getHypervisorType();
+        return imageVO.getHypervisorType();
     }
 
     @Override
     public int getBits() {
-        return this.imageVO.getBits();
+        return imageVO.getBits();
     }
 
     @Override
@@ -371,7 +385,7 @@ public class TemplateObject implements TemplateInfo {
         if (url != null ){
             return url;
         }
-        return this.imageVO.getUrl();
+        return imageVO.getUrl();
     }
 
     public void setUrl(String url){
@@ -380,22 +394,22 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getChecksum() {
-        return this.imageVO.getChecksum();
+        return imageVO.getChecksum();
     }
 
     @Override
     public Long getSourceTemplateId() {
-        return this.imageVO.getSourceTemplateId();
+        return imageVO.getSourceTemplateId();
     }
 
     @Override
     public String getTemplateTag() {
-        return this.imageVO.getTemplateTag();
+        return imageVO.getTemplateTag();
     }
 
     @Override
     public Map getDetails() {
-        return this.imageVO.getDetails();
+        return imageVO.getDetails();
     }
 
     @Override
@@ -405,7 +419,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public long getDomainId() {
-        return this.imageVO.getDomainId();
+        return imageVO.getDomainId();
     }
 
     @Override

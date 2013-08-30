@@ -65,7 +65,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     private static final String UPDATE_VM_DISK_STATS = "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, " +
                "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
     private static final String INSERT_USGAE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, " +
-                "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?)";
+                "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 

@@ -55,13 +55,57 @@ public class Networks {
      * Different types of broadcast domains.
      */
     public enum BroadcastDomainType {
-        Native(null, null),
-        Vlan("vlan", Integer.class),
+        Native(null, null) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        // strange requirement but this is how the code expects it
+                        return new URI("vlan://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
+        Vlan("vlan", Integer.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("vlan://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException(
+                            "Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
         Vswitch("vs", String.class),
         LinkLocal(null, null),
         Vnet("vnet", Long.class),
         Storage("storage", Integer.class),
-        Lswitch("lswitch", String.class),
+        Lswitch("lswitch", String.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    return new URI("lswitch",value.toString(),null,null);
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException(
+                            "Unable to convert to broadcast URI: " + value);
+                }
+            }
+
+            /**
+             * gets scheme specific part instead of host
+             */
+            @Override
+            public String getValueFrom(URI uri) {
+                return uri.getSchemeSpecificPart();
+            }
+        },
         Mido("mido", String.class),
         Pvlan("pvlan", String.class),
         UnDecided(null, null);
@@ -90,30 +134,53 @@ public class Networks {
             return type;
         }
 
+        /**
+         * The default implementation of toUri returns an uri with the scheme and value as host
+         *
+         * @param value will be put in the host field
+         * @return the resulting URI
+         */
         public <T> URI toUri(T value) {
             try {
-                // do we need to check that value does not contain a scheme
-                // part?
-                if (value.toString().contains(":"))
-                    return new URI(value.toString());
-                else
-                    return new URI(scheme, value.toString(), null);
+                return new URI(scheme + "://" + value.toString());
             } catch (URISyntaxException e) {
                 throw new CloudRuntimeException(
                         "Unable to convert to broadcast URI: " + value);
             }
         }
 
-        public static BroadcastDomainType getTypeOf(URI uri) {
-            return getType(uri.getScheme());
+        /**
+         * get the enum value from this uri
+         *
+         * @param uri to get the scheme value from
+         * @return the scheme as BroadcastDomainType
+         */
+        public static BroadcastDomainType getSchemeValue(URI uri) {
+            return toEnumValue(uri.getScheme());
         }
 
+        /**
+         * gets the type from a string encoded uri
+         *
+         * @param str the uri string
+         * @return the scheme as BroadcastDomainType
+         * @throws URISyntaxException when the string can not be converted to URI
+         */
         public static BroadcastDomainType getTypeOf(String str)
                 throws URISyntaxException {
-            return getTypeOf(new URI(str));
+            if (com.cloud.dc.Vlan.UNTAGGED.equalsIgnoreCase(str)) {
+                return Native;
+            }
+            return getSchemeValue(new URI(str));
         }
 
-        public static BroadcastDomainType getType(String scheme) {
+        /**
+         * converts a String to a BroadcastDomainType
+         *
+         * @param scheme convert a string representation to a BroacastDomainType
+         * @return the value of this
+         */
+        public static BroadcastDomainType toEnumValue(String scheme) {
             if (scheme == null) {
                 return UnDecided;
             }
@@ -125,23 +192,64 @@ public class Networks {
             return UnDecided;
         }
 
+        /**
+         * The default implementation of getValueFrom returns the host part of the uri
+         *
+         * @param uri to get the value from
+         * @return the host part as String
+         */
+        public String getValueFrom(URI uri) {
+            return uri.getHost();
+        }
+
+        /**
+         * get the BroadcastDomain value from an arbitrary URI
+         * TODO what when the uri is useless
+         *
+         * @param uri the uri
+         * @return depending on the scheme/BroadcastDomainType
+         */
+        public static String getValue(URI uri) {
+            return getSchemeValue(uri).getValueFrom(uri);
+        }
+
+        /**
+         * get the BroadcastDomain value from an arbitrary String
+         * TODO what when the uriString is useless
+         *
+         * @param uriString the string encoded uri
+         * @return depending on the scheme/BroadcastDomainType
+         * @throws URISyntaxException the string is not even an uri
+         */
         public static String getValue(String uriString)
                 throws URISyntaxException {
             return getValue(new URI(uriString));
         }
 
-        public static String getValue(URI uri) {
-            BroadcastDomainType type = getTypeOf(uri);
-            if (type == Vlan) {
-                // do complicated stuff for backward compatibility
-                try {
-                    Long.parseLong(uri.getSchemeSpecificPart());
-                    return uri.getSchemeSpecificPart();
-                } catch (NumberFormatException e) {
-                    return uri.getHost();
+        /**
+         * encode a string into a BroadcastUri
+         * @param candidate the input string
+         * @return an URI containing an appropriate (possibly given) scheme and the value
+         */
+        public static URI fromString(String candidate) {
+            try {
+                Long.parseLong(candidate);
+                return Vlan.toUri(candidate);
+            } catch (NumberFormatException nfe) {
+                if (com.cloud.dc.Vlan.UNTAGGED.equalsIgnoreCase(candidate)) {
+                    return Native.toUri(candidate);
                 }
-            } else {
-                return uri.getSchemeSpecificPart();
+                try {
+                    URI uri = new URI(candidate);
+                    BroadcastDomainType tiep = getSchemeValue(uri);
+                    if (tiep.scheme.equals(uri.getScheme())) {
+                        return uri;
+                    } else {
+                        throw new CloudRuntimeException("string '" + candidate + "' has an unknown BroadcastDomainType.");
+                    }
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("string is not a broadcast URI: " + candidate);
+                }
             }
         }
     };
@@ -188,7 +296,20 @@ public class Networks {
     public enum IsolationType {
         None(null, null),
         Ec2("ec2", String.class),
-        Vlan("vlan", Integer.class),
+        Vlan("vlan", Integer.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains(":"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("vlan", value.toString(), null, null);
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException(
+                            "Unable to convert to isolation URI: " + value);
+                }
+            }
+        },
         Vswitch("vs", String.class),
         Undecided(null, null),
         Vnet("vnet", Long.class);
@@ -211,15 +332,7 @@ public class Networks {
 
         public <T> URI toUri(T value) {
             try {
-                // assert(this!=Vlan ||
-                // value.getClass().isAssignableFrom(Integer.class)) :
-                // do we need to check that value does not contain a scheme
-                // part?
-                // "Why are you putting non integer into vlan url";
-                if (value.toString().contains(":"))
-                    return new URI(value.toString());
-                else
-                    return new URI(scheme, value.toString(), null);
+                return new URI(scheme + "://" + value.toString());
             } catch (URISyntaxException e) {
                 throw new CloudRuntimeException(
                         "Unable to convert to isolation type URI: " + value);

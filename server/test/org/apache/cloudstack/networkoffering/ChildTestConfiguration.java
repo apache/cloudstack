@@ -32,6 +32,7 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
@@ -43,7 +44,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
@@ -62,6 +62,7 @@ import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
@@ -99,7 +100,6 @@ import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.service.dao.ServiceOfferingDetailsDaoImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
-import com.cloud.storage.dao.S3DaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
@@ -110,6 +110,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
@@ -147,7 +148,6 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         DcDetailsDaoImpl.class,
         NicSecondaryIpDaoImpl.class,
         UserIpv6AddressDaoImpl.class,
-        S3DaoImpl.class,
         UserDaoImpl.class,
         NicDaoImpl.class,
         NetworkDomainDaoImpl.class,
@@ -197,6 +197,11 @@ public class ChildTestConfiguration {
     @Bean
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
+    }
+    
+    @Bean
+    public EntityManager entityMgr() {
+        return Mockito.mock(EntityManager.class);
     }
 
     @Bean
@@ -302,6 +307,11 @@ public class ChildTestConfiguration {
     @Bean
     public NetworkManager networkManager() {
         return Mockito.mock(NetworkManager.class);
+    }
+
+    @Bean
+    public IpAddressManager ipAddressManager() {
+        return Mockito.mock(IpAddressManager.class);
     }
 
     @Bean

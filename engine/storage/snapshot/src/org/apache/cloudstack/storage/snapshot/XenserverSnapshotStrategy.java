@@ -21,14 +21,15 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -130,18 +131,44 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot) {
         s_logger.debug("delete snapshot chain for snapshot: " + snapshot.getId());
         boolean result = false;
-        while (snapshot != null && (snapshot.getState() == Snapshot.State.Destroying || snapshot.getState()
-                == Snapshot.State.Destroyed || snapshot.getState() == Snapshot.State.Error)) {
-            SnapshotInfo child = snapshot.getChild();
+        boolean resultIsSet = false;   //need to track, the snapshot itself is deleted or not.
+        try {
+            while (snapshot != null && (snapshot.getState() == Snapshot.State.Destroying || snapshot.getState()
+                    == Snapshot.State.Destroyed || snapshot.getState() == Snapshot.State.Error)) {
+                SnapshotInfo child = snapshot.getChild();
 
-            if (child != null) {
-                s_logger.debug("the snapshot has child, can't delete it on the storage");
-                break;
+                if (child != null) {
+                    s_logger.debug("the snapshot has child, can't delete it on the storage");
+                    break;
+                }
+                s_logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
+                SnapshotInfo parent = snapshot.getParent();
+                boolean deleted = false;
+                if (parent != null) {
+                    if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
+                        //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
+                        //Instead, mark it as destroyed in the db.
+                        s_logger.debug("for empty delta snapshot, only mark it as destroyed in db");
+                        snapshot.processEvent(Event.DestroyRequested);
+                        snapshot.processEvent(Event.OperationSuccessed);
+                        deleted = true;
+                        if (!resultIsSet) {
+                            result = true;
+                            resultIsSet = true;
+                        }
+                    }
+                }
+                if (!deleted) {
+                    boolean r = this.snapshotSvr.deleteSnapshot(snapshot);
+                    if (!resultIsSet) {
+                        result = r;
+                        resultIsSet = true;
+                    }
+                }
+                snapshot = parent;
             }
-            s_logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
-            SnapshotInfo parent = snapshot.getParent();
-            result = this.snapshotSvr.deleteSnapshot(snapshot);
-            snapshot = parent;
+        } catch (Exception e) {
+            s_logger.debug("delete snapshot failed: ", e);
         }
         return result;
     }
@@ -152,7 +179,6 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         if (snapshotVO.getState() == Snapshot.State.Destroyed) {
             return true;
         }
-
 
         if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
             s_logger.debug("delete snapshot on primary storage:");
@@ -166,13 +192,14 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     + " due to it is not in BackedUp Status");
         }
 
-        // firt mark the snapshot as destroyed, so that ui can't see it, but we
-        // may not destroy the snapshot on the storage, as other snaphosts may
+        // first mark the snapshot as destroyed, so that ui can't see it, but we
+        // may not destroy the snapshot on the storage, as other snapshots may
         // depend on it.
         SnapshotInfo snapshotOnImage = this.snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshotOnImage == null) {
             s_logger.debug("Can't find snapshot on backup storage, delete it in db");
             snapshotDao.remove(snapshotId);
+            return true;
         }
 
         SnapshotObject obj = (SnapshotObject) snapshotOnImage;
@@ -189,8 +216,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             if (result) {
                 //snapshot is deleted on backup storage, need to delete it on primary storage
                 SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-                snapshotOnPrimary.setState(State.Destroyed);
-                snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+                if (snapshotOnPrimary != null) {
+                    snapshotOnPrimary.setState(State.Destroyed);
+                    snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+                }
             }
         } catch (Exception e) {
             s_logger.debug("Failed to delete snapshot: ", e);
@@ -199,6 +228,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             } catch (NoTransitionException e1) {
                 s_logger.debug("Failed to change snapshot state: " + e.toString());
             }
+            return false;
         }
 
         return true;

@@ -191,6 +191,13 @@ public interface DeploymentPlanner extends Adapter {
             _podIds.add(podId);
         }
 
+        public void addPodList(Collection<Long> podList) {
+            if (_podIds == null) {
+                _podIds = new HashSet<Long>();
+            }
+            _podIds.addAll(podList);
+        }
+
         public void addCluster(long clusterId) {
             if (_clusterIds == null) {
                 _clusterIds = new HashSet<Long>();

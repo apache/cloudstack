@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.BufferedOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,21 +51,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
+import com.cloud.agent.api.CheckOnHostCommand;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
@@ -73,6 +66,14 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -191,6 +192,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -202,7 +204,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.hostNicType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
@@ -240,7 +241,13 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineName;
+
+import com.ceph.rados.Rados;
+import com.ceph.rados.RadosException;
+import com.ceph.rados.IoCTX;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdImage;
+import com.ceph.rbd.RbdException;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -361,6 +368,8 @@ ServerResource {
     private boolean _can_bridge_firewall;
     protected String _localStoragePath;
     protected String _localStorageUUID;
+    protected String _guestCpuMode;
+    protected String _guestCpuModel;
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 
@@ -752,6 +761,20 @@ ServerResource {
             s_logger.trace("Ignoring libvirt error.", e);
         }
 
+        _guestCpuMode = (String) params.get("guest.cpu.mode");
+        if (_guestCpuMode != null) {
+            _guestCpuModel = (String) params.get("guest.cpu.model");
+
+            if(_hypervisorLibvirtVersion < (9 * 1000 + 10)) {
+                s_logger.warn("LibVirt version 0.9.10 required for guest cpu mode, but version " +
+                        prettyVersion(_hypervisorLibvirtVersion) + " detected, so it will be disabled");
+                _guestCpuMode = "";
+                _guestCpuModel = "";
+            }
+            params.put("guest.cpu.mode", _guestCpuMode);
+            params.put("guest.cpu.model", _guestCpuModel);
+        }
+
         String[] info = NetUtils.getNetworkParams(_privateNic);
 
         _monitor = new KVMHAMonitor(null, info[0], _heartBeatPath);
@@ -843,7 +866,7 @@ ServerResource {
 
         configureVifDrivers(params);
 
-        KVMStorageProcessor storageProcessor = new KVMStorageProcessor(this._storagePoolMgr, this);
+        KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
@@ -1003,7 +1026,7 @@ ServerResource {
         File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
 
         if (! f.isDirectory()){
-            s_logger.debug("failing to get physical interface from bridge"
+            s_logger.debug("failing to get physical interface from bridge "
                            + bridgeName + ", does " + f.getAbsolutePath()
                            + "exist?");
             return "";
@@ -1015,13 +1038,14 @@ ServerResource {
             String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
             if (fname.startsWith("eth") || fname.startsWith("bond")
-                || fname.startsWith("vlan") || fname.startsWith("em")) {
+                || fname.startsWith("vlan") || fname.startsWith("em")
+                || fname.matches("^p\\d+p\\d+")) {
                 return fname;
             }
         }
 
-        s_logger.debug("failing to get physical interface from bridge"
-                        + bridgeName + ", did not find an eth*, bond*, or vlan* in "
+        s_logger.debug("failing to get physical interface from bridge "
+                        + bridgeName + ", did not find an eth*, bond*, vlan*, em*, or p*p* in "
                         + f.getAbsolutePath());
         return "";
     }
@@ -1070,7 +1094,7 @@ ServerResource {
         }
     }
 
-    private void passCmdLine(String vmName, String cmdLine)
+    private boolean passCmdLine(String vmName, String cmdLine)
             throws InternalErrorException {
         final Script command = new Script(_patchViaSocketPath, 5*1000, s_logger);
         String result;
@@ -1079,7 +1103,9 @@ ServerResource {
         result = command.execute();
         if (result != null) {
             s_logger.debug("passcmd failed:" + result);
+            return false;
         }
+        return true;
     }
 
     boolean isDirectAttachedNetwork(String type) {
@@ -1254,9 +1280,11 @@ ServerResource {
             } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
                 return execute((NetworkRulesVmSecondaryIpCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
-                return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
+                return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand) cmd);
+            } else if (cmd instanceof CheckOnHostCommand) {
+                return execute((CheckOnHostCommand)cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1390,6 +1418,26 @@ ServerResource {
 
     }
 
+    protected Answer execute(CheckOnHostCommand cmd) {
+        ExecutorService executors = Executors.newSingleThreadExecutor();
+        List<NfsStoragePool> pools = _monitor.getStoragePools();
+        KVMHAChecker ha = new KVMHAChecker(pools, cmd.getHost().getPrivateNetwork().getIp());
+        Future<Boolean> future = executors.submit(ha);
+        try {
+            Boolean result = future.get();
+            if (result) {
+                return new Answer(cmd, false, "Heart is still beating...");
+            } else {
+                return new Answer(cmd);
+            }
+        } catch (InterruptedException e) {
+            return new Answer(cmd, false, "can't get status of host:");
+        } catch (ExecutionException e) {
+            return new Answer(cmd, false, "can't get status of host:");
+        }
+
+    }
+
     protected Storage.StorageResourceType getStorageResourceType() {
         return Storage.StorageResourceType.STORAGE_POOL;
     }
@@ -1516,35 +1564,66 @@ ServerResource {
             String path = vol.getPath();
             String type = getResizeScriptType(pool, vol);
 
-            if (type == null) {
-                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '"
-                                + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
-            } else if (type.equals("QCOW2") && shrinkOk) {
-                return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+            /**
+             * RBD volumes can't be resized via a Bash script or via libvirt
+             *
+             * libvirt-java doesn't implemented resizing volumes, so we have to do this manually
+             *
+             * Future fix would be to hand this over to libvirt
+             */
+            if (pool.getType() == StoragePoolType.RBD) {
+                try {
+                    Rados r = new Rados(pool.getAuthUserName());
+                    r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+                    r.confSet("key", pool.getAuthSecret());
+                    r.connect();
+                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                    IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                    Rbd rbd = new Rbd(io);
+                    RbdImage image = rbd.open(vol.getName());
+
+                    s_logger.debug("Resizing RBD volume " + vol.getName() +  " to " + newSize + " bytes"); 
+                    image.resize(newSize);
+                    rbd.close(image);
+
+                    r.ioCtxDestroy(io);
+                    s_logger.debug("Succesfully resized RBD volume " + vol.getName() +  " to " + newSize + " bytes"); 
+                } catch (RadosException e) {
+                    return new ResizeVolumeAnswer(cmd, false, e.toString());
+                } catch (RbdException e) {
+                    return new ResizeVolumeAnswer(cmd, false, e.toString());
+                }
+            } else {
+                if (type == null) {
+                    return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '"
+                                    + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+                } else if (type.equals("QCOW2") && shrinkOk) {
+                    return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
+                }
+
+                s_logger.debug("got to the stage where we execute the volume resize, params:"
+                            + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
+                final Script resizecmd = new Script(_resizeVolumePath,
+                            _cmdsTimeout, s_logger);
+                resizecmd.add("-s",String.valueOf(newSize));
+                resizecmd.add("-c",String.valueOf(currentSize));
+                resizecmd.add("-p",path);
+                resizecmd.add("-t",type);
+                resizecmd.add("-r",String.valueOf(shrinkOk));
+                resizecmd.add("-v",vmInstanceName);
+                String result = resizecmd.execute();
+
+                if (result != null) {
+                    return new ResizeVolumeAnswer(cmd, false, result);
+                }
             }
 
-            s_logger.debug("got to the stage where we execute the volume resize, params:"
-                           + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
-            final Script resizecmd = new Script(_resizeVolumePath,
-                        _cmdsTimeout, s_logger);
-            resizecmd.add("-s",String.valueOf(newSize));
-            resizecmd.add("-c",String.valueOf(currentSize));
-            resizecmd.add("-p",path);
-            resizecmd.add("-t",type);
-            resizecmd.add("-r",String.valueOf(shrinkOk));
-            resizecmd.add("-v",vmInstanceName);
-            String result = resizecmd.execute();
-
-            if (result == null) {
-
-                /* fetch new size as seen from libvirt, don't want to assume anything */
-                pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
-                long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
-                s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
-                return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
-            }
-
-            return new ResizeVolumeAnswer(cmd, false, result);
+            /* fetch new size as seen from libvirt, don't want to assume anything */
+            pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
+            long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
+            s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
+            return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
         } catch (CloudRuntimeException e) {
             String error = "failed to resize volume: " + e;
             s_logger.debug(error);
@@ -1659,9 +1738,10 @@ ServerResource {
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         NicTO nic = cmd.getNic();
         String vmName = cmd.getVmName();
+        Domain vm = null;
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-            Domain vm = getDomain(conn, vmName);
+            vm = getDomain(conn, vmName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
             Integer nicnum = 0;
             for (InterfaceDef pluggedNic : pluggedNics) {
@@ -1681,6 +1761,14 @@ ServerResource {
             String msg = " Plug Nic failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new PlugNicAnswer(cmd, false, msg);
+        } finally {
+            if (vm != null) {
+                try {
+                    vm.free();
+                } catch (LibvirtException l) {
+                    s_logger.trace("Ignoring libvirt error.", l);
+                }
+            }
         }
     }
 
@@ -1688,9 +1776,10 @@ ServerResource {
         Connect conn;
         NicTO nic = cmd.getNic();
         String vmName = cmd.getVmName();
+        Domain vm = null;
         try {
             conn = LibvirtConnection.getConnectionByVmName(vmName);
-            Domain vm = getDomain(conn, vmName);
+            vm = getDomain(conn, vmName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
             for (InterfaceDef pluggedNic : pluggedNics) {
                 if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
@@ -1708,6 +1797,14 @@ ServerResource {
             String msg = " Unplug Nic failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new UnPlugNicAnswer(cmd, false, msg);
+        } finally {
+            if (vm != null) {
+                try {
+                    vm.free();
+                } catch (LibvirtException l) {
+                    s_logger.trace("Ignoring libvirt error.", l);
+                }
+            }
         }
     }
 
@@ -1974,12 +2071,6 @@ ServerResource {
                     cmd.getPool().getType(),
                     cmd.getPool().getUuid());
 
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                s_logger.debug("Snapshots are not supported on RBD volumes");
-                return new ManageSnapshotAnswer(cmd, false,
-                        "Snapshots are not supported on RBD volumes");
-            }
-
             KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(cmd
                     .getVolumePath());
             if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING
@@ -2006,23 +2097,63 @@ ServerResource {
                     vm.resume();
                 }
             } else {
+                /**
+                 * For RBD we can't use libvirt to do our snapshotting or any Bash scripts.
+                 * libvirt also wants to store the memory contents of the Virtual Machine,
+                 * but that's not possible with RBD since there is no way to store the memory
+                 * contents in RBD.
+                 *
+                 * So we rely on the Java bindings for RBD to create our snapshot
+                 *
+                 * This snapshot might not be 100% consistent due to writes still being in the
+                 * memory of the Virtual Machine, but if the VM runs a kernel which supports
+                 * barriers properly (>2.6.32) this won't be any different then pulling the power
+                 * cord out of a running machine.
+                 */
+                if (primaryPool.getType() == StoragePoolType.RBD) {
+                    try {
+                        Rados r = new Rados(primaryPool.getAuthUserName());
+                        r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+                        r.confSet("key", primaryPool.getAuthSecret());
+                        r.connect();
+                        s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
-                /* VM is not running, create a snapshot by ourself */
-                final Script command = new Script(_manageSnapshotPath,
-                        _cmdsTimeout, s_logger);
-                if (cmd.getCommandSwitch().equalsIgnoreCase(
-                        ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                    command.add("-c", disk.getPath());
+                        IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
+                        Rbd rbd = new Rbd(io);
+                        RbdImage image = rbd.open(disk.getName());
+
+                        if (cmd.getCommandSwitch().equalsIgnoreCase(
+                            ManageSnapshotCommand.CREATE_SNAPSHOT)) {
+                            s_logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
+                            image.snapCreate(snapshotName);
+                        } else {
+                            s_logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
+                            image.snapRemove(snapshotName);
+                        }
+
+                        rbd.close(image);
+                        r.ioCtxDestroy(io);
+                    } catch (Exception e) {
+                        s_logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
+                    }
                 } else {
-                    command.add("-d", snapshotPath);
-                }
+                    /* VM is not running, create a snapshot by ourself */
+                    final Script command = new Script(_manageSnapshotPath,
+                            _cmdsTimeout, s_logger);
+                    if (cmd.getCommandSwitch().equalsIgnoreCase(
+                            ManageSnapshotCommand.CREATE_SNAPSHOT)) {
+                        command.add("-c", disk.getPath());
+                    } else {
+                        command.add("-d", snapshotPath);
+                    }
 
-                command.add("-n", snapshotName);
-                String result = command.execute();
-                if (result != null) {
-                    s_logger.debug("Failed to manage snapshot: " + result);
-                    return new ManageSnapshotAnswer(cmd, false,
-                            "Failed to manage snapshot: " + result);
+                    command.add("-n", snapshotName);
+                    String result = command.execute();
+                    if (result != null) {
+                        s_logger.debug("Failed to manage snapshot: " + result);
+                        return new ManageSnapshotAnswer(cmd, false,
+                                "Failed to manage snapshot: " + result);
+                    }
                 }
             }
             return new ManageSnapshotAnswer(cmd, cmd.getSnapshotId(),
@@ -2064,16 +2195,74 @@ ServerResource {
                     cmd.getPrimaryStoragePoolNameLabel());
             KVMPhysicalDisk snapshotDisk = primaryPool.getPhysicalDisk(cmd
                     .getVolumePath());
-            Script command = new Script(_manageSnapshotPath, _cmdsTimeout,
-                    s_logger);
-            command.add("-b", snapshotDisk.getPath());
-            command.add("-n", snapshotName);
-            command.add("-p", snapshotDestPath);
-            command.add("-t", snapshotName);
-            String result = command.execute();
-            if (result != null) {
-                s_logger.debug("Failed to backup snaptshot: " + result);
-                return new BackupSnapshotAnswer(cmd, false, result, null, true);
+
+            /**
+             * RBD snapshots can't be copied using qemu-img, so we have to use
+             * the Java bindings for librbd here.
+             *
+             * These bindings will read the snapshot and write the contents to
+             * the secondary storage directly
+             * 
+             * It will stop doing so if the amount of time spend is longer then
+             * cmds.timeout
+             */
+            if (primaryPool.getType() == StoragePoolType.RBD) {
+                try {
+                    Rados r = new Rados(primaryPool.getAuthUserName());
+                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+                    r.confSet("key", primaryPool.getAuthSecret());
+                    r.connect();
+                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+
+                    IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
+                    Rbd rbd = new Rbd(io);
+                    RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
+
+                    long startTime = System.currentTimeMillis() / 1000;
+
+                    File fh = new File(snapshotDestPath);
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));
+                    int chunkSize = 4194304;
+                    long offset = 0;
+                    s_logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
+                    while(true) {
+                        byte[] buf = new byte[chunkSize];
+
+                        int bytes = image.read(offset, buf, chunkSize);
+                        if (bytes <= 0) {
+                            break;
+                        }
+                        bos.write(buf, 0, bytes);
+                        offset += bytes;
+                    }
+                    s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + offset);
+                    bos.close();
+                    r.ioCtxDestroy(io);
+                } catch (RadosException e) {
+                    s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                } catch (RbdException e) {
+                    s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                } catch (FileNotFoundException e) {
+                    s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                } catch (IOException e) {
+                    s_logger.debug("An I/O error occured during a snapshot operation on " + snapshotDestPath);
+                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
+                }
+            } else {
+                Script command = new Script(_manageSnapshotPath, _cmdsTimeout,
+                        s_logger);
+                command.add("-b", snapshotDisk.getPath());
+                command.add("-n", snapshotName);
+                command.add("-p", snapshotDestPath);
+                command.add("-t", snapshotName);
+                String result = command.execute();
+                if (result != null) {
+                    s_logger.debug("Failed to backup snaptshot: " + result);
+                    return new BackupSnapshotAnswer(cmd, false, result, null, true);
+                }
             }
             /* Delete the snapshot on primary */
 
@@ -2110,11 +2299,11 @@ ServerResource {
                     vm.resume();
                 }
             } else {
-                command = new Script(_manageSnapshotPath, _cmdsTimeout,
+                Script command = new Script(_manageSnapshotPath, _cmdsTimeout,
                         s_logger);
                 command.add("-d", snapshotDisk.getPath());
                 command.add("-n", snapshotName);
-                result = command.execute();
+                String result = command.execute();
                 if (result != null) {
                     s_logger.debug("Failed to backup snapshot: " + result);
                     return new BackupSnapshotAnswer(cmd, false,
@@ -3179,8 +3368,8 @@ ServerResource {
 
         if (vmTO.getMinRam() != vmTO.getMaxRam()){
             grd.setMemBalloning(true);
-            grd.setCurrentMem((long)vmTO.getMinRam()/1024);
-            grd.setMemorySize((long)vmTO.getMaxRam()/1024);
+            grd.setCurrentMem(vmTO.getMinRam()/1024);
+            grd.setMemorySize(vmTO.getMaxRam()/1024);
         }
         else{
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
@@ -3188,23 +3377,30 @@ ServerResource {
         grd.setVcpuNum(vmTO.getCpus());
         vm.addComp(grd);
 
-        CpuTuneDef ctd = new CpuTuneDef();
-        /**
-            A 4.0.X/4.1.X management server doesn't send the correct JSON
-            command for getMinSpeed, it only sends a 'speed' field.
+        CpuModeDef cmd = new CpuModeDef();
+        cmd.setMode(_guestCpuMode);
+        cmd.setModel(_guestCpuModel);
+        vm.addComp(cmd);
 
-            So if getMinSpeed() returns null we fall back to getSpeed().
+        if (_hypervisorLibvirtVersion >= 9000) {
+            CpuTuneDef ctd = new CpuTuneDef();
+            /**
+             A 4.0.X/4.1.X management server doesn't send the correct JSON
+             command for getMinSpeed, it only sends a 'speed' field.
 
-            This way a >4.1 agent can work communicate a <=4.1 management server
+             So if getMinSpeed() returns null we fall back to getSpeed().
 
-            This change is due to the overcommit feature in 4.2
-        */
-        if (vmTO.getMinSpeed() != null) {
-            ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
-        } else {
-            ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
+             This way a >4.1 agent can work communicate a <=4.1 management server
+
+             This change is due to the overcommit feature in 4.2
+             */
+            if (vmTO.getMinSpeed() != null) {
+                ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
+            } else {
+                ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
+            }
+            vm.addComp(ctd);
         }
-        vm.addComp(ctd);
 
         FeaturesDef features = new FeaturesDef();
         features.addFeatures("pae");
@@ -3222,8 +3418,6 @@ ServerResource {
         if (vmTO.getOs().startsWith("Windows")) {
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
             clock.setTimer("rtc", "catchup", null);
-        } else if (vmTO.getType() != VirtualMachine.Type.User) {
-            clock.setTimer("kvmclock", "catchup", null);
         }
 
         vm.addComp(clock);
@@ -3320,8 +3514,12 @@ ServerResource {
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 if ((_kernelVersion < 2006034) && (conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
-                    for (int count = 0; count < 10; count ++) {
-                        passCmdLine(vmName, vmSpec.getBootArgs());
+                    //wait for 5 minutes at most
+                    for (int count = 0; count < 30; count ++) {
+                        boolean succeed = passCmdLine(vmName, vmSpec.getBootArgs());
+                        if (succeed) {
+                            break;
+                        }
                         try {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
@@ -4244,6 +4442,10 @@ ServerResource {
                 }
             }
         } catch (LibvirtException e) {
+            if (e.getMessage().contains("Domain not found")) {
+                s_logger.debug("VM " + vmName + " doesn't exist, no need to stop it");
+                return null;
+            }
             s_logger.debug("Failed to stop VM :" + vmName + " :", e);
             return e.getMessage();
         } catch (InterruptedException ie) {
@@ -4850,6 +5052,13 @@ ServerResource {
         }
 
         return new Answer(cmd, success, "");
+    }
+
+    private String prettyVersion(long version) {
+        long major = version / 1000000;
+        long minor = version % 1000000 / 1000;
+        long release = version % 1000000 % 1000;
+        return major + "."  + minor + "." + release;
     }
 
 	@Override

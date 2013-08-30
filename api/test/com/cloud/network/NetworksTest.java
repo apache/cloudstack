@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 
 /**
  * @author dhoogland
@@ -45,7 +46,8 @@ public class NetworksTest {
     @Test
     public void vlanBroadcastDomainTypeTest() throws URISyntaxException {
         String uri1 = "vlan://1";
-        String uri2 = "vlan:2";
+        Long value2 = 2L;
+        String uri2 = BroadcastDomainType.Vlan.toUri(value2).toString();
         BroadcastDomainType type1 = BroadcastDomainType.getTypeOf(uri1);
         BroadcastDomainType type2 = BroadcastDomainType.getTypeOf(uri2);
         String id1 = BroadcastDomainType.getValue(uri1);
@@ -55,20 +57,29 @@ public class NetworksTest {
         Assert.assertEquals("uri2 should be of broadcasttype vlan",
                 BroadcastDomainType.Vlan, type2);
         Assert.assertEquals("id1 should be \"1\"", "1", id1);
-        Assert.assertEquals("id1 should be \"2\"", "2", id2);
+        Assert.assertEquals("id2 should be \"2\"", "2", id2);
+    }
+
+    @Test
+    public void vlanIsolationTypeTest() throws URISyntaxException {
+        String uri1 = "vlan://1";
+        Long value2 = 2L;
+        String uri2 = IsolationType.Vlan.toUri(value2).toString();
+        Assert.assertEquals("id1 should be \"vlan://1\"", "vlan://1", uri1);
+        Assert.assertEquals("id2 should be \"vlan://2\"", "vlan://2", uri2);
     }
 
     @Test
     public void otherTypesTest() throws URISyntaxException {
         String bogeyUri = "lswitch://1";
-        String uri2 = "mido:2";
+        String uri2 = "mido://2";
         BroadcastDomainType type1 = BroadcastDomainType.getTypeOf(bogeyUri);
         BroadcastDomainType type2 = BroadcastDomainType.getTypeOf(uri2);
         String id1 = BroadcastDomainType.getValue(bogeyUri);
         String id2 = BroadcastDomainType.getValue(uri2);
-        Assert.assertEquals("uri1 should be of broadcasttype vlan",
+        Assert.assertEquals("uri1 should be of broadcasttype lswitch",
                 BroadcastDomainType.Lswitch, type1);
-        Assert.assertEquals("uri2 should be of broadcasttype vlan",
+        Assert.assertEquals("uri2 should be of broadcasttype mido",
                 BroadcastDomainType.Mido, type2);
         Assert.assertEquals("id1 should be \"//1\"", "//1", id1);
         Assert.assertEquals("id1 should be \"2\"", "2", id2);

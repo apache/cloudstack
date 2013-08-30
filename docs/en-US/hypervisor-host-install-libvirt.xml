@@ -47,6 +47,11 @@
             <programlisting>libvirtd_opts="-d -l"</programlisting>
         </listitem>
         <listitem>
+            <para>In order to have the VNC Console work we have to make sure it will bind on 0.0.0.0. We do this by editing <filename>/etc/libvirt/qemu.conf</filename></para>
+            <para>Make sure this parameter is set:</para>
+            <programlisting>vnc_listen = "0.0.0.0"</programlisting>
+        </listitem>
+        <listitem>
             <para>Restart libvirt</para>
             <para>In RHEL or CentOS:</para>
             <programlisting><command>$ service libvirtd restart</command></programlisting>

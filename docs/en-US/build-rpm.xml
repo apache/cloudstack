@@ -53,7 +53,16 @@ under the License.
             <programlisting><prompt>$</prompt>./package.sh</programlisting>
         </para>
         <para>That will run for a bit and then place the finished packages in <filename>dist/rpmbuild/RPMS/x86_64/</filename>.</para>
-        <para>You should see seven RPMs in that directory: <filename>cloudstack-agent-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-awsapi-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-cli-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-common-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-docs-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, <filename>cloudstack-management-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>, and <filename>cloudstack-usage-4.1.0-SNAPSHOT.el6.x86_64.rpm</filename>.</para>
+        <para>You should see seven RPMs in that directory: </para>
+            <programlisting>
+                cloudstack-agent-4.1.0-SNAPSHOT.el6.x86_64.rpm
+                cloudstack-awsapi-4.1.0-SNAPSHOT.el6.x86_64.rpm
+                cloudstack-cli-4.1.0-SNAPSHOT.el6.x86_64.rpm
+                cloudstack-common-4.1.0-SNAPSHOT.el6.x86_64.rpm
+                cloudstack-docs-4.1.0-SNAPSHOT.el6.x86_64.rpm
+                cloudstack-management-4.1.0-SNAPSHOT.el6.x86_64.rpm
+                cloudstack-usage-4.1.0-SNAPSHOT.el6.x86_64.rpm
+            </programlisting>
             <section id="sect-source-buildrpm-repo">
                 <title>Creating a yum repo</title>
                 <para>
