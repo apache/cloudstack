@@ -368,7 +368,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
-        if (vlanUse != VlanType.DirectAttached || zone.getNetworkType() == NetworkType.Basic) {
+        if (vlanUse != VlanType.DirectAttached) {
             addr.setAssociatedWithNetworkId(guestNetworkId);
             addr.setVpcId(vpcId);
         }

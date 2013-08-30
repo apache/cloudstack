@@ -1672,9 +1672,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         _resourceLimitMgr.incrementResourceCount(account.getId(),
-                ResourceType.volume, new Long(volumes.size()));
-
-        _resourceLimitMgr.incrementResourceCount(account.getId(),
                 ResourceType.user_vm);
 
         txn.commit();
@@ -4821,6 +4818,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 ex.addProxyObject(vm, vmId, "vmId");
                 throw ex;
             }
+        }
+        // Save usage event and update resource count for user vm volumes
+        if (vm instanceof UserVm) {
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
 
         s_logger.debug("Restore VM " + vmId + " with template "
