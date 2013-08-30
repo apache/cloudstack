@@ -32,7 +32,7 @@
        <title>Getting the KEYS</title>
        <para>
           To enable you to verify the GPG signature, you will need to download the 
-          <ulink url="http://www.apache.org/dist/incubator/cloudstack/KEYS">KEYS</ulink>
+          <ulink url="http://www.apache.org/dist/cloudstack/KEYS">KEYS</ulink>
           file.
        </para>
        <para>
