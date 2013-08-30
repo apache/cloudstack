@@ -1225,7 +1225,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, new Integer(allHosts.size()));
+        //'otherHosts' must use the current value of allHosts as allHosts may get modified later in the allocator
+        List<HostVO> allHostsCpy = new ArrayList<HostVO>(allHosts);
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List <? extends Host>, Integer>(allHostsCpy,
+                new Integer(allHostsCpy.size()));
         List<Host> suitableHosts = new ArrayList<Host>();
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
