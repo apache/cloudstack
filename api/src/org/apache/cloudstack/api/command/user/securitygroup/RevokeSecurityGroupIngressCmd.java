@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityRule;
 import com.cloud.user.Account;
 
 @APICommand(name = "revokeSecurityGroupIngress", responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
@@ -67,9 +68,12 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        SecurityGroup group = _entityMgr.findById(SecurityGroup.class, getId());
-        if (group != null) {
-            return group.getAccountId();
+        SecurityRule rule = _entityMgr.findById(SecurityRule.class, getId());
+        if (rule != null) {
+            SecurityGroup group = _entityMgr.findById(SecurityGroup.class, rule.getSecurityGroupId());
+            if (group != null) {
+                return group.getAccountId();
+            }
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
