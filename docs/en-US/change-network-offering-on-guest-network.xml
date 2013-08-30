@@ -32,7 +32,7 @@
     <listitem>
       <para>If you are changing from a network offering that uses the &PRODUCT; virtual router to
         one that uses external devices as network service providers, you must first stop all the VMs
-        on the network. See <xref linkend="stopping-and-starting-vms"/>.</para>
+        on the network.</para>
     </listitem>
     <listitem>
       <para>In the left navigation, choose Network.</para>
