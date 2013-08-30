@@ -108,12 +108,12 @@
     </orderedlist>
   </section>
   <section id="default-egress-policy">
-    <title>Changing the Default Egress Policy</title>
-    <para>You can configure the default policy of egress firewall rules in Isolated Advanced
-      networks. Use the create network offering option to determine whether the default policy
-      should be block or allow all the traffic to the public network from a guest network. If no
-      policy is specified, by default all the traffic is allowed from the guest network that you
-      create by using this network offering.</para>
+    <title>Configuring the Default Egress Policy</title>
+    <para>The default egress policy for Isolated guest network is configured by using Network
+      offering.  Use the create network offering option to determine whether the default policy
+      should be block or allow all the traffic to the public network from a guest network.  Use this
+      network offering to create the network. If no policy is specified, by default all the traffic
+      is allowed from the guest network that you create by using this network offering.</para>
     <para>You have two options: Allow and Deny.</para>
     <formalpara>
       <title>Allow</title>
