@@ -309,7 +309,45 @@
 	                }	                
 	            };  
             	
-            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {
+            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {            		
+            		if(trafficData.vSwitchType == null) {
+            			 var useDvs = false;
+                         $.ajax({
+                             url: createURL('listConfigurations'),
+                             data: {
+                                 name: 'vmware.use.dvswitch'
+                             },
+                             async: false,
+                             success: function(json) {
+                                 if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                     useDvs = true;
+                                 }
+                             }
+                         });    
+                         if (useDvs == true) { 
+                        	 var useNexusDvs = false;                                            
+                             $.ajax({
+                                 url: createURL('listConfigurations'),
+                                 data: {
+                                     name: 'vmware.use.nexus.vswitch'
+                                 },
+                                 async: false,
+                                 success: function(json) {
+                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                         useNexusDvs = true;
+                                     }
+                                 }
+                             });
+                             if (useNexusDvs == true) {
+                            	 trafficData.vSwitchType = 'nexusdvs';
+                             } else {
+                            	 trafficData.vSwitchType = 'vmwaredvs';
+                             }   
+                         } else { //useDvs == false
+                        	 trafficData.vSwitchType = 'vmwaresvs';
+                         }                         
+            		}
+            		
             		$.extend(fields, {
             		    vSwitchType: {
             		        label: 'vSwitch Type',
