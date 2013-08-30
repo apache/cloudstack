@@ -85,12 +85,4 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
         return listBy(sc, searchFilter);
     }
 
-    @Override
-    public SecurityGroupRulesVO findByUuidIncludingRemoved(final String uuid) {
-        SearchCriteria<SecurityGroupRulesVO> sc = createSearchCriteria();
-        sc.addAnd("ruleUuid", SearchCriteria.Op.EQ, uuid);
-        SecurityGroupRulesVO rule = findOneIncludingRemovedBy(sc);
-        SecurityGroupRulesVO newRule = new SecurityGroupRulesVO(rule.getRuleId());
-        return newRule;
-    }
 }
