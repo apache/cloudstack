@@ -10088,21 +10088,21 @@
                                 preFilter: function(args) {
                                     var $form = args.$form;                                    
                                     $form.click(function() {  
-                                        var $vsmFields = $form.find('.form-item').filter(function() {
-                                            var vsmFields = [
+                                        var $nexusDvsOptFields = $form.find('.form-item').filter(function() {
+                                            var nexusDvsOptFields = [
                                                 'vsmipaddress',
                                                 'vsmusername',
                                                 'vsmpassword'
                                             ];	
-                                            return $.inArray($(this).attr('rel'), vsmFields) > -1;
+                                            return $.inArray($(this).attr('rel'), nexusDvsOptFields) > -1;
                                         });
-                                        var $vsmReqFields = $form.find('.form-item').filter(function() {
-                                            var vsmReqFields = [
+                                        var $nexusDvsReqFields = $form.find('.form-item').filter(function() {
+                                            var nexusDvsReqFields = [
                                                 'vsmipaddress_req',
                                                 'vsmusername_req',
                                                 'vsmpassword_req'
                                             ];	
-                                            return $.inArray($(this).attr('rel'), vsmReqFields) > -1;
+                                            return $.inArray($(this).attr('rel'), nexusDvsReqFields) > -1;
                                         });                                           
                                     	
                                     	if ($form.find('.form-item[rel=hypervisor] select').val() == 'VMware' ) {   
@@ -10116,8 +10116,8 @@
 	                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
 	                                        var $vSwitchGuestType = $form.find('.form-item[rel=vSwitchGuestType] select');    	                                        
 		                                            
-                                            //***** 'vmware.use.dvswitch' : whether to show override traffic checkbox (begin) *****
-                                            var dvSwitchEnabled = false;
+                                            
+                                            var useDvs = false;
                                             $.ajax({
                                                 url: createURL('listConfigurations'),
                                                 data: {
@@ -10126,16 +10126,15 @@
                                                 async: false,
                                                 success: function(json) {
                                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                                        dvSwitchEnabled = true;
+                                                        useDvs = true;
                                                     }
                                                 }
                                             });                                    		                                            
-                                            if (dvSwitchEnabled == true) {                                                        
+                                            if (useDvs == true) { //If using Distributed vswitch, there is OverrideTraffic option.                                                       
                                                 $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');                                               
                                                 $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'inline-block');   
-                                                
-                                                //'vmware.use.nexus.vswitch': whether to show VSM fields (begin)
-                                        		var vSwitchEnabled = false;                                            
+                                                                                                                                         
+                                        		var useNexusDvs = false;                                            
                                                 $.ajax({
                                                     url: createURL('listConfigurations'),
                                                     data: {
@@ -10144,27 +10143,26 @@
                                                     async: false,
                                                     success: function(json) {
                                                         if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                                            vSwitchEnabled = true;
+                                                            useNexusDvs = true;
                                                         }
                                                     }
                                                 });
-                                                if (vSwitchEnabled == true) {    
+                                                if (useNexusDvs == true) { //If using Nexus Distributed vswitch, show Nexus Distributed vswitch fields (either required ones or optional ones).     
         	                                        if (($overridePublicTraffic.is(':checked') && $vSwitchPublicType.val() == 'nexusdvs') ||
         	                                            ($overrideGuestTraffic.is(':checked') && $vSwitchGuestType.val() == 'nexusdvs' )) {
-        	                                            $vsmReqFields.css('display', 'inline-block');
-        	                                            $vsmFields.hide();
+        	                                            $nexusDvsReqFields.css('display', 'inline-block');
+        	                                            $nexusDvsOptFields.hide();
         	                                        } else {
-        	                                            $vsmFields.css('display', 'inline-block');
-        	                                            $vsmReqFields.hide();
+        	                                            $nexusDvsOptFields.css('display', 'inline-block');
+        	                                            $nexusDvsReqFields.hide();
         	                                        }
                                                 	
-                                                } else { //vSwitchEnabled == false                                                                                                                                                                              	
-                                                	$vsmFields.hide();
-                                                	$vsmReqFields.hide();
-                                                }  
-                                                //***** 'vmware.use.dvswitch' : whether to show override traffic checkbox (end) *****
+                                                } else { //If not using Nexus Distributed vswitch, hide Nexus Distributed vswitch fields.                                                                                                                                                                  	
+                                                	$nexusDvsOptFields.hide();
+                                                	$nexusDvsReqFields.hide();
+                                                }                                                 
                                                 
-                                            } else { //dvSwitchEnabled == false                                                      
+                                            } else { //useDvs == false                                                      
                                                 $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                                 $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
                                                 $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
@@ -10173,10 +10171,10 @@
                                                 $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');                                                
                                                 $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');    
                                                 
-                                                $vsmFields.hide();
-                                            	$vsmReqFields.hide();
+                                                $nexusDvsOptFields.hide();
+                                            	$nexusDvsReqFields.hide();
                                             }
-                                            //***** 'vmware.use.dvswitch' (end) *****                                               
+                                     
 	                                        
                                         } else { //XenServer, KVM, etc (non-VMware)
                                             $form.find('.form-item[rel=vCenterHost]').css('display', 'none');
@@ -10187,8 +10185,8 @@
                                             
                                             $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                             $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');                                                                                                                        	
-                                        	$vsmFields.hide();
-                                        	$vsmReqFields.hide();
+                                        	$nexusDvsOptFields.hide();
+                                        	$nexusDvsReqFields.hide();
                                         }  
                                     	                                       
                                         if ($form.find('.form-item[rel=overridepublictraffic]').css('display') != 'none' && $overridePublicTraffic.is(':checked')) {
@@ -10396,7 +10394,7 @@
                                     vSwitchPublicType: {
                                         label: 'Public Traffic vSwitch Type',
                                         select: function(args) {
-                                            var vSwitchEnabled = false;
+                                            var useNexusDvs = false;
                                             var items = []
                                             $.ajax({
                                                 url: createURL('listConfigurations'),
@@ -10406,12 +10404,12 @@
                                                 async: false,
                                                 success: function(json) {
                                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                                        vSwitchEnabled = true;
+                                                        useNexusDvs = true;
                                                     }
                                                 }
                                             });
 
-                                            if (vSwitchEnabled) {
+                                            if (useNexusDvs) {
                                                 items.push({
                                                     id: "nexusdvs",
                                                     description: "Cisco Nexus 1000v Distributed Virtual Switch"
@@ -10465,7 +10463,7 @@
                                         select: function(args) {
                                             var items = []
                                             
-                                            var vSwitchEnabled = false;
+                                            var useNexusDvs = false;
                                             $.ajax({
                                                 url: createURL('listConfigurations'),
                                                 data: {
@@ -10474,13 +10472,13 @@
                                                 async: false,
                                                 success: function(json) {
                                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                                        vSwitchEnabled = true;
+                                                        useNexusDvs = true;
                                                     }
                                                 }
                                             });
 
 
-                                            if (vSwitchEnabled) {
+                                            if (useNexusDvs) {
                                                 items.push({
                                                     id: "nexusdvs",
                                                     description: "Cisco Nexus 1000v Distributed Virtual Switch"
