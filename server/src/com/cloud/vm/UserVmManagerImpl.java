@@ -1471,8 +1471,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         //Update Resource Count for the given account
-        _resourceLimitMgr.incrementResourceCount(account.getId(),
-                ResourceType.volume, new Long(volumes.size()));
         resourceCountIncrement(account.getId(), new Long(serviceOffering.getCpu()),
                 new Long(serviceOffering.getRamSize()));
         txn.commit();
@@ -4836,6 +4834,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
+        }
+        // Save usage event and update resource count for user vm volumes
+        if (vm instanceof UserVm) {
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
 
         _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());

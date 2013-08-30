@@ -74,6 +74,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -112,6 +113,7 @@ public class UserVmManagerTest {
     @Mock ServiceOfferingDao _offeringDao;
     @Mock
     EntityManager _entityMgr;
+    @Mock ResourceLimitService _resourceLimitMgr;
 
     @Before
     public void setup(){
@@ -130,6 +132,7 @@ public class UserVmManagerTest {
         _userVmMgr._configMgr = _configMgr;
         _userVmMgr._offeringDao= _offeringDao;
         _userVmMgr._capacityMgr = _capacityMgr;
+        _userVmMgr._resourceLimitMgr = _resourceLimitMgr;
         _userVmMgr._scaleRetry = 2;
         _userVmMgr._entityMgr = _entityMgr;
 

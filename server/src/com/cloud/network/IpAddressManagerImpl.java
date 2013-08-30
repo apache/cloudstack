@@ -773,7 +773,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
-        if (vlanUse != VlanType.DirectAttached || zone.getNetworkType() == NetworkType.Basic) {
+        if (vlanUse != VlanType.DirectAttached) {
             addr.setAssociatedWithNetworkId(guestNetworkId);
             addr.setVpcId(vpcId);
         }
