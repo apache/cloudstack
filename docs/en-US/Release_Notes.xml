@@ -227,7 +227,8 @@ under the License.
           <para>These new RBD features require at least librbd 0.61.7 (Cuttlefish) and libvirt
             0.9.14 on the KVM hypervisors.</para>
         </note>
-        <para>With this release &PRODUCT; will leverage the features of RBD format 2. This allows
+        <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1191">CLOUDSTACK-1191</ulink>:
+        With this release &PRODUCT; will leverage the features of RBD format 2. This allows
           snapshotting and backing up those snapshots.</para>
         <para>Backups of snapshots to Secondary Storage are full copies of the RBD snapshot, they
           are not RBD diffs. This because when restoring a backup of a snapshot it is not mandatory
