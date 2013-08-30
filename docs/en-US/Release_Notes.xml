@@ -243,6 +243,15 @@ under the License.
           the patch disk a VirtIO serial console is used to pass meta information to System VMs.
           This enabled the deployment of System VMs on RBD Primary Storage.</para>
       </section>
+      <section id="disk-io-polling-throttling">
+          <title>Disk I/O polling and throttling</title>
+          <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1192">CLOUDSTACK-1192</ulink>:
+          On KVM hypervisors polling and throttling of disk I/Os is supported. Per disk disk attached to
+              an Instance the usage server will record the amount of IOps.</para>
+          <para>Per disk offering you are able to specify the number of Read and Write I/Os. Trottling is
+              done by Qemu/KVM.</para>
+          <para>Both polling and throttling only works with KVM and with all types of Primary Storage.</para>
+      </section>
     </section>
     <section id="issues-fixed-4.2">
       <title>Issues Fixed in 4.2.0</title>
