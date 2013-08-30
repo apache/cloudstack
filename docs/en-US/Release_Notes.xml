@@ -874,6 +874,11 @@ gpgcheck=0
                 <listitem>
                   <para>Upgrade the Usage server.</para>
                   <programlisting>sudo yum upgrade cloud-usage</programlisting>
+                  <note>
+                    <para>After upgrade, if the usage server fails to restart then copy
+                      db.properties from /etc/cloudstack/management to /etc/cloudstack/usage. Then start the
+                      Usage Server.</para>
+                  </note>
                 </listitem>
               </orderedlist>
             </listitem>
@@ -1276,7 +1281,12 @@ service cloudstack-agent start
         <listitem>
           <para>Start all Usage Servers (if they were running on your previous version). Perform
             this on each Usage Server host.</para>
-          <para><command># service cloudstack-usage start</command></para>
+          <programlisting># service cloudstack-usage start</programlisting>
+          <note>
+            <para>After upgrade, if the usage server fails to restart then copy
+              db.properties from /etc/cloudstack/management to /etc/cloudstack/usage. Then start the
+              Usage Server.</para>
+          </note>
         </listitem>
         <listitem>
           <para>Additional steps are required for each KVM host. These steps will not affect running
