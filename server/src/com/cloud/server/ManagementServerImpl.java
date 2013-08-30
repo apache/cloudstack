@@ -1161,8 +1161,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     null, null, null);
         }
 
-        Pair<List<? extends Host>, Integer> otherHosts = new Pair<List <? extends Host>, Integer>(allHosts,
-                new Integer(allHosts.size()));
+        //'otherHosts' must use the current value of allHosts as allHosts may get modified later in the allocator
+        List<HostVO> allHostsCpy = new ArrayList<HostVO>(allHosts);
+        Pair<List<? extends Host>, Integer> otherHosts = new Pair<List <? extends Host>, Integer>(allHostsCpy,
+                new Integer(allHostsCpy.size()));
         List<Host> suitableHosts = new ArrayList<Host>();
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
