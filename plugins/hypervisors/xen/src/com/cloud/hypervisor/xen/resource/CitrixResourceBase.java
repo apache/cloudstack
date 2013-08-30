@@ -2299,6 +2299,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (add && correctVif == null) {
                 addVif = true;
             }
+            if (!add && correctVif == null) {
+               return; // it is a disassociateIp and it has already happened
+            }
 
             if (addVif) {
                 // Add a new VIF to DomR
