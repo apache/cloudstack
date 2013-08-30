@@ -324,10 +324,10 @@
             		                }, {
             		                    id: 'vmwaredvs',
             		                    description: 'VMware vNetwork Distributed Virtual Switch'
-            		                }],
-            		                defaultValue: trafficData.vSwitchType
+            		                }]
             		            });
-            		        }
+            		        },
+    		                defaultValue: trafficData.vSwitchType
             		    }
             		});   
             	}            	
