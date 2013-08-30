@@ -223,15 +223,15 @@
           <listitem>
             <para><emphasis role="bold">IP Range</emphasis>: A range of IP addresses that are
               accessible from the Internet and are assigned to the guest VMs.</para>
-            <para>If one NIC is used, these IPs should be in the same CIDR in the case of
-              IPv6.</para>
+            <!--<para>If one NIC is used, these IPs should be in the same CIDR in the case of
+              IPv6.</para> -->
           </listitem>
-          <listitem>
+          <!-- <listitem>
             <para><emphasis role="bold">IPv6 CIDR</emphasis>: The network prefix that defines the
               guest network subnet. This is the CIDR that describes the IPv6 addresses in use in the
               guest networks in this zone. To allot IP addresses from within a particular address
               block, enter a CIDR.</para>
-          </listitem>
+          </listitem> -->
           <listitem>
             <para><emphasis role="bold">Network Domain</emphasis>: A custom DNS suffix at the level
               of a network. If you want to assign a special domain name to the guest VM network,
