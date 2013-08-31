@@ -24,8 +24,8 @@
 
 <section id="example-openldap-configuration">
     <title>Example LDAP Configuration for OpenLdap</title>
-    <para>This shows the configuration settings required for using OpenLDAP</para>
-    <para>The default values supplied are suited for OpenLDAP</para>
+    <para>This shows the configuration settings required for using OpenLDAP.</para>
+    <para>The default values supplied are suited for OpenLDAP.</para>
     <itemizedlist>
         <listitem><para>uid - Logon name</para></listitem>
         <listitem><para>mail - Email Address</para></listitem>

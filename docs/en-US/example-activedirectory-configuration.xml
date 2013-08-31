@@ -24,14 +24,14 @@
 
 <section id="example-activedirectory-configuration">
     <title>Example LDAP Configuration for Active Directory</title>
-    <para>This shows the configuration settings required for using ActiveDirectory</para>
+    <para>This shows the configuration settings required for using ActiveDirectory.</para>
     <itemizedlist>
         <listitem><para>samAccountName - Logon name</para></listitem>
         <listitem><para>mail - Email Address</para></listitem>
         <listitem><para>cn - Real name</para></listitem>
     </itemizedlist>
     <para>Along with this the ldap.user.object name needs to be modified, by default ActiveDirectory uses the value "user" for this.</para>
-    <para>Map the following attributes accordingly as shown below within the cloudstack ldap configuration:</para>
+    <para>Map the following attributes accordingly as shown below:</para>
     <mediaobject>
         <imageobject>
             <imagedata fileref="./images/add-ldap-configuration-ad.png"/>

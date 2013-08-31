@@ -699,7 +699,23 @@ var addGuestNetworkDialog = {
 }
 
 
-// Role Functions
+    function isLdapEnabled() {
+        var result;
+        $.ajax({
+            url: createURL("listLdapConfigurations"),
+            dataType: "json",
+            async: false,
+            success: function(json) {
+                result = (json.ldapconfigurationresponse.count > 0);
+            },
+            error: function(json) {
+                result = false;
+            }
+        });
+        return result;
+    }
+
+    // Role Functions
 
     function isAdmin() {
         return (g_role == 1);

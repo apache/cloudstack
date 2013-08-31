@@ -14,13 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl
 
-public class LDAPRemoveResponse extends BaseResponse {
-
-    public LDAPRemoveResponse(){
-        super();
+class LdapConfigurationDaoImplSpec extends spock.lang.Specification {
+    def "Test setting up of a LdapConfigurationDao"() {
+		given: "We have an LdapConfigurationDao implementation"
+        def ldapConfigurationDaoImpl = new LdapConfigurationDaoImpl();
+		expect: "that hostnameSearch and listAllConfigurationsSearch is configured"
+        ldapConfigurationDaoImpl.hostnameSearch != null;
+        ldapConfigurationDaoImpl.listAllConfigurationsSearch != null
     }
 }

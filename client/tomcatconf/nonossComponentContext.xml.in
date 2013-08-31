@@ -224,7 +224,7 @@
       <list>
           <ref bean="SHA256SaltedUserAuthenticator"/>
           <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
+          <ref bean="LdapAuthenticator"/>
           <ref bean="PlainTextUserAuthenticator"/>
       </list>
     </property>
@@ -234,7 +234,7 @@
       <list>
           <ref bean="SHA256SaltedUserAuthenticator"/>
           <ref bean="MD5UserAuthenticator"/>
-          <ref bean="LDAPUserAuthenticator"/>
+          <ref bean="LdapAuthenticator"/>
           <ref bean="PlainTextUserAuthenticator"/>
       </list>
     </property>

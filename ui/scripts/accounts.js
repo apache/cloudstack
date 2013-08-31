@@ -76,222 +76,20 @@
                                     return 'label.add.account';
                                 }
                             },
-
-                            createForm: {
-                                title: 'label.add.account',
-                                desc: 'label.add.account',
-                                fields: {
-                                    username: {
-                                        label: 'label.username',
-                                        validation: {
-                                            required: true
-                                        },
-                                        docID: 'helpAccountUsername'
-                                    },
-                                    password: {
-                                        label: 'label.password',
-                                        validation: {
-                                            required: true
-                                        },
-                                        isPassword: true,
-                                        id: 'password',
-                                        docID: 'helpAccountPassword'
-                                    },
-                                    'password-confirm': {
-                                        label: 'label.confirm.password',
-                                        validation: {
-                                            required: true,
-                                            equalTo: '#password'
-                                        },
-                                        isPassword: true,
-                                        docID: 'helpAccountConfirmPassword'
-                                    },
-                                    email: {
-                                        label: 'label.email',
-                                        validation: {
-                                            required: true,
-                                            email: true
-                                        },
-                                        docID: 'helpAccountEmail'
-                                    },
-                                    firstname: {
-                                        label: 'label.first.name',
-                                        validation: {
-                                            required: true
-                                        },
-                                        docID: 'helpAccountFirstName'
-                                    },
-                                    lastname: {
-                                        label: 'label.last.name',
-                                        validation: {
-                                            required: true
-                                        },
-                                        docID: 'helpAccountLastName'
-                                    },
-                                    domainid: {
-                                        label: 'label.domain',
-                                        docID: 'helpAccountDomain',
-                                        validation: {
-                                            required: true
-                                        },
-                                        select: function(args) {
-                                            var data = {};
-
-                                            if (args.context.users) { // In accounts section
-                                                data.listAll = true;
-                                            } else if (args.context.domains) { // In domain section (use specific domain)
-                                                data.id = args.context.domains[0].id;
-                                            }
-
-                                            $.ajax({
-                                                url: createURL("listDomains"),
-                                                data: data,
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    var items = [];
-                                                    domainObjs = json.listdomainsresponse.domain;
-                                                    $(domainObjs).each(function() {
-                                                        items.push({
-                                                            id: this.id,
-                                                            description: this.path
-                                                        });
-
-                                                        if (this.level == 0)
-                                                            rootDomainId = this.id;
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    },
-                                    account: {
-                                        label: 'label.account',
-                                        docID: 'helpAccountAccount'
-                                    },
-                                    accounttype: {
-                                        label: 'label.type',
-                                        docID: 'helpAccountType',
-                                        validation: {
-                                            required: true
-                                        },
-                                        select: function(args) {
-                                            var items = [];
-                                            items.push({
-                                                id: 0,
-                                                description: "User"
-                                            }); //regular-user
-                                            items.push({
-                                                id: 1,
-                                                description: "Admin"
-                                            }); //root-admin
-                                            args.response.success({
-                                                data: items
-                                            });
-                                        }
-                                    },
-                                    timezone: {
-                                        label: 'label.timezone',
-                                        docID: 'helpAccountTimezone',
-                                        select: function(args) {
-                                            var items = [];
-                                            items.push({
-                                                id: "",
-                                                description: ""
-                                            });
-                                            for (var p in timezoneMap)
-                                                items.push({
-                                                    id: p,
-                                                    description: timezoneMap[p]
-                                                });
-                                            args.response.success({
-                                                data: items
-                                            });
-                                        }
-                                    },
-                                    networkdomain: {
-                                        label: 'label.network.domain',
-                                        docID: 'helpAccountNetworkDomain',
-                                        validation: {
-                                            required: false
-                                        }
-                                    }
-                                }
-                            },
-
-                            action: function(args) {
-                                var data = {
-                                    username: args.data.username,
-                                };
-
-                                var password = args.data.password;
-                                if (md5Hashed) {
-                                    password = $.md5(password);
-                                }
-                                $.extend(data, {
-                                    password: password
-                                });
-
-                                $.extend(data, {
-                                    email: args.data.email,
-                                    firstname: args.data.firstname,
-                                    lastname: args.data.lastname,
-                                    domainid: args.data.domainid
-                                });
-
-                                var account = args.data.account;
-                                if (account == null || account.length == 0) {
-                                    account = args.data.username;
-                                }
-                                $.extend(data, {
-                                    account: account
-                                });
-
-                                var accountType = args.data.accounttype;
-                                if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain
-                                    accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
-                                }
-                                $.extend(data, {
-                                    accounttype: accountType
-                                });
-
-                                if (args.data.timezone != null && args.data.timezone.length > 0) {
-                                    $.extend(data, {
-                                        timezone: args.data.timezone
-                                    });
-                                }
-
-                                if (args.data.networkdomain != null && args.data.networkdomain.length > 0) {
-                                    $.extend(data, {
-                                        networkdomain: args.data.networkdomain
-                                    });
-                                }
-
-                                $.ajax({
-                                    url: createURL('createAccount'),
-                                    type: "POST",
-                                    data: data,
-                                    success: function(json) {
-                                        var item = json.createaccountresponse.account;
-                                        args.response.success({
-                                            data: item
-                                        });
-                                    },
-                                    error: function(XMLHttpResponse) {
-                                        args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                                    }
-                                });
-                            },
-
                             notification: {
                                 poll: function(args) {
                                     args.complete({
                                         actionFilter: accountActionfilter
                                     });
                                 }
-                            }
+                            },
+
+                            action: {
+                                custom: cloudStack.uiCustom.accountsWizard(
+                                    cloudStack.accountsWizard
+                                )
+                            },
+
                         }
                     },
 
@@ -1254,47 +1052,56 @@
                                         return 'label.action.change.password';
                                     }
                                 },
-                                createForm: {
-                                    title: 'label.action.change.password',
-                                    fields: {
-                                        newPassword: {
-                                            label: 'label.new.password',
-                                            isPassword: true,
-                                            validation: {
-                                                required: true
-                                            },
-                                            id: 'newPassword'
-                                        },
-                                        'password-confirm': {
-                                            label: 'label.confirm.password',
-                                            validation: {
-                                                required: true,
-                                                equalTo: '#newPassword'
-                                            },
-                                            isPassword: true
-                                        }
-                                    }
-                                },
-                                action: function(args) {
-                                    var password = args.data.newPassword;
-                                    if (md5Hashed)
-                                        password = $.md5(password);
 
-                                    var data = {
-                                        id: args.context.users[0].id,
-                                        password: password
-                                    };
+				action: function(args) {
+				    if (isLdapEnabled()) {
+					alert(dictionary["error.could.not.change.your.password.because.ldap.is.enabled"]);
+					args.response.error({});
+				    } else {
+					cloudStack.dialog.createForm({
+					    noDialog: false,
+					    form: {
+						title: 'label.action.change.password',
+						fields: {
+						    newPassword: {
+							label: 'label.new.password',
+							isPassword: true,
+							validation: {
+							    required: true
+							},
+							id: 'newPassword'
+						    },
+						    'password-confirm': {
+							label: 'label.confirm.password',
+							validation: {
+							    required: true,
+							    equalTo: '#newPassword'
+							},
+							isPassword: true
+						    }
+						}
+					    }
+					})
+					var password = args.data.newPassword;
+					if (md5Hashed)
+					    password = $.md5(password);
 
-                                    $.ajax({
-                                        url: createURL('updateUser'),
-                                        data: data,
-                                        type: "POST",                                        
-                                        success: function(json) {
-                                            args.response.success({
-                                                data: json.updateuserresponse.user
-                                            });
-                                        }
-                                    });
+					var data = {
+					    id: args.context.users[0].id,
+					    password: password
+					};
+					$.ajax({
+					    url: createURL('updateUser'),
+					    data: data,
+					    type: "POST",
+					    success: function(json) {
+						args.response.success({
+						    data: json.updateuserresponse.user
+						});
+					    }
+					});
+
+				    }
                                 },
                                 notification: {
                                     poll: function(args) {

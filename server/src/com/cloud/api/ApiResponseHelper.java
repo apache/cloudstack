@@ -81,7 +81,6 @@ import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
-import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -2802,20 +2801,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         hcResponse.setRules(responses);
         hcResponse.setObjectName("healthcheckpolicies");
         return hcResponse;
-    }
-
-    @Override
-    public LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String searchBase,
-            String bindDN) {
-        LDAPConfigResponse lr = new LDAPConfigResponse();
-        lr.setHostname(hostname);
-        lr.setPort(port.toString());
-        lr.setUseSSL(useSSL.toString());
-        lr.setQueryFilter(queryFilter);
-        lr.setBindDN(bindDN);
-        lr.setSearchBase(searchBase);
-        lr.setObjectName("ldapconfig");
-        return lr;
     }
 
     @Override
