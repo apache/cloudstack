@@ -24,19 +24,28 @@
 <section id="LDAP-for-user-authentication">
     <title>Using an LDAP Server for User Authentication</title>
     <para>You can use an external LDAP server such as Microsoft Active Directory or OpenLDAP to authenticate &PRODUCT; end-users.</para>
-    <para>To set up LDAP authentication in &PRODUCT;, open the global settings page and set:</para>
+    <para>In order to do this you must:</para>
     <itemizedlist>
-        <listitem><para>ldap.basedn - The base directory you want to search within for uses</para></listitem>
-        <listitem><para>ldap.bind.password - The password you wish to use to bind, this can be blank if the server supports anonymous binding</para></listitem>
-        <listitem><para>ldap.bind.principal - The account you wish to use to bind, this can be blank if the server supports anonymous binding</para></listitem>
-        <listitem><para>ldap.email.attribute - The attribute within your LDAP server that holds a value for users email address</para></listitem>
-        <listitem><para>ldap.realname.attribute - The attribute within your LDAP server that holds a value users realname</para></listitem>
-        <listitem><para>ldap.user.object - The object class that identifies a user</para></listitem>
-        <listitem><para>ldap.username.attribute - The attribute within your LDAP server that has a value that will match the cloudstack accounts username field</para></listitem>
+	<listitem><para>Set your LDAP configuration within &PRODUCT;</para></listitem>
+	<listitem><para>Create &PRODUCT; accounts for LDAP users</para></listitem>
     </itemizedlist>
-    <para>Finally you can add LDAP servers from Global Settings -> Select View -> LDAP Configuration. This requires a hostname and port</para>
+    <para>To set up LDAP authentication in &PRODUCT;, open the global settings page and search for LDAP</para>
+    <para>Set ldap.basedn to match your sever's base directory.</para>
+    <para>Review the defaults for the following, ensure that they match your schema.</para>
+    <itemizedlist>
+	<listitem><para>ldap.email.attribute</para></listitem>
+	<listitem><para>ldap.firstname.attribute</para></listitem>
+	<listitem><para>ldap.lastname.attribute</para></listitem>
+	<listitem><para>ldap.username.attribute</para></listitem>
+	<listitem><para>ldap.user.object</para></listitem>
+    </itemizedlist>
+    <para>Optionally you can set the following:</para>
+    <itemizedlist>
+	<listitem><para>If you do not want to use anonymous binding you can set ldap.bind.principle and ldap.bind.password as credentials for your LDAP server that will grant &PRODUCT; permission to perform a search on the LDAP server.</para></listitem>
+	<listitem><para>For SSL support set ldap.truststore to a path on the file system where your trusted store is located. Along with this set ldap.truststore.password as the password that unlocks the truststore.</para></listitem>
+	<listitem><para>If you wish to filter down the user set that is granted access to &PRODUCT; via the LDAP attribute memberof you can do so using ldap.search.group.principle.</para></listitem>
+    </itemizedlist>
+    <para>Finally, you can add your LDAP server. To do so select LDAP Configuration from the views section within global settings. Click on "Configure LDAP" and fill in your server's hostname and port.</para>
     <xi:include href="example-activedirectory-configuration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="example-openldap-configuration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <!-- Support for SSL has been removed but will be back shortly. -->
-    <!-- <xi:include href="SSL-keystore-path-and-password.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> -->
     </section>

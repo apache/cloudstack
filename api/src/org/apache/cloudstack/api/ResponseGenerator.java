@@ -60,7 +60,6 @@ import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
-import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -353,8 +352,6 @@ public interface ResponseGenerator {
     TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result);
 
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
-
-    LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);
 
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 

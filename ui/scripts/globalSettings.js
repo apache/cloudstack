@@ -99,7 +99,6 @@
                     }
                 }
             },
-
             ldapConfiguration: {
                 type: 'select',
                 title: 'LDAP Configuration',
@@ -110,29 +109,18 @@
                         hostname: {
                             label: 'Hostname'
                         },
-                        queryfilter: {
-                            label: 'Query Filter'
-                        },
-                        searchbase: {
-                            label: 'Search Base'
-                        },
                         port: {
                             label: 'LDAP Port'
                         },
-                        ssl: {
-                            label: 'SSL'
-
-                        }
-
                     },
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
                         $.ajax({
-                            url: createURL('ldapConfig&listall=true'), //Need a list LDAP configuration API call which needs to be implemented
+                            url: createURL('listLdapConfigurations'),
                             data: data,
                             success: function(json) {
-                                var items = json.ldapconfigresponse.ldapconfig;
+                                var items = json.ldapconfigurationresponse.LdapConfiguration;
                                 args.response.success({
                                     data: items
                                 });
@@ -142,12 +130,9 @@
                             }
                         });
                     },
-
                     detailView: {
                         name: 'label.details',
                         actions: {
-
-                            // Remove LDAP
                             remove: {
                                 label: 'Remove LDAP',
                                 messages: {
@@ -159,192 +144,96 @@
                                     }
                                 },
                                 action: function(args) {
-
                                     $.ajax({
-                                        url: createURL("ldapRemove"),
+                                        url: createURL("deleteLdapConfiguration&hostname=" + args.context.ldapConfiguration[0].hostname),
                                         success: function(json) {
-
                                             args.response.success();
-
                                         }
-
                                     });
                                     $(window).trigger('cloudStack.fullRefresh');
-
                                 }
                             }
                         },
-
                         tabs: {
-
                             details: {
                                 title: 'LDAP Configuration Details',
                                 fields: [{
                                     hostname: {
                                         label: 'Hostname'
                                     },
-                                    description: {
-                                        label: 'label.description'
-                                    },
-                                    ssl: {
-                                        label: 'SSL'
+                                    port: {
+                                        label: 'Port'
                                     }
                                 }],
                                 dataProvider: function(args) {
+                                    var items = [];
+                                    console.log(args);
                                     $.ajax({
-                                        url: createURL("ldapConfig&listAll=true"),
+                                        url: createURL("listLdapConfigurations&hostname=" + args.context.ldapConfiguration[0].hostname),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var item = json.ldapconfigresponse.ldapconfig;
+                                            var item = json.ldapconfigurationresponse.LdapConfiguration;
                                             args.response.success({
-                                                data: item
+                                                data: item[0]
                                             });
                                         }
                                     });
                                 }
-
                             }
-
                         }
                     },
-
                     actions: {
                         add: {
-
                             label: 'Configure LDAP',
-
                             messages: {
                                 confirm: function(args) {
                                     return 'Do you really want to configure LDAP ? ';
                                 },
                                 notification: function(args) {
-                                    return 'LDAP configured';
+                                    console.log(args);
+                                    return 'Successfully added a new LDAP server';
                                 }
                             },
-
                             createForm: {
-
                                 title: 'Configure LDAP',
                                 fields: {
-                                    name: {
-                                        label: 'Bind DN',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    password: {
-                                        label: 'Bind Password',
-                                        validation: {
-                                            required: true
-                                        },
-                                        isPassword: true
-                                    },
                                     hostname: {
                                         label: 'Hostname',
                                         validation: {
                                             required: true
                                         }
                                     },
-                                    queryfilter: {
-                                        label: 'Query Filter',
-                                        validation: {
-                                            required: true
-                                        },
-                                        docID: 'helpLdapQueryFilter'
-                                    },
-                                    searchbase: {
-                                        label: 'SearchBase',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    ssl: {
-                                        label: 'SSL',
-                                        isBoolean: true,
-                                        isChecked: false
-
-                                    },
                                     port: {
                                         label: 'Port',
-                                        defaultValue: '389'
-                                    },
-                                    truststore: {
-                                        label: 'Trust Store',
-                                        isHidden: true,
-                                        dependsOn: 'ssl',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    truststorepassword: {
-                                        label: 'Trust Store Password',
-                                        isHidden: true,
-                                        dependsOn: 'ssl',
                                         validation: {
                                             required: true
                                         }
                                     }
-
                                 }
-
-
                             },
-
-
                             action: function(args) {
                                 var array = [];
-                                array.push("&binddn=" + todb(args.data.name));
-                                array.push("&bindpass=" + todb(args.data.password));
                                 array.push("&hostname=" + todb(args.data.hostname));
-                                array.push("&searchbase=" + todb(args.data.searchbase));
-                                array.push("&queryfilter=" + todb(args.data.queryfilter));
-                                array.push("&port=" + todb(args.data.port));
-
-                                if (args.$form.find('.form-item[rel=ssl]').find('input[type=checkbox]').is(':Checked') == true) {
-
-                                    array.push("&ssl=true");
-                                    if (args.data.truststore != "")
-                                        array.push("&truststore=" + todb(args.data.truststore));
-
-                                    if (args.data.truststorepassword != "")
-                                        array.push("&truststorepass=" + todb(args.data.truststorepassword));
-
-                                } else
-                                    array.push("&ssl=false");
-
+                                array.push("&port=" + todb(args.data.port));;
                                 $.ajax({
-                                    url: createURL("ldapConfig" + array.join("")),
+                                    url: createURL("addLdapConfiguration" + array.join("")),
                                     dataType: "json",
-                                    type: "POST",                               
+                                    async: true,
                                     success: function(json) {
-                                        var items = json.ldapconfigresponse.ldapconfig;
+                                        var items = json.ldapconfigurationresponse.LdapAddConfiguration;
                                         args.response.success({
                                             data: items
                                         });
-
                                     },
-
                                     error: function(json) {
                                         args.response.error(parseXMLHttpResponse(json));
-
                                     }
-
-
                                 });
-
-
                             }
                         }
-
                     }
-
-
-
                 }
-
-
-
             },
             hypervisorCapabilities: {
                 type: 'select',

@@ -415,6 +415,19 @@ public enum Config {
     // object store
     S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
 
+    // Ldap
+    LdapBasedn("Advanced", ManagementServer.class, String.class, "ldap.basedn", null, "Sets the basedn for LDAP", null),
+    LdapBindPassword("Advanced", ManagementServer.class, String.class, "ldap.bind.password", null, "Sets the bind password for LDAP", null),
+    LdapBindPrincipal("Advanced", ManagementServer.class, String.class, "ldap.bind.principal", null, "Sets the bind principal for LDAP", null),
+    LdapEmailAttribute("Advanced", ManagementServer.class, String.class, "ldap.email.attribute", "mail", "Sets the email attribute used within LDAP", null),
+    LdapFirstnameAttribute("Advanced", ManagementServer.class, String.class, "ldap.firstname.attribute", "givenname", "Sets the firstname attribute used within LDAP", null),
+    LdapLastnameAttribute("Advanced", ManagementServer.class, String.class, "ldap.lastname.attribute", "sn", "Sets the lastname attribute used within LDAP", null),
+    LdapUsernameAttribute("Advanced", ManagementServer.class, String.class, "ldap.username.attribute", "uid", "Sets the username attribute used within LDAP", null),
+    LdapUserObject("Advanced", ManagementServer.class, String.class, "ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP", null),
+    LdapSearchGroupPrinciple("Advanced", ManagementServer.class, String.class, "ldap.search.group.principle", null, "Sets the principle of the group that users must be a member of", null),
+    LdapTrustStore("Advanced", ManagementServer.class, String.class, "ldap.truststore", null, "Sets the path to the truststore to use for SSL", null),
+    LdapTrustStorePassword("Advanced", ManagementServer.class, String.class, "ldap.truststore.password", null, "Sets the password for the truststore", null),
+
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
@@ -423,15 +436,15 @@ public enum Config {
 
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
 	           "routes", ConfigurationParameterScope.zone.toString()),
-	
+
     InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, String.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
     ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side." +
     		" If set to false, these commands become asynchronous. Default value is false.", null),
     ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." +
             " If set to false, these commands become asynchronous. Default value is false.", null),
-	
+
 	UCSSyncBladeInterval("Advanced", ManagementServer.class, Integer.class, "ucs.sync.blade.interval", "3600", "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", null);
-	
+
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;

@@ -387,7 +387,7 @@
   <bean id="MD5UserAuthenticator" class="com.cloud.server.auth.MD5UserAuthenticator">
     <property name="name" value="MD5"/>
   </bean>
-  <bean id="LDAPUserAuthenticator" class="com.cloud.server.auth.LDAPUserAuthenticator">
+  <bean id="LdapAuthenticator" class="org.apache.cloudstack.ldap.LdapAuthenticator">
     <property name="name" value="LDAP"/>
   </bean>
   <bean id="SHA256SaltedUserAuthenticator" class="com.cloud.server.auth.SHA256SaltedUserAuthenticator">
@@ -396,6 +396,11 @@
   <bean id="PlainTextUserAuthenticator" class="com.cloud.server.auth.PlainTextUserAuthenticator">
     <property name="name" value="PLAINTEXT"/>
   </bean>
+  <bean id="LdapManager" class="org.apache.cloudstack.ldap.LdapManagerImpl" />
+  <bean id="LdapUserManager" class="org.apache.cloudstack.ldap.LdapUserManager" />
+  <bean id="LdapContextFactory" class="org.apache.cloudstack.ldap.LdapContextFactory" />
+  <bean id="LdapConfigurationDao" class="org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl" />
+  <bean id="LdapConfiguration" class="org.apache.cloudstack.ldap.LdapConfiguration" />
 
   <!--
       Network Elements

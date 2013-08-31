@@ -28,8 +28,6 @@ import javax.naming.NamingException;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
@@ -314,33 +312,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#updateLDAP(org.apache.cloudstack.api.commands.LDAPConfigCmd)
-     */
-    @Override
-    public boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#removeLDAP(org.apache.cloudstack.api.commands.LDAPRemoveCmd)
-     */
-    @Override
-    public boolean removeLDAP(LDAPRemoveCmd cmd) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#listLDAPConfig(org.apache.cloudstack.api.commands.LDAPConfigCmd)
-     */
-    @Override
-    public LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

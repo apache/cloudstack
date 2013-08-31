@@ -5830,7 +5830,7 @@ label.error {
 .multi-wizard .buttons {
   width: 100%;
   position: absolute;
-  top: 519px;
+  bottom: 10px;
   left: 0px;
 }
 
@@ -12267,3 +12267,98 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   color: #0000FF !important;
 }
 
+.accounts-wizard table {
+    margin: 0;
+    width: 100%;
+    table-layout: fixed;
+}
+.accounts-wizard .ui-button {
+    display: inline-block !important;
+    float: none !important;
+}
+.accounts-wizard td:last-child {
+    border: none;
+}
+.accounts-wizard tbody tr:nth-child(even) {
+    background: #DFE1E3;
+}
+.accounts-wizard tbody tr:nth-child(odd) {
+    background: #F2F0F0;
+}
+.accounts-wizard .content {
+    display: inline-block;
+}
+.accounts-wizard .content:last-child {
+    margin-left: 14px;
+}
+.accounts-wizard .input-area {
+    width: 320px;
+    font-size: 13px;
+    color: #485867;
+    text-shadow: 0px 2px 1px #FFFFFF;
+}
+.ldap-account-choice {
+    border: none !important;
+    border-radius: 0 0 0 0 !important;
+}
+.manual-account-details .name {
+    margin-top: 2px;
+    width: 100px;
+    float: left;
+    padding-bottom:10px;
+}
+.manual-account-details {
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+}
+.manual-account-details label.error {
+    display: block;
+    font-size: 10px;
+}
+.manual-account-details .value {
+    float: left;
+}
+.manual-account-details .form-item:after {
+    content:".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+.manual-account-details .form-item {
+    padding: 5px;
+    width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+.manual-account-details select, .manual-account-details input {
+    width: 150px;
+}
+.manual-account-details input {
+    background: #F6F6F6;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -khtml-border-radius: 4px;
+    border-radius: 4px;
+    border-radius: 4px 4px 4px 4px;
+    border: 1px solid #AFAFAF;
+    -moz-box-shadow: inset 0px 1px #727272;
+    -webkit-box-shadow: inset 0px 1px #727272;
+    -o-box-shadow: inset 0px 1px #727272;
+    box-shadow: inset 0px 1px #727272;
+    -moz-box-shadow: inset 0px 1px 0px #727272;
+    -webkit-box-shadow: inset 0px 1px 0px #727272;
+    -o-box-shadow: inset 0px 1px 0px #727272;
+}
+.manual-account-details > *:nth-child(even) {
+    background: #DFE1E3;
+}
+.manual-account-details > *:nth-child(odd) {
+    background: #F2F0F0;
+}
+.manual-account-details .value {
+    display: inline-block;
+}
