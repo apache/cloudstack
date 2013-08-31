@@ -1144,7 +1144,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
 
             if (diskOffering.getTags() != null) {
-                if (!newDiskOffering.getTags().equals(diskOffering.getTags())) {
+                if (newDiskOffering.getTags() == null || !newDiskOffering.getTags().equals(diskOffering.getTags())) {
                     throw new InvalidParameterValueException(
                             "Tags on new and old disk offerings must match");
                 }
