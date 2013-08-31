@@ -289,6 +289,10 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (primaryPool.getType() == StoragePoolType.CLVM) {
                 vol = templateToPrimaryDownload(templatePath, primaryPool);
             } else {
+                if (templatePath.contains("/mnt")) {
+                    //upgrade issue, if the path contains path, need to extract the volume uuid from path
+                    templatePath = templatePath.substring(templatePath.lastIndexOf(File.separator) + 1);
+                }
                 BaseVol = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath);
                 vol = storagePoolMgr.createDiskFromTemplate(BaseVol, UUID.randomUUID().toString(), BaseVol.getPool());
             }
