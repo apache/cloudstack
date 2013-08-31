@@ -24,11 +24,13 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
+import junit.framework.Assert;
 import org.apache.commons.lang.SystemUtils;
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.Random;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -194,5 +196,18 @@ public class LibvirtComputingResourceTest {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Pair<Double, Double> stats = LibvirtComputingResource.getNicStats("lo");
         assertNotNull(stats);
+    }
+
+    @Test
+    public void testUUID() {
+        String uuid = "1";
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        uuid =lcr.getUuid(uuid);
+        Assert.assertTrue(!uuid.equals("1"));
+
+        String oldUuid = UUID.randomUUID().toString();
+        uuid = oldUuid;
+        uuid = lcr.getUuid(uuid);
+        Assert.assertTrue(uuid.equals(oldUuid));
     }
 }
