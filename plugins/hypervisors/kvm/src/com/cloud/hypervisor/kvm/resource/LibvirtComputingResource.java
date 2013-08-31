@@ -3357,10 +3357,28 @@ ServerResource {
         }
     }
 
+    protected  String getUuid(String uuid) {
+        if (uuid == null) {
+            uuid = UUID.randomUUID().toString();
+        } else {
+            try {
+                UUID uuid2 = UUID.fromString(uuid);
+                String uuid3 = uuid2.toString();
+                if (!uuid3.equals(uuid)) {
+                    uuid = UUID.randomUUID().toString();
+                }
+            } catch (IllegalArgumentException e) {
+                uuid = UUID.randomUUID().toString();
+            }
+        }
+        return uuid;
+    }
     protected LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
         LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
-        vm.setDomUUID(vmTO.getUuid());
+        String uuid = vmTO.getUuid();
+        uuid = getUuid(uuid);
+        vm.setDomUUID(uuid);
         vm.setDomDescription(vmTO.getOs());
 
         GuestDef guest = new GuestDef();
