@@ -109,10 +109,10 @@ public class VmwareStorageLayoutHelper {
 		String[] vmdkFullCloneModePair = getVmdkFilePairDatastorePath(ds, vmName, vmdkName, 
     		VmwareStorageLayoutType.VMWARE, false);
 
-		if(!ds.fileExists(vmdkLinkedCloneModeLegacyPair[0])) {
+		if(!ds.fileExists(vmdkLinkedCloneModeLegacyPair[0]) && !ds.fileExists(vmdkLinkedCloneModePair[0])) {
 			// To protect against inconsistency caused by non-atomic datastore file management, detached disk may
 			// be left over in its previous owner VM. We will do a fixup synchronization here by moving it to root
-			// again
+			// again.
 			//
 			syncVolumeToRootFolder(dcMo, ds, vmdkName);
 		}
