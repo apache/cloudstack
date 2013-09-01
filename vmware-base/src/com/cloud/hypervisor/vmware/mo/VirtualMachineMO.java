@@ -988,7 +988,7 @@ public class VirtualMachineMO extends BaseMO {
 			s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
 				+ new Gson().toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
 
-		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, getScsiDeviceControllerKey(),
+		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(),
 			vmdkDatastorePathChain, morDs, -1, 1);
 	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
 	    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
@@ -1573,7 +1573,7 @@ public class VirtualMachineMO extends BaseMO {
     		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
     		VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-    	    VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, -1, disks, morDs, -1, 1);
+    	    VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, null, -1, disks, morDs, -1, 1);
 
     	    deviceConfigSpec.setDevice(device);
     	    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
@@ -1834,6 +1834,22 @@ public class VirtualMachineMO extends BaseMO {
 						if(deviceNumbering.equals(deviceBusName))
 							return diskBackingInfo.getFileName();
 					}
+				}
+			}
+		}
+
+		return null;
+	}
+	
+	public VirtualDisk getDiskDeviceByDeviceBusName(String deviceBusName) throws Exception {
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+		
+		if(devices != null && devices.size() > 0) {
+			for(VirtualDevice device : devices) {
+				if(device instanceof VirtualDisk) {
+					String deviceNumbering = getDeviceBusName(devices, device);
+					if(deviceNumbering.equals(deviceBusName))
+						return (VirtualDisk)device;
 				}
 			}
 		}
