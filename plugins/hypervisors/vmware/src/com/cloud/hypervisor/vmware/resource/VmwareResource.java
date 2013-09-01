@@ -2807,7 +2807,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (vol.getType() == Volume.Type.ISO)
                 	continue;
                 
-                controllerKey = getDiskController(vol, vmSpec, ideControllerKey, scsiControllerKey);
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol);
+                controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
 
                 VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
                 PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
@@ -2816,19 +2817,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 VirtualDevice device;
                 
                 String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, 
-                    	vol, diskInfoBuilder,
-                    	dataStoresDetails,
-                    	(controllerKey == ideControllerKey) ? true : false, 
-                    	0, 	// currently only support bus 0
-                    	(controllerKey == ideControllerKey) ? ideUnitNumber : scsiUnitNumber);
+                    	vol, matchingExistingDisk,
+                    	dataStoresDetails);
                 
-                device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, 
+                device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, 
                 	diskChain, 
                 	volumeDsDetails.first(),
                     (controllerKey == ideControllerKey) ? ideUnitNumber++ : scsiUnitNumber++, i + 1);
                 
                 deviceConfigSpecArray[i].setDevice(device);
-                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            	deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
                 if(s_logger.isDebugEnabled())
                     s_logger.debug("Prepare volume at new device " + _gson.toJson(device));
@@ -2951,18 +2949,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     
     // return the finalized disk chain for startup, from top to bottom
     private String[] syncDiskChain(DatacenterMO dcMo, VirtualMachineMO vmMo, VirtualMachineTO vmSpec, 
-    	DiskTO vol, VirtualMachineDiskInfoBuilder diskInfoBuilder,
-    	HashMap<String ,Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails,
-    	boolean ideController, int deviceBusNumber, int deviceUnitNumber) throws Exception {
+    	DiskTO vol, VirtualMachineDiskInfo diskInfo,
+    	HashMap<String ,Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails
+    	) throws Exception {
     	
         VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
-        
-        String deviceBusName;
-        if(ideController)
-        	deviceBusName = String.format("ide%d:%d", deviceBusNumber, deviceUnitNumber);
-        else
-        	deviceBusName = String.format("scsi%d:%d", deviceBusNumber, deviceUnitNumber);
         
         Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
         if(volumeDsDetails == null)
@@ -2970,36 +2962,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         DatastoreMO dsMo = volumeDsDetails.second();
 
         // we will honor vCenter's meta if it exists
-        if(diskInfoBuilder != null && diskInfoBuilder.getDiskCount() > 0) {
-        	// we will always on-disk info from vCenter in this case
-        	VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(deviceBusName);
-        	if(diskInfo != null) {
-        		if(s_logger.isInfoEnabled())
-        			s_logger.info("Volume " + volumeTO.getId() + " does not seem to exist on datastore. use on-disk chain: " + 
-        				_gson.toJson(diskInfo));
-        		
-        		return diskInfo.getDiskChain();
-        	} else {
-        		s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore. on-disk may be out of sync as well. disk device info: " + deviceBusName);
-        	}
-        }
+    	if(diskInfo != null) {
+    		// to deal with run-time upgrade to maintain the new datastore folder structure
+    		String disks[] = diskInfo.getDiskChain();
+    		for(int i = 0; i < disks.length; i++) {
+    			DatastoreFile file = new DatastoreFile(disks[i]);
+    			if(file.getDir() != null && file.getDir().isEmpty()) {
+    				s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
+    				disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(
+    		            dcMo, vmMo.getName(), dsMo, file.getFileBaseName());
+    			}
+    		}
+    		return disks;
+    	} 
         
         String datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(
             	dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
         if(!dsMo.fileExists(datastoreDiskPath)) {
-    		if(s_logger.isInfoEnabled())
-    			s_logger.info("Volume " + volumeTO.getId() + " does not seem to exist on datastore, out of sync? path: " + datastoreDiskPath);
-    		
-            // last resort, try chain info stored in DB
-            if(volumeTO.getChainInfo() != null) {
-            	VirtualMachineDiskInfo diskInfo = _gson.fromJson(volumeTO.getChainInfo(), VirtualMachineDiskInfo.class);
-            	if(diskInfo != null) {
-            		s_logger.info("Use chain info from DB: " + volumeTO.getChainInfo());
-            		return diskInfo.getDiskChain();
-            	}
-            	
-            	throw new Exception("Volume " + volumeTO.getId() + " does not seem to exist on datastore. Broken disk chain");
-            	}
+    		s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore, out of sync? path: " + datastoreDiskPath);
     	}
         
     	return new String[] { datastoreDiskPath }; 
@@ -3209,21 +3189,80 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
     
-    private static int getDiskController(DiskTO vol, VirtualMachineTO vmSpec, int ideControllerKey, int scsiControllerKey) {
+    private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol) {
+    	if(diskInfoBuilder != null) {
+    		VolumeObjectTO volume = (VolumeObjectTO)vol.getData();
+
+    		VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volume.getPath());
+    		if(diskInfo != null) {
+    			s_logger.info("Found existing disk info from volume path: " + volume.getPath());
+    			return diskInfo;
+    		} else {
+    			String chainInfo = volume.getChainInfo();
+    			if(chainInfo != null) {
+    				VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+    				if(infoInChain != null) {
+    					String[] disks = infoInChain.getDiskChain();
+    					if(disks.length > 0) {
+    						for(String diskPath : disks) {
+    							DatastoreFile file = new DatastoreFile(diskPath);
+    							diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName());
+    							if(diskInfo != null) {
+    								s_logger.info("Found existing disk from chain info: " + diskPath);
+    								return diskInfo;
+    							}
+    						}
+    					}
+    					
+    					if(diskInfo == null) {
+    						diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(infoInChain.getDiskDeviceBusName());
+    						if(diskInfo != null) {
+    							s_logger.info("Found existing disk from from chain device bus information: " + infoInChain.getDiskDeviceBusName());
+    							return diskInfo;
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
+    	
+    	return null;
+    }
+    
+    private int getDiskController(VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, 
+    	VirtualMachineTO vmSpec, int ideControllerKey, int scsiControllerKey) {
+    	
     	int controllerKey;
+    	if(matchingExistingDisk != null) {
+    		s_logger.info("Chose disk controller based on existing information: " + matchingExistingDisk.getDiskDeviceBusName());
+    		if(matchingExistingDisk.getDiskDeviceBusName().startsWith("ide"))
+    			return ideControllerKey;
+    		else
+    			return scsiControllerKey;
+    	}
     	
         if(vol.getType() == Volume.Type.ROOT) {
-            if(vmSpec.getDetails() != null && vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER) != null)
+        	Map<String, String> vmDetails = vmSpec.getDetails();
+            if(vmDetails != null && vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER) != null)
             {
-                if(vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER).equalsIgnoreCase("scsi"))
+                if(vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER).equalsIgnoreCase("scsi")) {
+                	s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi, based on root disk controller settings: " 
+                			+ vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER));
                     controllerKey = scsiControllerKey;
-                else
+                }
+                else {
+                	s_logger.info("Chose disk controller for vol " + vol.getType() + " -> ide, based on root disk controller settings: " 
+                			+ vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER));
                     controllerKey = ideControllerKey;
+                }
             } else {
+            	s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi. due to null root disk controller setting");
                 controllerKey = scsiControllerKey;
             }
+            
         } else {
             // DATA volume always use SCSI device
+        	s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi");
             controllerKey = scsiControllerKey;
         }
     	
@@ -3234,9 +3273,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	int ideControllerKey, int scsiControllerKey) throws Exception {
 
     	VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-    	int controllerKey;
-        int ideUnitNumber = 1;				// we always count in IDE device first
-        int scsiUnitNumber = 0;
     	
     	for(DiskTO vol: sortedDisks) {
             if (vol.getType() == Volume.Type.ISO)
@@ -3244,15 +3280,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             
     		VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
 
-            controllerKey = getDiskController(vol, vmSpec, ideControllerKey, scsiControllerKey);
-            
-            String deviceBusName;
-            if(controllerKey == ideControllerKey)
-            	deviceBusName = String.format("ide%d:%d", 0, ideUnitNumber++);
-            else
-            	deviceBusName = String.format("scsi%d:%d", 0, scsiUnitNumber++);
-            
-    		VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(deviceBusName);
+            VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(diskInfoBuilder, vol);
     		assert(diskInfo != null);
     		
     		String[] diskChain = diskInfo.getDiskChain();

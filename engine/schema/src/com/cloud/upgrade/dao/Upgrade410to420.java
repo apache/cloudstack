@@ -727,7 +727,7 @@ public class Upgrade410to420 implements DbUpgrade {
                         pstmt.close();
                     } else {
                         if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
-                            throw new CloudRuntimeException("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
+                            // throw new CloudRuntimeException("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
                         } else {
                             s_logger.warn("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() + " hypervisor is not used, so not failing upgrade");
                             // Update the latest template URLs for corresponding hypervisor
