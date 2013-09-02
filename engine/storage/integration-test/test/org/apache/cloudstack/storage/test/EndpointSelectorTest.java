@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.test;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.cluster.LockMasterListener;
+import com.cloud.server.LockMasterListener;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
