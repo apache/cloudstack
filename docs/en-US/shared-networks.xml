@@ -38,14 +38,14 @@
         designated by the administrator</para>
     </listitem>
     <listitem>
-      <para>Shared Networks are isolated by security groups</para>
+      <para>Shared Networks can be isolated by security groups</para>
     </listitem>
     <listitem>
       <para>Public Network is a shared network that is not shown to the end users</para>
     </listitem>
     <listitem>
-      <para>Source NAT per zone is not supported in Shared Networks when the service provider is
-        virtual router. However, Source NAT per account is supported in this case.</para>
+      <para>Source NAT per zone is not supported when the service provider is virtual router.
+        However, Source NAT per account is supported with virtual router in a Shared Network.</para>
     </listitem>
   </itemizedlist>
   <para>For information, see <xref linkend="creating-shared-network"/>.</para>
