@@ -47,11 +47,6 @@
   <profiles>
   <profile>
       <id>integration-test</id>
-      <activation>
-        <property>
-          <name>nonoss</name>
-        </property>
-      </activation>
       <modules>
         <module>storage/integration-test</module>
       </modules>
