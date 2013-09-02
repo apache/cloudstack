@@ -22,6 +22,22 @@
   <title>Added API Commands in 4.2</title>
   <itemizedlist>
     <listitem>
+      <para>addImageStore</para>
+      <para>Adds all types of secondary storage providers, S3/Swift/NFS.</para>
+    </listitem>
+    <listitem>
+      <para>createSecondaryStagingStore</para>
+      <para>Adds a staging secondary storage in each zone.</para>
+    </listitem>
+    <listitem>
+      <para>listImageStores</para>
+      <para>Lists all secondary storages, S3/Swift/NFS.</para>
+    </listitem>
+    <listitem>
+      <para>listSecondaryStagingStores</para>
+      <para>Lists all staging secondary storages.</para>
+    </listitem>
+    <listitem>
       <para>addIpToNic </para>
       <para>Adds an IP address to the NIC from the guest subnet. The request parameters are: nicid,
         ipaddress.</para>
@@ -286,8 +302,7 @@
     </listitem>
     <listitem>
       <para>scaleSystemVm </para>
-      <para>Scales the service offering for a systemVM, console proxy, or secondary storage. The
-        system VM must be in Stopped state for this command to take effect.</para>
+      <para>Scales the service offering for a systemVM, console proxy, or secondary storage.</para>
     </listitem>
     <listitem>
       <para>listDeploymentPlanners </para>
