@@ -447,7 +447,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (clz == GetVmStatsCommand.class) {
                 answer = execute((GetVmStatsCommand) cmd);
             } else if (clz == GetVmDiskStatsCommand.class) {
-                answer = execute((GetDiskVmStatsCommand) cmd);
+                answer = execute((GetVmDiskStatsCommand) cmd);
             } else if (clz == CheckHealthCommand.class) {
                 answer = execute((CheckHealthCommand) cmd);
             } else if (clz == StopCommand.class) {
