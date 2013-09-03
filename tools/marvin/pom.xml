@@ -57,8 +57,7 @@
               <arguments>
                 <argument>codegenerator.py</argument>
                 <argument>-s</argument>
-                <argument>${basedir}/../apidoc/target/commands.xml</argument>
-                <echo>Generating ${project.artifactId} API classes}</echo>
+                <argument>${basedir}/commands.xml</argument>
               </arguments>
             </configuration>
           </execution>
@@ -112,7 +111,6 @@
                     <argument>-e</argument>
                     <argument>${endpoint}</argument>
                     <argument>-y</argument>
-                    <echo>Generating ${project.artifactId} API classes}</echo>
                   </arguments>
                 </configuration>
               </execution>
@@ -143,6 +141,7 @@
                   <arguments>
                     <argument>install</argument>
                     <argument>--upgrade</argument>
+                    <!-- TODO: Fix Marvin versioning here -->
                     <argument>Marvin-0.1.0.tar.gz</argument>
                   </arguments>
                 </configuration>
