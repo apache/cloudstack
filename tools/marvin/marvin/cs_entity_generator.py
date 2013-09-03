@@ -16,7 +16,11 @@
 # under the License.
 
 import os
-import inflect
+try:
+    import inflect
+except ImportError:
+    raise Exception("inflect installation not found. use pip install inflect to continue")
+
 grammar = ['create', 'list', 'delete', 'update', 'ldap', 'login', 'logout',
            'enable', 'activate', 'disable', 'add', 'remove',
            'attach', 'detach', 'associate', 'generate', 'assign',
@@ -46,15 +50,15 @@ LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
 # under the License.
 """
 
-def get_api_cmds(path=None):
+def get_api_cmds():
     """ Returns the API cmdlet instances
-    @param path: path where the api modules are found. defaults to pythonpath
+
     @return: instances of all the API commands exposed by CloudStack
     """
-    if path:
-        api_classes = __import__('cloudstackAPI', fromlist=['*'], level=2)
-    else:
-        api_classes = __import__('marvin.cloudstackAPI')
+    namespace = {}
+    execfile('cloudstackAPI/__init__.py', namespace)
+    api_classes = __import__('cloudstackAPI', globals().update(namespace), fromlist=['*'], level=-1)
+
 
     cmdlist = map(
         lambda f: getattr(api_classes, f),
@@ -77,14 +81,12 @@ def get_api_cmds(path=None):
     cmdlets = map(lambda t: t(), clslist)
     return cmdlets
 
-
 def singularize(word, num=0):
     """Use the inflect engine to make singular nouns of the entities
     @return: singular of `word`
     """
     inflector = inflect.engine()
     return inflector.singular_noun(word)
-
 
 def transform_api(api):
     """Brute-force transform for entities that don't match other transform rules
@@ -109,7 +111,6 @@ def verb_adjust(api, entity):
         return api[:index]
     else:
         return api
-
 
 def entity_adjust(entity):
     """
@@ -143,13 +144,16 @@ def entity_adjust(entity):
         return 'VpnGateway'
     elif entity == 'Site2SiteCustomerGateway':
         return 'VpnCustomerGateway'
+    #Cloudstack returns Register entity for registerUserKeys
+    elif entity == 'Register':
+        return 'UserKeys'
     #Cloudstack maintains Template/ISO/Volume as single Image type
+    #elif entity in ['Template', 'Volume']:
+    #    return 'Image'
+    #extractImage returns an Extract response but is a property of Image
     elif entity == 'Extract':
-        return 'Image'
-    elif entity == 'Template':
-        return 'Image'
+        return 'Template'
     return entity
-
 
 def prepositon_transformer(preposition=None):
     """Returns a transformer for the entity if it has a doXPrepositionY style API
@@ -164,12 +168,10 @@ def prepositon_transformer(preposition=None):
         return api, None
     return transform_api_with_preposition
 
-
 def skip_list():
     """APIs that we will not auto-generate
     """
-    return []
-
+    return ['cleanVMReservationsCmd']
 
 def get_transformers():
     """ List of transform rules as lambdas
@@ -181,7 +183,6 @@ def get_transformers():
                     prepositon_transformer('With'),
                     transform_api]
     return transformers
-
 
 def get_verb_and_entity(cmd):
     """Break down the API cmd instance in to `verb` and `Entity`
@@ -211,27 +212,25 @@ def get_verb_and_entity(cmd):
                 entity = singularize(entity) if singularize(entity) else entity
             entity = entity_adjust(entity)
             verb = verb_adjust(api, entity)
-        print "%s => (verb, entity) = (%s, %s)" % (api, verb, entity)
+        #print "%s => (verb, entity) = (%s, %s)" % (api, verb, entity)
         return verb, entity
     else:
         print "No matching verb, entity breakdown for api %s" % api
 
-
-def get_actionable_entities(path=None):
+def get_actionable_entities():
     """
     Inspect all entities and return a map of the Entity against the actions
     along with the required arguments to satisfy the action
-    @param path: path where the api modules are found. defaults to pythonpath
+
     @return: Dictionary of Entity { "verb" : [required] }
     """
-    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), get_api_cmds(path)),
+    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), get_api_cmds()),
         key=lambda k: get_verb_and_entity(k)[1])
-
 
     entities = {}
     for cmd in cmdlets:
         requireds = getattr(cmd, 'required')
-        optionals = filter(lambda x: '__' not in x and 'required' not in x and 'isAsync' not in x, dir(cmd))
+        optionals = filter(lambda x: '__' not in x and x not in ['required', 'isAsync', 'entity'], dir(cmd))
         api = cmd.__class__.__name__
         if api in skip_list():
             continue
@@ -240,6 +239,7 @@ def get_actionable_entities(path=None):
             entities[entity] = {}
         entities[entity][verb] = {}
         entities[entity][verb]['args'] = requireds
+        entities[entity][verb]['optionals'] = optionals
         entities[entity][verb]['apimodule'] = cmd.__class__.__module__.split('.')[-1]
         entities[entity][verb]['apicmd'] = api
     print "Transformed %s APIs to %s entities successfully" % (len(cmdlets), len(entities)) \
@@ -251,6 +251,7 @@ def get_actionable_entities(path=None):
 def write_entity_classes(entities, module=None):
     """
     Writes the collected entity classes into `path`
+
     @param entities: dictionary of entities and the verbs acting on them
     @param module: top level module to the generated classes
     @return:
@@ -260,7 +261,7 @@ def write_entity_classes(entities, module=None):
     for entity, actions in entities.iteritems():
         body = []
         imports = []
-        imports.append('from %s.CloudStackEntity import CloudStackEntity' % module)
+        imports.append('from CloudStackEntity import CloudStackEntity')
         body.append('class %s(CloudStackEntity):' % entity)
         #TODO: Add docs for entity
         body.append('\n\n')
@@ -269,7 +270,8 @@ def write_entity_classes(entities, module=None):
         body.append('\n')
         for action, details in actions.iteritems():
             imports.append('from marvin.cloudstackAPI import %s' % details['apimodule'])
-            if action.startswith('create') or action.startswith('list') or action.startswith('deploy'):
+            if action.startswith('create') or action.startswith('list') or action.startswith(
+                'register') or action.startswith('deploy'):
                 body.append(tabspace + '@classmethod')
             if action not in ['create', 'deploy']:
                 no_id_args = filter(lambda arg: arg!= 'id', details['args'])
@@ -278,6 +280,10 @@ def write_entity_classes(entities, module=None):
                         action, ', '.join(list(set(no_id_args)))))
                 else:
                     body.append(tabspace + 'def %s(self, apiclient, **kwargs):' % (action))
+                # doc to explain what possible args go into **kwargs
+                body.append(tabspace * 2 + '"""Placeholder for docstring')
+                body.append(tabspace * 2 + 'optional arguments (**kwargs): [%s]"""' % ', '.join(details['optionals']))
+
                 body.append(tabspace * 2 + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                "command": details["apicmd"]})
                 if 'id' in details['args']:
@@ -286,7 +292,7 @@ def write_entity_classes(entities, module=None):
                     body.append(tabspace * 2 + 'cmd.%s = %s' % (arg, arg))
                 body.append(tabspace * 2 + '[setattr(cmd, key, value) for key,value in kwargs.iteritems()]')
                 body.append(tabspace * 2 + '%s = apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
-                if action in ['list']:
+                if action.startswith('list'):
                     body.append(
                         tabspace * 2 + 'return map(lambda e: %s(e.__dict__), %s) if %s and len(%s) > 0 else None' % (
                             entity, entity.lower(), entity.lower(), entity.lower()))
@@ -299,6 +305,10 @@ def write_entity_classes(entities, module=None):
                 else:
                     body.append(tabspace + 'def %s(cls, apiclient, factory=None, **kwargs):' % action)
                     #TODO: Add docs for actions
+                # doc to explain what possible args go into **kwargs
+                body.append(tabspace * 2 + '"""Placeholder for docstring')
+                body.append(tabspace * 2 + 'optional arguments (**kwargs): [%s]"""' % ', '.join(details['optionals']))
+
                 body.append(tabspace * 2 + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                "command": details["apicmd"]})
                 body.append(tabspace * 2 + 'if factory:')
@@ -319,17 +329,15 @@ def write_entity_classes(entities, module=None):
         code = imports + '\n\n' + body
 
         entitydict[entity] = code
-        write_entity_factory(entity, actions, 'factory2')
-        if module.find('.') > 0:
-            module_path = '/'.join(module.split('.'))[1:]
-        else:
-            module_path = '/' + module
-        if not os.path.exists(".%s" % module_path):
-            os.mkdir(".%s" % module_path)
-        with open(".%s/%s.py" % (module_path, entity), "w") as writer:
+        write_entity_factory(entity, actions, module='factory')
+        module_path = './' + '/'.join(module.split('.'))
+        if not os.path.exists("%s" % module_path):
+            os.makedirs("%s" % module_path)
+        with open("%s/__init__.py" % (module_path), "w") as writer:
+            writer.write(LICENSE)
+        with open("%s/%s.py" % (module_path, entity), "w") as writer:
             writer.write(LICENSE)
             writer.write(code)
-
 
 def write_entity_factory(entity, actions, module=None):
     """Data factories for each entity
@@ -338,41 +346,50 @@ def write_entity_factory(entity, actions, module=None):
     tabspace = '    '
     code = ''
     factory_defaults = []
-    if 'create' in actions:
-        factory_defaults.extend(actions['create']['args'])
-    elif 'deploy' in actions:
-        factory_defaults.extend(actions['deploy']['args'])
-    elif 'associate' in actions:
-        factory_defaults.extend(actions['associate']['args'])
-    elif 'register' in actions:
-        factory_defaults.extend(actions['register']['args'])
-    else:
-        return
+    keys = actions.keys()
+    for key in keys:
+        if key.startswith('create'):
+            factory_defaults.extend(actions[key]['args'])
+        elif key.startswith('deploy'):
+            factory_defaults.extend(actions[key]['args'])
+        elif key.startswith('associate'):
+            factory_defaults.extend(actions[key]['args'])
+        elif key.startswith('register'):
+            factory_defaults.extend(actions[key]['args'])
+        else:
+            continue
+            #print '%s is not suitable for factory creation for entity %s' %(key, entity)
 
-    if not os.path.exists("./factory2"):
-            os.mkdir("./factory2")
+    factory_defaults = set(factory_defaults)
+    module_path = './' + '/'.join(module.split('.'))
+    if not os.path.exists(module_path):
+        os.makedirs(module_path)
 
-    if os.path.exists("./factory2/%sFactory.py" % entity):
+    if os.path.exists("%s/%sFactory.py" % (module_path, entity)):
         for arg in factory_defaults:
             code += tabspace + '%s = None\n' % arg
-        with open("./factory2/%sFactory.py" % entity, "r") as reader:
+        with open("%s/%sFactory.py" % (module_path, entity), "r") as reader:
             rcode = reader.read()
             if rcode.find(code) > 0:
                 return
-        with open("./factory2/%sFactory.py" % entity, "a") as writer:
+        with open("%s/%sFactory.py" % (module_path, entity), "a") as writer:
             writer.write(code)
     else:
         code += 'import factory\n'
         code += 'from marvin.base import %s\n' % entity
-        code += 'class %sFactory(factory.Factory):' % entity
+        code += 'from CloudStackBaseFactory import CloudStackBaseFactory'
+        code += '\n'
+        code += 'class %sFactory(CloudStackBaseFactory):' % entity
         code += '\n\n'
         code += tabspace + 'FACTORY_FOR = %s.%s\n\n' % (entity, entity)
         for arg in factory_defaults:
             code += tabspace + '%s = None\n' % arg
-        with open("./factory2/%sFactory.py" % entity, "w") as writer:
+        with open("%s/__init__.py" % (module_path), "w") as writer:
+            writer.write(LICENSE)
+        with open("%s/%sFactory.py" % (module_path, entity), "w") as writer:
             writer.write(LICENSE)
             writer.write(code)
 
 if __name__ == '__main__':
     entities = get_actionable_entities()
-    write_entity_classes(entities, 'base2')
+    write_entity_classes(entities, 'base')
