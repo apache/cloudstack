@@ -36,13 +36,16 @@
           <para>IP need not be associated with a network </para>
         </listitem>
         <listitem>
-          <para>Network association is transferable across networks </para>
+          <para>IP association is transferable across networks </para>
         </listitem>
         <listitem>
           <para>IP is transferable across both Basic and Advanced zones </para>
         </listitem>
         <listitem>
           <para>IP is transferable across VPC, non-VPC isolated and shared networks </para>
+        </listitem>
+        <listitem>
+          <para>Portable IP transfer is available only for static NAT. </para>
         </listitem>
       </itemizedlist></para>
     <formalpara>
