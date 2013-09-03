@@ -488,6 +488,23 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
+    // update template_zone_ref for cross-zone template for newly added zone
+    @Override
+    public void associateCrosszoneTemplatesToZone(long dcId){
+        VMTemplateZoneVO tmpltZone;
+
+        List<VMTemplateVO> allTemplates = _templateDao.listAll();
+        for (VMTemplateVO vt: allTemplates){
+            if (vt.isCrossZones()) {
+                tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
+                if (tmpltZone == null) {
+                    VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
+                    _vmTemplateZoneDao.persist(vmTemplateZone);
+                }
+            }
+        }
+    }
+    
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO());
         EndPoint ep = _epSelector.select(ssStore);

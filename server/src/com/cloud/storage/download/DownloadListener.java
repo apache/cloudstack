@@ -289,6 +289,8 @@ public class DownloadListener implements Listener {
 	            return;
 	        }
 	        _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
+	        // update template_zone_ref for cross-zone templates
+	        _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
 	    }
 	    /* This can be removed
 	    else if ( cmd instanceof StartupStorageCommand) {
