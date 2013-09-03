@@ -85,6 +85,8 @@ public class AlertGenerator {
         } else {
             eventDescription.put("podId", null);
         }
+        eventDescription.put("subject", subject);
+        eventDescription.put("body", body);
 
         String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
