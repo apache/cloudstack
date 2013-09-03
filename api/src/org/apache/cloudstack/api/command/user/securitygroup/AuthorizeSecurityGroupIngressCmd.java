@@ -208,13 +208,6 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        if(cidrList != null){
-            for(String cidr : cidrList ){
-                if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR,  cidr + " is an Invalid CIDR ");
-                }
-            }
-        }
         List<? extends SecurityRule> ingressRules = _securityGroupService.authorizeSecurityGroupIngress(this);
         if (ingressRules != null && !ingressRules.isEmpty()) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(ingressRules);

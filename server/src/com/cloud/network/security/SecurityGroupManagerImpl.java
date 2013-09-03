@@ -624,6 +624,14 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             protocol = NetUtils.ALL_PROTO;
         }
 
+        if(cidrList != null){
+            for(String cidr : cidrList ){
+                if (!NetUtils.isValidCIDR(cidr)){
+                    throw new InvalidParameterValueException("Invalid cidr " + cidr);
+                }
+            }
+        }
+
         if (!NetUtils.isValidSecurityGroupProto(protocol)) {
             throw new InvalidParameterValueException("Invalid protocol " + protocol);
         }
