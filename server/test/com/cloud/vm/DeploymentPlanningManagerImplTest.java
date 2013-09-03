@@ -54,6 +54,7 @@ import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
@@ -364,6 +365,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public VMReservationDao reservationDao() {
             return Mockito.mock(VMReservationDao.class);
+        }
+
+        @Bean
+        public AffinityGroupService affinityGroupService() {
+            return Mockito.mock(AffinityGroupService.class);
         }
 
         public static class Library implements TypeFilter {

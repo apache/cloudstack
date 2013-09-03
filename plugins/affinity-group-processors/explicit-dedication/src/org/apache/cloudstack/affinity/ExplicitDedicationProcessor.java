@@ -44,6 +44,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -406,6 +407,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
         return true;
     }
 
+    @DB
     @Override
     public void handleDeleteGroup(AffinityGroup group) {
         // When a group of the 'ExplicitDedication' type gets deleted, make sure

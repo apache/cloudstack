@@ -19,6 +19,15 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.region.PortableIpDaoImpl;
+import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -357,6 +366,16 @@ public class ChildTestConfiguration {
     @Bean
     public DataStoreManager dataStoreManager() {
         return Mockito.mock(DataStoreManager.class);
+    }
+
+    @Bean
+    public AffinityGroupDao affinityGroupDao() {
+        return Mockito.mock(AffinityGroupDao.class);
+    }
+
+    @Bean
+    public AffinityGroupService affinityGroupService() {
+        return Mockito.mock(AffinityGroupService.class);
     }
 
     public static class Library implements TypeFilter {
