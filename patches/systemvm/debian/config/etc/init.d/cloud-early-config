@@ -847,7 +847,7 @@ setup_redundant_router() {
     crontab -l|grep "check_heartbeat.sh"
     if [ $? -ne 0 ]
     then
-        (crontab -l; echo "*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
+        (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
     fi
 }
 
