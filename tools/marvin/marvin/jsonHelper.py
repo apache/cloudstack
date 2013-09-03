@@ -125,6 +125,8 @@ def finalizeResultObj(result, responseName, responsecls):
 
         mirrorObj = False
         for k, v in value.__dict__.iteritems():
+            if k.startswith('job'):
+                continue
             if k in responsecls.__dict__:
                 mirrorObj = True
             else:
