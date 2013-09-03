@@ -20,7 +20,7 @@ import json
 import os
 import sys
 import urllib2
-from optparse import OptionParser
+from argparse import ArgumentParser
 from textwrap import dedent
 from os import path
 from cs_entity_generator import write_entity_classes, get_actionable_entities
@@ -137,7 +137,7 @@ class codeGenerator(object):
         for req in self.cmd.request:
             if req.desc is not None:
                 self.code += self.space + self.space + '"""%s"""\n' % req.desc
-            if req.required == "true":
+            if req.required:
                 self.code += self.space + self.space + '"""Required"""\n'
 
             value = "None"
@@ -146,13 +146,14 @@ class codeGenerator(object):
 
             self.code += self.space + self.space
             self.code += 'self.%s = %s\n' % (req.name, value)
-            if req.required == "true":
+            if req.required:
                 self.required.append(req.name)
 
         self.code += self.space + self.space + "self.required = ["
         for require in self.required:
             self.code += '"' + require + '",'
         self.code += "]\n"
+        #print cmd.name, self.required
         self.required = []
 
         """generate response code"""
@@ -189,7 +190,7 @@ class codeGenerator(object):
         @param code: Generated code
         @return: None
         """
-        final_path = path.join(out, 'cloudstackAPI', modulename)
+        final_path = path.join(out, modulename)
         module = final_path + '.py' #eg: out/cloudstackAPI/modulename.py
         with open(module, "w") as fp:
             fp.write(code)
@@ -428,32 +429,32 @@ class codeGenerator(object):
         @return: The classes in cloudstackAPI/ formed from api discovery json
         """
         if endpointUrl.find('response=json') >= 0:
-                apiStream = urllib2.urlopen(endpointUrl)
-                cmds = self.loadCmdFromJSON(apiStream)
-                for cmd in cmds:
-                    code = self.generateApiCmd(cmd)
-                    self.write(out=self.outputFolder, modulename=cmd.name, code=code)
-                self.finalize()
+            apiStream = urllib2.urlopen(endpointUrl)
+            cmds = self.loadCmdFromJSON(apiStream)
+            for cmd in cmds:
+                code = self.generateApiCmd(cmd)
+                self.write(out=self.outputFolder, modulename=cmd.name, code=code)
+            self.finalize()
 
 
 def getText(elements):
     return elements[0].childNodes[0].nodeValue.strip()
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-o", "--output", dest="output",
+    parser = ArgumentParser()
+    parser.add_argument("-o", "--output", dest="output",
                       help="The path to the generated code entities, default\
  is .")
-    parser.add_option("-s", "--specfile", dest="spec",
+    parser.add_argument("-s", "--specfile", dest="spec",
                       help="The path and name of the api spec xml file,\
  default is /etc/cloud/cli/commands.xml")
-    parser.add_option("-e", "--endpoint", dest="endpoint",
+    parser.add_argument("-e", "--endpoint", dest="endpoint",
                       help="The endpoint mgmt server (with open 8096) where\
  apis are discovered, default is localhost")
-    parser.add_option("-y", "--entity", dest="entity",
+    parser.add_argument("-y", "--entity", dest="entity", action="store_true",
                       help="Generate entity based classes")
 
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
 
     folder = "."
     if options.output is not None:
@@ -476,7 +477,7 @@ if __name__ == "__main__":
             print parser.print_help()
             exit(1)
 
-    cg = codeGenerator(folder)
+    cg = codeGenerator(apiModule)
     if options.spec is not None:
         cg.generateCodeFromXML(apiSpecFile)
     elif options.endpoint is not None:
@@ -485,5 +486,5 @@ response=json' % options.endpoint
         cg.generateCodeFromJSON(endpointUrl)
 
     if options.entity:
-        entities = get_actionable_entities(path=apiModule)
-        write_entity_classes(entities, "base2")
+        entities = get_actionable_entities()
+        write_entity_classes(entities, "base")
