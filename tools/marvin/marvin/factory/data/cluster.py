@@ -17,7 +17,7 @@
 
 import factory
 from marvin.utils import random_gen
-from marvin.factory.ClusterFactory import ClusterFactory
+from marvin.factory.cluster import ClusterFactory
 
 class XenClusterFactory(ClusterFactory):
     clustername = factory.Sequence(lambda n: "xencluster" + random_gen())

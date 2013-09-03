@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.factory.FirewallRuleFactory import FirewallRuleFactory
+from marvin.factory.firewallrule import FirewallRuleFactory
 
 class SshFirewallRuleFactory(FirewallRuleFactory):
     protocol = 'tcp'

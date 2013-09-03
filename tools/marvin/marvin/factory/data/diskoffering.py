@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.factory.DiskOfferingFactory import DiskOfferingFactory
+from marvin.factory.diskoffering import DiskOfferingFactory
 from marvin.utils import random_gen
 
 class SharedDiskOfferingFactory(DiskOfferingFactory):

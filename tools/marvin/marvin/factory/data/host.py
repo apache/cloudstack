@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.factory.HostFactory import HostFactory
+from marvin.factory.host import HostFactory
 
 class XenserverHostFactory(HostFactory):
 

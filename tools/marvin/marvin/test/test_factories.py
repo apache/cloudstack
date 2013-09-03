@@ -26,7 +26,7 @@ from marvin.factory.data.template import *
 from marvin.factory.data.user import *
 from marvin.factory.data.networkoffering import *
 
-from marvin.factory.VirtualMachineFactory import *
+from marvin.factory.virtualmachine import *
 
 from marvin.entity.serviceoffering import ServiceOffering
 from marvin.entity.zone import Zone

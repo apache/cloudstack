@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.factory.NetworkOfferingFactory import NetworkOfferingFactory
+from marvin.factory.networkoffering import NetworkOfferingFactory
 from marvin.utils import random_gen
 
 

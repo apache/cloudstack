@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.factory.UserFactory import UserFactory
+from marvin.factory.user import UserFactory
 from marvin.factory.data.account import UserAccountFactory
 from marvin.utils import random_gen
 

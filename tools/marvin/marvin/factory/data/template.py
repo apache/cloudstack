@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.factory.TemplateFactory import TemplateFactory
+from marvin.factory.template import TemplateFactory
 
 class DefaultBuiltInTemplateFactory(TemplateFactory):
     ostype = 'CentOS 5.3 (64-bit)'

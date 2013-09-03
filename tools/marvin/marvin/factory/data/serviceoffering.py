@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.factory.ServiceOfferingFactory import ServiceOfferingFactory
+from marvin.factory.serviceoffering import ServiceOfferingFactory
 from marvin.utils import random_gen
 
 class SmallServiceOfferingFactory(ServiceOfferingFactory):

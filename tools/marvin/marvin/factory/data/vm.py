@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.factory.VirtualMachineFactory import VirtualMachineFactory
+from marvin.factory.virtualmachine import VirtualMachineFactory
 from marvin.utils import random_gen
 
 

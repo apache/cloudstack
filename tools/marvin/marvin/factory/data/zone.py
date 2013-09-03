@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.factory.ZoneFactory import ZoneFactory
+from marvin.factory.zone import ZoneFactory
 from marvin.utils import random_gen
 
 class AdvancedZoneFactory(ZoneFactory):
