@@ -3454,7 +3454,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // support KVM only util 2013.06.25
         if (!userVm.getHypervisorType().equals(HypervisorType.KVM))
             return;
-    	// Collect vm disk statistics from host before stopping Vm
+    	s_logger.debug("Collect vm disk statistics from host before stopping Vm");
     	long hostId = userVm.getHostId();
     	List<String> vmNames = new ArrayList<String>();
     	vmNames.add(userVm.getInstanceName());
@@ -3476,8 +3476,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             try {
                 txn.start();
                 HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsByName = diskStatsAnswer.getVmDiskStatsMap();
+                if (vmDiskStatsByName == null)
+                    return;
                 List<VmDiskStatsEntry> vmDiskStats = vmDiskStatsByName.get(userVm.getInstanceName());
-
                 if (vmDiskStats == null)
 		    return;
 
@@ -4882,7 +4883,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
         UserVmVO vm = _vmDao.findById(profile.getId());
-        if (vm.getState() == State.Running)
+        if (vm != null && vm.getState() == State.Stopping)
             collectVmDiskStatistics(vm);
     }
     
