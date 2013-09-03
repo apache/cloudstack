@@ -33,13 +33,13 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
 
     DedicatedResourceVO findByHostId(Long hostId);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedHosts(Long hostId, Long domainId, Long accountId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedHosts(Long hostId, Long domainId, Long accountId, Long affinityGroupId);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedClusters(Long clusterId, Long domainId, Long accountId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedClusters(Long clusterId, Long domainId, Long accountId, Long affinityGroupId);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedPods(Long podId, Long domainId, Long accountId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedPods(Long podId, Long domainId, Long accountId, Long affinityGroupId);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId, Long affinityGroupId);
 
     List<DedicatedResourceVO> listByAccountId(Long accountId);
 
@@ -52,4 +52,7 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
     List<Long> listAllClusters();
 
     List<Long> listAllHosts();
+
+    List<DedicatedResourceVO> listByAffinityGroupId(Long affinityGroupId);
+
 }

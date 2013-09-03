@@ -57,4 +57,15 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
     public boolean canBeSharedDomainWide() {
         return false;
     }
+
+    @Override
+    public void handleDeleteGroup(AffinityGroup group) {
+        // TODO Auto-generated method stub
+        return;
+    }
+
+    @Override
+    public boolean subDomainAccess() {
+        return false;
+    }
 }

@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -66,6 +67,7 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -132,6 +134,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     protected AffinityGroupDao _affinityGroupDao;
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    @Inject
+    AffinityGroupService _affinityGroupService;
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -215,7 +219,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
 
-        checkForNonDedicatedResources(vmProfile, dc, avoids);
+        if (vm.getType() == VirtualMachine.Type.User) {
+            checkForNonDedicatedResources(vmProfile, dc, avoids);
+        }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: "
                     + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
@@ -445,19 +451,47 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     private void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         boolean isExplicit = false;
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        // check affinity group of type Explicit dedication exists
+
+        // check if zone is dedicated. if yes check if vm owner has acess to it.
+        DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
+        if (dedicatedZone != null) {
+            long accountDomainId = vmProfile.getOwner().getDomainId();
+            long accountId = vmProfile.getOwner().getAccountId();
+
+            // If a zone is dedicated to an account then all hosts in this zone
+            // will be explicitly dedicated to
+            // that account. So there won't be any shared hosts in the zone, the
+            // only way to deploy vms from that
+            // account will be to use explicit dedication affinity group.
+            if (dedicatedZone.getAccountId() != null) {
+                if (dedicatedZone.getAccountId().equals(accountId)) {
+                    return;
+                } else {
+                    throw new CloudRuntimeException("Failed to deploy VM, Zone " + dc.getName()
+                            + " not available for the user account " + vmProfile.getOwner());
+                }
+            }
+
+            // if zone is dedicated to a domain. Check owner's access to the
+            // domain level dedication group
+            if (!_affinityGroupService.isAffinityGroupAvailableInDomain(dedicatedZone.getAffinityGroupId(),
+                    accountDomainId)) {
+                throw new CloudRuntimeException("Failed to deploy VM, Zone " + dc.getName()
+                        + " not available for the user domain " + vmProfile.getOwner());
+            }
+
+        }
+
+        // check affinity group of type Explicit dedication exists. If No put
+        // dedicated pod/cluster/host in avoid list
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), "ExplicitDedication");
 
         if (vmGroupMappings != null && !vmGroupMappings.isEmpty()){
             isExplicit = true;
         }
 
-        if (!isExplicit && vm.getType() == VirtualMachine.Type.User) {
+        if (!isExplicit) {
             //add explicitly dedicated resources in avoidList
-            DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
-            if (dedicatedZone != null && dedicatedZone.getDomainId() != null) {
-                throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated . Please use Explicit Dedication Affinity Group");
-            }
 
             List<Long> allPodsInDc = _podDao.listAllPods(dc.getId());
             List<Long> allDedicatedPods = _dedicatedDao.listAllPods();

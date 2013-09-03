@@ -56,11 +56,15 @@ public class DedicatedResourceVO implements DedicatedResources{
     @Column(name = "account_id")
     private Long accountId;
 
+    @Column(name = "affinity_group_id")
+    private long affinityGroupId;
+
     public DedicatedResourceVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public DedicatedResourceVO(Long dataCenterId, Long podId, Long clusterId, Long hostId, Long domainId, Long accountId) {
+    public DedicatedResourceVO(Long dataCenterId, Long podId, Long clusterId, Long hostId, Long domainId,
+            Long accountId, long affinityGroupId) {
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.clusterId = clusterId;
@@ -68,6 +72,7 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.domainId = domainId;
         this.accountId = accountId;
         this.uuid = UUID.randomUUID().toString();
+        this.affinityGroupId = affinityGroupId;
     }
 
     public long getId() {
@@ -132,5 +137,9 @@ public class DedicatedResourceVO implements DedicatedResources{
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public long getAffinityGroupId() {
+        return affinityGroupId;
     }
 }

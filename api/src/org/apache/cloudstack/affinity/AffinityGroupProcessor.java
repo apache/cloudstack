@@ -72,9 +72,20 @@ public interface AffinityGroupProcessor extends Adapter {
      * canBeSharedDomainWide() should return true if the affinity/anti-affinity
      * group can be created for a domain and shared by all accounts under the
      * domain.
-     * 
+     *
      * @return boolean true/false
      */
     boolean canBeSharedDomainWide();
+
+    /**
+     * subDomainAccess() should return true if the affinity/anti-affinity group
+     * can be created for a domain and used by the sub-domains. If true, all
+     * accounts under the sub-domains can see this group and use it.
+     * 
+     * @return boolean true/false
+     */
+    boolean subDomainAccess();
+
+    void handleDeleteGroup(AffinityGroup group);
 
 }

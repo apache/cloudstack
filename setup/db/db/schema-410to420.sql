@@ -447,6 +447,7 @@ CREATE TABLE `cloud`.`dedicated_resources` (
   `host_id` bigint unsigned COMMENT 'host id',
   `domain_id` bigint unsigned COMMENT 'domain id of the domain to which resource is dedicated',
   `account_id` bigint unsigned COMMENT 'account id of the account to which resource is dedicated',
+  `affinity_group_id` bigint unsigned NOT NULL COMMENT 'affinity group id associated',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_dedicated_resources__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_dedicated_resources__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
@@ -454,8 +455,10 @@ CREATE TABLE `cloud`.`dedicated_resources` (
   CONSTRAINT `fk_dedicated_resources__host_id` FOREIGN KEY (`host_id`) REFERENCES `cloud`.`host`(`id`),
   CONSTRAINT `fk_dedicated_resources__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
   CONSTRAINT `fk_dedicated_resources__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_dedicated_resources__affinity_group_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE,
   INDEX `i_dedicated_resources_domain_id`(`domain_id`),
   INDEX `i_dedicated_resources_account_id`(`account_id`),
+  INDEX `i_dedicated_resources_affinity_group_id`(`affinity_group_id`),
   CONSTRAINT `uc_dedicated_resources__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -485,9 +488,6 @@ ALTER TABLE `cloud`.`alert` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL D
 ALTER TABLE `cloud`.`event` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.interval', '86400', 'The interval (in seconds) to wait before running the alert purge thread');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.delay', '0', 'Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts');
-
-INSERT INTO `cloud`.`dedicated_resources` (`data_center_id`, `domain_id`) SELECT `id`, `domain_id` FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL;
-UPDATE `cloud`.`data_center` SET `domain_id` = NULL WHERE `domain_id` IS NOT NULL;
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS

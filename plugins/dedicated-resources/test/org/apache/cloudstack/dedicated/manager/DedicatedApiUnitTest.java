@@ -28,6 +28,10 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -212,28 +216,28 @@ public class DedicatedApiUnitTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void dedicateZoneExistTest() {
-        DedicatedResourceVO dr = new DedicatedResourceVO(10L, null, null, null, domainId, accountId);
+        DedicatedResourceVO dr = new DedicatedResourceVO(10L, null, null, null, domainId, accountId, 12L);
         when(_dedicatedDao.findByZoneId(10L)).thenReturn(dr);
         _dedicatedService.dedicateZone(10L, domainId, accountName);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void dedicatePodExistTest() {
-        DedicatedResourceVO dr = new DedicatedResourceVO(null, 10L, null, null, domainId, accountId);
+        DedicatedResourceVO dr = new DedicatedResourceVO(null, 10L, null, null, domainId, accountId, 12L);
         when(_dedicatedDao.findByPodId(10L)).thenReturn(dr);
         _dedicatedService.dedicatePod(10L, domainId, accountName);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void dedicateClusterExistTest() {
-        DedicatedResourceVO dr = new DedicatedResourceVO(null, null, 10L, null, domainId, accountId);
+        DedicatedResourceVO dr = new DedicatedResourceVO(null, null, 10L, null, domainId, accountId, 12L);
         when(_dedicatedDao.findByClusterId(10L)).thenReturn(dr);
         _dedicatedService.dedicateCluster(10L, domainId, accountName);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void dedicateHostExistTest() {
-        DedicatedResourceVO dr = new DedicatedResourceVO(null, null, null, 10L, domainId, accountId);
+        DedicatedResourceVO dr = new DedicatedResourceVO(null, null, null, 10L, domainId, accountId, 12L);
         when(_dedicatedDao.findByHostId(10L)).thenReturn(dr);
         _dedicatedService.dedicateHost(10L, domainId, accountName);
     }
@@ -308,6 +312,16 @@ public class DedicatedApiUnitTest {
         @Bean
         public ConfigurationDao configDao() {
             return Mockito.mock(ConfigurationDao.class);
+        }
+
+        @Bean
+        public AffinityGroupService affinityGroupService() {
+            return Mockito.mock(AffinityGroupService.class);
+        }
+
+        @Bean
+        public AffinityGroupDao affinityGroupDao() {
+            return Mockito.mock(AffinityGroupDao.class);
         }
 
         public static class Library implements TypeFilter {

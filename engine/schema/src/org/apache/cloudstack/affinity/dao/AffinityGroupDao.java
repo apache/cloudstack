@@ -18,6 +18,7 @@ package org.apache.cloudstack.affinity.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -26,5 +27,12 @@ public interface AffinityGroupDao extends GenericDao<AffinityGroupVO, Long> {
     boolean isNameInUse(Long accountId, Long domainId, String name);
     AffinityGroupVO findByAccountAndName(Long accountId, String name);
     List<AffinityGroupVO> findByAccountAndNames(Long accountId, String... names);
-    int removeByAccountId(long accountId); 
+
+    int removeByAccountId(long accountId);
+
+    AffinityGroup findDomainLevelGroupByName(Long domainId, String affinityGroupName);
+
+    AffinityGroup findByAccountAndType(Long accountId, String string);
+
+    AffinityGroup findDomainLevelGroupByType(Long domainId, String string);
 }

@@ -69,6 +69,8 @@ public class AffinityGroupAccessChecker extends DomainChecker {
                 if (caller.getId() != group.getAccountId()) {
                       throw new PermissionDeniedException(caller
                       + " does not have permission to operate with resource " + entity);
+                }else{
+                    return true;
                 }
 
             }

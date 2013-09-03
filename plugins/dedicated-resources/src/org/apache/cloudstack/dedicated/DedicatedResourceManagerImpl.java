@@ -26,6 +26,10 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.component.AdapterBase;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.commands.DedicateClusterCmd;
 import org.apache.cloudstack.api.commands.DedicateHostCmd;
 import org.apache.cloudstack.api.commands.DedicatePodCmd;
@@ -94,6 +98,10 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
     @Inject AccountManager _accountMgr;
     @Inject UserVmDao _userVmDao;
     @Inject ConfigurationDao _configDao;
+    @Inject AffinityGroupDao _affinityGroupDao;
+
+    @Inject
+    AffinityGroupService _affinityGroupService;
 
     private int capacityReleaseInterval;
 
@@ -214,7 +222,15 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zoneId, null, null, null, null, null);
+        // find or create the affinity group by name under this account/domain
+        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
+        if (group == null) {
+            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+        }
+
+        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zoneId, null, null, null, null, null,
+                group.getId());
         try {
             dedicatedResource.setDomainId(domainId);
             if (accountId != null) {
@@ -331,7 +347,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, podId, null, null, null, null);
+        // find or create the affinity group by name under this account/domain
+        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
+        if (group == null) {
+            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+        }
+        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, podId, null, null, null, null,
+                group.getId());
         try {
             dedicatedResource.setDomainId(domainId);
             if (accountId != null) {
@@ -434,7 +457,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, clusterId, null, null, null);
+        // find or create the affinity group by name under this account/domain
+        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
+        if (group == null) {
+            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+        }
+        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, clusterId, null, null, null,
+                group.getId());
         try {
             dedicatedResource.setDomainId(domainId);
             if (accountId != null) {
@@ -522,7 +552,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, null, hostId, null, null);
+        // find or create the affinity group by name under this account/domain
+        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
+        if (group == null) {
+            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+        }
+        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, null, hostId, null, null,
+                group.getId());
         try {
             dedicatedResource.setDomainId(domainId);
             if (accountId != null) {
@@ -538,6 +575,45 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
         result.add(dedicatedResource);
         return result;
+    }
+
+    private AffinityGroup findOrCreateDedicatedAffinityGroup(Long domainId, Long accountId) {
+        if(domainId == null){
+            return null;
+        }
+
+        AffinityGroup group = null;
+        String accountName = null;
+        String affinityGroupName = null;
+
+        if (accountId != null) {
+            AccountVO account = _accountDao.findById(accountId);
+            accountName = account.getAccountName();
+
+            group = _affinityGroupDao.findByAccountAndType(accountId, "ExplicitDedication");
+            if (group != null) {
+                return group;
+            }
+            // default to a groupname with account/domain information
+            affinityGroupName = "DedicatedGrp-" + accountName;
+
+        } else {
+            // domain level group
+            group = _affinityGroupDao.findDomainLevelGroupByType(domainId, "ExplicitDedication");
+            if (group != null) {
+                return group;
+            }
+            // default to a groupname with account/domain information
+            String domainName = _domainDao.findById(domainId).getName();
+            affinityGroupName = "DedicatedGrp-domain-" + domainName;
+        }
+
+
+        group = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName,
+                    "ExplicitDedication", "dedicated resources group");
+        
+        return group;
+
     }
 
     private List<UserVmVO> getVmsOnHost(long hostId) {
@@ -622,10 +698,12 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         DataCenterVO dc = _zoneDao.findById(resource.getDataCenterId());
         DomainVO domain = _domainDao.findById(resource.getDomainId());
         AccountVO account = _accountDao.findById(resource.getAccountId());
+        AffinityGroup group = _affinityGroupDao.findById(resource.getAffinityGroupId());
         dedicateZoneResponse.setId(resource.getUuid());
         dedicateZoneResponse.setZoneId(dc.getUuid());
         dedicateZoneResponse.setZoneName(dc.getName());
         dedicateZoneResponse.setDomainId(domain.getUuid());
+        dedicateZoneResponse.setAffinityGroupId(group.getUuid());
         if (account != null) {
             dedicateZoneResponse.setAccountId(account.getUuid());
         }
@@ -639,10 +717,12 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         HostPodVO pod = _podDao.findById(resource.getPodId());
         DomainVO domain = _domainDao.findById(resource.getDomainId());
         AccountVO account = _accountDao.findById(resource.getAccountId());
+        AffinityGroup group = _affinityGroupDao.findById(resource.getAffinityGroupId());
         dedicatePodResponse.setId(resource.getUuid());
         dedicatePodResponse.setPodId(pod.getUuid());
         dedicatePodResponse.setPodName(pod.getName());
         dedicatePodResponse.setDomainId(domain.getUuid());
+        dedicatePodResponse.setAffinityGroupId(group.getUuid());
         if (account != null) {
             dedicatePodResponse.setAccountId(account.getUuid());
         }
@@ -656,10 +736,12 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         ClusterVO cluster = _clusterDao.findById(resource.getClusterId());
         DomainVO domain = _domainDao.findById(resource.getDomainId());
         AccountVO account = _accountDao.findById(resource.getAccountId());
+        AffinityGroup group = _affinityGroupDao.findById(resource.getAffinityGroupId());
         dedicateClusterResponse.setId(resource.getUuid());
         dedicateClusterResponse.setClusterId(cluster.getUuid());
         dedicateClusterResponse.setClusterName(cluster.getName());
         dedicateClusterResponse.setDomainId(domain.getUuid());
+        dedicateClusterResponse.setAffinityGroupId(group.getUuid());
         if (account != null) {
             dedicateClusterResponse.setAccountId(account.getUuid());
         }
@@ -673,10 +755,12 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         HostVO host = _hostDao.findById(resource.getHostId());
         DomainVO domain = _domainDao.findById(resource.getDomainId());
         AccountVO account = _accountDao.findById(resource.getAccountId());
+        AffinityGroup group = _affinityGroupDao.findById(resource.getAffinityGroupId());
         dedicateHostResponse.setId(resource.getUuid());
         dedicateHostResponse.setHostId(host.getUuid());
         dedicateHostResponse.setHostName(host.getName());
         dedicateHostResponse.setDomainId(domain.getUuid());
+        dedicateHostResponse.setAffinityGroupId(group.getUuid());
         if (account != null) {
             dedicateHostResponse.setAccountId(account.getUuid());
         }
@@ -708,6 +792,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
+        Long affinityGroupId = cmd.getAffinityGroupId();
+
         if (accountName != null) {
             if (domainId != null) {
                 Account account = _accountDao.findActiveAccount(accountName, domainId);
@@ -718,7 +804,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedZones(zoneId, domainId, accountId);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedZones(zoneId, domainId,
+                accountId, affinityGroupId);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -728,6 +815,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
+        Long affinityGroupId = cmd.getAffinityGroupId();
+
         if (accountName != null) {
             if (domainId != null) {
                 Account account = _accountDao.findActiveAccount(accountName, domainId);
@@ -738,7 +827,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedPods(podId, domainId, accountId);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedPods(podId, domainId, accountId,
+                affinityGroupId);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -748,6 +838,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
+        Long affinityGroupId = cmd.getAffinityGroupId();
+
         if (accountName != null) {
             if (domainId != null) {
                 Account account = _accountDao.findActiveAccount(accountName, domainId);
@@ -758,7 +850,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedClusters(clusterId, domainId, accountId);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedClusters(clusterId, domainId,
+                accountId, affinityGroupId);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -767,6 +860,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long hostId = cmd.getHostId();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
+        Long affinityGroupId = cmd.getAffinityGroupId();
+
         Long accountId = null;
         if (accountName != null) {
             if (domainId != null) {
@@ -779,7 +874,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             }
         }
 
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedHosts(hostId, domainId, accountId);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedHosts(hostId, domainId, accountId, affinityGroupId);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -811,6 +906,16 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new CloudRuntimeException("Failed to delete Resource " + resourceId);
             }
             txn.commit();
+
+            // find the group associated and check if there are any more
+            // resources under that group
+            List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource
+                    .getAffinityGroupId());
+            if (resourcesInGroup.isEmpty()) {
+                // delete the group
+                _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+            }
+
         }
         return true;
     }

@@ -75,8 +75,9 @@ public class Upgrade410to420 implements DbUpgrade {
         return new File[] { new File(script) };
     }
 
-    @Override
-    public void performDataMigration(Connection conn) {
+	@Override
+	public void performDataMigration(Connection conn) {
+        movePrivateZoneToDedicatedResource(conn);
         upgradeVmwareLabels(conn);
         persistLegacyZones(conn);
         persistVswitchConfiguration(conn);
@@ -258,6 +259,126 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.close();
                 }
             } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void movePrivateZoneToDedicatedResource(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        PreparedStatement pstmtUpdate = null;
+
+        try {
+            pstmt = conn.prepareStatement("SELECT `id`, `domain_id` FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL");
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                long zoneId = rs.getLong(1);
+                long domainId = rs.getLong(2);
+                long affinityGroupId;
+
+                // create or find an affinity group for this domain of type
+                // 'ExplicitDedication'
+
+                PreparedStatement pstmt2 = null;
+                ResultSet rs2 = null;
+                pstmt2 = conn
+                        .prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` INNER JOIN `cloud`.`affinity_group_domain_map` ON affinity_group.id=affinity_group_domain_map.affinity_group_id WHERE affinity_group.type = 'ExplicitDedication' AND affinity_group.acl_type = 'Domain'  AND  (affinity_group_domain_map.domain_id = ?)");
+                pstmt2.setLong(1, domainId);
+                rs2 = pstmt2.executeQuery();
+                if (rs2.next()) {
+                    // group exists, use it
+                    affinityGroupId = rs2.getLong(1);
+                    dedicateZone(conn, zoneId, domainId, affinityGroupId);
+                } else {
+                    // create new group
+                    rs2.close();
+                    pstmt2.close();
+
+                    pstmt2 = conn.prepareStatement("SELECT name FROM `cloud`.`domain` where id = ?");
+                    pstmt2.setLong(1, domainId);
+                    rs2 = pstmt2.executeQuery();
+                    String domainName = "";
+                    if (rs2.next()) {
+                        // group exists, use it
+                        domainName = rs2.getString(1);
+                    }
+                    rs2.close();
+                    pstmt2.close();
+                    // create new domain level group for this domain
+                    String type = "ExplicitDedication";
+                    String uuid = UUID.randomUUID().toString();
+                    String groupName = "DedicatedGrp-domain-" + domainName;
+                    s_logger.debug("Adding AffinityGroup of type " + type + " for domain id " + domainId);
+
+                    String sql = "INSERT INTO `cloud`.`affinity_group` (`name`, `type`, `uuid`, `description`, `domain_id`, `account_id`, `acl_type`) VALUES (?, ?, ?, ?, 1, 1, 'Domain')";
+                    pstmtUpdate = conn.prepareStatement(sql);
+                    pstmtUpdate.setString(1, groupName);
+                    pstmtUpdate.setString(2, type);
+                    pstmtUpdate.setString(3, uuid);
+                    pstmtUpdate.setString(4, "dedicated resources group");
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+
+                    pstmt2 = conn
+                            .prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` where uuid = ?");
+                    pstmt2.setString(1, uuid);
+                    rs2 = pstmt2.executeQuery();
+                    if (rs2.next()) {
+                        affinityGroupId = rs2.getLong(1);
+                        dedicateZone(conn, zoneId, domainId, affinityGroupId);
+                    }
+                }
+                rs2.close();
+                pstmt2.close();
+            }
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+        } finally {
+            if (pstmtUpdate != null) {
+                try {
+                    pstmtUpdate.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                }
+            }
+
+        }
+    }
+
+    private void dedicateZone(Connection conn, long zoneId, long domainId, long affinityGroupId) {
+        PreparedStatement pstmtUpdate2 = null;
+        try {
+            // create the dedicated resources entry
+            String sql = "INSERT INTO `cloud`.`dedicated_resources` (`uuid`,`data_center_id`, `domain_id`, `affinity_group_id`) VALUES (?, ?, ?, ?)";
+            pstmtUpdate2 = conn.prepareStatement(sql);
+            pstmtUpdate2.setString(1, UUID.randomUUID().toString());
+            pstmtUpdate2.setLong(2, zoneId);
+            pstmtUpdate2.setLong(3, domainId);
+            pstmtUpdate2.setLong(4, affinityGroupId);
+            pstmtUpdate2.executeUpdate();
+            pstmtUpdate2.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while saving zone to dedicated resources", e);
+        } finally {
+            if (pstmtUpdate2 != null) {
+                try {
+                    pstmtUpdate2.close();
+                } catch (SQLException e) {
+                }
             }
         }
     }
