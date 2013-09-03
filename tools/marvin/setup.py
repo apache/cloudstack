@@ -27,7 +27,7 @@ except ImportError:
         raise RuntimeError("python setuptools is required to build Marvin")
 
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 import os
 def read(fname):
@@ -42,7 +42,6 @@ setup(name="Marvin",
     maintainer_email="tsp@apache.org",
     long_description="Marvin is the Apache CloudStack python client written around the unittest framework",
     platforms=("Any",),
-    url="https://builds.apache.org/job/cloudstack-marvin/",
     packages=["marvin", "marvin.cloudstackAPI", "marvin.base", "marvin.factory",
               "marvin.sandbox.advanced", "marvin.sandbox.advancedsg", "marvin.sandbox.basic"],
     license="LICENSE.txt",
@@ -52,7 +51,8 @@ setup(name="Marvin",
         "paramiko",
         "nose",
         "factory_boy",
-        "should-dsl"
+        "should-dsl",
+        "inflect",
     ],
     py_modules=['marvin.marvinPlugin'],
     zip_safe=False,
