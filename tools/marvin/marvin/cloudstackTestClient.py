@@ -38,7 +38,7 @@ class cloudstackTestClient(object):
                  defaultWorkerThreads=10,
                  logging=None):
         self.connection = \
-            cloudstackConnection.cloudConnection(mgmtDetails,
+            cloudstackConnection.CloudConnection(mgmtDetails,
                                                  asyncTimeout,
                                                  logging)
         self.apiClient =\
