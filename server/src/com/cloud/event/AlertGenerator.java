@@ -88,7 +88,7 @@ public class AlertGenerator {
         eventDescription.put("subject", subject);
         eventDescription.put("body", body);
 
-        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
 
         event.setDescription(eventDescription);

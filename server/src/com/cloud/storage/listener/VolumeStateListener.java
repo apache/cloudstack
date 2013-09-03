@@ -77,7 +77,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         eventDescription.put("old-state", oldState.name());
         eventDescription.put("new-state", newState.name());
 
-        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
 
         eventMsg.setDescription(eventDescription);

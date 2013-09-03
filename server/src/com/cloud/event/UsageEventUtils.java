@@ -151,7 +151,7 @@ public class UsageEventUtils {
         eventDescription.put("resource", resourceType);
         eventDescription.put("id", resourceUUID);
 
-        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
 
         event.setDescription(eventDescription);

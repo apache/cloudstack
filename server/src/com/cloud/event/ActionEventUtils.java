@@ -193,7 +193,7 @@ public class ActionEventUtils {
         eventDescription.put("entityuuid", entityUuid);
         eventDescription.put("description", description);
 
-        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
         eventDescription.put("eventDateTime", eventDate);
 
         event.setDescription(eventDescription);
