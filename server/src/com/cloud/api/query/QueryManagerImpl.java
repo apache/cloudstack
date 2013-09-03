@@ -2499,11 +2499,21 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
              * List all resources due to Explicit Dedication except the
              * dedicated resources of other account
              */
-            if (domainId != null && account.getType() == Account.ACCOUNT_TYPE_ADMIN) { //
+            if (domainId != null) { //
                 // for domainId != null // right now, we made the decision to
-                // only
-                // / list zones associated // with this domain, private zone
+                // only list zones associated // with this domain, private zone
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+
+                if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    // accountId == null (zones dedicated to a domain) or
+                    // accountId = caller
+                    SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+                    sdc.addOr("accountId", SearchCriteria.Op.EQ, account.getId());
+                    sdc.addOr("accountId", SearchCriteria.Op.NULL);
+
+                    sc.addAnd("account", SearchCriteria.Op.SC, sdc);
+                }
+
             } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 // it was decided to return all zones for the user's domain, and
                 // everything above till root
@@ -2534,6 +2544,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+                // accountId == null (zones dedicated to a domain) or
+                // accountId = caller
+                SearchCriteria<DataCenterJoinVO> sdc2 = _dcJoinDao.createSearchCriteria();
+                sdc2.addOr("accountId", SearchCriteria.Op.EQ, account.getId());
+                sdc2.addOr("accountId", SearchCriteria.Op.NULL);
+
+                sc.addAnd("account", SearchCriteria.Op.SC, sdc2);
 
                 // remove Dedicated zones not dedicated to this domainId or
                 // subdomainId

@@ -2338,3 +2338,40 @@ CREATE TABLE `cloud`.`ldap_configuration` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP VIEW IF EXISTS `cloud`.`data_center_view`;
+CREATE VIEW `cloud`.`data_center_view` AS
+    select 
+        data_center.id,
+        data_center.uuid,
+        data_center.name,
+        data_center.is_security_group_enabled,
+        data_center.is_local_storage_enabled,
+        data_center.description,
+        data_center.dns1,
+        data_center.dns2,
+        data_center.ip6_dns1,
+        data_center.ip6_dns2,
+        data_center.internal_dns1,
+        data_center.internal_dns2,
+        data_center.guest_network_cidr,
+        data_center.domain,
+        data_center.networktype,
+        data_center.allocation_state,
+        data_center.zone_token,
+        data_center.dhcp_provider,
+        data_center.removed,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+		dedicated_resources.affinity_group_id,
+		dedicated_resources.account_id,
+		affinity_group.uuid affinity_group_uuid
+    from
+        `cloud`.`data_center`
+            left join
+        `cloud`.`domain` ON data_center.domain_id = domain.id
+			left join
+        `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
+			left join
+        `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;
