@@ -33,6 +33,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -148,6 +150,10 @@ public class UsageEventUtils {
         eventDescription.put("event", usageEventType);
         eventDescription.put("resource", resourceType);
         eventDescription.put("id", resourceUUID);
+
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
+
         event.setDescription(eventDescription);
 
         try {

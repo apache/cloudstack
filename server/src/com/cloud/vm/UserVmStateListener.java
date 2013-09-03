@@ -34,6 +34,8 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import javax.inject.Inject;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,6 +118,10 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         eventDescription.put("id", vo.getUuid());
         eventDescription.put("old-state", oldState.name());
         eventDescription.put("new-state", newState.name());
+
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
+
         eventMsg.setDescription(eventDescription);
         try {
             _eventBus.publish(eventMsg);

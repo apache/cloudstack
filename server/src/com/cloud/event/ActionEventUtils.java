@@ -17,6 +17,8 @@
 
 package com.cloud.event;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -189,6 +191,10 @@ public class ActionEventUtils {
         eventDescription.put("status", state.toString());
         eventDescription.put("entity", entityType);
         eventDescription.put("entityuuid", entityUuid);
+
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
+
         event.setDescription(eventDescription);
 
         try {
