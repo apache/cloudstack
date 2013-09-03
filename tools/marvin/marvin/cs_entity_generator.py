@@ -261,9 +261,8 @@ def write_entity_classes(entities, module=None):
     for entity, actions in entities.iteritems():
         body = []
         imports = []
-        imports.append('from CloudStackEntity import CloudStackEntity')
+        imports.append('from cloudstackentity import CloudStackEntity')
         body.append('class %s(CloudStackEntity):' % entity)
-        #TODO: Add docs for entity
         body.append('\n\n')
         body.append(tabspace + 'def __init__(self, items):')
         body.append(tabspace * 2 + 'self.__dict__.update(items)')
@@ -280,6 +279,7 @@ def write_entity_classes(entities, module=None):
                         action, ', '.join(list(set(no_id_args)))))
                 else:
                     body.append(tabspace + 'def %s(self, apiclient, **kwargs):' % (action))
+                #TODO: Add docs for entity
                 # doc to explain what possible args go into **kwargs
                 body.append(tabspace * 2 + '"""Placeholder for docstring')
                 body.append(tabspace * 2 + 'optional arguments (**kwargs): [%s]"""' % ', '.join(details['optionals']))
@@ -335,7 +335,7 @@ def write_entity_classes(entities, module=None):
             os.makedirs("%s" % module_path)
         with open("%s/__init__.py" % (module_path), "w") as writer:
             writer.write(LICENSE)
-        with open("%s/%s.py" % (module_path, entity), "w") as writer:
+        with open("%s/%s.py" % (module_path, entity.lower()), "w") as writer:
             writer.write(LICENSE)
             writer.write(code)
 
@@ -365,31 +365,20 @@ def write_entity_factory(entity, actions, module=None):
     if not os.path.exists(module_path):
         os.makedirs(module_path)
 
-    if os.path.exists("%s/%sFactory.py" % (module_path, entity)):
-        for arg in factory_defaults:
-            code += tabspace + '%s = None\n' % arg
-        with open("%s/%sFactory.py" % (module_path, entity), "r") as reader:
-            rcode = reader.read()
-            if rcode.find(code) > 0:
-                return
-        with open("%s/%sFactory.py" % (module_path, entity), "a") as writer:
-            writer.write(code)
-    else:
-        code += 'import factory\n'
-        code += 'from marvin.base import %s\n' % entity
-        code += 'from CloudStackBaseFactory import CloudStackBaseFactory'
-        code += '\n'
-        code += 'class %sFactory(CloudStackBaseFactory):' % entity
-        code += '\n\n'
-        code += tabspace + 'FACTORY_FOR = %s.%s\n\n' % (entity, entity)
-        for arg in factory_defaults:
-            code += tabspace + '%s = None\n' % arg
-        with open("%s/__init__.py" % (module_path), "w") as writer:
-            writer.write(LICENSE)
-        with open("%s/%sFactory.py" % (module_path, entity), "w") as writer:
-            writer.write(LICENSE)
-            writer.write(code)
+    code += 'from marvin.entity.%s import %s\n' % (entity.lower(), entity)
+    code += 'from cloudstackbasefactory import CloudStackBaseFactory'
+    code += '\n'
+    code += 'class %sFactory(CloudStackBaseFactory):' % entity
+    code += '\n\n'
+    code += tabspace + 'FACTORY_FOR = %s\n\n' % entity
+    for arg in factory_defaults:
+        code += tabspace + '%s = None\n' % arg
+    with open("%s/__init__.py" % (module_path), "w") as writer:
+        writer.write(LICENSE)
+    with open("%s/%s.py" % (module_path, entity.lower()), "w") as writer:
+        writer.write(LICENSE)
+        writer.write(code)
 
 if __name__ == '__main__':
     entities = get_actionable_entities()
-    write_entity_classes(entities, 'base')
+    write_entity_classes(entities, 'entity')

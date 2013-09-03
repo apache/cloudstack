@@ -20,22 +20,22 @@ import logging
 
 from marvin.cloudstackTestClient import cloudstackTestClient
 
-from marvin.data.account import UserAccountFactory, AdminAccountFactory, DomainAdminFactory
-from marvin.data.serviceoffering import *
-from marvin.data.template import *
-from marvin.data.user import *
-from marvin.data.networkoffering import *
+from marvin.factory.data.account import UserAccountFactory, AdminAccountFactory, DomainAdminFactory
+from marvin.factory.data.serviceoffering import *
+from marvin.factory.data.template import *
+from marvin.factory.data.user import *
+from marvin.factory.data.networkoffering import *
 
 from marvin.factory.VirtualMachineFactory import *
 
-from marvin.base.ServiceOffering import ServiceOffering
-from marvin.base.Zone import Zone
-from marvin.base.Account import Account
-from marvin.base.Template import Template
-from marvin.base.User import User
-from marvin.base.Network import Network
+from marvin.entity.serviceoffering import ServiceOffering
+from marvin.entity.zone import Zone
+from marvin.entity.account import Account
+from marvin.entity.template import Template
+from marvin.entity.user import User
+from marvin.entity.network import Network
 
-from marvin.base.IpAddress import IpAddress
+from marvin.entity.ipaddress import IpAddress
 class BuildVsCreateStrategyTest(unittest.TestCase):
     def setUp(self):
         self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factory.cloudstack')).getApiClient()
@@ -160,7 +160,7 @@ class IpAddressFactoryTest(unittest.TestCase):
         self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factory.cloudstack')).getApiClient()
 
     def tearDown(self):
-        pass
+        self.vm.destroy(apiclient=self.apiClient)
 
     def test_associateIpAddressToNetwork(self):
         accnt = UserAccountFactory.create(apiclient=self.apiClient)
@@ -171,7 +171,7 @@ class IpAddressFactoryTest(unittest.TestCase):
         template = Template.list(apiclient=self.apiClient, templatefilter="featured")
         self.assert_(len(template) > 0)
         zones = Zone.list(apiclient=self.apiClient)
-        vm = VirtualMachineFactory.create(
+        self.vm = VirtualMachineFactory.create(
             apiclient=self.apiClient,
             serviceofferingid = service[0].id,
             templateid = template[0].id,
@@ -182,18 +182,4 @@ class IpAddressFactoryTest(unittest.TestCase):
         firstip = all_ips[0]
         networks = Network.list(apiclient=self.apiClient, account = accnt.name, domainid = accnt.domainid)
         firstip.associate(apiclient=self.apiClient, networkid = networks[0].id)
-        vm.destroy(apiclient=self.apiClient)
 
-
-class VirtualMachineTest(unittest.TestCase):
-    """
-    Test virtualmachine lifecycle using factories
-    """
-    def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factory.cloudstack')).getApiClient()
-
-    def tearDown(self):
-        pass
-
-    def test_virtualmachinedeploy(self):
-        pass

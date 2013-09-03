@@ -487,4 +487,4 @@ response=json' % options.endpoint
 
     if options.entity:
         entities = get_actionable_entities()
-        write_entity_classes(entities, "base")
+        write_entity_classes(entities, "entity")
