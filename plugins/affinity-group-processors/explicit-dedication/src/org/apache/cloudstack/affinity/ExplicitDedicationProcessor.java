@@ -381,4 +381,13 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
         return domainIds;
     }
 
+    @Override
+    public boolean isAdminControlledGroup() {
+        return true;
+    }
+
+    @Override
+    public boolean canBeSharedDomainWide() {
+        return true;
+    }
 }

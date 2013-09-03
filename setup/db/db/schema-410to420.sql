@@ -410,12 +410,14 @@ CREATE TABLE `cloud`.`affinity_group` (
   `description` varchar(4096) NULL,
   `domain_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
+  `acl_type` varchar(15) NOT NULL COMMENT 'ACL access type. can be Account/Domain',
   UNIQUE (`name`, `account_id`),
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_affinity_group__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
   CONSTRAINT `fk_affinity_group__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
   CONSTRAINT `uc_affinity_group__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE `cloud`.`affinity_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -426,7 +428,15 @@ CREATE TABLE `cloud`.`affinity_group_vm_map` (
   CONSTRAINT `fk_affinity_group_vm_map___instance_id` FOREIGN KEY(`instance_id`) REFERENCES `user_vm` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
+CREATE TABLE `cloud`.`affinity_group_domain_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `affinity_group_id` bigint unsigned NOT NULL COMMENT 'affinity group id',
+  `subdomain_access` int(1) unsigned COMMENT '1 if affinity group can be accessible from the subdomain',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_affinity_group_domain_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_affinity_group_domain_map__affinity_group_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`dedicated_resources` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -898,6 +908,7 @@ CREATE VIEW `cloud`.`affinity_group_view` AS
         affinity_group.type type,
         affinity_group.description description,
         affinity_group.uuid uuid,
+		affinity_group.acl_type acl_type,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,

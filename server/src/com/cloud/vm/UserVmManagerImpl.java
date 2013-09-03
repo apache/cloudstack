@@ -2572,13 +2572,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             + " ,type: " + ag.getType() + " , Please try again after removing the affinity group");
                 } else {
                     // verify permissions
-                    _accountMgr.checkAccess(caller, null, true, owner, ag);
-                    // Root admin has access to both VM and AG by default, but
-                    // make sure the owner of these entities is same
-                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
-                        if (ag.getAccountId() != owner.getAccountId()) {
-                            throw new PermissionDeniedException("Affinity Group " + ag
-                                    + " does not belong to the VM's account");
+                    if (ag.getAclType() == ACLType.Domain) {
+                        _accountMgr.checkAccess(caller, null, false, owner, ag);
+                        // Root admin has access to both VM and AG by default,
+                        // but
+                        // make sure the owner of these entities is same
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                            if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
+                                throw new PermissionDeniedException("Affinity Group " + ag
+                                        + " does not belong to the VM's domain");
+                            }
+                        }
+                    } else {
+                        _accountMgr.checkAccess(caller, null, true, owner, ag);
+                        // Root admin has access to both VM and AG by default,
+                        // but
+                        // make sure the owner of these entities is same
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                            if (ag.getAccountId() != owner.getAccountId()) {
+                                throw new PermissionDeniedException("Affinity Group " + ag
+                                        + " does not belong to the VM's account");
+                            }
                         }
                     }
                 }

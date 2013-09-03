@@ -58,4 +58,23 @@ public interface AffinityGroupProcessor extends Adapter {
      */
     boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination)
             throws AffinityConflictException;
+
+    /**
+     * isAdminControlledGroup() should return true if the affinity/anti-affinity
+     * group can only be operated on[create/delete/modify] by the Admin
+     *
+     * @return boolean true/false
+     */
+    boolean isAdminControlledGroup();
+
+
+    /**
+     * canBeSharedDomainWide() should return true if the affinity/anti-affinity
+     * group can be created for a domain and shared by all accounts under the
+     * domain.
+     * 
+     * @return boolean true/false
+     */
+    boolean canBeSharedDomainWide();
+
 }

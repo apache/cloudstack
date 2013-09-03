@@ -47,4 +47,14 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
             throws AffinityConflictException {
         return true;
     }
+
+    @Override
+    public boolean isAdminControlledGroup() {
+        return false;
+    }
+
+    @Override
+    public boolean canBeSharedDomainWide() {
+        return false;
+    }
 }

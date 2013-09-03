@@ -23,6 +23,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+
 import com.cloud.vm.VirtualMachine;
 
 @Entity
@@ -84,6 +86,10 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name = "vm_state")
     @Enumerated(value = EnumType.STRING)
     protected VirtualMachine.State vmState = null;
+
+    @Column(name = "acl_type")
+    @Enumerated(value = EnumType.STRING)
+    ControlledEntity.ACLType aclType;
 
 
     public AffinityGroupJoinVO() {
@@ -256,4 +262,14 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         // TODO Auto-generated method stub
         return null;
     }
+
+    public ControlledEntity.ACLType getAclType() {
+        return aclType;
+    }
+
+    public void setAclType(ControlledEntity.ACLType aclType) {
+        this.aclType = aclType;
+    }
+
 }
+

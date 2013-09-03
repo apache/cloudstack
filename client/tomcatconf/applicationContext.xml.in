@@ -377,6 +377,7 @@
   <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
   <bean id="domainChecker" class="com.cloud.acl.DomainChecker" />
+  <bean id="affinityGroupAccessChecker" class="com.cloud.acl.AffinityGroupAccessChecker" />
   
   <!--
     Authenticators
@@ -928,6 +929,8 @@
   <bean id="AffinityGroupDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDaoImpl">
   </bean>
   <bean id="AffinityGroupVMMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl">
+  </bean>
+  <bean id="AffinityGroupDomainMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDaoImpl">
   </bean>
   
   <bean id="PlannerHostReservationDaoImpl" class="com.cloud.deploy.dao.PlannerHostReservationDaoImpl">
