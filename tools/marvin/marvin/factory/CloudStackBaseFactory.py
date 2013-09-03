@@ -18,7 +18,7 @@
 import factory
 import inspect
 
-CREATORS = ["create", "deploy"]
+CREATORS = ["create", "deploy", "register"]
 
 
 class CloudStackBaseFactory(factory.Factory):

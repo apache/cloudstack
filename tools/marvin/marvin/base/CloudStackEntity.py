@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-cloudstack_version = "4.1.0"
+cloudstack_version = "4.2.0"
 
 class CloudStackEntity(object):
 
