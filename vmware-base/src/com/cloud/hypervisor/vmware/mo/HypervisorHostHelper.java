@@ -499,10 +499,10 @@ public class HypervisorHostHelper {
 
             if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
                 createGCTag = true;
-                vid = Integer.parseInt(vlanId);
+                vid = Integer.parseInt(BroadcastDomainType.getValue(vlanId));
             }
             if (secondaryvlanId != null) {
-                spvlanid = Integer.parseInt(secondaryvlanId);
+                spvlanid = Integer.parseInt(BroadcastDomainType.getValue(secondaryvlanId));
             }
         }
 
@@ -937,7 +937,7 @@ public class HypervisorHostHelper {
 
             if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) ) {
                 createGCTag = true;
-                vid = Integer.parseInt(vlanId);
+                vid = Integer.parseInt(BroadcastDomainType.getValue(vlanId));
             }
         }
 
