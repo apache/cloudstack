@@ -809,6 +809,154 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    def test_09_stop_vm_migrate_vol(self):
+        """Test Stopped Virtual Machine's ROOT volume migration
+        """
+
+        # Validate the following:
+        # 1. deploy Vm with startvm=true
+        # 2. Should not be able to login to the VM.
+        # 3. listVM command should return the deployed VM.State of this VM
+        #    should be "Running".
+        # 4. Stop the vm
+        # 5.list primary storages in the cluster , should be more than one
+        # 6.Migrate voluem to another available primary storage
+        clusters = Cluster.list(
+                                self.apiclient,
+                                zoneid = self.zone.id
+                                )
+        self.assertEqual(
+                            isinstance(clusters, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        i = 0
+        for cluster in clusters :
+            storage_pools = StoragePool.list(
+                                             self.apiclient,
+                                             clusterid = cluster.id
+                                             )
+            if len(storage_pools) > 1 :
+                self.cluster_id = cluster.id
+                i += 1
+                break
+        if i == 0 :
+            self.skipTest("No cluster with more than one primary storage pool to perform migrate volume test")
+
+        hosts = Host.list(
+                          self.apiclient,
+                          clusterid = self.cluster_id
+                          )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        host = hosts[0]
+        self.debug("Deploying instance on host: %s" % host.id)
+        self.debug("Deploying instance in the account: %s" %
+                                                self.account.name)
+        self.virtual_machine = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    serviceofferingid=self.service_offering.id,
+                                    diskofferingid=self.disk_offering.id,
+                                    hostid=host.id,
+                                    mode=self.zone.networktype
+                                )
+
+        self.debug("Deployed instance in account: %s" %
+                                                    self.account.name)
+        list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.virtual_machine.id
+                                                 )
+
+        self.debug(
+                "Verify listVirtualMachines response for virtual machine: %s" \
+                % self.virtual_machine.id
+            )
+
+        self.assertEqual(
+                            isinstance(list_vm_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+                            vm_response.state,
+                            "Running",
+                            "VM should be in Running state after deployment"
+                        )
+        self.debug("Stopping instance: %s" % self.virtual_machine.name)
+        self.virtual_machine.stop(self.apiclient)
+        self.debug("Instance is stopped!")
+        self.debug(
+                "Verify listVirtualMachines response for virtual machine: %s" \
+                % self.virtual_machine.id
+            )
+        list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.virtual_machine.id
+                                                 )
+        self.assertEqual(
+                            isinstance(list_vm_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+                            vm_response.state,
+                            "Stopped",
+                            "VM should be in Stopped state after stoping vm"
+                        )
+        volumes = Volume.list(
+                              self.apiclient,
+                              virtualmachineid=self.virtual_machine.id,
+                              type='ROOT',
+                              listall=True
+                              )
+        self.assertEqual(
+                            isinstance(volumes, list),
+                            True,
+                            "Check volume list response returns a valid list"
+                        )
+        vol_response = volumes[0]
+        #get the storage name in which volume is stored
+        storage_name = vol_response.storage
+        storage_pools = StoragePool.list(
+                                         self.apiclient,
+                                         clusterid = self.cluster_id
+                                         )
+        #Get storage pool to migrate volume
+        for spool in storage_pools:
+            if spool.name == storage_name:
+                continue
+            else:
+                self.storage_id = spool.id
+                self.storage_name = spool.name
+                break
+        self.debug("Migrating volume to storage pool: %s" % self.storage_name)
+        Volume.migrate(
+                       self.apiclient,
+                       storageid = self.storage_id,
+                       volumeid = vol_response.id
+                       )
+        volume = Volume.list(
+                              self.apiclient,
+                              virtualmachineid=self.virtual_machine.id,
+                              type='ROOT',
+                              listall=True
+                              )
+        self.assertEqual(
+                         volume[0].storage,
+                         self.storage_name,
+                         "Check volume migration response")
+        
+        return
 
 class TestDeployHaEnabledVM(cloudstackTestCase):
 
