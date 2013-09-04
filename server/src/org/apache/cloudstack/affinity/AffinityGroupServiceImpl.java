@@ -54,7 +54,6 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
@@ -118,7 +117,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
             String affinityGroupType, String description) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         //validate the affinityGroupType
         Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
@@ -146,7 +145,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public AffinityGroup createAffinityGroupInternal(String account, Long domainId, String affinityGroupName,
             String affinityGroupType, String description) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         // validate the affinityGroupType
         Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
@@ -358,7 +357,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @Override
     public List<String> listAffinityGroupTypes() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         List<String> types = new ArrayList<String>();
         Map<String, AffinityGroupProcessor> componentMap = ComponentContext.getComponentsOfType(AffinityGroupProcessor.class);

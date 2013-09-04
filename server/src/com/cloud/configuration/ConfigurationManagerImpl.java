@@ -44,7 +44,6 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;

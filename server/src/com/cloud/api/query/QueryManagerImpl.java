@@ -173,7 +173,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;

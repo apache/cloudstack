@@ -105,13 +105,6 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
                     long affinityGroupId = vmGroupMapping.getAffinityGroupId();
 
-                    // List<DedicatedResourceVO> dr =
-                    // _dedicatedDao.listByAccountId(accountId);
-                    // List<DedicatedResourceVO> drOfDomain =
-                    // searchInDomainResources(domainId);
-                    // List<DedicatedResourceVO> drOfParentDomain =
-                    // searchInParentDomainResources(domainId);
-
                     List<DedicatedResourceVO> dr = _dedicatedDao.listByAffinityGroupId(affinityGroupId);
                     resourceList.addAll(dr);
 

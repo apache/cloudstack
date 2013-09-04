@@ -76,7 +76,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
