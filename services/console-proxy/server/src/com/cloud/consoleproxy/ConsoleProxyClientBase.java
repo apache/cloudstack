@@ -20,6 +20,8 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.util.List;
 
+import javassist.tools.web.Viewer;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.consoleproxy.util.TileInfo;
@@ -283,11 +285,11 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, 
             updateUrl, width, height, tileWidth, tileHeight, title, 
             ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, 
-            languages, guest);
+            languages, guest, this.clientParam.getLocale());
     }
     
     private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width,
-        int height, int tileWidth, int tileHeight, String title, boolean rawKeyboard, List<String> languages, String guest) {
+        int height, int tileWidth, int tileHeight, String title, boolean rawKeyboard, List<String> languages, String guest, String locale) {
 
         StringBuffer sbLanguages = new StringBuffer("");
         if(languages != null) {
@@ -342,7 +344,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             "<script language=\"javascript\">",
             "var acceptLanguages = '" + sbLanguages.toString() + "';",
             "var tileMap = [ " + tileSequence + " ];",
-            "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', tileMap, ", 
+            "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', '" + locale + "', tileMap, ",
                 String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
 
             "$(function() {",

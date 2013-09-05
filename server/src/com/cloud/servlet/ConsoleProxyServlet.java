@@ -55,6 +55,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -74,7 +75,7 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject VirtualMachineManager _vmMgr;
     @Inject ManagementServer _ms;
     @Inject IdentityService _identityService;
-
+    @Inject UserVmDetailsDaoImpl _userVmDetailsDaoImpl;
     static ManagementServer s_ms;
 
     private Gson _gson = new GsonBuilder().create();
@@ -384,6 +385,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
 
+        Map<String, String> details = _userVmDetailsDaoImpl.findDetails(vm.getId());
         String sid = vm.getVncPassword();
         String tag = vm.getUuid();
         String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
@@ -394,6 +396,9 @@ public class ConsoleProxyServlet extends HttpServlet {
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+        if (details != null && details.containsKey("keyboard")) {
+            param.setLocale(details.get("keyboard"));
+        }
         if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());

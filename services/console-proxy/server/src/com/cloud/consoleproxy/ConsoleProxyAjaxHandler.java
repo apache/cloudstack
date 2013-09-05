@@ -77,7 +77,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String eventStr = queryMap.get("event");
         String console_url = queryMap.get("consoleurl");
         String console_host_session = queryMap.get("sessionref");
-        
+        String vm_locale = queryMap.get("locale");
+
         if(tag == null)
             tag = "";
         
@@ -124,7 +125,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             param.setTicket(ticket);
             param.setClientTunnelUrl(console_url);
             param.setClientTunnelSession(console_host_session);
-            
+            param.setLocale(vm_locale);
+
             viewer = ConsoleProxy.getAjaxVncViewer(param, ajaxSessionIdStr);
         } catch(Exception e) {
 
@@ -181,7 +183,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             }
         }
     }
-    
+
     private static String convertStreamToString(InputStream is, boolean closeStreamAfterRead) { 
         BufferedReader reader = new BufferedReader(new InputStreamReader(is)); 
         StringBuilder sb = new StringBuilder(); 
