@@ -22,7 +22,7 @@
 	under the License.
 -->	
 <section id="configure-vpn">
-	<title>Configuring VPN</title>
+	<title>Configuring Remote Access VPN</title>
 	<para>To set up VPN for the cloud:</para>
 	<orderedlist>
 		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>

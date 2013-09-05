@@ -23,7 +23,7 @@
 -->
 
 <section id="using-vpn-with-windows">
-    <title>Using VPN with Windows</title>
+    <title>Using Remote Access VPN with Windows</title>
     <para>The procedure to use VPN varies by Windows version.  Generally, the user must edit the VPN properties and make sure that the default route is not the VPN. The following steps are for Windows L2TP clients on Windows Vista. The commands should be similar for other Windows versions.</para>
     <orderedlist>
         <listitem id="source-nat"><para>Log in to the &PRODUCT; UI and click on the source NAT IP for the account. The VPN tab should display the IPsec preshared key. Make a note of this and the source NAT IP. The UI also lists one or more users and their passwords. Choose one of these users, or, if none exists, add a user and password.</para></listitem>
