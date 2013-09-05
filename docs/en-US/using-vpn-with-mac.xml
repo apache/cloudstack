@@ -23,7 +23,7 @@
 -->
 
 <section id="using-vpn-with-mac">
-    <title>Using VPN with Mac OS X</title>
+    <title>Using Remote Access VPN with Mac OS X</title>
     <para>First, be sure you've configured the VPN settings in your &PRODUCT; install. This section is only concerned with connecting via Mac OS X to your VPN.</para>
     <para>Note, these instructions were written on Mac OS X 10.7.5. They may differ slightly in older or newer releases of Mac OS X.</para>
     <orderedlist>
