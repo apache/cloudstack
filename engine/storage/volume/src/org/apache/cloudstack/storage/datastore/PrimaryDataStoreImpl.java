@@ -358,9 +358,13 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         return this.pdsv.getPodId();
     }
 
+    public Date getRemoved() {
+        return this.pdsv.getRemoved();
+    }
+
     @Override
     public boolean isInMaintenance() {
-        return this.getStatus() == StoragePoolStatus.Maintenance ? true : false;
+        return this.getStatus() == StoragePoolStatus.PrepareForMaintenance || this.getStatus() == StoragePoolStatus.Maintenance || this.getStatus() == StoragePoolStatus.ErrorInMaintenance || this.getRemoved() != null;
     }
 
     @Override
