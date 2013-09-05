@@ -84,9 +84,9 @@ class Services:
                     "mode": 'HTTP_DOWNLOAD',    # Downloading existing ISO
                 },
                 "template": {
-                    "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                    "hypervisor": 'XenServer',
-                    "format": 'VHD',
+                    "url": "",
+                    "hypervisor": '',
+                    "format": '',
                     "isfeatured": True,
                     "ispublic": True,
                     "isextractable": True,
@@ -1522,6 +1522,13 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
+
+        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
+        self.services["template"]["url"] = builtin_info[0] 
+        self.services["template"]["hypervisor"] = builtin_info[1]     
+        self.services["template"]["format"] = builtin_info[2]
+
+        # Register new template
         self.template = Template.register(
                                         self.apiclient,
                                         self.services["template"],
@@ -1529,6 +1536,11 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
+        self.debug(
+                "Registered a template of format: %s with ID: %s" % (
+                                                                self.services["template"]["format"],
+                                                                self.template.id
+                                                                ))
         try:
             self.template.download(self.apiclient)
         except Exception as e:
