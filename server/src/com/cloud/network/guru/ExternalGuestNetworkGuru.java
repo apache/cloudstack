@@ -140,7 +140,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         int vlanTag;
         if (config.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId(),
-                _useSystemGuestVlans.valueIn(config.getAccountId()));
+                UseSystemGuestVlans.valueIn(config.getAccountId()));
 
             try {
                 vlanTag = Integer.parseInt(vnet);

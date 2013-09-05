@@ -27,27 +27,23 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.config.ConfigValue;
-
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
-    
+
     private String _serviceUrl;
 
-    private ConfigValue<Integer> _requestTimeoutSeconds;
     protected static HttpClient s_client = null;
-    
+
     public ClusterServiceServletImpl() {
     }
 
-    public ClusterServiceServletImpl(String serviceUrl, ConfigValue<Integer> requestTimeoutSeconds) {
-        s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + requestTimeoutSeconds.value() + " seconds");
-    	
+    public ClusterServiceServletImpl(String serviceUrl) {
+        s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + ClusterServiceAdapter.ClusterMessageTimeOut.value() + " seconds");
+
         _serviceUrl = serviceUrl;
-        _requestTimeoutSeconds = requestTimeoutSeconds;
     }
-    
+
     @Override
     public String execute(ClusterServicePdu pdu) throws RemoteException {
 
@@ -69,7 +65,7 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     @Override
     public boolean ping(String callingPeer) throws RemoteException {
-        if(s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping at " + _serviceUrl);
         }
 
@@ -78,9 +74,9 @@ public class ClusterServiceServletImpl implements ClusterService {
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
         method.addParameter("callingPeer", callingPeer);
-        
-        String returnVal =  executePostMethod(client, method);
-        if("true".equalsIgnoreCase(returnVal)) {
+
+        String returnVal = executePostMethod(client, method);
+        if ("true".equalsIgnoreCase(returnVal)) {
             return true;
         }
         return false;
@@ -92,22 +88,20 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             long startTick = System.currentTimeMillis();
             response = client.executeMethod(method);
-            if(response == HttpStatus.SC_OK) {
+            if (response == HttpStatus.SC_OK) {
                 result = method.getResponseBodyAsString();
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: "
-                            + (System.currentTimeMillis() - startTick) + " ms");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: " + (System.currentTimeMillis() - startTick) + " ms");
                 }
             } else {
-                s_logger.error("Invalid response code : " + response + ", from : "
-                        + _serviceUrl + ", method : " + method.getParameter("method")
-                        + " responding time: " + (System.currentTimeMillis() - startTick));
+                s_logger.error("Invalid response code : " + response + ", from : " + _serviceUrl + ", method : " + method.getParameter("method") + " responding time: " +
+                               (System.currentTimeMillis() - startTick));
             }
         } catch (HttpException e) {
             s_logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
         } catch (IOException e) {
             s_logger.error("IOException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             s_logger.error("Exception from : " + _serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
         } finally {
             method.releaseConnection();
@@ -115,34 +109,34 @@ public class ClusterServiceServletImpl implements ClusterService {
 
         return result;
     }
-    
+
     private HttpClient getHttpClient() {
 
-    	if(s_client == null) {
-    		MultiThreadedHttpConnectionManager mgr = new MultiThreadedHttpConnectionManager();
-    		mgr.getParams().setDefaultMaxConnectionsPerHost(4);
-    		
-    		// TODO make it configurable
-    		mgr.getParams().setMaxTotalConnections(1000);
-    		
-	        s_client = new HttpClient(mgr);
-	        HttpClientParams clientParams = new HttpClientParams();
-            clientParams.setSoTimeout(_requestTimeoutSeconds.value() * 1000);
-	        
-	        s_client.setParams(clientParams);
-    	}
-    	return s_client;
+        if (s_client == null) {
+            MultiThreadedHttpConnectionManager mgr = new MultiThreadedHttpConnectionManager();
+            mgr.getParams().setDefaultMaxConnectionsPerHost(4);
+
+            // TODO make it configurable
+            mgr.getParams().setMaxTotalConnections(1000);
+
+            s_client = new HttpClient(mgr);
+            HttpClientParams clientParams = new HttpClientParams();
+            clientParams.setSoTimeout(ClusterServiceAdapter.ClusterMessageTimeOut.value() * 1000);
+
+            s_client.setParams(clientParams);
+        }
+        return s_client;
     }
 
     // for test purpose only
     public static void main(String[] args) {
-/*
-        ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice", 300);
-        try {
-            String result = service.execute("test", 1, "{ p1:v1, p2:v2 }", true);
-            System.out.println(result);
-        } catch (RemoteException e) {
-        }
-*/
+        /*
+                ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice", 300);
+                try {
+                    String result = service.execute("test", 1, "{ p1:v1, p2:v2 }", true);
+                    System.out.println(result);
+                } catch (RemoteException e) {
+                }
+        */
     }
 }

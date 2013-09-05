@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -136,7 +135,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -166,11 +164,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
 
     Gson _gson;
-
-    @InjectConfig(key = CapacityManager.CpuOverprovisioningFactorCK)
-    ConfigValue<Float> _cpuOverprovisioningFactor;
-    @InjectConfig(key = CapacityManager.MemOverprovisioningFactorCK)
-    ConfigValue<Float> _memOverprovisioningFactor;
 
     @Inject
     AccountManager _accountMgr;
@@ -478,8 +471,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (clusterType == Cluster.ClusterType.CloudManaged) {
             Map<String, String> details = new HashMap<String, String>();
-            details.put("cpuOvercommitRatio", _cpuOverprovisioningFactor.value().toString());
-            details.put("memoryOvercommitRatio", _memOverprovisioningFactor.value().toString());
+            details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
+            details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
             return result;
         }
@@ -489,8 +482,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("url", url);
         details.put("username", username);
         details.put("password", password);
-        details.put("cpuOvercommitRatio", _cpuOverprovisioningFactor.value().toString());
-        details.put("memoryOvercommitRatio", _memOverprovisioningFactor.value().toString());
+        details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
+        details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
         _clusterDetailsDao.persist(cluster.getId(), details);
 
         boolean success = false;

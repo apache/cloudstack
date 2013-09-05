@@ -160,7 +160,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setCidr(network.getCidr());
         }
 
-        String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), _useSystemGuestVlans.valueIn(network.getAccountId()));
+        String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), UseSystemGuestVlans.valueIn(network.getAccountId()));
         if (vnet == null) {
             throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
                         "part of network " + network + " implement ", DataCenter.class, dcId);

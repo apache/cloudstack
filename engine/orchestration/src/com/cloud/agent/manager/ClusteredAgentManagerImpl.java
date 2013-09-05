@@ -50,7 +50,6 @@ import com.google.gson.Gson;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -142,11 +141,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         "Interval between scans to load agents", false, ConfigKey.Scope.Global, 1000);
     
 
-    protected ConfigValue<Boolean> _agentLBEnabled;
-    protected ConfigValue<Double> _connectedAgentsThreshold;
-    protected ConfigValue<Integer> _loadSize;
-    protected ConfigValue<Integer> _directAgentScanInterval;
-
     @Override
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
         _peers = new HashMap<String, SocketChannel>(7);
@@ -154,11 +148,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _nodeId = ManagementServerNode.getManagementServerId();
 
         s_logger.info("Configuring ClusterAgentManagerImpl. management server node id(msid): " + _nodeId);
-
-        _loadSize = _configDepot.get(LoadSize);
-        _directAgentScanInterval = _configDepot.get(ScanInterval);
-        _agentLBEnabled = _configDepot.get(EnableLB);
-        _connectedAgentsThreshold = _configDepot.get(ConnectedAgentThreshold);
 
         ClusteredAgentAttache.initialize(this);
 
@@ -175,9 +164,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (!super.start()) {
             return false;
         }
-        _timer.schedule(new DirectAgentScanTimerTask(), STARTUP_DELAY, _directAgentScanInterval.value());
+        _timer.schedule(new DirectAgentScanTimerTask(), STARTUP_DELAY, ScanInterval.value());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Scheduled direct agent scan task to run at an interval of " + _directAgentScanInterval.value() + " seconds");
+            s_logger.debug("Scheduled direct agent scan task to run at an interval of " + ScanInterval.value() + " seconds");
         }
 
         // schedule transfer scan executor - if agent LB is enabled
@@ -207,7 +196,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         // for agents that are self-managed, threshold to be considered as disconnected after pingtimeout
         long cutSeconds = (System.currentTimeMillis() >> 10) - getTimeout();
-        List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, _loadSize.value().longValue(), _nodeId);
+        List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, LoadSize.value().longValue(), _nodeId);
         List<HostVO> appliances = _hostDao.findAndUpdateApplianceToLoad(cutSeconds, _nodeId);
         hosts.addAll(appliances);
 
@@ -506,13 +495,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     throw new CloudRuntimeException("Unable to resolve " + ip);
                 }
                 try {
-                    ch = SocketChannel.open(new InetSocketAddress(addr, _port.value()));
+                    ch = SocketChannel.open(new InetSocketAddress(addr, Port.value()));
                     ch.configureBlocking(true); // make sure we are working at blocking mode
                     ch.socket().setKeepAlive(true);
                     ch.socket().setSoTimeout(60 * 1000);
                     try {
                         SSLContext sslContext = Link.initSSLContext(true);
-                        sslEngine = sslContext.createSSLEngine(ip, _port.value());
+                        sslEngine = sslContext.createSSLEngine(ip, Port.value());
                         sslEngine.setUseClientMode(true);
 
                         Link.doHandshake(ch, sslEngine, true);
@@ -1369,7 +1358,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     public boolean isAgentRebalanceEnabled() {
-        return _agentLBEnabled.value();
+        return EnableLB.value();
     }
 
     private ClusteredAgentRebalanceService _rebalanceService;
@@ -1379,7 +1368,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         Profiler profilerAgentLB = new Profiler();
         profilerAgentLB.start();
         //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
-        if (_agentLBEnabled.value() && !_agentLbHappened) {
+        if (EnableLB.value() && !_agentLbHappened) {
             SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
             sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
             sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
@@ -1392,12 +1381,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             double managedHostsCount = allManagedRoutingAgents.size();
             if (allHostsCount > 0.0) {
                 double load = managedHostsCount / allHostsCount;
-                if (load >= _connectedAgentsThreshold.value()) {
-                    s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + _connectedAgentsThreshold);
+                if (load >= ConnectedAgentThreshold.value()) {
+                    s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + ConnectedAgentThreshold.value());
                     _rebalanceService.scheduleRebalanceAgents();
                     _agentLbHappened = true;
                 } else {
-                    s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + _connectedAgentsThreshold);
+                    s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + ConnectedAgentThreshold.value());
                 }
             }
         }

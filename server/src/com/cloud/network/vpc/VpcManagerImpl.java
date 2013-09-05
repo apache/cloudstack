@@ -39,7 +39,6 @@ import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.configuration.Config;
@@ -198,8 +197,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
  
-    ConfigValue<String> _networkDomain;
-
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -260,8 +257,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
         _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
 
-        _networkDomain = _configDepot.get(NetworkOrchestrationService.GuestDomainSuffix);
-        
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
         IpAddressSearch.and("dataCenterId", IpAddressSearch.entity().getDataCenterId(), Op.EQ);
@@ -620,7 +615,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             // 2) If null, generate networkDomain using domain suffix from the global config variables
             if (networkDomain == null) {
-                networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain.valueIn(zoneId);
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + NetworkOrchestrationService.GuestDomainSuffix.valueIn(zoneId);
             }
         }
         
@@ -1772,7 +1767,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean isCidrBlacklisted(String cidr, long zoneId) {
-        String routesStr = _networkDomain.valueIn(zoneId);
+        String routesStr = NetworkOrchestrationService.GuestDomainSuffix.valueIn(zoneId);
         if (routesStr != null && !routesStr.isEmpty()) {
             String[] cidrBlackList = routesStr.split(",");
             

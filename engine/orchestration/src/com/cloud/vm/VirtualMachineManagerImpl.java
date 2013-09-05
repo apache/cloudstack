@@ -45,7 +45,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -159,7 +158,6 @@ import com.cloud.utils.Journal;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -302,27 +300,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     ScheduledExecutorService _executor = null;
 
-    @InjectConfig(key = AgentManager.WaitCK)
-    protected ConfigValue<Integer> _operationTimeout;
-
-    @InjectConfig(key = "start.retry")
-    protected ConfigValue<Integer> _retry;
     protected long _nodeId;
-
-    @InjectConfig(key = "vm.op.cleanup.wait")
-    protected ConfigValue<Long> _cleanupWait;
-    @InjectConfig(key = "vm.op.cleanup.interval")
-    protected ConfigValue<Long> _cleanupInterval;
-    @InjectConfig(key = "vm.op.cancel.interval")
-    protected ConfigValue<Long> _cancelWait;
-    @InjectConfig(key = "vm.op.wait.interval")
-    protected ConfigValue<Integer> _opWaitInterval;
-    @InjectConfig(key = "vm.op.lock.state.retry")
-    protected ConfigValue<Integer> _lockStateRetry;
-    @InjectConfig(key = "vm.destroy.forcestop")
-    protected ConfigValue<Boolean> _forceStop;
-    @InjectConfig(key = "sync.interval")
-    protected ConfigValue<Integer> _syncInterval;
 
     @Override
     public void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru) {
@@ -494,7 +472,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean start() {
-        _executor.scheduleAtFixedRate(new CleanupTask(), _cleanupInterval.value(), _cleanupInterval.value(), TimeUnit.SECONDS);
+        _executor.scheduleAtFixedRate(new CleanupTask(), VmOpCleanupInterval.value(), VmOpCleanupInterval.value(), TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
         return true;
     }
@@ -556,13 +534,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
 
-            if (vo.getSecondsTaskIsInactive() > _cancelWait.value()) {
+            if (vo.getSecondsTaskIsInactive() > VmOpCancelInterval.value()) {
                 s_logger.warn("The task item for vm " + vm + " has been inactive for " + vo.getSecondsTaskIsInactive());
                 return false;
             }
 
             try {
-                Thread.sleep(_opWaitInterval.value());
+                Thread.sleep(VmOpWaitInterval.value());
             } catch (InterruptedException e) {
                 s_logger.info("Waiting for " + vm + " but is interrupted");
                 throw new ConcurrentOperationException("Waiting for " + vm + " but is interrupted");
@@ -578,7 +556,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
-        int retry = _lockStateRetry.value();
+        int retry = VmOpLockStateRetry.value();
         while (retry-- != 0) {
             Transaction txn = Transaction.currentTxn();
             Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result = null;
@@ -729,7 +707,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             boolean reuseVolume = true;
             DataCenterDeployment originalPlan = plan;
 
-            int retry = _retry.value();
+            int retry = StartRetry.value();
             while (retry-- != 0) { // It's != so that it can match -1.
 
                 if (reuseVolume) {
@@ -1329,7 +1307,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Destroying vm " + vm);
         }
 
-        advanceStop(vm, _forceStop.value());
+        advanceStop(vm, VmDestroyForcestop.value());
 
         if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(), null)) {
             s_logger.debug("Unable to delete all snapshots for " + vm);
@@ -1865,7 +1843,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public void run() {
             s_logger.trace("VM Operation Thread Running");
             try {
-                _workDao.cleanup(_cleanupWait.value());
+                _workDao.cleanup(VmOpCleanupWait.value());
             } catch (Exception e) {
                 s_logger.error("VM Operations failed due to ", e);
             }
@@ -2575,7 +2553,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             // initiate the cron job
-            ClusterSyncCommand syncCmd = new ClusterSyncCommand(_syncInterval.value(), clusterId);
+            ClusterSyncCommand syncCmd = new ClusterSyncCommand(ClusterDeltaSyncInterval.value(), clusterId);
             try {
                 long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
                 s_logger.debug("Cluster VM sync started with jobid " + seq_no);
@@ -2628,7 +2606,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             try {
                 lock.addRef();
-                List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - (_operationTimeout.value() * 1000)), State.Starting, State.Stopping);
+                List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - (AgentManager.Wait.value() * 1000)), State.Starting, State.Stopping);
                 for (VMInstanceVO instance : instances) {
                     State state = instance.getState();
                     if (state == State.Stopping) {
@@ -3229,11 +3207,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return result;
     }
 
-    @InjectConfig(key = CapacityManager.CpuOverprovisioningFactorCK)
-    ConfigValue<Float> _cpuOverprovisioningFactor;
-    @InjectConfig(key = CapacityManager.MemOverprovisioningFactorCK)
-    ConfigValue<Float> _memOverprovisioningFactor;
-
     @Override
     public VMInstanceVO reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
         ConcurrentOperationException {
@@ -3243,8 +3216,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         ServiceOffering newServiceOffering = _entityMgr.findById(ServiceOffering.class, newServiceofferingId);
         HostVO hostVo = _hostDao.findById(vm.getHostId());
 
-        Float memoryOvercommitRatio = _memOverprovisioningFactor.valueIn(hostVo.getClusterId());
-        Float cpuOvercommitRatio = _cpuOverprovisioningFactor.valueIn(hostVo.getClusterId());
+        Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(hostVo.getClusterId());
+        Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(hostVo.getClusterId());
         long minMemory = (long)(newServiceOffering.getRamSize() / memoryOvercommitRatio);
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), (int)(newServiceOffering.getSpeed() / cpuOvercommitRatio),
             newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());

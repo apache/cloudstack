@@ -47,7 +47,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -140,8 +139,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     ConfigDepot _configDepot;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
-    private ConfigValue<Long> _maxVolumeSizeInGb;
-    private ConfigValue<Boolean> _recreateSystemVmEnabled;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -489,8 +486,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > (_maxVolumeSizeInGb.value() * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+        } else if (size > (MaxVolumeSize.value() * 1024 * 1024 * 1024)) {
+            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + MaxVolumeSize + " Gb.");
         }
 
         return true;
@@ -909,7 +906,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols) throws StorageUnavailableException {
-        boolean recreate = _recreateSystemVmEnabled.value();
+        boolean recreate = RecreatableSystemVmEnabled.value();
         List<VolumeTask> tasks = new ArrayList<VolumeTask>();
         for (VolumeVO vol : vols) {
             StoragePoolVO assignedPool = null;
@@ -981,7 +978,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException {
         VolumeVO newVol;
-        boolean recreate = _recreateSystemVmEnabled.value();
+        boolean recreate = RecreatableSystemVmEnabled.value();
         DataStore destPool = null;
         if (recreate && (dest.getStorageForDisks() == null || dest.getStorageForDisks().get(vol) == null)) {
             destPool = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
@@ -1120,10 +1117,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _maxVolumeSizeInGb = _configDepot.get(MaxVolumeSize);
-
-        _recreateSystemVmEnabled = _configDepot.get(RecreatableSystemVmEnabled);
-
         return true;
     }
 

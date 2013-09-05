@@ -73,7 +73,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -153,7 +152,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -858,12 +856,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         listener.hostConnect(hostId, pool.getId());
     }
 
-    @InjectConfig(key = CapacityManager.StorageOverprovisioningFactorCK)
-    ConfigValue<Double> _storageOverprovisioningFactor;
-
     @Override
     public BigDecimal getStorageOverProvisioningFactor(Long dcId) {
-        return new BigDecimal(_storageOverprovisioningFactor.valueIn(dcId));
+        return new BigDecimal(CapacityManager.StorageOverprovisioningFactor.valueIn(dcId));
     }
 
     @Override
@@ -1462,12 +1457,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    @InjectConfig(key = CapacityManager.StorageCapacityDisableThresholdCK)
-    ConfigValue<Float> _storageCapacityDisableThreshold;
-
     private boolean checkUsagedSpace(StoragePool pool) {
         StatsCollector sc = StatsCollector.getInstance();
-        double storageUsedThreshold = _storageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (sc != null) {
             long totalSize = pool.getCapacityBytes();
             StorageStats stats = sc.getStoragePoolStats(pool.getId());
@@ -1537,9 +1529,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return futureIops <= pool.getCapacityIops();
     }
 
-    @InjectConfig(key = CapacityManager.StorageAllocatedCapacityDisableThresholdCK)
-    ConfigValue<Double> _storageAllocatedCapacityDisableThreshold;
-
     @Override
     public boolean storagePoolHasEnoughSpace(List<Volume> volumes,
             StoragePool pool) {
@@ -1575,7 +1564,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             totalOverProvCapacity = pool.getCapacityBytes();
         }
 
-        double storageAllocatedThreshold = _storageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity
                     + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: "

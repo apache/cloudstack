@@ -21,18 +21,6 @@ package org.apache.cloudstack.framework.config;
  *
  */
 public interface ConfigDepot {
-    /**
-     * Retrieves the global configuration value for key.
-     * @param key name of the key to retrieve.
-     * @return global configuration value even if the key is scoped
-     */
-    <T> ConfigValue<T> get(ConfigKey<T> key);
-    
-    /**
-     * Retrieves a ConfigValue by its name
-     * @param name name of the config
-     * @return ConfigValue
-     */
-    ConfigValue<?> get(String name);
 
+    ConfigKey<?> get(String paramName);
 }

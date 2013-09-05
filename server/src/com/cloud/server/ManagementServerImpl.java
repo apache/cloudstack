@@ -430,7 +430,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -558,7 +557,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLifecycle;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -3238,9 +3236,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         return cloudParams;
     }
-    
-    @InjectConfig(key = TemplateManager.AllowPublicUserTemplatesCK)
-    ConfigValue<Boolean> _allowPublicUserTemplates;
 
     @Override
     public Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd) {
@@ -3265,7 +3260,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         long diskOffMaxSize = Long.valueOf(_configDao.getValue(Config.CustomDiskOfferingMaxSize.key()));
 
-        boolean userPublicTemplateEnabled = _allowPublicUserTemplates.valueIn(caller.getId());
+        boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
         // add some parameters UI needs to handle API throttling
         boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));

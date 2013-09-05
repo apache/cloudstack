@@ -69,7 +69,6 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -271,9 +270,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         full,
         linked
     }
-
-    @InjectConfig(key = EnableDynamicallyScaleVmCK)
-    ConfigValue<Boolean> _enableDynamicallyScaleVm;
 
     @Inject
     EntityManager _entityMgr;
@@ -1270,7 +1266,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance.getState().equals(State.Running)) {
             int retry = _scaleRetry;
             ExcludeList excludes = new ExcludeList();
-            boolean enableDynamicallyScaleVm = _enableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId());
+            boolean enableDynamicallyScaleVm = EnableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId());
             if(!enableDynamicallyScaleVm){
                throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }

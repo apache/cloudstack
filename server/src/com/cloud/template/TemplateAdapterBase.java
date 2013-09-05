@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -66,7 +65,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -91,10 +89,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     @Inject TemplateManager templateMgr;
     @Inject ConfigurationServer _configServer;
     @Inject ProjectManager _projectMgr;
-
-    @InjectConfig(key = TemplateManager.AllowPublicUserTemplatesCK)
-    ConfigValue<Boolean> _allowPublicUserTemplates;
-
 
     @Override
     public boolean stop() {
@@ -175,7 +169,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         // check whether owner can create public templates
-        boolean allowPublicUserTemplates = _allowPublicUserTemplates.valueIn(templateOwner.getId());
+        boolean allowPublicUserTemplates = TemplateManager.AllowPublicUserTemplates.valueIn(templateOwner.getId());
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new InvalidParameterValueException("Only private templates/ISO can be created.");
         }

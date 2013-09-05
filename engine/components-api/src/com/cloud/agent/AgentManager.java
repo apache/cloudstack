@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
@@ -30,6 +32,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
  */
 public interface AgentManager {
     final static String WaitCK = "wait";
+    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, WaitCK, "1800", "Time in seconds to wait for control commands to return", true);
 
     public enum TapAgentsAction {
         Add, Del, Contains,

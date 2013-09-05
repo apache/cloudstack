@@ -46,7 +46,6 @@ import com.sun.mail.smtp.SMTPTransport;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -112,10 +111,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // one hour by default
-    private ConfigValue<Double> _memoryCapacityThreshold;
-    private ConfigValue<Double> _cpuCapacityThreshold;
-    private ConfigValue<Double> _storageCapacityThreshold;
-    private ConfigValue<Double> _storageAllocCapacityThreshold;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
     private double _secondaryStorageCapacityThreshold = 0.75;
@@ -156,11 +151,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());
         String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
         String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
-
-        _storageCapacityThreshold = _configDepot.get(StorageCapacityThreshold);
-        _cpuCapacityThreshold = _configDepot.get(CPUCapacityThreshold);
-        _memoryCapacityThreshold = _configDepot.get(MemoryCapacityThreshold);
-        _storageAllocCapacityThreshold = _configDepot.get(StorageAllocatedCapacityThreshold);
 
         if (publicIPCapacityThreshold != null) {
             _publicIPCapacityThreshold = Double.parseDouble(publicIPCapacityThreshold);
@@ -543,16 +533,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 switch (capacityType) {
                     case Capacity.CAPACITY_TYPE_STORAGE:
                         capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
-                        threshold = _storageCapacityThreshold.valueIn(cluster.getId());
+                        threshold = StorageCapacityThreshold.valueIn(cluster.getId());
                         break;
                     case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
-                        threshold = _storageAllocCapacityThreshold.valueIn(cluster.getId());
+                        threshold = StorageAllocatedCapacityThreshold.valueIn(cluster.getId());
                         break;
                     case Capacity.CAPACITY_TYPE_CPU:
-                        threshold = _cpuCapacityThreshold.valueIn(cluster.getId());
+                        threshold = CPUCapacityThreshold.valueIn(cluster.getId());
                         break;
                     case Capacity.CAPACITY_TYPE_MEMORY:
-                        threshold = _memoryCapacityThreshold.valueIn(cluster.getId());
+                        threshold = MemoryCapacityThreshold.valueIn(cluster.getId());
                         break;
                     default:
                         threshold = _capacityTypeThresholdMap.get(capacityType);

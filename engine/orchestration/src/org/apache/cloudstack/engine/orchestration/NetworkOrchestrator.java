@@ -44,7 +44,6 @@ import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -342,20 +341,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
 
-    ConfigValue<Integer> _networkGcWait;
-    ConfigValue<Integer> _networkGcInterval;
-    ConfigValue<Integer> _networkLockTimeout;
-    ConfigValue<String> _domainSuffix;
-
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
     @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _networkGcWait = _configDepot.get(NetworkGcWait);
-        _networkGcInterval = _configDepot.get(NetworkGcInterval);
-        _networkLockTimeout = _configDepot.get(NetworkLockTimeout);
-
         // populate providers
         Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -580,7 +570,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public boolean start() {
-        _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), _networkGcInterval.value(), _networkGcInterval.value(), TimeUnit.SECONDS);
+        _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), NetworkGcInterval.value(), NetworkGcInterval.value(), TimeUnit.SECONDS);
         return true;
     }
 
@@ -920,7 +910,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // Acquire lock only when network needs to be implemented
-        network = _networksDao.acquireInLockTable(networkId, _networkLockTimeout.value());
+        network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
         if (network == null) {
             // see NetworkVO.java
             ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
@@ -1783,7 +1773,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                     // 2) If null, generate networkDomain using domain suffix from the global config variables
                     if (networkDomain == null) {
-                        networkDomain = "cs" + Long.toHexString(owner.getId()) + _domainSuffix.valueIn(zoneId);
+                        networkDomain = "cs" + Long.toHexString(owner.getId()) + GuestDomainSuffix.valueIn(zoneId);
                     }
 
                 } else {
@@ -1908,7 +1898,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         try {
             //do global lock for the network
-            network = _networksDao.acquireInLockTable(networkId, _networkLockTimeout.value());
+            network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
             if (network == null) {
                 s_logger.warn("Unable to acquire lock for the network " + network + " as a part of network shutdown");
                 return false;
@@ -2235,7 +2225,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
                         }
                         stillFree.put(networkId, currentTime);
-                    } else if (time > (currentTime - _networkGcWait.value())) {
+                    } else if (time > (currentTime - NetworkGcWait.value())) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
                         }

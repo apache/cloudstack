@@ -35,7 +35,6 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIp;
@@ -134,7 +133,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -162,9 +160,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
-
-    @InjectConfig(key = UseSystemPublicIpsCK)
-    ConfigValue<Boolean> _useSystemPublicIps;
 
     @Inject
     NetworkOrchestrationService _networkMgr = null;
@@ -727,7 +722,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // If all the dedicated IPs of the owner are in use fetch an IP from the system pool
         if (addrs.size() == 0 && fetchFromDedicatedRange) {
             // Verify if account is allowed to acquire IPs from the system
-            boolean useSystemIps = _useSystemPublicIps.valueIn(owner.getId());
+            boolean useSystemIps = UseSystemPublicIps.valueIn(owner.getId());
             if (useSystemIps && nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                 fetchFromDedicatedRange = false;
                 sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
@@ -1098,7 +1093,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             ipaddr.setAllocatedToAccountId(ipOwner.getId());
             ipaddr = _ipAddressDao.persist(ipaddr);
 
-            String guestType = vlan.getVlanType().toString();
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN,
                 ipaddr.getId(),
                 ipaddr.getDataCenterId(),

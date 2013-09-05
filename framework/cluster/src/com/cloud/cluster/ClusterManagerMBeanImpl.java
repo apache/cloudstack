@@ -24,44 +24,44 @@ import javax.management.StandardMBean;
 import com.cloud.utils.DateUtil;
 
 public class ClusterManagerMBeanImpl extends StandardMBean implements ClusterManagerMBean {
-	private final ClusterManagerImpl _clusterMgr;
-	private final ManagementServerHostVO _mshostVo;
-	
-	public ClusterManagerMBeanImpl(ClusterManagerImpl clusterMgr, ManagementServerHostVO mshostVo) {
-		super(ClusterManagerMBean.class, false);
-		
-		_clusterMgr = clusterMgr;
-		_mshostVo = mshostVo;
-	}
-	
-	@Override
+    private final ClusterManagerImpl _clusterMgr;
+    private final ManagementServerHostVO _mshostVo;
+
+    public ClusterManagerMBeanImpl(ClusterManagerImpl clusterMgr, ManagementServerHostVO mshostVo) {
+        super(ClusterManagerMBean.class, false);
+
+        _clusterMgr = clusterMgr;
+        _mshostVo = mshostVo;
+    }
+
+    @Override
     public long getMsid() {
-		return _mshostVo.getMsid();
-	}
-	
-	@Override
+        return _mshostVo.getMsid();
+    }
+
+    @Override
     public String getLastUpdateTime() {
-		Date date = _mshostVo.getLastUpdateTime();
-		return DateUtil.getDateDisplayString(TimeZone.getDefault(), date);
-	}
-	
-	@Override
+        Date date = _mshostVo.getLastUpdateTime();
+        return DateUtil.getDateDisplayString(TimeZone.getDefault(), date);
+    }
+
+    @Override
     public String getClusterNodeIP() {
-		return _mshostVo.getServiceIP();
-	}
-	
-	@Override
+        return _mshostVo.getServiceIP();
+    }
+
+    @Override
     public String getVersion() {
-		return _mshostVo.getVersion();
-	}
-	
-	@Override
+        return _mshostVo.getVersion();
+    }
+
+    @Override
     public int getHeartbeatInterval() {
-		return _clusterMgr.getHeartbeatInterval();
-	}
-	
-	@Override
+        return _clusterMgr.getHeartbeatInterval();
+    }
+
+    @Override
     public int getHeartbeatThreshold() {
-		return _clusterMgr.getHeartbeatThreshold();
-	}
+        return ClusterManager.HeartbeatThreshold.value();
+    }
 }

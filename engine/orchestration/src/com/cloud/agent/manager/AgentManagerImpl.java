@@ -43,7 +43,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -155,12 +154,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected int _retry = 2;
 
-    protected ConfigValue<Integer> _wait;
-    protected ConfigValue<Integer> _alertWait;
     protected long _nodeId = -1;
-
-    protected ConfigValue<Integer> _pingInterval;
-    protected ConfigValue<Float> _pingTimeout;
 
     protected ExecutorService _executor;
     protected ThreadPoolExecutor _connectExecutor;
@@ -188,47 +182,34 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "The number of direct agents to load each time", false);
     protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advance", "500",
             "Default size for DirectAgentPool", false);
-    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, WaitCK, "1800", "Time in seconds to wait for control commands to return", true);
-
-    protected ConfigValue<Integer> _port;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
-        _port = _configDepot.get(Port);
-        ConfigValue<Integer> workers = _configDepot.get(Workers);
+        s_logger.info("Ping Timeout is " + PingTimeout.value());
 
-        _pingInterval = _configDepot.get(PingInterval);
-
-        _wait = _configDepot.get(Wait);
-        _alertWait = _configDepot.get(AlertWait);
-        _pingTimeout = _configDepot.get(PingTimeout);
-
-        s_logger.info("Ping Timeout is " + _pingTimeout);
-
-        ConfigValue<Integer> threads = _configDepot.get(DirectAgentLoadSize);
+        int threads = DirectAgentLoadSize.value();
 
         _nodeId = ManagementServerNode.getManagementServerId();
         s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
 
-        long lastPing = (System.currentTimeMillis() >> 10) - (long)(_pingTimeout.value() * _pingInterval.value());
+        long lastPing = (System.currentTimeMillis() >> 10) - (long)(PingTimeout.value() * PingInterval.value());
         _hostDao.markHostsAsDisconnected(_nodeId, lastPing);
 
         registerForHostEvents(new BehindOnPingListener(), true, true, false);
 
-        _executor = new ThreadPoolExecutor(threads.value(), threads.value(), 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
         _connectExecutor = new ThreadPoolExecutor(100, 500, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
         //allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", _port.value(), workers.value() + 10, this);
-        s_logger.info("Listening on " + _port.value() + " with " + workers.value() + " workers");
+        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this);
+        s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
         
-        ConfigValue<Integer> size = _configDepot.get(DirectAgentPoolSize);
-        _directAgentExecutor = new ScheduledThreadPoolExecutor(size.value(), new NamedThreadFactory("DirectAgent"));
-        s_logger.debug("Created DirectAgentAttache pool with size: " + size.value());
+        _directAgentExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgent"));
+        s_logger.debug("Created DirectAgentAttache pool with size: " + DirectAgentPoolSize.value());
         
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
 
@@ -236,7 +217,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected long getTimeout() {
-        return (long)(_pingTimeout.value() * _pingInterval.value());
+        return (long)(PingTimeout.value() * PingInterval.value());
     }
 
     @Override
@@ -357,7 +338,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected int getPingInterval() {
-        return _pingInterval.value();
+        return PingInterval.value();
     }
 
     @Override
@@ -392,7 +373,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         if (timeout <= 0) {
-            timeout = _wait.value();
+            timeout = Wait.value();
         }
         assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
 
@@ -576,7 +557,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             _connection.start();
         }
 
-        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), _pingInterval.value(), _pingInterval.value(), TimeUnit.SECONDS);
+        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
 
         return true;
     }
@@ -828,7 +809,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 } else if (determinedState == Status.Disconnected) {
                     s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
                     if (currentStatus == Status.Disconnected) {
-                        if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > _alertWait.value()) {
+                        if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > AlertWait.value()) {
                             s_logger.warn("Host " + host.getId() + " has been disconnected pass the time it should be disconnected.");
                             event = Status.Event.WaitedTooLong;
                         } else {
@@ -840,8 +821,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         HostPodVO podVO = _podDao.findById(host.getPodId());
                         String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
                         if ((host.getType() != Host.Type.SecondaryStorage) && (host.getType() != Host.Type.ConsoleProxy)) {
-                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc, "If the agent for host [" + hostDesc
-                                    + "] is not restarted within " + _alertWait + " seconds, HA will begin on the VMs");
+                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
+                                "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, HA will begin on the VMs");
                         }
                         event = Status.Event.AgentDisconnected;
                     }
@@ -1408,7 +1389,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         attache = createAttacheForDirectConnect(host, resource);
         StartupAnswer[] answers = new StartupAnswer[cmds.length];
         for (int i = 0; i < answers.length; i++) {
-            answers[i] = new StartupAnswer(cmds[i], attache.getId(), _pingInterval.value());
+            answers[i] = new StartupAnswer(cmds[i], attache.getId(), PingInterval.value());
         }
         attache.process(answers);
         attache = notifyMonitorsOfConnection(attache, cmds, forRebalance);

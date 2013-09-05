@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -75,7 +74,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.InjectConfig;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -92,9 +90,6 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     static final ConfigKey<String> RemoteAccessVpnClientIpRange = new ConfigKey<String>("Network", String.class, RemoteAccessVpnClientIpRangeCK, "10.1.2.1-10.1.2.8",
         "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", false, ConfigKey.Scope.Account);
-
-    @InjectConfig(key = RemoteAccessVpnClientIpRangeCK)
-    ConfigValue<String> _remoteAccessVpnClientIpRange;
 
     @Inject AccountDao _accountDao;
     @Inject VpnUserDao _vpnUsersDao;
@@ -166,7 +161,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
 
         if (ipRange == null) {
-            ipRange = _remoteAccessVpnClientIpRange.valueIn(ipAddr.getAccountId());
+            ipRange = RemoteAccessVpnClientIpRange.valueIn(ipAddr.getAccountId());
         }
         String[] range = ipRange.split("-");
         if (range.length != 2) {
@@ -208,7 +203,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
-        String ipRange = _remoteAccessVpnClientIpRange.value();
+        String ipRange = RemoteAccessVpnClientIpRange.value();
         if (ipRange == null) {
             s_logger.warn("Remote Access VPN global configuration missing client ip range -- ignoring");
             return;

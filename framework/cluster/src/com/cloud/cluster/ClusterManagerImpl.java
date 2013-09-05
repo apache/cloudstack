@@ -47,7 +47,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -77,8 +76,6 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     private final List<ClusterManagerListener> _listeners = new ArrayList<ClusterManagerListener>();
     private final Map<Long, ManagementServerHostVO> _activePeers = new HashMap<Long, ManagementServerHostVO>();
-    private ConfigValue<Integer> _heartbeatInterval;
-    private ConfigValue<Integer> _heartbeatThreshold;
 
     private final Map<String, ClusterService> _clusterPeers;
 
@@ -354,7 +351,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     public void broadcast(long agentId, String cmds) {
         Date cutTime = DateUtil.currentGMTTime();
 
-        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold.value()));
+        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
         for (ManagementServerHostVO peer : peers) {
             String peerName = Long.toString(peer.getMsid());
             if (getSelfPeerName().equals(peerName)) {
@@ -534,7 +531,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return new Runnable() {
             @Override
             public void run() {
-                Transaction txn = Transaction.open("ClusterHeartBeat");
+                Transaction txn = Transaction.open("ClusterHeartbeat");
                 try {
                     Profiler profiler = new Profiler();
                     Profiler profilerHeartbeatUpdate = new Profiler();
@@ -568,7 +565,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     } finally {
                         profiler.stop();
                         
-                        if (profiler.getDuration() >= _heartbeatInterval.value()) {
+                        if (profiler.getDuration() >= HeartbeatInterval.value()) {
                             if(s_logger.isDebugEnabled())
                                 s_logger.debug("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() +
                                     ", profilerHeartbeatUpdate: " + profilerHeartbeatUpdate.toString() +
@@ -602,7 +599,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     invalidHeartbeatConnection();
                 } finally {
                     txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
-                    txn.close("ClusterHeartBeat");
+                    txn.close("ClusterHeartbeat");
                 }
             }
         };
@@ -623,7 +620,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     private Connection getHeartbeatConnection() throws SQLException {
         if(_heartbeatConnection == null) {
             Connection conn = Transaction.getStandaloneConnectionWithException();
-            _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartBeat", conn, false);
+            _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartbeat", conn, false);
         }
 
         return _heartbeatConnection.conn();
@@ -759,7 +756,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         // upon startup, for all inactive management server nodes that we see at startup time, we will send notification also to help upper layer perform
         // missed cleanup
         Date cutTime = DateUtil.currentGMTTime();
-        List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - _heartbeatThreshold.value()));
+        List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
        
         // We don't have foreign key constraints to enforce the mgmt_server_id integrity in host table, when user manually
         // remove records from mshost table, this will leave orphan mgmt_serve_id reference in host table.
@@ -804,7 +801,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         
         Profiler profilerQueryActiveList = new Profiler();
         profilerQueryActiveList.start();
-        List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold.value()));
+        List<ManagementServerHostVO> currentList = _mshostDao.getActiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
         profilerQueryActiveList.stop();
 
         Profiler profilerSyncClusterInfo = new Profiler();
@@ -919,7 +916,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         
         profiler.stop();
         
-        if (profiler.getDuration() >= _heartbeatInterval.value()) {
+        if (profiler.getDuration() >= HeartbeatInterval.value()) {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Peer scan takes too long to finish. profiler: " + profiler.toString()
                   + ", profilerQueryActiveList: " + profilerQueryActiveList.toString()
@@ -987,7 +984,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             _mshostPeerDao.clearPeerInfo(_mshostId);
 
             // use seperate thread for heartbeat updates
-            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), _heartbeatInterval.value(), _heartbeatInterval.value(), TimeUnit.MILLISECONDS);
+            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HeartbeatInterval.value(), HeartbeatInterval.value(), TimeUnit.MILLISECONDS);
             _notificationExecutor.submit(getNotificationTask());
 
         } catch (Throwable e) {
@@ -1028,19 +1025,11 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return true;
     }
 
-    protected final ConfigKey<Integer> HeartBeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server",
-            "1500", "Interval to check for the heart beat between management server nodes", false);
-    protected final ConfigKey<Integer> HeartBeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server",
-            "150000", "Threshold before self-fence the management server", true);
-    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if(s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring cluster manager : " + name);
         }
-
-        _heartbeatInterval = _configDepot.get(HeartBeatInterval);
-        _heartbeatThreshold = _configDepot.get(HeartBeatThreshold);
 
         File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
         Properties dbProps = new Properties();
@@ -1095,7 +1084,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     public boolean isManagementNodeAlive(long msid) {
         ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
         if(mshost != null) {
-            if (mshost.getLastUpdateTime().getTime() >= DateUtil.currentGMTTime().getTime() - _heartbeatThreshold.value()) {
+            if (mshost.getLastUpdateTime().getTime() >= DateUtil.currentGMTTime().getTime() - HeartbeatThreshold.value()) {
                 return true;
             }
         }
@@ -1119,7 +1108,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {HeartBeatInterval, HeartBeatThreshold};
+        return new ConfigKey<?>[] {HeartbeatInterval, HeartbeatThreshold};
     }
 
     private boolean pingManagementNode(ManagementServerHostVO mshost) {
@@ -1167,18 +1156,13 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
 
 
-    @Override
-    public int getHeartbeatThreshold() {
-        return _heartbeatThreshold.value();
-    }
-
     public int getHeartbeatInterval() {
-        return _heartbeatInterval.value();
+        return HeartbeatInterval.value();
     }
 
     private void checkConflicts() throws ConfigurationException {
         Date cutTime = DateUtil.currentGMTTime();
-        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - _heartbeatThreshold.value()));
+        List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
         for(ManagementServerHostVO peer : peers) {
             String peerIP = peer.getServiceIP().trim();
             if(_clusterNodeIP.equals(peerIP)) {

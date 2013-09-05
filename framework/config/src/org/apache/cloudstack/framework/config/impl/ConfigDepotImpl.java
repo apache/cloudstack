@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.framework.config.impl;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -29,14 +29,11 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ConfigInjector;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -60,14 +57,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *   - Figure out the correct categories.
  *
  */
-public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker, ConfigInjector {
+public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker {
     private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
     @Inject
     ConfigurationDao   _configDao;
     @Inject
     List<Configurable> _configurables;
     @Inject
-    List<ScopedConfigStorage> _scopedStorage;
+    List<ScopedConfigStorage> _scopedStorages;
 
     HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
@@ -75,17 +72,9 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
     }
 
     @Override
-    public <T> ConfigValue<T> get(ConfigKey<T> config) {
-        if (config.scope() == Scope.Global) {
-            return new ConfigValue<T>(_configDao, config);
-        } else {
-            for (ScopedConfigStorage storage : _scopedStorage) {
-                if (storage.getScope() == config.scope()) {
-                    return new ConfigValue<T>(_configDao, config, storage);
-                }
-            }
-            throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope());
-        }
+    public ConfigKey<?> get(String key) {
+        Pair<String, ConfigKey<?>> value = _allKeys.get(key);
+        return value != null ? value.second() : null;
     }
 
     @Override
@@ -121,6 +110,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
     }
 
     @Override
+    @PostConstruct
     public void check() {
         for (Configurable configurable : _configurables) {
             s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
@@ -135,24 +125,17 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
         }
     }
 
-    @Override
-    public void inject(Field field, Object obj, String key) {
-        Pair<String, ConfigKey<?>> configKey = _allKeys.get(key);
-        try {
-            field.set(obj, get(configKey.second()));
-        } catch (IllegalArgumentException e) {
-            throw new CloudRuntimeException("Unable to inject configuration due to ", e);
-        } catch (IllegalAccessException e) {
-            throw new CloudRuntimeException("Unable to inject configuration due to ", e);
-        }
+    public ConfigurationDao global() {
+        return _configDao;
     }
-
-    @Override
-    public ConfigValue<?> get(String name) {
-        Pair<String, ConfigKey<?>> configKey = _allKeys.get(name);
-        if (configKey == null) {
-            throw new CloudRuntimeException("Unable to find a registered config key for " + name);
+    
+    public ScopedConfigStorage scoped(ConfigKey<?> config) {
+        for (ScopedConfigStorage storage : _scopedStorages) {
+            if (storage.getScope() == config.scope()) {
+                return storage;
+            }
         }
-        return get(configKey.second());
+
+        throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope() + " for " + config.key());
     }
 }

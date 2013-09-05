@@ -41,7 +41,6 @@ import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigValue;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -268,14 +267,7 @@ public class VirtualMachineManagerImplTest {
         doReturn(hostVO).when(_hostDao).findById(1L);
         doReturn(1L).when(_vmInstance).getDataCenterId();
         doReturn(1L).when(hostVO).getClusterId();
-        @SuppressWarnings("unchecked")
-        ConfigValue<Float> memOverprovisioningFactor = mock(ConfigValue.class);
-        @SuppressWarnings("unchecked")
-        ConfigValue<Float> cpuOverprovisioningFactor = mock(ConfigValue.class);
-        when(_configDepot.get(CapacityManager.MemOverprovisioningFactor)).thenReturn(memOverprovisioningFactor);
-        when(memOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
-        when(_configDepot.get(CapacityManager.CpuOverprovisioningFactor)).thenReturn(cpuOverprovisioningFactor);
-        when(cpuOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
+        when(CapacityManager.CpuOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
                 newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(),
                 newServiceOffering.getLimitCpuUse());

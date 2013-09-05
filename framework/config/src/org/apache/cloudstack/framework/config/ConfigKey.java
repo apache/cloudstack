@@ -16,6 +16,11 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
+import java.sql.Date;
+
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
@@ -72,6 +77,13 @@ public class ConfigKey<T> {
     private final Scope _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final boolean _isDynamic;
     private final T _multiplier;
+    T _value = null;
+
+    static ConfigDepotImpl s_depot = null;
+
+    static void init(ConfigDepotImpl depot) {
+        s_depot = depot;
+    }
 
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Scope scope) {
         this(type, name, category, defaultValue, description, isDynamic, scope, null);
@@ -117,4 +129,55 @@ public class ConfigKey<T> {
 
         throw new CloudRuntimeException("Comparing ConfigKey to " + obj.toString());
     }
+
+    public T value() {
+        if (_value == null || isDynamic()) {
+            ConfigurationVO vo = s_depot != null ? s_depot.global().findById(key()) : null;
+            _value = valueOf(vo != null ? vo.getValue() : defaultValue());
+        }
+
+        return _value;
+    }
+
+    public T valueIn(long id) {
+        String value = s_depot != null ? s_depot.scoped(this).getConfigValue(id, this) : null;
+        if (value == null) {
+            return value();
+        } else {
+            return valueOf(value);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected T valueOf(String value) {
+        Number multiplier = 1;
+        if (multiplier() != null) {
+            multiplier = (Number)multiplier();
+        }
+        Class<T> type = type();
+        if (type.isAssignableFrom(Boolean.class)) {
+            return (T)Boolean.valueOf(value);
+        } else if (type.isAssignableFrom(Integer.class)) {
+            return (T)new Integer(Integer.parseInt(value) * multiplier.intValue());
+        } else if (type.isAssignableFrom(Long.class)) {
+            return (T)new Long(Long.parseLong(value) * multiplier.longValue());
+        } else if (type.isAssignableFrom(Short.class)) {
+            return (T)new Short(Short.parseShort(value));
+        } else if (type.isAssignableFrom(String.class)) {
+            return (T)value;
+        } else if (type.isAssignableFrom(Float.class)) {
+            return (T)new Float(Float.parseFloat(value) * multiplier.floatValue());
+        } else if (type.isAssignableFrom(Double.class)) {
+            return (T)new Double(Double.parseDouble(value) * multiplier.doubleValue());
+        } else if (type.isAssignableFrom(String.class)) {
+            return (T)value;
+        } else if (type.isAssignableFrom(Date.class)) {
+            return (T)Date.valueOf(value);
+        } else if (type.isAssignableFrom(Character.class)) {
+            return (T)new Character(value.charAt(0));
+        } else {
+            throw new CloudRuntimeException("Unsupported data type for config values: " + type);
+        }
+    }
+
 }
