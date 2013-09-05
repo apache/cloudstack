@@ -145,7 +145,8 @@ install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
 	install -D usage/target/cloud-usage-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
 	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
-	cp usage/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
+	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
+	cp usage/target/transformed/log4j-cloud_usage.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/log4j-cloud.xml
 	install -D packaging/debian/init/cloud-usage $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 
 	# cloudstack-awsapi
