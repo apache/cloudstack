@@ -2663,7 +2663,7 @@ ServerResource {
 
         Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
         ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd,
-                storagepool.getCapacity(), storagepool.getUsed(), tInfo);
+                storagepool.getCapacity(), storagepool.getAvailable(), tInfo);
 
         return answer;
     }
