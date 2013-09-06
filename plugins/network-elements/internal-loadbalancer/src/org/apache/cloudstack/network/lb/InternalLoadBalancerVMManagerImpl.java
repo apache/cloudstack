@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
@@ -88,7 +87,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
@@ -148,9 +146,6 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject VMTemplateDao _templateDao;
     @Inject ResourceManager _resourceMgr;
-    @Inject ConfigurationServer _configServer;
-    @Inject
-    ConfigDepot _configDepot;
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile,

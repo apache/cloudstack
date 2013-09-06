@@ -147,7 +147,7 @@ public class NetworkACLServiceTest extends TestCase{
 
     @Test
     public void testCreateACL() throws Exception {
-        Mockito.when(_entityMgr.findById(Vpc.class, Mockito.anyLong())).thenReturn(new VpcVO());
+        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
         Mockito.when(_networkAclMgr.createNetworkACL("acl_new", "acl desc", 1L)).thenReturn(acl);
         assertNotNull(_aclService.createNetworkACL("acl_new", "acl desc", 1L));
     }
@@ -161,7 +161,7 @@ public class NetworkACLServiceTest extends TestCase{
 
     @Test
     public void testCreateACLItem() throws Exception {
-        Mockito.when(_entityMgr.findById(Vpc.class, Mockito.anyLong())).thenReturn(new VpcVO());
+        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
         Mockito.when(_networkAclMgr.getNetworkACL(Mockito.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.createNetworkACLItem(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt(),
                 Mockito.any(NetworkACLItem.TrafficType.class), Mockito.anyLong(),  Mockito.anyString(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
@@ -171,7 +171,7 @@ public class NetworkACLServiceTest extends TestCase{
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateACLItemDuplicateNumber() throws Exception {
-        Mockito.when(_entityMgr.findById(Vpc.class, Mockito.anyLong())).thenReturn(new VpcVO());
+        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
         Mockito.when(_networkAclMgr.getNetworkACL(Mockito.anyLong())).thenReturn(acl);
         Mockito.when(_networkACLItemDao.findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
         _aclService.createNetworkACLItem(createACLItemCmd);

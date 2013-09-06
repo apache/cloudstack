@@ -58,10 +58,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
-<<<<<<< HEAD
-import com.cloud.server.LockMasterListener;
-=======
->>>>>>> Made changes to configuration.  Eliminated ConfigValue and only use ConfigKey
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;

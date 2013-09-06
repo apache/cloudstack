@@ -61,7 +61,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/lb_svc.xml")
-@SuppressWarnings("unchecked")
 public class InternalLBVMServiceTest extends TestCase {
     //The interface to test
     @Inject InternalLoadBalancerVMService _lbVmSvc;

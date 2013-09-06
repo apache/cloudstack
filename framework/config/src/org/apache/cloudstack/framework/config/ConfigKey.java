@@ -139,7 +139,11 @@ public class ConfigKey<T> {
         return _value;
     }
 
-    public T valueIn(long id) {
+    public T valueIn(Long id) {
+        if (id == null) {
+            return value();
+        }
+
         String value = s_depot != null ? s_depot.scoped(this).getConfigValue(id, this) : null;
         if (value == null) {
             return value();
