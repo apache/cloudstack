@@ -1072,12 +1072,12 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     #change antispoof rule in vmchain
     try:
-        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/-A/-D/'"
-        delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
-        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
-        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/!--set/! --set/' | sed 's/-A/-D/'"
+        delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/!--set/! --set/'| sed 's/-A/-D/'"
+        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/!--set/! --set/'"
+        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/!--set/! --set/'"
+        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/!--set/! --set/'"
+        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/'  | sed 's/!--set/! --set/'"
         
         ipts = []
         for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
