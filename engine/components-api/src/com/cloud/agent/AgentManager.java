@@ -20,23 +20,28 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ServerResource;
 
 /**
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager {
-    final static String WaitCK = "wait";
-    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, WaitCK, "1800", "Time in seconds to wait for control commands to return", true);
+    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return", true);
 
     public enum TapAgentsAction {
         Add, Del, Contains,
     }
+
+    boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
 
     /**
      * easy send method that returns null if there's any errors. It handles all exceptions.

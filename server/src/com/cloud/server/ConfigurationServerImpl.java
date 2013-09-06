@@ -51,6 +51,7 @@ import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
+import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
@@ -224,14 +225,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             if (hostIpAdr != null) {
             	Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
             	if (devel) {
-            		String value = _configDao.getValue(Config.ManagementHostIPAdr.key());
+                    String value = _configDao.getValue(ClusterManager.ManagementHostIPAdr.key());
             		if (value != null && !value.equals("localhost")) {
             			needUpdateHostIp = false;
             		}
             	}
                
             	if (needUpdateHostIp) {
-            		 _configDao.update(Config.ManagementHostIPAdr.key(), Config.ManagementHostIPAdr.getCategory(), hostIpAdr);
+                    _configDao.update(ClusterManager.ManagementHostIPAdr.key(), ClusterManager.ManagementHostIPAdr.category(), hostIpAdr);
                      s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
             	}
             }

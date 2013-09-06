@@ -51,6 +51,7 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -210,7 +211,6 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     ServiceOfferingVO _elasticLbVmOffering;
     ScheduledExecutorService _gcThreadPool;
     String _mgmtCidr;
-    String _mgmtHost;
     
     Set<Long> _gcCandidateElbVmIds = Collections.newSetFromMap(new ConcurrentHashMap<Long,Boolean>());
     
@@ -403,7 +403,6 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             _instance = "VM";
         }
         _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
-        _mgmtHost = _configDao.getValue(Config.ManagementHostIPAdr.key());
         
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
 
@@ -812,8 +811,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 //  control command is sent over management network in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
-                                + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmtHost);
+                        s_logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
+                                      dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " +
+                                      ClusterManager.ManagementHostIPAdr.value());
                     }
 
                     if (s_logger.isDebugEnabled()) {

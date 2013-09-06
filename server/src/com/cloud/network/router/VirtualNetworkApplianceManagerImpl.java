@@ -96,6 +96,7 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -373,7 +374,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     int _routerCpuMHz;
     int _retry = 2;
     String _instance;
-    String _mgmt_host;
     String _mgmt_cidr;
 
     int _routerStatsInterval = 300;
@@ -649,7 +649,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        _mgmt_host = configs.get("host");
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
         _routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
@@ -2060,11 +2059,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 controlNic = nic;
                 // DOMR control command is sent over management server in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: "
-                    + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
-                                + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmt_host);
-                    }
+                    s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
+                                  dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + ClusterManager.ManagementHostIPAdr.value());
 
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Add management server explicit route to DomR.");

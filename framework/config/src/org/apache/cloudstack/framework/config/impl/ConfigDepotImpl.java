@@ -55,7 +55,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *   - Move all of the configurations to using ConfigDepot
  *   - Completely eliminate Config.java
  *   - Figure out the correct categories.
- *
+ *   - Add a scope for management server, where if the scope is management server
+ *     then the override is retrieved from a properties file.  Imagine adding a
+ *     new management server node and it is much more capable system than previous
+ *     management servers, you want the adjustments to thread pools etc to be
+ *     very different than other management serves.
+ *   - Add validation methods to ConfigKey<?>.  If a validation class is declared
+ *     when constructing a ConfigKey then configuration server should use the
+ *     validation class to validate the value the admin input for the key.
  */
 public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker {
     private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
@@ -69,6 +76,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
     HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
     public ConfigDepotImpl() {
+        ConfigKey.init(this);
     }
 
     @Override

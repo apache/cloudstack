@@ -165,7 +165,6 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
 
-    private String _mgmt_host;
     private int _mgmt_port = 8250;
 
     @Inject
@@ -1267,10 +1266,6 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         prepareDefaultCertificate();
 
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
-        _mgmt_host = agentMgrConfigs.get("host");
-        if (_mgmt_host == null) {
-            s_logger.warn("Critical warning! Please configure your management server host address right after you have started your management server and then restart it, otherwise you won't be able to do console access");
-        }
 
         value = agentMgrConfigs.get("port");
         _mgmt_port = NumbersUtil.parseInt(value, 8250);
@@ -1342,7 +1337,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
-        buf.append(" host=").append(_mgmt_host);
+        buf.append(" host=").append(ClusterManager.ManagementHostIPAdr.value());
         buf.append(" port=").append(_mgmt_port);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
         if (_sslEnabled) {

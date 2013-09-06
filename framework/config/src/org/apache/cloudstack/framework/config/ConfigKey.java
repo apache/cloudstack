@@ -81,7 +81,7 @@ public class ConfigKey<T> {
 
     static ConfigDepotImpl s_depot = null;
 
-    static void init(ConfigDepotImpl depot) {
+    static public void init(ConfigDepotImpl depot) {
         s_depot = depot;
     }
 

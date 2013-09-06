@@ -1108,7 +1108,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {HeartbeatInterval, HeartbeatThreshold};
+        return new ConfigKey<?>[] {HeartbeatInterval, HeartbeatThreshold, ManagementHostIPAdr};
     }
 
     private boolean pingManagementNode(ManagementServerHostVO mshost) {

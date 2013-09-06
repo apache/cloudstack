@@ -41,7 +41,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.ServerContexts;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -165,9 +164,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private final Map<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
 
     @Inject ResourceManager _resourceMgr;
-
-    @Inject
-    protected ConfigDepot _configDepot;
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>(Integer.class, "workers", "Advance", "5",
             "Number of worker threads handling remote agent connections.", false);
@@ -678,7 +674,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    protected AgentAttache createAttacheForDirectConnect(HostVO host, ServerResource resource)
+    protected AgentAttache createAttacheForDirectConnect(Host host, ServerResource resource)
             throws ConnectionException {
 //        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
 //            return new DummyAttache(this, host.getId(), false);
@@ -1383,7 +1379,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         disconnectInternal(hostId, event, false);
     }
 
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
+    @Override
+    public boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
         AgentAttache attache;
 
         attache = createAttacheForDirectConnect(host, resource);
@@ -1394,7 +1391,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         attache.process(answers);
         attache = notifyMonitorsOfConnection(attache, cmds, forRebalance);
 
-        return attache;
+        return attache != null;
     }
 
     @Override

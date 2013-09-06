@@ -416,15 +416,6 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceManager#listHostsByNameLike(java.lang.String)
-     */
-    @Override
-    public List<HostVO> listHostsByNameLike(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override

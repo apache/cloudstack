@@ -109,8 +109,6 @@ public interface ResourceManager extends ResourceService {
 
     public HostVO findHostByName(String name);
 
-    public List<HostVO> listHostsByNameLike(String name);
-
     HostStats getHostStatistics(long hostId);
 
     Long getGuestOSCategoryId(long hostId);

@@ -26,6 +26,7 @@ public interface ClusterManager extends Manager {
         "Interval to check for the heart beat between management server nodes", false);
     final ConfigKey<Integer> HeartbeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server", "150000",
         "Threshold before self-fence the management server", true);
+    final ConfigKey<String> ManagementHostIPAdr = new ConfigKey<String>("Advanced", String.class, "host", "localhost", "The ip address of management server", true);
 
     void OnReceiveClusterServicePdu(ClusterServicePdu pdu);
 

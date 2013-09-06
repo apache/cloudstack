@@ -279,7 +279,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected AgentAttache createAttacheForDirectConnect(HostVO host, ServerResource resource) {
+    protected AgentAttache createAttacheForDirectConnect(Host host, ServerResource resource) {
 //        if (resource instanceof DummySecondaryStorageResource) {
 //            return new DummyAttache(this, host.getId(), false);
 //        }
