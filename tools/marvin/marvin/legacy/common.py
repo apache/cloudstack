@@ -20,7 +20,7 @@
 #Import Local Modules
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
-from marvin.utils import *
+from marvin.legacy.utils import *
 from marvin.integration.lib.base import Configurations
 
 #Import System modules
