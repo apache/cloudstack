@@ -15,14 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
 import sys
 import logging
 import nose.core
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin import deployDataCenter
 from nose.plugins.base import Plugin
 import time
+from marvin.deployer import deployDataCenter
 
 
 class MarvinPlugin(Plugin):

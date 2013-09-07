@@ -22,11 +22,9 @@
 #    * Only a sandbox
 ############################################################
 '''
-import random
-import marvin
 from ConfigParser import SafeConfigParser
 from optparse import OptionParser
-from marvin.configGenerator import *
+from marvin.deployer.configGenerator import *
 
 
 def getGlobalSettings(config):

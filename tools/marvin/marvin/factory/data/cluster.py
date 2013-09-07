@@ -16,7 +16,7 @@
 # under the License.
 
 import factory
-from marvin.utils import random_gen
+from marvin.legacy.utils import random_gen
 from marvin.factory.cluster import ClusterFactory
 
 class XenClusterFactory(ClusterFactory):

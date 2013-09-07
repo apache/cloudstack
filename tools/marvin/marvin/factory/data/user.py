@@ -18,7 +18,7 @@
 import factory
 from marvin.factory.user import UserFactory
 from marvin.factory.data.account import UserAccountFactory
-from marvin.utils import random_gen
+from marvin.legacy.utils import random_gen
 
 class UserFactory(UserFactory):
 

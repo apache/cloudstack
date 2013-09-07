@@ -15,9 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import factory
 from marvin.factory.virtualmachine import VirtualMachineFactory
-from marvin.utils import random_gen
 
 
 class VirtualMachineIsolatedNetwork(VirtualMachineFactory):

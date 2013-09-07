@@ -17,7 +17,7 @@
 
 import factory
 from marvin.factory.zone import ZoneFactory
-from marvin.utils import random_gen
+from marvin.legacy.utils import random_gen
 
 class AdvancedZoneFactory(ZoneFactory):
     name = factory.Sequence(lambda n: "advzone" + random_gen())

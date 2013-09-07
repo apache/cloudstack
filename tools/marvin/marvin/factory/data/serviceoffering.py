@@ -17,7 +17,7 @@
 
 import factory
 from marvin.factory.serviceoffering import ServiceOfferingFactory
-from marvin.utils import random_gen
+from marvin.legacy.utils import random_gen
 
 class SmallServiceOfferingFactory(ServiceOfferingFactory):
     cpunumber = 1
