@@ -23,9 +23,7 @@ import urllib2
 from argparse import ArgumentParser
 from textwrap import dedent
 from os import path
-from cs_entity_generator import write_entity_classes, get_actionable_entities
-
-
+from marvin.generate.apitoentity import generate, get_entity_action_map
 
 class cmdParameterProperty(object):
     def __init__(self):
@@ -486,5 +484,5 @@ response=json' % options.endpoint
         cg.generateCodeFromJSON(endpointUrl)
 
     if options.entity:
-        entities = get_actionable_entities()
-        write_entity_classes(entities, "entity")
+        entities = get_entity_action_map()
+        generate(entities, "entity")
