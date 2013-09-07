@@ -25,9 +25,13 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -35,20 +39,27 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.UUID;
 
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
@@ -74,7 +85,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     SnapshotManager snapshotMgr;
     @Inject
     EndPointSelector epSelector;
-
+    @Inject
+    ConfigurationDao configDao;
+    @Inject
+    TemplateManager templateManager;
+    @Inject
+    TemplateDataFactory templateDataFactory;
     @Override
     public DataTO getTO(DataObject data) {
         return null;
@@ -165,10 +181,49 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        DataStore store = destData.getDataStore();
+        if (store.getRole() == DataStoreRole.Primary) {
+            if ((srcdata.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE)) {
+                //For CLVM, we need to copy template to primary storage at all, just fake the copy result.
+                TemplateObjectTO templateObjectTO = new TemplateObjectTO();
+                templateObjectTO.setPath(UUID.randomUUID().toString());
+                templateObjectTO.setSize(srcdata.getSize());
+                templateObjectTO.setPhysicalSize(srcdata.getSize());
+                templateObjectTO.setFormat(Storage.ImageFormat.RAW);
+                CopyCmdAnswer answer = new CopyCmdAnswer(templateObjectTO);
+                CopyCommandResult result = new CopyCommandResult("", answer);
+                callback.complete(result);
+            } else if (srcdata.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME) {
+                //For CLVM, we need to pass template on secondary storage to hypervisor
+                String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
+                int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
+                        Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+                StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
+                DataStore imageStore = templateManager.getImageStore(storagePoolVO.getDataCenterId(), srcdata.getId());
+                DataObject srcData = templateDataFactory.getTemplate(srcdata.getId(), imageStore);
+
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait, true);
+                EndPoint ep = epSelector.select(srcData, destData);
+                Answer answer = ep.sendMessage(cmd);
+                CopyCommandResult result = new CopyCommandResult("", answer);
+                callback.complete(result);
+            }
+        }
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
+        //BUG fix for CLOUDSTACK-4618
+        DataStore store = destData.getDataStore();
+        if (store.getRole() == DataStoreRole.Primary) {
+            if ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
+                    (srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME)) {
+                StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
+                if (storagePoolVO != null && storagePoolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 

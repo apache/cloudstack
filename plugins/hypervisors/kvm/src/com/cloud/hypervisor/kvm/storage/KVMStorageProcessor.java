@@ -147,8 +147,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         DataTO destData = cmd.getDestTO();
         TemplateObjectTO template = (TemplateObjectTO) srcData;
         DataStoreTO imageStore = template.getDataStore();
-        TemplateObjectTO volume = (TemplateObjectTO) destData;
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) volume.getDataStore();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) destData.getDataStore();
 
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");
@@ -197,19 +196,32 @@ public class KVMStorageProcessor implements StorageProcessor {
             KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(),
                     primaryPool);
 
-            TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(primaryVol.getName());
 
+             DataTO data = null;
             /**
              * Force the ImageFormat for RBD templates to RAW
              *
              */
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                newTemplate.setFormat(ImageFormat.RAW);
-            } else {
-                newTemplate.setFormat(ImageFormat.QCOW2);
+            if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                TemplateObjectTO newTemplate = new TemplateObjectTO();
+                newTemplate.setPath(primaryVol.getName());
+                if (primaryPool.getType() == StoragePoolType.RBD) {
+                    newTemplate.setFormat(ImageFormat.RAW);
+                } else {
+                    newTemplate.setFormat(ImageFormat.QCOW2);
+                }
+                data = newTemplate;
+            } else if (destData.getObjectType() == DataObjectType.VOLUME) {
+                VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
+                volumeObjectTO.setPath(primaryVol.getName());
+                if (primaryVol.getFormat() == PhysicalDiskFormat.RAW)
+                    volumeObjectTO.setFormat(ImageFormat.RAW);
+                else if (primaryVol.getFormat() == PhysicalDiskFormat.QCOW2) {
+                    volumeObjectTO.setFormat(ImageFormat.QCOW2);
+                }
+                data = volumeObjectTO;
             }
-            return new CopyCmdAnswer(newTemplate);
+            return new CopyCmdAnswer(data);
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());
         } finally {
@@ -287,6 +299,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String templatePath = template.getPath();
 
             if (primaryPool.getType() == StoragePoolType.CLVM) {
+                templatePath = ((NfsTO)imageStore).getUrl() + File.separator + templatePath;
                 vol = templateToPrimaryDownload(templatePath, primaryPool);
             } else {
                 if (templatePath.contains("/mnt")) {
