@@ -17,7 +17,7 @@
 
 import factory
 from marvin.factory.networkoffering import NetworkOfferingFactory
-from marvin.utils import random_gen
+from marvin.legacy.utils import random_gen
 
 
 class DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory(NetworkOfferingFactory):
@@ -43,6 +43,12 @@ class DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory(NetworkOfferingF
                 'provider': 'VirtualRouter'
             }
         )
+    # enable the offering post generation
+    factory.PostGenerationMethodCall('update',
+        factory.SelfAttribute('..apiclient'),
+        id=factory.SelfAttribute('..id'),
+        state='Enabled')
+
 
 
 class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
@@ -71,3 +77,39 @@ class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
                 'provider': provider
             }
         )
+
+    # enable the offering post generation
+    factory.PostGenerationMethodCall('update',
+        factory.SelfAttribute('..apiclient'),
+        id=factory.SelfAttribute('..id'),
+        state='Enabled')
+
+
+class DefaultSharedNetworkOfferingFactory(NetworkOfferingFactory):
+
+    displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%d" % n)
+    name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%d" % n)
+    availability = "Optional"
+    supportedservices = "Dns,Dhcp,UserData"
+    guestiptype = "Shared"
+    traffictype = "GUEST"
+
+    specifyVlan = True
+    specifyIpRanges = True
+    isPersistent = False
+    conserveMode = True
+
+    serviceProviderList = []
+    for service in map(lambda l: l.strip(' '), supportedservices.split(',')):
+        serviceProviderList.append(
+            {
+                'service': service,
+                'provider': 'VirtualRouter'
+            }
+        )
+
+    # enable the offering post generation
+    factory.PostGenerationMethodCall('update',
+        factory.SelfAttribute('..apiclient'),
+        id=factory.SelfAttribute('..id'),
+        state='Enabled')
