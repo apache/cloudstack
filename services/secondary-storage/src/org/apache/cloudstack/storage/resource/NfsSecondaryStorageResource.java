@@ -526,6 +526,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     SwiftUtil.putObject(swift, properties, containterName, _tmpltpp);
                 }
 
+                //clean up template data on staging area
+                try {
+                    DeleteCommand deleteCommand = new DeleteCommand(newTemplate);
+                    execute(deleteCommand);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to clean up staging area:", e);
+                }  
+                
                 TemplateObjectTO template = new TemplateObjectTO();
                 template.setPath(swiftPath);
                 template.setSize(templateFile.length());
@@ -543,7 +551,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 TemplateObjectTO newTemplate = (TemplateObjectTO)answer.getNewData();
                 newTemplate.setDataStore(srcDataStore);
                 CopyCommand newCpyCmd = new CopyCommand(newTemplate, destData, cmd.getWait(), cmd.executeInSequence());
-                return copyFromNfsToS3(newCpyCmd);
+                Answer result = copyFromNfsToS3(newCpyCmd);
+                //clean up template data on staging area
+                try {
+                    DeleteCommand deleteCommand = new DeleteCommand(newTemplate);
+                    execute(deleteCommand);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to clean up staging area:", e);
+                }  
+                return result;
             }
         }
         s_logger.debug("Failed to create templat from snapshot");

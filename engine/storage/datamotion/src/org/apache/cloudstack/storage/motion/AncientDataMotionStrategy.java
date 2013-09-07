@@ -440,6 +440,11 @@ public class
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, _mgmtServer.getExecuteInSequence());
         EndPoint ep = selector.select(srcData, destData);
         Answer answer = ep.sendMessage(cmd);
+        
+        // clean up snapshot copied to staging 
+        if (srcData != null) {
+            cacheMgr.deleteCacheObject(srcData);
+        }
         return answer;
     }
 
