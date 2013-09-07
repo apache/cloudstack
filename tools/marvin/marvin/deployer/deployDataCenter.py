@@ -16,7 +16,6 @@
 # under the License.
 
 """Deploy datacenters according to a json configuration file"""
-import configGenerator
 import cloudstackException
 import cloudstackTestClient
 import logging
@@ -24,6 +23,7 @@ from cloudstackAPI import *
 from os import path
 from time import sleep
 from optparse import OptionParser
+from marvin.deployer import configGenerator
 
 
 class deployDataCenters(object):
@@ -517,7 +517,7 @@ class deployDataCenters(object):
             self.config = configGenerator.getSetupConfig(self.configFile)
         except:
             raise cloudstackException.InvalidParameterException(
-                "Failed to load config %s" % self.configFile)
+                "Failed to load deployer %s" % self.configFile)
 
         ''' Retrieving Management Server Connection Details '''
         mgtDetails = self.config.mgtSvr[0]
@@ -602,7 +602,7 @@ if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-i", "--input", action="store",
                       default="./datacenterCfg", dest="input", help="the path \
-                      where the json config file generated, by default is \
+                      where the json deployer file generated, by default is \
                       ./datacenterCfg")
 
     (options, args) = parser.parse_args()

@@ -856,7 +856,7 @@ if __name__ == "__main__":
 with security groups")
     parser.add_option("-o", "--output", action="store",
                       default="./datacenterCfg", dest="output",
-                      help="the path where the json config file generated, \
+                      help="the path where the json deployer file generated, \
 by default is ./datacenterCfg")
 
     (options, args) = parser.parse_args()
