@@ -42,11 +42,11 @@ fi
 
 is_lv() {
 	# Must be a block device
-	if [ -b "${1}" ]; then
+	if [ -b "${1}"  -o  -L "{1}" ]; then
 		# But not a volume group or physical volume
 		lvm vgs "${1}" > /dev/null 2>&1 && return 1
 		# And a logical volume
-		lvm lvs "${1}" > /dev/null 2>&1 && return 0
+		lvm lvs "${1}" > /dev/null 2>&1 && return 1
 	fi
 	return 0
 }
