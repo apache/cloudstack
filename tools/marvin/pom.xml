@@ -55,7 +55,7 @@
               <workingDirectory>${basedir}/marvin</workingDirectory>
               <executable>python</executable>
               <arguments>
-                <argument>codegenerator.py</argument>
+                <argument>generate/xmltoapi.py</argument>
                 <argument>-s</argument>
                 <argument>${basedir}/commands.xml</argument>
               </arguments>

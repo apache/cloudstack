@@ -19,7 +19,7 @@ try:
     import inflect
 except ImportError:
     raise Exception("inflect installation not found. use pip install inflect to continue")
-from marvin.generate.verbs import grammar
+from verbs import grammar
 
 def singularize(word, num=0):
     """Use the inflect engine to make singular nouns of the entities

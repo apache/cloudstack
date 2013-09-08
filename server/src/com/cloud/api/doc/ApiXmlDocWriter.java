@@ -608,9 +608,11 @@ public class ApiXmlDocWriter {
         try {
             ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");
             for (Field f : AlertManager.class.getFields()) {
-                String name = f.getName().substring(11);
-                Alert alert = new Alert(name, f.getInt(null));
-                out.writeObject(alert);
+                if (f.getClass().isAssignableFrom(Number.class)) {
+                    String name = f.getName().substring(11);
+                    Alert alert = new Alert(name, f.getInt(null));
+                    out.writeObject(alert);
+                }
             }
             out.close();
         } catch (IOException e) {

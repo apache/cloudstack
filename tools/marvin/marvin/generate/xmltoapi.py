@@ -23,7 +23,7 @@ import urllib2
 from argparse import ArgumentParser
 from textwrap import dedent
 from os import path
-from marvin.generate.apitoentity import generate, get_entity_action_map
+from apitoentity import generate, get_entity_action_map
 
 class cmdParameterProperty(object):
     def __init__(self):

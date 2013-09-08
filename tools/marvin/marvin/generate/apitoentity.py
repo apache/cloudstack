@@ -16,9 +16,9 @@
 # under the License.
 
 import os
-from marvin.generate.entity import Entity
-from marvin.generate.factory import Factory
-from marvin.generate.linguist import *
+from entity import Entity
+from factory import Factory
+from linguist import *
 
 LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
