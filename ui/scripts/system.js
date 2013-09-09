@@ -6096,39 +6096,30 @@
                                                     });
 
                                                     $.ajax({
-                                                    	url: createURL('listClusters'),
+                                                    	url: createURL('listApis'),
                                                     	data: {
-                                                            zoneid: args.context.physicalResources[0].id
-                                                        },
-                                                        async: false,
-                                                        success: function(json) {                                                        	
-                                                        	var clusters = json.listclustersresponse.cluster;
-                                                        	if (clusters != null) {
-                                                        		for (var i = 0; i < clusters.length; i++) {                                                        			
-                                                        			if (clusters[i].hypervisortype == 'VMware') {                                                        				
-                                                        				$.ajax({
-                                                                            url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
-                                                                            data: {
-                                                                                zoneid: args.context.physicalResources[0].id
-                                                                            },
-                                                                            async: false,
-                                                                            success: function(json) { //e.g. json == { "listvmwaredcsresponse" { "count":1 ,"VMwareDC" [ {"id":"c3c2562d-65e9-4fc7-92e2-773c2efe8f37","zoneid":1,"name":"datacenter","vcenter":"10.10.20.20"} ] } }
-                                                                                var vmwaredcs = json.listvmwaredcsresponse.VMwareDC;
-                                                                                if (vmwaredcs != null) {
-                                                                                    selectedZoneObj.vmwaredcName = vmwaredcs[0].name;
-                                                                                    selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
-                                                                                    selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
-                                                                                }
-                                                                            }
-                                                                            //, error: function(XMLHttpResponse) {} //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});   
-                                                                        });                                                        				
-                                                        				
-                                                        				break;
-                                                        			}
-                                                        		}                                                        		
-                                                        	}                                                        	
-                                                        }
-                                                    });                         
+                                                    		name: 'listVmwareDcs'                                                    		
+                                                    	},
+                                                    	async: false,
+                                                    	success: function(json) {                                                    		
+                                                    		$.ajax({
+                                                                url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
+                                                                data: {
+                                                                    zoneid: args.context.physicalResources[0].id
+                                                                },
+                                                                async: false,
+                                                                success: function(json) { //e.g. json == { "listvmwaredcsresponse" { "count":1 ,"VMwareDC" [ {"id":"c3c2562d-65e9-4fc7-92e2-773c2efe8f37","zoneid":1,"name":"datacenter","vcenter":"10.10.20.20"} ] } }
+                                                                    var vmwaredcs = json.listvmwaredcsresponse.VMwareDC;
+                                                                    if (vmwaredcs != null) {
+                                                                        selectedZoneObj.vmwaredcName = vmwaredcs[0].name;
+                                                                        selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
+                                                                        selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
+                                                                    }
+                                                                }                                                                
+                                                            });          
+                                                    	},
+                                                    	error: function(XMLHttpResponse) {} //suppress error dialog by overriding default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});   
+                                                    });                                                                                                      
                                                     // for testing only (begin)
                                                     /*
 						                            selectedZoneObj.vmwaredcName = "datacenter";
@@ -13638,7 +13629,7 @@
                                         }
                                     },
                                     url: {
-                                        label: 'label.url',
+                                        label: 'label.ip', //CLOUDSTACK-4629
                                         validation: {
                                             required: true
                                         }
