@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.lang.String;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -171,12 +170,12 @@ public class JuniperSrxResource implements ServerResource {
         ROLLBACK("rollback.xml"), 
         TEST("test.xml");
 
-        private String scriptsDir = "scripts/network/juniper";
-        private String xml;
+        private final String scriptsDir = "scripts/network/juniper";
+        private final String xml;
         private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
         private SrxXml(String filename) {
-            this.xml = getXml(filename);
+            xml = getXml(filename);
         }
 
         public String getXml() {
@@ -209,9 +208,9 @@ public class JuniperSrxResource implements ServerResource {
     }	
 
     public class UsageFilter {
-        private String name;
-        private String counterIdentifier;
-        private String addressType;
+        private final String name;
+        private final String counterIdentifier;
+        private final String addressType;
 
         private UsageFilter(String name, String addressType, String counterIdentifier) {
             this.name = name;    		
@@ -238,14 +237,14 @@ public class JuniperSrxResource implements ServerResource {
     }	
 
     public class FirewallFilterTerm {
-        private String name;
-        private List<String> sourceCidrs;
-        private String destIp;
+        private final String name;
+        private final List<String> sourceCidrs;
+        private final String destIp;
         private String portRange;
-        private String protocol;
+        private final String protocol;
         private String icmpType;
         private String icmpCode;
-        private String countName;
+        private final String countName;
         
         private FirewallFilterTerm(String name, List<String> sourceCidrs, String destIp, String protocol, Integer startPort, Integer endPort,
                 Integer icmpType, Integer icmpCode, String countName) {
@@ -255,7 +254,7 @@ public class JuniperSrxResource implements ServerResource {
             this.protocol = protocol;
             
             if (protocol.equals("tcp") || protocol.equals("udp")) {
-                this.portRange = String.valueOf(startPort) + "-" + String.valueOf(endPort);
+                portRange = String.valueOf(startPort) + "-" + String.valueOf(endPort);
             } else if (protocol.equals("icmp")) {
                 this.icmpType = String.valueOf(icmpType);
                 this.icmpCode = String.valueOf(icmpCode);
@@ -325,7 +324,7 @@ public class JuniperSrxResource implements ServerResource {
         SECURITYPOLICY_EGRESS("egress"),
         SECURITYPOLICY_EGRESS_DEFAULT("egress-default");
 
-        private String identifier;
+        private final String identifier;
 
         private SecurityPolicyType(String identifier) {
             this.identifier = identifier;
@@ -336,6 +335,7 @@ public class JuniperSrxResource implements ServerResource {
         }
     }
 
+    @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof ReadyCommand) {
             return execute((ReadyCommand) cmd);
@@ -360,6 +360,7 @@ public class JuniperSrxResource implements ServerResource {
         }
     }
 
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
             _name = (String) params.get("name");
@@ -443,6 +444,7 @@ public class JuniperSrxResource implements ServerResource {
 
     }
 
+    @Override
     public StartupCommand[] initialize() {   
         StartupExternalFirewallCommand cmd = new StartupExternalFirewallCommand();
         cmd.setName(_name);
@@ -455,6 +457,7 @@ public class JuniperSrxResource implements ServerResource {
         return new StartupCommand[]{cmd};
     }
 
+    @Override
     public Host.Type getType() {
         return Host.Type.ExternalFirewall;
     }
@@ -484,10 +487,12 @@ public class JuniperSrxResource implements ServerResource {
         closeSocket();
     }
 
+    @Override
     public IAgentControl getAgentControl() {
         return null;
     }
 
+    @Override
     public void setAgentControl(IAgentControl agentControl) {
         return;
     }
