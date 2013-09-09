@@ -2657,7 +2657,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public boolean canVmRestartOnAnotherServer(long vmId) {
         List<VolumeVO> vols = _volsDao.findCreatedByInstance(vmId);
         for (VolumeVO vol : vols) {
-            if (!vol.isRecreatable() && !vol.getPoolType().isShared()) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
+            if (!vol.isRecreatable() && storagePoolVO != null && storagePoolVO.getPoolType() != null && !(storagePoolVO.getPoolType().isShared())) {
                 return false;
             }
         }
