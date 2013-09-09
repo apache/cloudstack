@@ -25,6 +25,8 @@ import string
 import random
 import imaplib
 import email
+import socket
+import urlparse
 import datetime
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
@@ -154,16 +156,23 @@ def fetch_api_client(config_file='datacenterCfg'):
         )
     )
 
-def get_host_credentials(config, hostname):
-    """Get login information for a host `hostname` from marvin's `config`
+def get_host_credentials(config, hostip):
+    """Get login information for a host `hostip` (ipv4) from marvin's `config`
 
     @return the tuple username, password for the host else raise keyerror"""
     for zone in config.zones:
         for pod in zone.pods:
             for cluster in pod.clusters:
                 for host in cluster.hosts:
-                    if str(host.url).find(str(hostname)) > 0:
-                        return host.username, host.password
+                    if str(host.url).startswith('http'):
+                        hostname = urlparse.urlsplit(str(host.url)).netloc
+                    else:
+                        hostname = str(host.url)
+                    try:
+                        if socket.getfqdn(hostip) == socket.getfqdn(hostname):
+                            return host.username, host.password
+                    except socket.error, e:
+                        raise Exception("Unresolvable host %s error is %s" % (hostip, e))
     raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
 
