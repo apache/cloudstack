@@ -431,7 +431,9 @@ public class
         int _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CreatePrivateTemplateFromSnapshotWait.getDefaultValue()));
 
+        boolean needCache = false;
         if (needCacheStorage(srcData, destData)) {
+            needCache = true;
             SnapshotInfo snapshot = (SnapshotInfo) srcData;
             srcData = cacheSnapshotChain(snapshot);
         }
@@ -441,7 +443,7 @@ public class
         Answer answer = ep.sendMessage(cmd);
         
         // clean up snapshot copied to staging 
-        if (srcData != null) {
+        if (needCache && srcData != null) {
             cacheMgr.deleteCacheObject(srcData);
         }
         return answer;
