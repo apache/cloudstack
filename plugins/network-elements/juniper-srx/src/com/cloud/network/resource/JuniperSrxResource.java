@@ -65,7 +65,6 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.resource.ServerResource;
@@ -699,7 +698,8 @@ public class JuniperSrxResource implements ServerResource {
             Long publicVlanTag = null;
             if (ip.getVlanId() != null && !ip.getVlanId().equals("untagged")) {
             	try {
-                    publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(ip.getVlanId()));
+                    // TODO BroadcastDomain.getValue(ip.getVlanId) ???
+            		publicVlanTag = Long.parseLong(ip.getVlanId());
             	} catch (Exception e) {
             		throw new ExecutionException("Could not parse public VLAN tag: " + ip.getVlanId());
             	}
@@ -3581,8 +3581,7 @@ public class JuniperSrxResource implements ServerResource {
     	Long publicVlanTag = null;
     	if (!vlan.equals("untagged")) {
     		try {
-                // make sure this vlan is numeric
-                publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(vlan));
+    			publicVlanTag = Long.parseLong(vlan);
     		} catch (Exception e) {
     			throw new ExecutionException("Unable to parse VLAN tag: " + vlan);
     		}

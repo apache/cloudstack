@@ -165,8 +165,6 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
                         "part of network " + network + " implement ", DataCenter.class, dcId);
         }
-        // when supporting more types of networks this need to become
-//        int vlan = Integer.parseInt(BroadcastDomainType.getValue(vnet));
         int vlan = Integer.parseInt(vnet);
 
         // Name is either the given name or the uuid

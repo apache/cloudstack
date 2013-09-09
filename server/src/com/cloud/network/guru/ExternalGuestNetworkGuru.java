@@ -143,8 +143,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 UseSystemGuestVlans.valueIn(config.getAccountId()));
 
             try {
-                // when supporting more types of networks this need to become
-//              int vlantag = Integer.parseInt(BroadcastDomainType.getValue(vnet));
                 vlanTag = Integer.parseInt(vnet);
             } catch (NumberFormatException e) {
                 throw new CloudRuntimeException("Obtained an invalid guest vlan tag. Exception: " + e.getMessage());
