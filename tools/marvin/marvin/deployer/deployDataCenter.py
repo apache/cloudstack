@@ -16,14 +16,14 @@
 # under the License.
 
 """Deploy datacenters according to a json configuration file"""
-import cloudstackException
-import cloudstackTestClient
 import logging
-from cloudstackAPI import *
+import configGenerator
 from os import path
 from time import sleep
+from cloudstackAPI import *
 from optparse import OptionParser
-from marvin.deployer import configGenerator
+from marvin import cloudstackTestClient
+from marvin import cloudstackException
 
 
 class deployDataCenters(object):

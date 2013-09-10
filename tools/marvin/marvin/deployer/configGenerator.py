@@ -18,8 +18,7 @@
 import json
 import os
 from optparse import OptionParser
-import jsonHelper
-
+from marvin import jsonHelper
 
 class managementServer(object):
     def __init__(self):

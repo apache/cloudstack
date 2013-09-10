@@ -15,10 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import deployDataCenter
 import TestCaseExecuteEngine
-import sys
+from deployer import deployDataCenter
 from argparse import ArgumentParser
+
 if __name__ == "__main__":
 
     parser = ArgumentParser()
