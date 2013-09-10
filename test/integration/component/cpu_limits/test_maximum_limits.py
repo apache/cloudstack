@@ -137,34 +137,34 @@ class TestMaxCPULimits(cloudstackTestCase):
         if api_client is None:
             api_client = self.apiclient
 
-            self.debug("Deploying instance")
-            try:
-                if account:
-                    vm = VirtualMachine.create(
-                        api_client,
-                        self.services["virtual_machine"],
-                        templateid=self.template.id,
-                        accountid=account.name,
-                        domainid=account.domainid,
-                        networkids=networks,
-                        serviceofferingid=service_off.id)
-                elif project:
-                    vm = VirtualMachine.create(
-                        api_client,
-                        self.services["virtual_machine"],
-                        templateid=self.template.id,
-                        projectid=project.id,
-                        networkids=networks,
-                        serviceofferingid=service_off.id)
-                vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
-                self.assertIsInstance(vms,
-                    list,
-                    "List VMs should return a valid response")
-                self.assertEqual(vms[0].state, "Running",
-                    "Vm state should be running after deployment")
-                return vm
-            except Exception as e:
-                self.fail("Failed to deploy an instance: %s" % e)
+        self.debug("Deploying instance")
+        try:
+            if account:
+                vm = VirtualMachine.create(
+                     api_client,
+                     self.services["virtual_machine"],
+                     templateid=self.template.id,
+                     accountid=account.name,
+                     domainid=account.domainid,
+                     networkids=networks,
+                     serviceofferingid=service_off.id)
+            elif project:
+                vm = VirtualMachine.create(
+                     api_client,
+                     self.services["virtual_machine"],
+                     templateid=self.template.id,
+                     projectid=project.id,
+                     networkids=networks,
+                     serviceofferingid=service_off.id)
+            vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
+            self.assertIsInstance(vms,
+                                  list,
+                                  "List VMs should return a valid response")
+            self.assertEqual(vms[0].state, "Running",
+                             "Vm state should be running after deployment")
+            return vm
+        except Exception as e:
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupAccounts(self, account_limit=2, domain_limit=2, project_limit=2):
 
