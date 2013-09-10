@@ -154,10 +154,10 @@ class TestCPULimits(cloudstackTestCase):
         if api_client is None:
             api_client = self.apiclient
 
-            self.debug("Deploying an instance in account: %s" %
+        self.debug("Deploying an instance in account: %s" %
                        self.account.name)
-            try:
-                vm = VirtualMachine.create(
+        try:
+            vm = VirtualMachine.create(
                     api_client,
                     self.services["virtual_machine"],
                     templateid=self.template.id,
@@ -165,15 +165,15 @@ class TestCPULimits(cloudstackTestCase):
                     domainid=self.account.domainid,
                     networkids=networks,
                     serviceofferingid=service_off.id)
-                vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
-                self.assertIsInstance(vms,
+            vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
+            self.assertIsInstance(vms,
                     list,
                     "List VMs should return a valid response")
-                self.assertEqual(vms[0].state, "Running",
+            self.assertEqual(vms[0].state, "Running",
                     "Vm state should be running after deployment")
-                return vm
-            except Exception as e:
-                self.fail("Failed to deploy an instance: %s" % e)
+            return vm
+        except Exception as e:
+            self.fail("Failed to deploy an instance: %s" % e)
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_01_multiplecore_start_stop_instance(self):
@@ -401,10 +401,10 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         if api_client is None:
             api_client = self.apiclient
 
-            self.debug("Deploying an instance in account: %s" %
+        self.debug("Deploying an instance in account: %s" %
                        self.account.name)
-            try:
-                vm = VirtualMachine.create(
+        try:
+            vm = VirtualMachine.create(
                     api_client,
                     self.services["virtual_machine"],
                     templateid=self.template.id,
@@ -412,15 +412,15 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
                     domainid=self.account.domainid,
                     networkids=networks,
                     serviceofferingid=service_off.id)
-                vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
-                self.assertIsInstance(vms,
+            vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
+            self.assertIsInstance(vms,
                     list,
                     "List VMs should return a valid response")
-                self.assertEqual(vms[0].state, "Running",
+            self.assertEqual(vms[0].state, "Running",
                     "Vm state should be running after deployment")
-                return vm
-            except Exception as e:
-                self.fail("Failed to deploy an instance: %s" % e)
+            return vm
+        except Exception as e:
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupAccounts(self):
 

@@ -162,23 +162,23 @@ class TestProjectsCPULimits(cloudstackTestCase):
         if api_client is None:
             api_client = self.api_client
 
-            try:
-                self.vm = VirtualMachine.create(
-                    api_client,
-                    self.services["virtual_machine"],
-                    templateid=self.template.id,
-                    projectid=project.id,
-                    networkids=networks,
-                    serviceofferingid=service_off.id)
-                vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
-                self.assertIsInstance(vms,
+        try:
+            self.vm = VirtualMachine.create(
+                        api_client,
+                        self.services["virtual_machine"],
+                        templateid=self.template.id,
+                        projectid=project.id,
+                        networkids=networks,
+                        serviceofferingid=service_off.id)
+            vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
+            self.assertIsInstance(vms,
                     list,
                     "List VMs should return a valid response")
-                self.assertEqual(vms[0].state, "Running",
+            self.assertEqual(vms[0].state, "Running",
                     "Vm state should be running after deployment")
-                return self.vm
-            except Exception as e:
-                self.fail("Failed to deploy an instance: %s" % e)
+            return self.vm
+        except Exception as e:
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupProjectAccounts(self):
 
