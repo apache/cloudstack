@@ -34,7 +34,11 @@
             <configuration>
               <target>
                 <delete dir="marvin/cloudstackAPI" />
-                <echo>Deleting ${project.artifactId} API sources</echo>
+                <delete>
+                  <fileset dir="marvin/factory/" includes="*.py" />
+                  <fileset dir="marvin/entity/" includes="*.py" />
+                </delete>
+                <echo>Deleting generated ${project.artifactId} sources</echo>
               </target>
             </configuration>
           </execution>
