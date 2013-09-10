@@ -44,11 +44,11 @@ class DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory(NetworkOfferingF
             }
         )
     # enable the offering post generation
-    factory.PostGenerationMethodCall('update',
-        factory.SelfAttribute('..apiclient'),
-        id=factory.SelfAttribute('..id'),
-        state='Enabled')
-
+    @factory.post_generation
+    def enable(self, create, extracted, **kwargs):
+        if not create:
+            return
+        self.update(apiclient=kwargs['apiclient'], id=self.id, state='Enabled')
 
 
 class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
@@ -79,10 +79,12 @@ class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
         )
 
     # enable the offering post generation
-    factory.PostGenerationMethodCall('update',
-        factory.SelfAttribute('..apiclient'),
-        id=factory.SelfAttribute('..id'),
-        state='Enabled')
+    @factory.post_generation
+    def enable(self, create, extracted, **kwargs):
+        if not create:
+            return
+        self.update(apiclient=kwargs['apiclient'], id=self.id, state='Enabled')
+
 
 
 class DefaultSharedNetworkOfferingFactory(NetworkOfferingFactory):
@@ -109,7 +111,8 @@ class DefaultSharedNetworkOfferingFactory(NetworkOfferingFactory):
         )
 
     # enable the offering post generation
-    factory.PostGenerationMethodCall('update',
-        factory.SelfAttribute('..apiclient'),
-        id=factory.SelfAttribute('..id'),
-        state='Enabled')
+    @factory.post_generation
+    def enable(self, create, extracted, **kwargs):
+        if not create:
+            return
+        self.update(apiclient=kwargs['apiclient'], id=self.id, state='Enabled')

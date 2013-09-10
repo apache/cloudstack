@@ -201,17 +201,17 @@ class NetworkFactoryTest(unittest.TestCase):
             logging=logging.getLogger('factory.cloudstack')).getApiClient()
 
     def tearDown(self):
-        pass
+        self.accnt.delete()
 
     @attr(tags='network')
     def test_isolatedGuestNetwork(self):
         """Test to create a network within a guest account
         @return:
         """
-        accnt = UserAccountFactory(apiclient=self.apiClient)
+        self.accnt = UserAccountFactory(apiclient=self.apiClient)
         zones = Zone.list(apiclient=self.apiClient)
         network = GuestIsolatedNetworkFactory(
             apiclient=self.apiClient,
-            zoneid=zones[0].id,
+            zoneid=zones[0].id
             )
-        self.debug("network created with id, name" %(network.id, network.name))
+        logging.getLogger('factory.cloudstack').debug("network created with id %s, name %s" %(network.id, network.name))
