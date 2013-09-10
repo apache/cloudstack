@@ -1037,9 +1037,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
 
-                tapLoadingAgents(id, TapAgentsAction.Add);
-                _resourceMgr.createHostAndAgent(id, resource, details, false, null, false);
-                tapLoadingAgents(id, TapAgentsAction.Del);
+                if (tapLoadingAgents(id, TapAgentsAction.Add)) {
+                    try {
+                        AgentAttache agentattache = findAttache(id);
+                        if (agentattache == null) {
+                            s_logger.debug("Creating agent for host " + id);
+                            _resourceMgr.createHostAndAgent(id, resource, details, false, null, false);
+                            s_logger.debug("Completed creating agent for host " + id);
+                        } else {
+                            s_logger.debug("Agent already created in another thread for host " + id + ", ignore this");
+                        }
+                    } finally {
+                        tapLoadingAgents(id, TapAgentsAction.Del);
+                    }
+                } else {
+                    s_logger.debug("Agent creation already getting processed in another thread for host " + id + ", ignore this");
+                }
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
@@ -1290,7 +1303,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         synchronized (_loadingAgents) {
             if (action == TapAgentsAction.Add) {
-                _loadingAgents.add(hostId);
+                if (_loadingAgents.contains(hostId))
+                    return false;
+                else
+                    _loadingAgents.add(hostId);
             } else if (action == TapAgentsAction.Del) {
                 _loadingAgents.remove(hostId);
             } else if (action == TapAgentsAction.Contains) {
