@@ -38,45 +38,14 @@ LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
 # under the License.
 """
 
-def get_api_cmds():
-    """ Returns the API cmdlet instances
-
-    @return: instances of all the API commands exposed by CloudStack
-    """
-    namespace = {}
-    execfile('cloudstackAPI/__init__.py', namespace)
-    api_classes = __import__('cloudstackAPI', globals().update(namespace), fromlist=['*'], level=-1)
-
-
-    cmdlist = map(
-        lambda f: getattr(api_classes, f),
-        filter(
-            lambda t: t.startswith('__') == False,
-            dir(api_classes)
-        )
-    )
-    cmdlist = filter(
-        lambda g: g is not None,
-        cmdlist
-    )
-    clslist = map(
-        lambda g: getattr(g, g.__name__.split('.')[-1] + 'Cmd'),
-        filter(
-            lambda h: h.__name__.split('.')[-1] not in ['baseCmd', 'baseResponse', 'cloudstackAPIClient'],
-            cmdlist
-        )
-    )
-    cmdlets = map(lambda t: t(), clslist)
-    return cmdlets
-
-def get_entity_action_map():
+def get_entity_action_map(apimodules):
     """ Inspect cloudstack api and return a map of the Entity against the actions
     along with the required arguments to make the action call
 
     @return: Dictionary of Entity { "verb" : [required] }
     eg: VirtualMachine { "deploy" : [templateid, serviceoffering, zoneid, etc] }
     """
-    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), get_api_cmds()),
+    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), apimodules),
         key=lambda k: get_verb_and_entity(k)[1])
 
     entities = {}
@@ -109,13 +78,14 @@ def write(entity_or_factory, module):
         writer.write(LICENSE)
         writer.write(entity_or_factory.__str__())
 
-def generate(entities):
+def generate(api):
     """
     Writes the collected entity classes
 
-    @param entities: dictionary of entities and the verbs acting on them
+    @param api: api cmdlet modules read from cloudstackAPI/__init__.py
     @return:
     """
+    entities = get_entity_action_map(api)
     for entity, actions in entities.iteritems():
         e = Entity()
         f = Factory()
@@ -125,7 +95,3 @@ def generate(entities):
 
         write(e, module='entity')
         write(f, module='factory')
-
-if __name__ == '__main__':
-    entities = get_entity_action_map()
-    generate(entities)
