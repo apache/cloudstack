@@ -62,6 +62,7 @@
                 <argument>codegenerator.py</argument>
                 <argument>-s</argument>
                 <argument>${basedir}/commands.xml</argument>
+                <argument>-y</argument>
               </arguments>
             </configuration>
           </execution>

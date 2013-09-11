@@ -30,7 +30,6 @@ class GuestIsolatedNetworkFactory(NetworkFactory):
         DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory,
         apiclient=factory.SelfAttribute('..apiclient'),
         name=factory.Sequence(lambda n: 'GuestIsolatedNetworkOffering-%s' % random_gen()),
-        enable__apiclient=factory.SelfAttribute('..apiclient')
     )
     networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if no.networkoffering else no.networkoffering)
     zoneid = None

@@ -52,7 +52,9 @@ class Factory(object):
         code += '\n\n'
         code += 'class %sFactory(Factory):' % entity
         code += '\n\n'
-        code += tabspace + 'FACTORY_FOR = %s\n\n' % entity
+        code += tabspace + 'FACTORY_FOR = %s\n' % entity
+        code += tabspace + 'FACTORY_ARG_PARAMETERS = (\'apiclient\',)\n\n'
+        code += tabspace + 'apiclient = None\n'
         for arg in factory_defaults:
             code += tabspace + '%s = None\n' % arg
         self.name = entity

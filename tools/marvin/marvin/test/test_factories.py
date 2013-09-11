@@ -107,9 +107,9 @@ class NetworkOfferingFactoryTest(unittest.TestCase):
         self.assert_(snatOffering is not None, msg = "no network offering was created")
         self.assert_(snatOffering.name is not None, msg="error in network offering creation")
 
+    @attr(tags='offering')
     def test_defaultSGOfferingEnable(self):
-        sgOffering = DefaultSharedNetworkOfferingWithSGServiceFactory(apiclient=self.apiClient)
-        sgOffering.update(self.apiClient, state='Enabled', name=sgOffering.name, id=sgOffering.id)
+        DefaultSharedNetworkOfferingWithSGServiceFactory(apiclient=self.apiClient)
 
     def tearDown(self):
         pass
@@ -201,7 +201,7 @@ class NetworkFactoryTest(unittest.TestCase):
             logging=logging.getLogger('factory.cloudstack')).getApiClient()
 
     def tearDown(self):
-        self.accnt.delete()
+        self.accnt.delete(apiclient=self.apiClient)
 
     @attr(tags='network')
     def test_isolatedGuestNetwork(self):

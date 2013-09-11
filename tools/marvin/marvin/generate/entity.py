@@ -96,11 +96,12 @@ class Entity(object):
                     m.signature = 'def __init__(self, apiclient=None, %s, factory=None, **kwargs):' % (
                     ', '.join(map(lambda arg: arg + '=None', list(set(details['args'])))))
                 else:
-                    m.signature = 'def %s(cls, apiclient=None, factory=None, **kwargs):' % action
+                    m.signature = 'def %s(cls, apiclient, factory=None, **kwargs):' % action
 
+                m.body.append(self.tabspace + 'self.__update__(kwargs)')
                 m.body.append(self.tabspace + 'if not apiclient:')
-                m.body.append(self.tabspace * 2 + 'self.__update__(kwargs)')
                 m.body.append(self.tabspace*2 + 'return')
+                m.body.append(self.tabspace + 'self.apiclient = apiclient')
 
                 m.body.append(self.tabspace + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                "command": details["apicmd"]})
