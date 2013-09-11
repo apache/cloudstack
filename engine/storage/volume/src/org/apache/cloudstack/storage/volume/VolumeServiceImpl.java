@@ -566,12 +566,12 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     @DB
     public boolean destroyVolume(long volumeId) throws ConcurrentOperationException {
-
+        // mark volume entry in volumes table as destroy state
         VolumeInfo vol = volFactory.getVolume(volumeId);
-        vol.processEvent(Event.DestroyRequested);
+        vol.stateTransit(Volume.Event.DestroyRequested);
         snapshotMgr.deletePoliciesForVolume(volumeId);
 
-        vol.processEvent(Event.OperationSuccessed);
+        vol.stateTransit(Volume.Event.OperationSucceeded);
 
         return true;
     }
