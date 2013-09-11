@@ -8129,6 +8129,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 .recurring-snapshots .schedule .forms form select {
   float: left;
   margin: 3px 10px 3px 3px;
+  max-width: 100%;
 }
 
 .recurring-snapshots .schedule .forms form input {
@@ -8166,7 +8167,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .recurring-snapshots .schedule .forms form .value {
-  width: 370px;
+  width: 470px;
   float: left;
   text-align: left;
 }
