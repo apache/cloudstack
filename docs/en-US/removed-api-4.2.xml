@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="removed-api-4.2">
-  <title>Removed APIs</title>
+  <title>Deprecated APIs</title>
   <itemizedlist>
     <listitem>
       <para>deleteCiscoNexusVSM (Deletes a Cisco Nexus VSM device) </para>
