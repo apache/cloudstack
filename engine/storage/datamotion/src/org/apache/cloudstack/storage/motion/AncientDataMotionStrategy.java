@@ -148,12 +148,6 @@ public class
 
         if (srcData.getType() == DataObjectType.TEMPLATE) {
             TemplateInfo template = (TemplateInfo)srcData;
-            if (template.getHypervisorType() == HypervisorType.Hyperv) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("needCacheStorage false due to src TemplateInfo, which is DataObjectType.TEMPLATE of HypervisorType.Hyperv");
-                }
-                return false;
-            }
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -304,11 +298,11 @@ public class
         Scope destScope = getZoneScope(destData.getDataStore().getScope());
         DataStore cacheStore = cacheMgr.getCacheStorage(destScope);
         if (cacheStore == null) {
-            // need to find a nfs image store, assuming that can't copy volume
+            // need to find a nfs or cifs image store, assuming that can't copy volume
             // directly to s3
             ImageStoreEntity imageStore = (ImageStoreEntity) this.dataStoreMgr.getImageStore(destScope.getScopeId());
-            if (!imageStore.getProtocol().equalsIgnoreCase("nfs")) {
-                s_logger.debug("can't find a nfs image store");
+            if (!imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
+                s_logger.debug("can't find a nfs (or cifs) image store to satisfy the need for a staging store");
                 return null;
             }
 

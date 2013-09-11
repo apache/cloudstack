@@ -83,13 +83,16 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
-        if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("file")
-                && !uri.getScheme().equalsIgnoreCase("iso") && !uri.getScheme().equalsIgnoreCase("dummy")) {
+        if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("cifs")
+        		&& !uri.getScheme().equalsIgnoreCase("file") 
+        		&& !uri.getScheme().equalsIgnoreCase("iso") 
+        		&& !uri.getScheme().equalsIgnoreCase("dummy")) {
             s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
 
-        if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("iso")) {
+        if (uri.getScheme().equalsIgnoreCase("nfs")	|| uri.getScheme().equalsIgnoreCase("cifs")
+        		|| uri.getScheme().equalsIgnoreCase("iso")) {
             return createNfsSecondaryStorageResource(dcId, podId, uri);
         } else if (uri.getScheme().equalsIgnoreCase("file")) {
             return createLocalSecondaryStorageResource(dcId, podId, uri);

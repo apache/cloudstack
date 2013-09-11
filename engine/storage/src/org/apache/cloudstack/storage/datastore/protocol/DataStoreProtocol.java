@@ -17,7 +17,7 @@
 package org.apache.cloudstack.storage.datastore.protocol;
 
 public enum DataStoreProtocol {
-    NFS("nfs"), ISCSI("iscsi");
+    NFS("nfs"), CIFS("cifs"), ISCSI("iscsi");
 
     private String name;
 

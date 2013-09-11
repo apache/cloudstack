@@ -505,7 +505,7 @@ public class DatabaseConfig {
             stmt.setLong(14, 1238425896);
 
             boolean nfs = false;
-            if (url.startsWith("nfs")) {
+            if (url.startsWith("nfs") || url.startsWith("cifs")) {
                 nfs = true;
             }
             if (nfs) {

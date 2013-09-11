@@ -18,7 +18,29 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import com.cloud.agent.api.Answer;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
@@ -27,25 +49,15 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
-import com.cloud.utils.SwiftUtil;
-import junit.framework.Assert;
-import junit.framework.TestCase;
-import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.UUID;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LocalNfsSecondaryStorageResourceTest extends TestCase {
+    private static Map<String, Object> testParams;
+
+    private static final Logger s_logger = Logger
+            .getLogger(LocalNfsSecondaryStorageResourceTest.class.getName());
+
     LocalNfsSecondaryStorageResource resource;
     @Before
     @Override
@@ -53,7 +65,15 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         resource = new LocalNfsSecondaryStorageResource();
         resource.setInSystemVM(true);
 
+        testParams = PropertiesUtil.toMap(loadProperties());
+        resource.configureStorageLayerClass(testParams);
+        Object testLocalRoot = testParams.get("testLocalRoot");
         resource.setParentPath("/mnt");
+
+        if (testLocalRoot != null) {
+            resource.setParentPath((String)testLocalRoot);
+        }
+
         System.setProperty("paths.script", "/Users/edison/develop/asf-master/script");
         //resource.configure("test", new HashMap<String, Object>());
     }
@@ -101,4 +121,25 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         Assert.assertTrue(listAnswer.getTemplateInfo().size() > 0);
     }
 
+    public static Properties loadProperties() throws ConfigurationException {
+        Properties properties = new Properties();
+        final File file = PropertiesUtil.findConfigFile("agent.properties");
+        if (file == null) {
+            throw new ConfigurationException(
+                    "Unable to find agent.properties.");
+        }
+
+        s_logger.info("agent.properties found at " + file.getAbsolutePath());
+
+        try {
+            properties.load(new FileInputStream(file));
+        } catch (final FileNotFoundException ex) {
+            throw new CloudRuntimeException("Cannot find the file: "
+                    + file.getAbsolutePath(), ex);
+        } catch (final IOException ex) {
+            throw new CloudRuntimeException("IOException in reading "
+                    + file.getAbsolutePath(), ex);
+        }
+        return properties;
+    }
 }

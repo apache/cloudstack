@@ -566,7 +566,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
                 } else if (uri.getScheme().equalsIgnoreCase("scp")) {
                     td = new ScpTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
-                } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                } else if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("cifs")) {
                     td = null;
                     // TODO: implement this.
                     throw new CloudRuntimeException("Scheme is not supported " + url);

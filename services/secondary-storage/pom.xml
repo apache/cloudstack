@@ -26,7 +26,10 @@
     <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <dependencies>
+    <properties>
+    <skipTests>true</skipTests>
+  </properties>
+    <dependencies>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
@@ -64,7 +67,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.14</version>
         <configuration>
-         <skipTests>true</skipTests>
+         <skipTests>${skipTests}</skipTests>
+         <systemPropertyVariables>
+            <log4j.configuration>file:${project.build.testSourceDirectory}/../conf/log4j.xml</log4j.configuration>
+        </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>

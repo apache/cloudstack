@@ -82,15 +82,8 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     synchronized public String getRootDir(String secUrl) {
         try {
             URI uri = new URI(secUrl);
-            String nfsHost = uri.getHost();
-
-            InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
-            String nfsHostIp = nfsHostAddr.getHostAddress();
-            String nfsPath = nfsHostIp + ":" + uri.getPath();
-            String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
-            String root = _parent + "/" + dir;
-            mount(root, nfsPath);
-            return root;
+            String dir = mountUri(uri);
+            return _parent + "/" + dir;
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
             s_logger.error(msg, e);
@@ -99,74 +92,30 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    protected String mount(String root, String nfsPath) {
-        File file = new File(root);
-        if (!file.exists()) {
-            if (_storage.mkdir(root)) {
-                s_logger.debug("create mount point: " + root);
-            } else {
-                s_logger.debug("Unable to create mount point: " + root);
-                return null;
-            }
+    protected void mount(String localRootPath, String remoteDevice, URI uri) {
+        ensureLocalRootPathExists(localRootPath, uri);
+        
+        if (mountExists(localRootPath, uri)) {
+            return;
         }
 
-        Script script = null;
-        String result = null;
-        script = new Script(!_inSystemVM, "mount", _timeout, s_logger);
-        List<String> res = new ArrayList<String>();
-        ZfsPathParser parser = new ZfsPathParser(root);
-        script.execute(parser);
-        res.addAll(parser.getPaths());
-        for (String s : res) {
-            if (s.contains(root)) {
-                s_logger.debug("mount point " + root + " already exists");
-                return root;
-            }
-        }
+        attemptMount(localRootPath, remoteDevice, uri);
 
-        Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
-        command.add("-t", "nfs");
-        if ("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
-            command.add("-o", "resvport");
-        }
-        if (_inSystemVM) {
-            // Fedora Core 12 errors out with any -o option executed from java
-            command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
-        }
-        command.add(nfsPath);
-        command.add(root);
-        result = command.execute();
+        // Change permissions for the mountpoint - seems to bypass authentication
+        Script script = new Script(true, "chmod", _timeout, s_logger);
+        script.add("777", localRootPath);
+        String result = script.execute();
         if (result != null) {
-            s_logger.warn("Unable to mount " + nfsPath + " due to " + result);
-            file = new File(root);
-            if (file.exists())
-                file.delete();
-            return null;
+            String errMsg = "Unable to set permissions for " + localRootPath + " due to " + result;
+            s_logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
         }
-        s_logger.debug("Successfully mount " + nfsPath);
-
-        // Change permissions for the mountpoint
-        script = new Script(true, "chmod", _timeout, s_logger);
-        script.add("777", root);
-        result = script.execute();
-        if (result != null) {
-            s_logger.warn("Unable to set permissions for " + root + " due to " + result);
-            return null;
-        }
-        s_logger.debug("Successfully set 777 permission for " + root);
+        s_logger.debug("Successfully set 777 permission for " + localRootPath);
 
         // XXX: Adding the check for creation of snapshots dir here. Might have
         // to move it somewhere more logical later.
-        if (!checkForSnapshotsDir(root)) {
-            return null;
-        }
-
-        // Create the volumes dir
-        if (!checkForVolumesDir(root)) {
-            return null;
-        }
-
-        return root;
+        checkForSnapshotsDir(localRootPath);
+        checkForVolumesDir(localRootPath);
     }
 
 }

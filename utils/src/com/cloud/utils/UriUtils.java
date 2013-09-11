@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -36,8 +37,8 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -101,6 +102,47 @@ public class UriUtils {
         return url;
     }
 
+    public static String getCifsUriParametersProblems(URI uri) {
+        if (!UriUtils.hostAndPathPresent(uri)) {
+            String errMsg = "cifs URI missing host and/or path.  "
+                    + " Make sure it's of the format "
+                    + "cifs://hostname/path?user=<username>&password=<password>";
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        if (!UriUtils.cifsCredentialsPresent(uri))
+        {
+            String errMsg = "cifs URI missing user and password details. "
+                    + "Add them as query parameters, e.g. "
+                    + "cifs://example.com/some_share?user=foo&password=bar";
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    public static boolean hostAndPathPresent(URI uri) {
+        return !(uri.getHost() == null || uri.getHost().trim().isEmpty()
+                || uri.getPath() == null || uri.getPath().trim().isEmpty());
+    }
+
+    public static boolean cifsCredentialsPresent(URI uri) {
+        List<NameValuePair> args = URLEncodedUtils.parse(uri, "UTF-8");
+        boolean foundUser = false;
+        boolean foundPswd = false;
+        for (NameValuePair nvp : args) {
+            String name = nvp.getName();
+            if (name.equals("user")) {
+                foundUser = true;
+                s_logger.debug("foundUser is" + foundUser);
+            }
+            else if (name.equals("password")) {
+                foundPswd = true;
+                s_logger.debug("foundPswd is" + foundPswd);
+            }
+        }
+        return (foundUser && foundPswd);
+    }
     // Get the size of a file from URL response header.
     public static Long getRemoteSize(String url) {
         Long remoteSize = (long) 0;

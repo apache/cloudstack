@@ -143,12 +143,20 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         try {
             uri = new URI(UriUtils.encodeURIComponent(url));
             if (uri.getScheme() == null) {
-                throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// as a prefix");
+                throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
                 String uriHost = uri.getHost();
                 String uriPath = uri.getPath();
                 if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
                     throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
+                }
+            } else if (uri.getScheme().equalsIgnoreCase("cifs")) {
+                // Don't validate against a URI encoded URI.
+                URI cifsUri = new URI(url);
+                String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
+                if (warnMsg != null)
+                {
+                    throw new InvalidParameterValueException(warnMsg);
                 }
             } else if (uri.getScheme().equalsIgnoreCase("sharedMountPoint")) {
                 String uriPath = uri.getPath();
@@ -193,6 +201,16 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setHost(storageHost);
             parameters.setPort(port);
             parameters.setPath(hostPath);
+        } else if (scheme.equalsIgnoreCase("cifs")) {
+            if (port == -1) {
+                port = 445;
+            }
+            parameters.setType(StoragePoolType.NetworkFilesystem);
+            parameters.setHost(storageHost);
+            parameters.setPort(port);
+            parameters.setPath(hostPath);
+            parameters.setUserInfo(uri.getQuery());
+
         } else if (scheme.equalsIgnoreCase("file")) {
             if (port == -1) {
                 port = 0;
