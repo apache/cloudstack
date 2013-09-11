@@ -310,7 +310,7 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, mode='default', method='GET'):
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -369,6 +369,11 @@ class VirtualMachine:
             cmd.keypair = keypair
         elif "keypair" in services:
             cmd.keypair = services["keypair"]
+
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        elif ipaddress in services:
+            cmd.ipaddress = services["ipaddress"]
 
         if securitygroupids:
             cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
