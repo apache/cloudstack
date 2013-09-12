@@ -4746,6 +4746,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected void plugDom0Vif(Connection conn, VIF dom0Vif) throws XmlRpcException, XenAPIException {
+        if (dom0Vif != null) {
+            dom0Vif.plug(conn);
+        }
+    }
+
     private void setupLinkLocalNetwork(Connection conn) {
         try {
             Network.Record rec = new Network.Record();
@@ -4800,11 +4806,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vifr.network = linkLocal;
                 vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
                 dom0vif = VIF.create(conn, vifr);
-                dom0vif.plug(conn);
+                plugDom0Vif(conn, dom0vif);
             } else {
                 s_logger.debug("already have a vif on dom0 for link local network");
                 if (!dom0vif.getCurrentlyAttached(conn)) {
-                    dom0vif.plug(conn);
+                    plugDom0Vif(conn, dom0vif);
                 }
             }
 
