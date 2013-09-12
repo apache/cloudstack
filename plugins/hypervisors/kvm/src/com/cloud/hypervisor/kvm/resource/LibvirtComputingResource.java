@@ -1365,7 +1365,7 @@ ServerResource {
                         secondaryStorageUrl
                         + volumeDestPath);
                 _storagePoolMgr.copyPhysicalDisk(volume,
-                        destVolumeName,secondaryStoragePool);
+                        destVolumeName,secondaryStoragePool, 0);
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             } else {
                 volumePath = "/volumes/" + cmd.getVolumeId() + File.separator;
@@ -1375,7 +1375,7 @@ ServerResource {
                 KVMPhysicalDisk volume = secondaryStoragePool
                         .getPhysicalDisk(cmd.getVolumePath() + ".qcow2");
                 _storagePoolMgr.copyPhysicalDisk(volume, volumeName,
-                        primaryPool);
+                        primaryPool, 0);
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             }
         } catch (CloudRuntimeException e) {
@@ -1461,7 +1461,7 @@ ServerResource {
                 } else {
                     BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
                     vol = _storagePoolMgr.createDiskFromTemplate(BaseVol, UUID
-                            .randomUUID().toString(), primaryPool);
+                            .randomUUID().toString(), primaryPool, 0);
                 }
                 if (vol == null) {
                     return new Answer(cmd, false,
@@ -1522,7 +1522,7 @@ ServerResource {
 
             /* Copy volume to primary storage */
 
-            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(), primaryPool);
+            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(), primaryPool, 0);
             return primaryVol;
         } catch (CloudRuntimeException e) {
             s_logger.error("Failed to download template to primary storage",e);
@@ -2347,7 +2347,7 @@ ServerResource {
                             primaryUuid);
             String volUuid = UUID.randomUUID().toString();
             KVMPhysicalDisk disk = _storagePoolMgr.copyPhysicalDisk(snapshot,
-                    volUuid, primaryPool);
+                    volUuid, primaryPool, 0);
             return new CreateVolumeFromSnapshotAnswer(cmd, true, "",
                     disk.getName());
         } catch (CloudRuntimeException e) {
@@ -2498,7 +2498,7 @@ ServerResource {
                 QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
                 destFile.setFormat(PhysicalDiskFormat.QCOW2);
 
-                QemuImg q = new QemuImg();
+                QemuImg q = new QemuImg(0);
                 try {
                     q.convert(srcFile, destFile);
                 } catch (QemuImgException e) {
@@ -2601,7 +2601,7 @@ ServerResource {
                     cmd.getPoolUuid());
 
             KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(
-                    tmplVol, UUID.randomUUID().toString(), primaryPool);
+                    tmplVol, UUID.randomUUID().toString(), primaryPool, 0);
 
             return new PrimaryStorageDownloadAnswer(primaryVol.getName(),
                     primaryVol.getSize());

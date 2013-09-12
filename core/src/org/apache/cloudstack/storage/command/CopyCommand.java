@@ -63,4 +63,8 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         this.cacheTO = cacheTO;
     }
 
+    public int getWaitInMillSeconds() {
+        return this.getWait() * 1000;
+    }
+
 }

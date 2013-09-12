@@ -766,7 +766,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      */
     @Override
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
-            String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool) {
+            String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
 
         String newUuid = UUID.randomUUID().toString();
         KVMStoragePool srcPool = template.getPool();
@@ -783,20 +783,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (destPool.getType() != StoragePoolType.RBD) {
                 disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
                 if (template.getFormat() == PhysicalDiskFormat.TAR) {
-                    Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath());
+                    Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath(), timeout);
                 } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
                     Script.runSimpleBashScript("mkdir -p " + disk.getPath());
                     Script.runSimpleBashScript("chmod 755 " + disk.getPath());
-                    Script.runSimpleBashScript("cp -p -r " + template.getPath() + "/* " + disk.getPath());
+                    Script.runSimpleBashScript("cp -p -r " + template.getPath() + "/* " + disk.getPath(), timeout);
                 } else if (format == PhysicalDiskFormat.QCOW2) {
                     QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath());
-                    QemuImg qemu = new QemuImg();
+                    QemuImg qemu = new QemuImg(timeout);
                     qemu.create(destFile, backingFile);
                 } else if (format == PhysicalDiskFormat.RAW) {
                     QemuImgFile sourceFile = new QemuImgFile(template.getPath(), template.getFormat());
                     QemuImgFile destFile = new QemuImgFile(disk.getPath(), PhysicalDiskFormat.RAW);
-                    QemuImg qemu = new QemuImg();
+                    QemuImg qemu = new QemuImg(timeout);
                     qemu.convert(sourceFile, destFile);
                 }
             } else {
@@ -806,7 +806,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 disk.setSize(template.getVirtualSize());
                 disk.setVirtualSize(disk.getSize());
 
-                QemuImg qemu = new QemuImg();
+                QemuImg qemu = new QemuImg(timeout);
                 QemuImgFile srcFile;
                 QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
                         destPool.getSourcePort(),
@@ -960,7 +960,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      */
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name,
-            KVMStoragePool destPool) {
+            KVMStoragePool destPool, int timeout) {
 
         /**
             With RBD you can't run qemu-img convert with an existing RBD image as destination
@@ -999,24 +999,27 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String destPath = newDisk.getPath();
         PhysicalDiskFormat destFormat = newDisk.getFormat();
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(timeout);
         QemuImgFile srcFile = null;
         QemuImgFile destFile = null;
 
         if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() != StoragePoolType.RBD)) {
             if (sourceFormat == PhysicalDiskFormat.TAR) {
-                Script.runSimpleBashScript("tar -x -f " + sourcePath + " -C " + destPath);
+                Script.runSimpleBashScript("tar -x -f " + sourcePath + " -C " + destPath, timeout);
             } else if (sourceFormat == PhysicalDiskFormat.DIR) {
                 Script.runSimpleBashScript("mkdir -p " + destPath);
                 Script.runSimpleBashScript("chmod 755 " + destPath);
-                Script.runSimpleBashScript("cp -p -r " + sourcePath + "/* " + destPath);
+                Script.runSimpleBashScript("cp -p -r " + sourcePath + "/* " + destPath, timeout);
             } else {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
                 try {
                     Map<String, String> info = qemu.info(srcFile);
                     String backingFile = info.get(new String("backing_file"));
                     if (sourceFormat.equals(destFormat) && backingFile == null) {
-                        Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
+                        String result = Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath, timeout);
+                        if (result != null) {
+                            throw new CloudRuntimeException("Failed to create disk: " + result);
+                        }
                     } else {
                         destFile = new QemuImgFile(destPath, destFormat);
                         try {

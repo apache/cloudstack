@@ -194,7 +194,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     primaryStore.getUuid());
 
             KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(),
-                    primaryPool);
+                    primaryPool, cmd.getWaitInMillSeconds());
 
 
              DataTO data = null;
@@ -232,7 +232,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate
-    private KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool) {
+    private KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool, int timeout) {
         int index = templateUrl.lastIndexOf("/");
         String mountpoint = templateUrl.substring(0, index);
         String templateName = null;
@@ -269,7 +269,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             /* Copy volume to primary storage */
 
             KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(),
-                    primaryPool);
+                    primaryPool, timeout);
             return primaryVol;
         } catch (CloudRuntimeException e) {
             s_logger.error("Failed to download template to primary storage", e);
@@ -300,14 +300,14 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             if (primaryPool.getType() == StoragePoolType.CLVM) {
                 templatePath = ((NfsTO)imageStore).getUrl() + File.separator + templatePath;
-                vol = templateToPrimaryDownload(templatePath, primaryPool);
+                vol = templateToPrimaryDownload(templatePath, primaryPool, cmd.getWaitInMillSeconds());
             } else {
                 if (templatePath.contains("/mnt")) {
                     //upgrade issue, if the path contains path, need to extract the volume uuid from path
                     templatePath = templatePath.substring(templatePath.lastIndexOf(File.separator) + 1);
                 }
                 BaseVol = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath);
-                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, UUID.randomUUID().toString(), BaseVol.getPool());
+                vol = storagePoolMgr.createDiskFromTemplate(BaseVol, UUID.randomUUID().toString(), BaseVol.getPool(), cmd.getWaitInMillSeconds());
             }
             if (vol == null) {
                 return new CopyCmdAnswer(" Can't create storage volume on storage pool");
@@ -378,7 +378,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     .getPhysicalDisk(srcVolumeName);
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
             KVMPhysicalDisk newDisk = storagePoolMgr.copyPhysicalDisk(volume, volumeName,
-                    primaryPool);
+                    primaryPool, cmd.getWaitInMillSeconds());
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setFormat(ImageFormat.valueOf(newDisk.getFormat().toString().toUpperCase()));
             newVol.setPath(volumeName);
@@ -426,7 +426,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageUrl  + File.separator + destVolumePath);
             storagePoolMgr.copyPhysicalDisk(volume,
-                    destVolumeName,secondaryStoragePool);
+                    destVolumeName,secondaryStoragePool, cmd.getWaitInMillSeconds());
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(destVolumePath + File.separator + destVolumeName);
             newVol.setFormat(destFormat);
@@ -444,7 +444,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer createTemplateFromVolume(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        int wait = cmd.getWait();
+        int wait = cmd.getWaitInMillSeconds();
         TemplateObjectTO template = (TemplateObjectTO) destData;
         DataStoreTO imageStore = template.getDataStore();
         VolumeObjectTO volume = (VolumeObjectTO) srcData;
@@ -470,7 +470,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String templateName = UUID.randomUUID().toString();
 
             if (primary.getType() != StoragePoolType.RBD) {
-                Script command = new Script(_createTmplPath, wait * 1000, s_logger);
+                Script command = new Script(_createTmplPath, wait, s_logger);
                 command.add("-f", disk.getPath());
                 command.add("-t", tmpltPath);
                 command.add("-n", templateName + ".qcow2");
@@ -491,7 +491,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + templateName + ".qcow2");
                 destFile.setFormat(PhysicalDiskFormat.QCOW2);
 
-                QemuImg q = new QemuImg();
+                QemuImg q = new QemuImg(cmd.getWaitInMillSeconds());
                 try {
                     q.convert(srcFile, destFile);
                 } catch (QemuImgException e) {
@@ -619,7 +619,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         SnapshotObjectTO snapshotOnCacheStore = (SnapshotObjectTO)answer.getNewData();
         snapshotOnCacheStore.setDataStore(cacheStore);
         ((SnapshotObjectTO) destData).setDataStore(imageStore);
-        CopyCommand newCpyCmd = new CopyCommand(snapshotOnCacheStore, destData, cmd.getWait(), cmd.executeInSequence());
+        CopyCommand newCpyCmd = new CopyCommand(snapshotOnCacheStore, destData, cmd.getWaitInMillSeconds(), cmd.executeInSequence());
         return copyToObjectStore(newCpyCmd);
     }
     @Override
@@ -723,7 +723,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     return new CopyCmdAnswer(e.toString());
                 }
             } else {
-                Script command = new Script(_manageSnapshotPath, cmd.getWait() * 1000, s_logger);
+                Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), s_logger);
                 command.add("-b", snapshotDisk.getPath());
                 command.add("-n", snapshotName);
                 command.add("-p", snapshotDestPath);
@@ -1185,7 +1185,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String primaryUuid = pool.getUuid();
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getPoolType(), primaryUuid);
             String volUuid = UUID.randomUUID().toString();
-            KVMPhysicalDisk disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, volUuid, primaryPool);
+            KVMPhysicalDisk disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, volUuid, primaryPool, cmd.getWaitInMillSeconds());
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(disk.getName());
             newVol.setSize(disk.getVirtualSize());
