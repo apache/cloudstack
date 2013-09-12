@@ -1292,22 +1292,11 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public SnapshotInfo takeSnapshot(VolumeInfo volume) {
-        VolumeObject vol = (VolumeObject) volume;
-        boolean result = vol.stateTransit(Volume.Event.SnapshotRequested);
-        if (!result) {
-            s_logger.debug("Failed to transit state");
-        }
         SnapshotInfo snapshot = null;
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
         } catch (Exception e) {
             s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
-        } finally {
-            if (snapshot != null) {
-                vol.stateTransit(Volume.Event.OperationSucceeded);
-            } else {
-                vol.stateTransit(Volume.Event.OperationFailed);
-            }
         }
 
         return snapshot;

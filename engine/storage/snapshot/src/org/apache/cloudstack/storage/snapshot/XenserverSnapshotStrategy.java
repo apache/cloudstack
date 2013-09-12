@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.snapshot;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Volume;
 import com.cloud.utils.db.DB;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -244,11 +245,23 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         try {
-            SnapshotResult result =  snapshotSvr.takeSnapshot(snapshot);
-            if (result.isFailed()) {
-                s_logger.debug("Failed to take snapshot: " + result.getResult());
-                throw new CloudRuntimeException(result.getResult());
+            VolumeInfo volumeInfo = snapshot.getBaseVolume();
+            volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
+            SnapshotResult result = null;
+            try {
+                result =  snapshotSvr.takeSnapshot(snapshot);
+                if (result.isFailed()) {
+                    s_logger.debug("Failed to take snapshot: " + result.getResult());
+                    throw new CloudRuntimeException(result.getResult());
+                }
+            } finally {
+                if (result != null && result.isSuccess()) {
+                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+                } else {
+                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                }
             }
+
             snapshot = result.getSnashot();
             DataStore primaryStore = snapshot.getDataStore();
 
