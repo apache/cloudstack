@@ -75,27 +75,52 @@
         <phrase>vds-name.png: Name of the dvSwitch as specified in the vCenter.</phrase>
       </textobject>
     </mediaobject>
-    <para>Use this VDS name when you specify the switch name in the traffic label while creating the
-      zone. Traffic label format is [["Name of vSwitch/dvSwitch/EthernetPortProfile"][,"VLAN
-      ID"[,"vSwitch Type"]]]</para>
+    <para>Use this VDS name in the following:</para>
+    <itemizedlist>
+         <listitem>
+        <para>The switch name in the Edit traffic label dialog while configuring a public and guest
+        traffic during zone creation.</para>
+        <para>During a zone creation, ensure that you select VMware vNetwork Distributed Virtual Switch
+          when you configure guest and public traffic type.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="./images/traffic-type.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>traffic-type.png: virtual switch type</phrase>
+          </textobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para>The Public Traffic vSwitch Type field when you add a VMware VDS-enabled cluster. </para>
+      </listitem>
+      <listitem>
+        <para>The switch name in the traffic label while updating the switch type in a zone.</para>
+      </listitem>
+    </itemizedlist>
+    <para>Traffic label format in the last case is [["Name of
+      vSwitch/dvSwitch/EthernetPortProfile"][,"VLAN ID"[,"vSwitch Type"]]]</para>
     <para>The possible values for traffic labels are:</para>
     <itemizedlist>
-      <listitem><para>empty string</para></listitem>
-      <listitem><para>dvSwitch0</para></listitem>
-      <listitem><para> dvSwitch0,200</para></listitem>
-      <listitem><para>dvSwitch1,300,vmwaredvs</para></listitem>
-      <listitem><para>myEthernetPortProfile,,nexusdvs</para></listitem>
-      <listitem><para>dvSwitch0,,vmwaredvs</para></listitem>
+      <listitem>
+        <para>empty string</para>
+      </listitem>
+      <listitem>
+        <para>dvSwitch0</para>
+      </listitem>
+      <listitem>
+        <para> dvSwitch0,200</para>
+      </listitem>
+      <listitem>
+        <para>dvSwitch1,300,vmwaredvs</para>
+      </listitem>
+      <listitem>
+        <para>myEthernetPortProfile,,nexusdvs</para>
+      </listitem>
+      <listitem>
+        <para>dvSwitch0,,vmwaredvs</para>
+      </listitem>
     </itemizedlist>
-    
-    <mediaobject>
-      <imageobject>
-        <imagedata fileref="./images/traffic-label.png"/>
-      </imageobject>
-      <textobject>
-        <phrase>traffic-label.png: Traffic label specified while zone creation.</phrase>
-      </textobject>
-    </mediaobject>
     <informaltable frame="all">
       <tgroup cols="3" align="left" colsep="1" rowsep="1">
         <colspec colname="c1"/>
@@ -124,10 +149,10 @@
           <row>
             <entry><para>2</para></entry>
             <entry><para>VLAN ID to be used for this traffic wherever applicable.</para></entry>
-            <entry><para>This field would be used for only public traffic as of now. In case of guest traffic this
-                field would be ignored and could be left empty for guest traffic. By default empty
-                string would be assumed which translates to untagged VLAN for that specific traffic
-                type.</para></entry>
+            <entry><para>This field would be used for only public traffic as of now. In case of
+                guest traffic this field would be ignored and could be left empty for guest traffic.
+                By default empty string would be assumed which translates to untagged VLAN for that
+                specific traffic type.</para></entry>
           </row>
           <row>
             <entry><para>3</para></entry>
@@ -153,6 +178,7 @@
         </tbody>
       </tgroup>
     </informaltable>
+    
   </section>
   <section id="enable-dvswitch">
     <title>Enabling Virtual Distributed Switch in &PRODUCT;</title>
@@ -171,6 +197,10 @@
   <section id="config-dvswitch">
     <title>Configuring Distributed Virtual Switch in &PRODUCT;</title>
     <para>You can configure VDS by adding the necessary resources while a zone is created.</para>
+    <para>Alternatively, at the cluster level, you can create an additional cluster with VDS enabled
+      in the existing zone. Use the Add Cluster option. For information as given in <xref
+        linkend="add-clusters-vsphere"/>.</para>
+    <para>In both these cases, you must specify the following parameters to configure VDS:</para>
     <mediaobject>
       <imageobject>
         <imagedata fileref="./images/dvSwitch-config.png"/>
@@ -179,10 +209,6 @@
         <phrase>dvSwitchConfig.png: Configuring dvSwitch</phrase>
       </textobject>
     </mediaobject>
-    <para>Alternatively, you can create an additional cluster with VDS enabled in the existing zone.
-      Use the Add Cluster option. For information as given in <xref linkend="add-clusters-vsphere"
-      />.</para>
-    <para>In both these cases, you must specify the following parameters to configure VDS:</para>
     <informaltable frame="all">
       <tgroup cols="2" align="left" colsep="1" rowsep="1">
         <colspec colname="c1"/>
