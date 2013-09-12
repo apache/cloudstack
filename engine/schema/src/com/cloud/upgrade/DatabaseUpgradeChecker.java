@@ -173,6 +173,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("4.0.2", new DbUpgrade[] { new Upgrade40to41(), new Upgrade410to420() });
 
         _upgradeMap.put("4.1.0", new DbUpgrade[] { new Upgrade410to420() });
+
+        _upgradeMap.put("4.1.1", new DbUpgrade[] { new Upgrade410to420() });
         
         //CP Upgrades
         _upgradeMap.put("3.0.3", new DbUpgrade[] { new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420() });
