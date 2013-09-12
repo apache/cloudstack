@@ -191,11 +191,13 @@ class TestRouterServices(cloudstackTestCase):
                                    hypervisor=self.apiclient.hypervisor
                                )
         else:
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
                 result = get_process_status(
                                     host.ipaddress,
-                                    self.services['virtual_machine']["publicport"],
-                                    self.vm_1.username,
-                                    self.vm_1.password,
+                                    22,
+                                    host.user,
+                                    host.passwd,
                                     router.linklocalip,
                                     "service dnsmasq status"
                                     )
@@ -207,7 +209,13 @@ class TestRouterServices(cloudstackTestCase):
                                 1,
                                 "Check dnsmasq service is running or not"
                         )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         return
+
+
+
+
 
     @attr(tags = ["advanced", "smoke"])
     def test_02_router_internal_adv(self):
@@ -264,14 +272,18 @@ class TestRouterServices(cloudstackTestCase):
                                hypervisor=self.apiclient.hypervisor
                            )
         else:
-            result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service dnsmasq status"
-                                )
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                result = get_process_status(
+                                    host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    router.linklocalip,
+                                    "service dnsmasq status"
+                                    )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.debug("Dnsmasq process status: %s" % res)
         
@@ -292,14 +304,18 @@ class TestRouterServices(cloudstackTestCase):
                            hypervisor=self.apiclient.hypervisor
                            )
         else:
-            result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service haproxy status"
-                                )
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                result = get_process_status(
+                                    host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    router.linklocalip,
+                                    "service haproxy status"
+                                    )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.assertEqual(
                             res.count("running"),
@@ -467,14 +483,18 @@ class TestRouterServices(cloudstackTestCase):
                            hypervisor=self.apiclient.hypervisor
                            )
         else:
-            res = get_process_status(
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                res = get_process_status(
                                 host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
+                                22,
+                                host.user,
+                                host.passwd,
                                 router.linklocalip,
                                 "uptime"
                                 )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         
         # res = 12:37:14 up 1 min,  0 users,  load average: 0.61, 0.22, 0.08
         # Split result to check the uptime

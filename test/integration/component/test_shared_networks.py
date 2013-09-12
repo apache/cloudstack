@@ -25,8 +25,6 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
-import datetime
 import netaddr
 
 class Services:
@@ -48,7 +46,7 @@ class Services:
                                     "username": "admin-XABU1",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -74,8 +72,6 @@ class Services:
                          "network": {
                                   "name": "MySharedNetwork - Test",
                                   "displaytext": "MySharedNetwork",
-                                  "networkofferingid":"1",
-                                  "vlan" :1200,
                                   "gateway" :"172.16.15.1",
                                   "netmask" :"255.255.255.0",
                                   "startip" :"172.16.15.2",
@@ -86,7 +82,6 @@ class Services:
                          "network1": {
                                   "name": "MySharedNetwork - Test1",
                                   "displaytext": "MySharedNetwork1",
-                                  "vlan" :1201,
                                   "gateway" :"172.16.15.1",
                                   "netmask" :"255.255.255.0",
                                   "startip" :"172.16.15.21",
@@ -237,6 +232,33 @@ class TestSharedNetworks(cloudstackTestCase):
 
         return
 
+    def getFreeVlan(self, apiclient, zoneid):
+        """
+        Find an unallocated VLAN outside the range allocated to the physical network.
+
+        @note: This does not guarantee that the VLAN is available for use in
+        the deployment's network gear
+        @return: physical_network, shared_vlan_tag
+        """
+        list_physical_networks_response = PhysicalNetwork.list(
+            apiclient,
+            zoneid=zoneid
+        )
+        assert isinstance(list_physical_networks_response, list)
+        assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+
+        physical_network = list_physical_networks_response[0]
+        vlans = xsplit(physical_network.vlan, ['-', ','])
+
+        assert len(vlans) > 0
+        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+        shared_ntwk_vlan = int(vlans[-1]) + random.randrange(1, 20)
+        if shared_ntwk_vlan > 4095:
+            shared_ntwk_vlan = int(vlans[0]) - random.randrange(1, 20)
+            assert shared_ntwk_vlan > 0, "VLAN chosen %s is invalid < 0" % shared_ntwk_vlan
+        self.debug("Attempting free VLAN %s for shared network creation" % shared_ntwk_vlan)
+        return physical_network, shared_ntwk_vlan
+
     @attr(tags=["advanced", "advancedns"])
     def test_sharedNetworkOffering_01(self):
         """  Test shared network Offering 01 """
@@ -308,7 +330,7 @@ class TestSharedNetworks(cloudstackTestCase):
             0,
             "listPhysicalNetworks should return at least one physical network."
             )
-        
+
         physical_network = list_physical_networks_response[0]
         
         self.debug("Physical network found: %s" % physical_network.id)
@@ -652,28 +674,13 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("User type account created: %s" % self.user_account.name)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
+
         
         #Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
@@ -740,6 +747,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
 
         self.network = Network.create(
                          self.api_client,
@@ -935,29 +943,13 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("User type account created: %s" % self.user_account.name)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical Network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
-        
+
         #Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
@@ -983,7 +975,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.assertEqual(
             list_network_offerings_response[0].state,
             "Disabled",
-            "The network offering created should be bydefault disabled."
+            "The network offering created should be by default disabled."
             )
         
         self.debug("Shared Network Offering created: %s" % self.shared_network_offering.id)
@@ -1020,6 +1012,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
         
         self.network = Network.create(
                          self.api_client,
@@ -1259,29 +1252,13 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("Domain user account created: %s" % self.domain_user_account.id)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical Network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
-        
+
         #Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
                                                  self.api_client,
@@ -1346,6 +1323,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
         
         self.network = Network.create(
                          self.api_client,
@@ -1581,28 +1559,13 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("Project2 created: %s" % self.project2.id)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical Network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
+
         
         #Create Network Offering
         self.shared_network_offering = NetworkOffering.create(
@@ -1630,7 +1593,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.assertEqual(
             list_network_offerings_response[0].state,
             "Disabled",
-            "The network offering created should be bydefault disabled."
+            "The network offering created should be by default disabled."
             )
         
         #Update network offering state from disabled to enabled.
@@ -1668,6 +1631,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
         
         self.network = Network.create(
                          self.api_client,
@@ -1804,25 +1768,7 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("Domain admin account created: %s" % self.admin_account.id)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
-        
-        self.debug("Physical Network found: %s" % physical_network.id)
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
@@ -1892,6 +1838,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
         
         try:
             self.network = Network.create(
@@ -1900,10 +1847,12 @@ class TestSharedNetworks(cloudstackTestCase):
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id,
                          )
-            self.fail("Network created with used vlan id, which is invalid")
+            self.fail("Network created with used vlan %s id, which is invalid" % shared_vlan)
         except Exception as e:
             self.debug("Network creation failed because the valn id being used by another network.")
-    
+
+
+
     @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_usedVlan2(self):
         """ Test Shared Network with used vlan 02 """
@@ -1962,25 +1911,9 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         
         self.debug("Admin account created: %s" % self.admin_account.id)
-        
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
-        
+
+        physical_network, shared_ntwk_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+
         self.debug("Physical Network found: %s" % physical_network.id)
         
         self.services["network_offering"]["specifyVlan"] = "True"
@@ -2050,7 +1983,8 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
-        self.services["network"]["vlan"] = "567"
+        self.services["network"]["vlan"] = shared_ntwk_vlan
+        self.debug("Creating a shared network in non-cloudstack VLAN %s" % shared_ntwk_vlan)
         self.network = Network.create(
                          self.api_client,
                          self.services["network"],
@@ -2147,23 +2081,7 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("Admin account created: %s" % self.admin_account.id)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical Network found: %s" % physical_network.id)
         
@@ -2234,6 +2152,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
 
         self.network = Network.create(
                          self.api_client,
@@ -2269,6 +2188,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network1"]["acltype"] = "domain"
         self.services["network1"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network1"]["physicalnetworkid"] = physical_network.id
+        self.services["network1"]["vlan"] = self.getFreeVlan(self.api_client, self.zone.id)
 
         self.network1 = Network.create(
                          self.api_client,
@@ -2509,28 +2429,14 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         
         self.debug("Isolated Network Offering created: %s" % self.isolated_network_offering.id)
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]        
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
 
         #create network using the shared network offering created
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
+
         self.shared_network = Network.create(
                          self.api_client,
                          self.services["network"],
@@ -2749,23 +2655,7 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("Admin type account created: %s" % self.admin_account.id)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical Network found: %s" % physical_network.id)
         
@@ -2835,6 +2725,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
         self.services["network"]["subdomainaccess"] = "True"
         
         try:
@@ -2893,23 +2784,7 @@ class TestSharedNetworks(cloudstackTestCase):
         
         self.debug("Admin type account created: %s" % self.admin_account.id)
         
-        #Verify that there should be at least one physical network present in zone.
-        list_physical_networks_response = PhysicalNetwork.list(
-                                                         self.api_client,
-                                                         zoneid=self.zone.id
-                                                         )
-        self.assertEqual(
-            isinstance(list_physical_networks_response, list),
-            True,
-            "listPhysicalNetworks returned invalid object in response."
-            )
-        self.assertNotEqual(
-            len(list_physical_networks_response),
-            0,
-            "listPhysicalNetworks should return at least one physical network."
-            )
-        
-        physical_network = list_physical_networks_response[0]
+        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
         
         self.debug("Physical Network found: %s" % physical_network.id)
         
@@ -2978,6 +2853,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Account"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
+        self.services["network"]["vlan"] = shared_vlan
         self.services["network"]["subdomainaccess"] = "False"
         
         try:

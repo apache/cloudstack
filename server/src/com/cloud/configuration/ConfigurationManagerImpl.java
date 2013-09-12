@@ -40,6 +40,9 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
@@ -74,6 +77,7 @@ import org.apache.cloudstack.region.PortableIpRangeDao;
 import org.apache.cloudstack.region.PortableIpRangeVO;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -170,7 +174,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.S3Dao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailVO;
@@ -219,8 +222,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     DataCenterDao _zoneDao;
     @Inject
     DomainDao _domainDao;
-    @Inject
-    S3Dao _s3Dao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
@@ -301,6 +302,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ManagementService _mgr;
     @Inject
     DedicatedResourceDao _dedicatedDao;
+    @Inject
+    AffinityGroupDao _affinityGroupDao;
+    @Inject
+    AffinityGroupService _affinityGroupService;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -1538,6 +1543,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             DedicatedResourceVO dr = _dedicatedDao.findByZoneId(zoneId);
             if (dr != null) {
                 _dedicatedDao.remove(dr.getId());
+                // find the group associated and check if there are any more
+                // resources under that group
+                List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(dr
+                        .getAffinityGroupId());
+                if (resourcesInGroup.isEmpty()) {
+                    // delete the group
+                    _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null);
+                }
             }
         }
 
@@ -1859,12 +1872,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // update a private zone to public; not vice versa
-        if (isPublic != null && isPublic) {
-            zone.setDomainId(null);
-            zone.setDomain(null);
-        }
-
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -1916,6 +1923,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (dhcpProvider != null) {
             zone.setDhcpProvider(dhcpProvider);
         }
+        
+        // update a private zone to public; not vice versa
+        if (isPublic != null && isPublic) {
+            zone.setDomainId(null);
+            zone.setDomain(null);
+
+            // release the dedication for this zone
+            DedicatedResourceVO resource = _dedicatedDao.findByZoneId(zoneId);
+            Long resourceId = null;
+            if (resource != null) {
+                resourceId = resource.getId();
+                if (!_dedicatedDao.remove(resourceId)) {
+                    throw new CloudRuntimeException("Failed to delete dedicated Zone Resource " + resourceId);
+                }
+                // find the group associated and check if there are any more
+                // resources under that group
+                List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource.getAffinityGroupId());
+                if (resourcesInGroup.isEmpty()) {
+                    // delete the group
+                    _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+                }
+            }
+        }
 
         if (!_zoneDao.update(zoneId, zone)) {
             throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
@@ -1958,7 +1988,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             txn.start();
             // Create the new zone in the database
             DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr,
-                    null, null, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled,
+                    domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled,
+                    isLocalStorageEnabled,
                     ip6Dns1, ip6Dns2);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
@@ -1971,8 +2002,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             zone = _zoneDao.persist(zone);
             if (domainId != null) {
                 // zone is explicitly dedicated to this domain
+                // create affinity group associated and dedicate the zone.
+                AffinityGroup group = createDedicatedAffinityGroup(null, domainId, null);
                 DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null,
-                        domainId, null);
+                        domainId, null, group.getId());
                 _dedicatedDao.persist(dedicatedResource);
             }
 
@@ -1987,6 +2020,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } finally {
             txn.close();
         }
+    }
+
+    private AffinityGroup createDedicatedAffinityGroup(String affinityGroupName, Long domainId, Long accountId) {
+        if (affinityGroupName == null) {
+            // default to a groupname with account/domain information
+            affinityGroupName = "ZoneDedicatedGrp-domain-" + domainId + (accountId != null ? "-acct-" + accountId : "");
+        }
+
+        AffinityGroup group = null;
+        String accountName = null;
+
+        if (accountId != null) {
+            AccountVO account = _accountDao.findById(accountId);
+            accountName = account.getAccountName();
+
+            group = _affinityGroupDao.findByAccountAndName(accountId, affinityGroupName);
+            if (group != null) {
+                return group;
+            }
+        } else {
+            // domain level group
+            group = _affinityGroupDao.findDomainLevelGroupByName(domainId, affinityGroupName);
+            if (group != null) {
+                return group;
+            }
+        }
+
+        group = _affinityGroupService.createAffinityGroupInternal(accountName, domainId, affinityGroupName,
+                "ExplicitDedication", "dedicated resources group");
+
+        return group;
+
     }
 
     @Override
@@ -3047,18 +3112,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
                     continue;
                 }
-                // from here, subnet overlaps
+                // from here, subnet overlaps               
                 if ( !vlanId.equals(vlan.getVlanTag()) ) {
-                    throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
-                            + " in zone " + zone.getName()
-                            + " has overlapped with the subnet. Please specify a different gateway/netmask.");
+                    boolean overlapped = false;
+                    if( network.getTrafficType() == TrafficType.Public ) {
+                        overlapped = true;
+                    } else {
+                        Long nwId = vlan.getNetworkId();
+                        if ( nwId != null ) {
+                            Network nw = _networkModel.getNetwork(nwId);
+                            if ( nw != null && nw.getTrafficType() == TrafficType.Public ) {
+                                overlapped = true;
+                            }
+                        }
+                        
+                    }
+                    if ( overlapped ) {
+                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+                                + " in zone " + zone.getName()
+                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
+                    }
                 }
-                if ( vlan.getNetworkId() != networkId) {
-                    throw new InvalidParameterValueException("This subnet is overlapped with subnet in other network " + vlan.getNetworkId()
-                            + " in zone " + zone.getName()
-                            + " . Please specify a different gateway/netmask.");
-                   
-                }
+
                 String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
                 String otherVlanStartIP = otherVlanIpRange[0];
                 String otherVlanEndIP = null;
@@ -3926,7 +4001,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
         
-        if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+        if (!serviceProviderMap.containsKey(Service.Lb) && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
                 maxconn=Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
@@ -4427,9 +4502,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // only root admin can list network offering with specifyVlan = true
-        if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
-            specifyVlan = false;
-        }
         if (specifyVlan != null) {
             sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
         }
@@ -4718,9 +4790,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 offering.setAvailability(availability);
             }
         }
-
-        if (maxconn != null) {
-            offering.setConcurrentConnections(maxconn);
+        if (_ntwkOffServiceMapDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Lb)){
+            if (maxconn != null) {
+                 offering.setConcurrentConnections(maxconn);
+            }
         }
 
         if (_networkOfferingDao.update(id, offering)) {
@@ -4987,7 +5060,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String netmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
 
-        Region region = _regionDao.findById(regionId);
+        RegionVO region = _regionDao.findById(regionId);
         if (region == null) {
             throw new InvalidParameterValueException("Invalid region ID: " + regionId);
         }
@@ -5047,6 +5120,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             startIpLong++;
         }
 
+        // implicitly enable portable IP service for the region
+        region.setPortableipEnabled(true);
+        _regionDao.update(region.getId(), region);
+
         txn.commit();
         portableIpLock.unlock();
         return portableIpRange;
@@ -5058,6 +5135,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     eventDescription = "deleting portable ip range", async = false)
     public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
         long rangeId = cmd.getId();
+
         PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(rangeId);
         if (portableIpRange == null) {
             throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
@@ -5070,12 +5148,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (fullIpRange != null && freeIpRange != null) {
             if (fullIpRange.size() == freeIpRange.size()) {
                 _portableIpRangeDao.expunge(portableIpRange.getId());
+                List<PortableIpRangeVO> pipranges = _portableIpRangeDao.listAll();
+                if (pipranges == null || pipranges.isEmpty()) {
+                    RegionVO region = _regionDao.findById(portableIpRange.getRegionId());
+                    region.setPortableipEnabled(false);
+                    _regionDao.update(region.getId(), region);
+                }
                 return true;
             } else {
                 throw new InvalidParameterValueException("Can't delete portable IP range as there are IP's assigned.");
             }
         }
-
         return false;
     }
 

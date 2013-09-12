@@ -131,12 +131,10 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.ImageStore;
-import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Swift;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
@@ -235,7 +233,6 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.S3Response;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -249,7 +246,6 @@ import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
@@ -460,10 +456,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setDescription(vmSnapshot.getDescription());
         vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
-        if (vm != null)
+        if (vm != null) {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
-        if (vmSnapshot.getParent() != null)
+        }
+        if (vmSnapshot.getParent() != null) {
             vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
+        }
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
         vmSnapshotResponse.setObjectName("vmsnapshot");
@@ -514,35 +512,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return listHosts.get(0);
     }
 
-    @Override
-    public SwiftResponse createSwiftResponse(Swift swift) {
-        SwiftResponse swiftResponse = new SwiftResponse();
-        swiftResponse.setId(swift.getUuid());
-        swiftResponse.setUrl(swift.getUrl());
-        swiftResponse.setAccount(swift.getAccount());
-        swiftResponse.setUsername(swift.getUserName());
-        swiftResponse.setObjectName("swift");
-        return swiftResponse;
-    }
-
-    @Override
-    public S3Response createS3Response(final S3 result) {
-
-        final S3Response response = new S3Response();
-
-        response.setAccessKey(result.getAccessKey());
-        response.setConnectionTimeout(result.getConnectionTimeout());
-        response.setEndPoint(result.getEndPoint());
-        response.setHttpsFlag(result.getHttpsFlag());
-        response.setMaxErrorRetry(result.getMaxErrorRetry());
-        response.setObjectId(result.getUuid());
-        response.setSecretKey(result.getSecretKey());
-        response.setSocketTimeout(result.getSocketTimeout());
-        response.setTemplateBucketName(result.getBucketName());
-
-        return response;
-
-    }
 
     @Override
     public VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan) {
@@ -1896,10 +1865,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 // convert account to projectIds
                 Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
 
-                if (project.getUuid() != null && !project.getUuid().isEmpty())
+                if (project.getUuid() != null && !project.getUuid().isEmpty()) {
                     projectIds.add(project.getUuid());
-                else
+                } else {
                     projectIds.add(String.valueOf(project.getId()));
+                }
             }
         }
 
@@ -2001,6 +1971,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsPersistent(offering.getIsPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
+        response.setConcurrentConnections(offering.getConcurrentConnections());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -2009,8 +1980,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (so != null) {
             ServiceOffering soffering = ApiDBUtils.findServiceOfferingById(so);
-            if (soffering != null)
+            if (soffering != null) {
                 response.setServiceOfferingId(soffering.getUuid());
+            }
         }
 
         if (offering.getGuestType() != null) {
@@ -2196,11 +2168,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // populate network offering information
-        NetworkOffering networkOffering = (NetworkOffering) ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+        NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
         if (networkOffering != null) {
             response.setNetworkOfferingId(networkOffering.getUuid());
             response.setNetworkOfferingName(networkOffering.getName());
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
+            response.setNetworkOfferingConserveMode(networkOffering.isConserveMode());
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.getIsPersistent());
@@ -2722,8 +2695,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb) {
         LBStickinessResponse spResponse = new LBStickinessResponse();
 
-        if (lb == null)
+        if (lb == null) {
             return spResponse;
+        }
         spResponse.setlbRuleId(lb.getUuid());
         Account account = ApiDBUtils.findAccountById(lb.getAccountId());
         if (account != null) {
@@ -2750,8 +2724,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb) {
         LBHealthCheckResponse hcResponse = new LBHealthCheckResponse();
 
-        if (lb == null)
+        if (lb == null) {
             return hcResponse;
+        }
         hcResponse.setlbRuleId(lb.getUuid());
         Account account = ApiDBUtils.findAccountById(lb.getAccountId());
         if (account != null) {
@@ -2834,6 +2809,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(region.getName());
         response.setEndPoint(region.getEndPoint());
         response.setObjectName("region");
+        response.setGslbServiceEnabled(region.checkIfServiceEnabled(Region.Service.Gslb));
+        response.setPortableipServiceEnabled(region.checkIfServiceEnabled(Region.Service.PortableIp));
         return response;
     }
 
@@ -3143,7 +3120,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
         Vpc vpc = ApiDBUtils.findVpcById(result.getVpcId());
         if (vpc != null) {
-            response.setVpcId(result.getUuid());
+            response.setVpcId(vpc.getUuid());
         }
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpngateway");
@@ -3372,27 +3349,30 @@ public class ApiResponseHelper implements ResponseGenerator {
 			//Snapshot Size
 			usageRecResponse.setSize(usageRecord.getSize());
 
-		} else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
-			//Load Balancer Policy ID
+        } else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
+            //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(lb.getUuid());
-		} else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
-			//Port Forwarding Rule ID
+            if(lb != null){
+                usageRecResponse.setUsageId(lb.getUuid());
+            }
+        } else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
+            //Port Forwarding Rule ID
             PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(pf.getUuid());
-
+            if(pf != null){
+                usageRecResponse.setUsageId(pf.getUuid());
+            }
 		} else if(usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING){
 			//Network Offering Id
 			NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
 			usageRecResponse.setOfferingId(netOff.getUuid());
 			//is Default
 			usageRecResponse.setDefault((usageRecord.getUsageId() == 1)? true:false);
-
-		} else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
-			//VPN User ID
+        } else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
+            //VPN User ID
             VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
+            if(vpnUser != null){
             usageRecResponse.setUsageId(vpnUser.getUuid());
-
+            }
 		} else if(usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP){
 			//Security Group Id
 			SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
@@ -3402,8 +3382,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 		    usageRecResponse.setVmName(vm.getInstanceName());
 		    usageRecResponse.setUsageId(vm.getUuid());
 	        usageRecResponse.setSize(usageRecord.getSize());
-	        if(usageRecord.getOfferingId() != null)
-	            usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+	        if(usageRecord.getOfferingId() != null) {
+                usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+            }
 		}
 
 		if (usageRecord.getRawUsage() != null) {
@@ -3422,8 +3403,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 	}
 
     public String getDateStringInternal(Date inputDate) {
-        if (inputDate == null)
+        if (inputDate == null) {
             return null;
+        }
 
         TimeZone tz = _usageSvc.getUsageTimezone();
         Calendar cal = Calendar.getInstance(tz);
@@ -3679,6 +3661,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setGateway(ipRange.getGateway());
         response.setNetmask(ipRange.getNetmask());
         response.setRegionId(ipRange.getRegionId());
+        response.setObjectName("portableiprange");
         return response;
     }
 
@@ -3725,7 +3708,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setState(portableIp.getState().name());
-
+        response.setObjectName("portableip");
         return response;
     }
 

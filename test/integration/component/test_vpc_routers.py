@@ -599,6 +599,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                TestVPCRouterOneNetwork,
                                cls
                                ).getClsTestClient().getApiClient()
+        cls._cleanup = []
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient, cls.services)
@@ -615,11 +616,13 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                             cls.apiclient,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.apiclient,
                                      cls.services["vpc_offering"]
                                      )
         cls.vpc_off.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.vpc_off)
 
         cls.account = Account.create(
                                      cls.apiclient,
@@ -627,8 +630,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=cls.domain.id
                                      )
-        cls._cleanup = [cls.account]
-       
+        cls._cleanup.insert(0, cls.account)
 
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
         cls.vpc = VPC.create(
@@ -640,6 +642,31 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          domainid=cls.account.domainid
                          )
 
+        private_gateway = PrivateGateway.create(
+                                                cls.apiclient,
+                                                gateway='10.1.3.1',
+                                                ipaddress='10.1.3.100',
+                                                netmask='255.255.255.0',
+                                                vlan=678,
+                                                vpcid=cls.vpc.id
+                                                )
+        cls.gateways = PrivateGateway.list(
+                                       cls.apiclient,
+                                       id=private_gateway.id,
+                                       listall=True
+                                       )
+
+        static_route = StaticRoute.create(
+                                          cls.apiclient,
+                                          cidr='11.1.1.1/24',
+                                          gatewayid=private_gateway.id
+                                          )
+        cls.static_routes = StaticRoute.list(
+                                       cls.apiclient,
+                                       id=static_route.id,
+                                       listall=True
+                                       )
+    
         cls.nw_off = NetworkOffering.create(
                                             cls.apiclient,
                                             cls.services["network_offering"],
@@ -695,6 +722,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   domainid=cls.account.domainid,
                                   listall=True
                                   )
+
         public_ip_1 = PublicIPAddress.create(
                                 cls.apiclient,
                                 accountid=cls.account.name,
@@ -757,7 +785,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 vpcid=cls.vpc.id
                                 )
 
-
         lb_rule = LoadBalancerRule.create(
                                     cls.apiclient,
                                     cls.services["lbrule"],
@@ -784,35 +811,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 traffictype='Egress'
                                 )
         
-        private_gateway = PrivateGateway.create(
-                                                cls.apiclient,
-                                                gateway='10.1.3.1',
-                                                ipaddress='10.1.3.100',
-                                                netmask='255.255.255.0',
-                                                vlan=678,
-                                                vpcid=cls.vpc.id
-                                                )
-        cls.gateways = PrivateGateway.list(
-                                       cls.apiclient,
-                                       id=private_gateway.id,
-                                       listall=True
-                                       )
-        static_route = StaticRoute.create(
-                                          cls.apiclient,
-                                          cidr='11.1.1.1/24',
-                                          gatewayid=private_gateway.id
-                                          )
-        cls.static_routes = StaticRoute.list(
-                                       cls.apiclient,
-                                       id=static_route.id,
-                                       listall=True
-                                       )
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ] 
-    
     @classmethod
     def tearDownClass(cls):
         try:
@@ -824,13 +822,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.account = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.cleanup = [self.account]     
+        self.cleanup = []
         return
 
     def tearDown(self):

@@ -60,7 +60,7 @@
     </section>
     <section id="ext-lb-offering">
       <title>Creating a Network Offering for External LB</title>
-      <para>To have internal LB support on VPC, create a network offering as follows: </para>
+      <para>To have external LB support on VPC, create a network offering as follows: </para>
       <orderedlist>
         <listitem>
           <para>Log in to the &PRODUCT; UI as a user or admin.</para>
@@ -111,12 +111,16 @@
                 Indicate whether a VLAN should be specified when this offering is used.</para>
             </listitem>
             <listitem>
-              <para><emphasis role="bold">Supported Services</emphasis>: Select Load Balancer.
-                Select <code>InternalLbVM</code> from the provider list.</para>
+              <para><emphasis role="bold">Supported Services</emphasis>: Select Load Balancer. Use
+                Netscaler or VpcVirtualRouter.</para>
             </listitem>
             <listitem>
-              <para><emphasis role="bold">Load Balancer Type</emphasis>: Select external LB from the
-                drop-down. Use Netscaler</para>
+              <para><emphasis role="bold">Load Balancer Type</emphasis>: Select Public LB from the
+                drop-down.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">LB Isolation</emphasis>: Select Dedicated if Netscaler is
+                used as the external LB provider.</para>
             </listitem>
             <listitem>
               <para><emphasis role="bold">System Offering</emphasis>: Choose the system service
@@ -274,6 +278,19 @@
         </textobject>
       </mediaobject>
     </section>
+    <section id="internallb-notes">
+      <title>Guidelines</title>
+      <itemizedlist>
+        <listitem><para>Internal LB and Public LB are mutually exclusive on a tier. If the tier has LB on the public
+            side, then it can't have the Internal LB.</para></listitem>
+        <listitem><para>Internal LB is supported just on VPC networks in &PRODUCT; 4.2 release.</para></listitem>
+        <listitem><para>Only Internal LB VM can act as the Internal LB provider in &PRODUCT; 4.2 release.</para></listitem>
+        <listitem><para>Network upgrade is not supported from the network offering with Internal LB to the network
+            offering with Public LB.</para></listitem>
+        <listitem><para>Multiple tiers can have internal LB support in a VPC.</para></listitem>
+        <listitem><para>Only one tier can have Public LB support in a VPC.</para></listitem>
+      </itemizedlist>
+    </section>
     <section id="enable-vpc-lb">
       <title>Enabling Internal LB on a VPC Tier</title>
       <orderedlist>
@@ -288,7 +305,9 @@
     </section>
     <section id="int-lb-offering">
       <title>Creating a Network Offering for Internal LB</title>
-      <para>To have internal LB support on VPC, create a network offering as follows: </para>
+      <para>To have internal LB support on VPC, either use the default offering,
+        DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB, or create a network offering as
+        follows: </para>
       <orderedlist>
         <listitem>
           <para>Log in to the &PRODUCT; UI as a user or admin.</para>
@@ -364,6 +383,14 @@
     </section>
     <section id="int-lb-vpc">
       <title>Creating an Internal LB Rule</title>
+      <para>When you create the Internal LB rule and applies to a VM, an Internal LB VM, which is
+        responsible for load balancing, is created. </para>
+      <para>You can view the created Internal LB VM in the Instances page if you navigate to
+          <emphasis role="bold">Infrastructure</emphasis> > <emphasis role="bold">Zones</emphasis> >
+          &lt;<emphasis role="italic">zone_ name</emphasis>&gt; > &lt;<emphasis role="italic"
+          >physical_network_name</emphasis>&gt; > <emphasis role="bold">Network Service
+          Providers</emphasis> > <emphasis role="bold">Internal LB VM</emphasis>. You can manage the
+        Internal LB VMs as and when required from the location.</para>
       <orderedlist>
         <listitem>
           <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
@@ -397,9 +424,11 @@
                 that can be displayed to users.</para>
             </listitem>
             <listitem>
-              <para><emphasis role="bold">Source IP Address</emphasis>: The source IP from which
-                traffic originates. Typically, this is the IP of an instance on another tier within
-                your VPC.</para>
+              <para><emphasis role="bold">Source IP Address</emphasis>: (Optional) The source IP
+                from which traffic originates. The IP is acquired from the CIDR of that particular
+                tier on which you want to create the Internal LB rule. If not specified, the IP
+                address is automatically allocated from the network CIDR.</para>
+              <para>For every Source IP, a new Internal LB VM is created for load balancing.</para>
             </listitem>
             <listitem>
               <para><emphasis role="bold">Source Port</emphasis>: The port associated with the

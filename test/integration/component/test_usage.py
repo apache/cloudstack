@@ -336,10 +336,10 @@ class TestPublicIPUsage(cloudstackTestCase):
 
         cls.public_ip = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
@@ -904,17 +904,17 @@ class TestISOUsage(cloudstackTestCase):
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
-
+        imageStores = ImageStore.list(self.api_client,zoneid=self.zone.id)
         # Check for ISO.CREATE, ISO.DELETE events in cloud.usage_event table
         self.assertEqual(
                             qresult.count('ISO.CREATE'),
-                            1,
+                            len(imageStores),
                             "Check ISO.CREATE event in events table"
                         )
 
         self.assertEqual(
                             qresult.count('ISO.DELETE'),
-                            1,
+                            len(imageStores),
                             "Check ISO.DELETE in events table"
                         )
         return
@@ -962,10 +962,10 @@ class TestLBRuleUsage(cloudstackTestCase):
                                 )
         cls.public_ip_1 = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
@@ -1291,10 +1291,10 @@ class TestNatRuleUsage(cloudstackTestCase):
                                 )
         cls.public_ip_1 = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,
@@ -1454,10 +1454,10 @@ class TestVpnUsage(cloudstackTestCase):
                                 )
         cls.public_ip = PublicIPAddress.create(
                                            cls.api_client,
-                                           cls.virtual_machine.account,
-                                           cls.virtual_machine.zoneid,
-                                           cls.virtual_machine.domainid,
-                                           cls.services["server"]
+                                           accountid=cls.virtual_machine.account,
+                                           zoneid=cls.virtual_machine.zoneid,
+                                           domainid=cls.virtual_machine.domainid,
+                                           services=cls.services["server"]
                                            )
         cls._cleanup = [
                         cls.service_offering,

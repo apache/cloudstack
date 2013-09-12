@@ -171,8 +171,8 @@ public class TemplateLocation {
         if (_props.getProperty("virtualsize") != null) {
             tmplInfo.size = Long.parseLong(_props.getProperty("virtualsize"));
         }
-        if (_props.getProperty("physicalSize") != null) {
-            tmplInfo.physicalSize = Long.parseLong(_props.getProperty("physicalSize"));
+        if (_props.getProperty("size") != null) {
+            tmplInfo.physicalSize = Long.parseLong(_props.getProperty("size"));
         }
 
         return tmplInfo;

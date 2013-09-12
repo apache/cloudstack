@@ -23,15 +23,25 @@
 -->
 <section id="migrate-vm-rootvolume-volume-new-storage-pool">
 	<title>Migrating a VM Root Volume to a New Storage Pool</title>
-	<para>When migrating the root disk volume, the VM must first be stopped, and users can not access the VM. After migration is complete, the VM can be restarted.</para>
-			<orderedlist>
-				<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-				<listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
-				<listitem><para>Stop the VM.</para></listitem>
-				<listitem><para>Use the &PRODUCT; API command, migrateVirtualMachine, with the ID of the VM to migrate and
-				the IDs of a destination host and destination storage pool in the same zone.</para></listitem>
-				<listitem><para>Watch for the VM status to change to Migrating, then back to Stopped.</para></listitem>
-				<listitem><para>Restart the VM.</para></listitem>
-			</orderedlist>
-	</section>
-
+	<para>(XenServer, VMware) You can live migrate a VM's root disk from one storage pool to another, without stopping the VM first.</para>
+	<para>(KVM) When migrating the root disk volume, the VM must first be stopped, and users can not access the VM. After migration is complete, the VM can be restarted.</para>
+	<orderedlist>
+		<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+		<listitem><para>In the left navigation bar, click Instances, and click the VM name.</para></listitem>
+		<listitem><para>(KVM only) Stop the VM.</para></listitem>
+		<listitem><para>Click the Migrate button <inlinemediaobject>
+			<imageobject>
+				<imagedata fileref="./images/migrate-instance.png"/>
+			</imageobject>
+			<textobject>
+				<phrase>Migrateinstance.png: button to migrate a VM or volume</phrase>
+			</textobject>
+		</inlinemediaobject>
+			and choose the destination from the dropdown list.</para>
+			<note><para>If the VM's storage has to be migrated along with the VM, this will be noted in the host
+				list. &PRODUCT; will take care of the storage migration for you.</para></note><para/></listitem>
+		<listitem><para>Watch for the volume status to change to Migrating, then back to Running (or Stopped, in the case of KVM). This
+			can take some time.</para></listitem>
+		<listitem><para>(KVM only) Restart the VM.</para></listitem>
+	</orderedlist>
+</section>

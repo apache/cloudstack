@@ -46,8 +46,88 @@
         <title>Root Administrator</title>
         <para>Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains</para>
     </formalpara>
-    <para>The resources belong to the account, not individual users in that account. For example,
-        billing, resource limits, and so on are maintained by the account, not the users. A user can
-        operate on any resource in the account provided the user has privileges for that operation.
-        The privileges are determined by the role.</para>
+    <formalpara>
+        <title>Resource Ownership</title>
+        <para>Resources belong to the account, not individual users in that account. For example,
+            billing, resource limits, and so on are maintained by the account, not the users. A user
+            can operate on any resource in the account provided the user has privileges for that
+            operation. The privileges are determined by the role. A root administrator can change
+            the ownership of any virtual machine from one account to any other account by using the
+            assignVirtualMachine API. A domain or sub-domain administrator can do the same for VMs
+            within the domain from one account to any other account in the domain or any of its
+            sub-domains.</para>
+    </formalpara>
+    <section id="dedicated-host-cluster-pod">
+        <title>Dedicating Resources to Accounts and Domains</title>
+        <para>The root administrator can dedicate resources to a specific domain or account
+            that needs private infrastructure for additional security or performance guarantees.
+            A zone, pod, cluster, or host can be reserved by the root administrator for a specific domain or account.
+            Only users in that domain or its subdomain may use the infrastructure.
+            For example, only users in a given domain can create guests in a zone dedicated to that domain.</para>
+        <para>There are several types of dedication available:</para>
+        <itemizedlist>
+            <listitem>
+                <para>Explicit dedication. A zone, pod, cluster, or host is dedicated to an account or
+                    domain by the root administrator during initial deployment and
+                    configuration.</para></listitem>
+            <listitem><para>Strict implicit dedication. A host will not be shared across multiple accounts. For example,
+                strict implicit dedication is useful for deployment of certain types of
+                applications, such as desktops, where no host can be shared
+                between different accounts without violating the desktop software's terms of license.</para></listitem>
+            <listitem><para>Preferred implicit dedication. The VM will be deployed in dedicated infrastructure if
+                possible. Otherwise, the VM can be deployed in shared
+                infrastructure.</para></listitem>
+        </itemizedlist>
+        <section id="dedication-how-to">
+            <title>How to Dedicate a Zone, Cluster, Pod, or Host to an Account or Domain</title>
+            <para>For explicit dedication: When deploying a new zone, pod, cluster, or host, the
+                root administrator can click the Dedicated checkbox, then choose a domain or account
+                to own the resource.</para>
+            <para>To explicitly dedicate an existing zone, pod, cluster, or host: log in as the root admin,
+                find the resource in the UI, and click the Dedicate button. <inlinemediaobject>
+                    <imageobject>
+                        <imagedata fileref="./images/dedicate-resource-button.png"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>dedicate-resource-button.png: button to dedicate a zone, pod, cluster, or host</phrase>
+                    </textobject>
+                </inlinemediaobject></para>
+            <para>For implicit dedication: The administrator creates a compute service offering and
+                in the Deployment Planner field, chooses ImplicitDedicationPlanner. Then in Planner
+                Mode, the administrator specifies either Strict or Preferred, depending on whether
+                it is permissible to allow some use of shared resources when dedicated resources are
+                not available. Whenever a user creates a VM based on this service offering, it is
+                allocated on one of the dedicated hosts.</para>
+        </section>
+        <section id="using-dedication-how-to">
+            <title>How to Use Dedicated Hosts</title>
+            <para>To use an explicitly dedicated host, use the explicit-dedicated type of affinity
+                group (see <xref linkend="affinity-groups"/>). For example, when creating a new VM,
+                an end user can choose to place it on dedicated infrastructure. This operation will
+                succeed only if some infrastructure has already been assigned as dedicated to the
+                user's account or domain.</para>
+        </section>
+        <section id="dedicated-infrastructure-behavior">
+            <title>Behavior of Dedicated Hosts, Clusters, Pods, and Zones</title>
+            <para>The administrator can live migrate VMs away from dedicated hosts if desired, whether the destination
+                is a host reserved for a different account/domain or a host that is shared (not dedicated to any particular account or domain).
+                &PRODUCT; will generate an alert, but the operation is allowed.</para>
+            <para>Dedicated hosts can be used in conjunction with host tags. If both a host tag and dedication are requested,
+                the VM will be placed only on a host that meets both requirements. If there is no dedicated resource available
+                to that user that also has the host tag requested by the user, then the VM will not deploy.</para>
+            <para>If you delete an account or domain, any hosts, clusters, pods, and zones that were
+                dedicated to it are freed up. They will now be available to be shared by any account
+                or domain, or the administrator may choose to re-dedicate them to a different
+                account or domain.</para>
+            <para>System VMs and virtual routers affect the behavior of host dedication.
+                System VMs and virtual routers are owned by the &PRODUCT; system account,
+                and they can be deployed on any host. They do not adhere to explicit dedication.
+                The presence of system vms and virtual routers on a host makes it unsuitable for strict implicit dedication.
+                The host can not be used for strict implicit dedication,
+                because the host already has VMs of a specific account (the default system account).
+                However, a host with system VMs or virtual routers can be used
+                for preferred implicit dedication.
+            </para>
+        </section>
+    </section>
 </section>

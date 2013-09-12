@@ -181,7 +181,7 @@ public interface NetworkManager  {
 
     UserDataServiceProvider getSSHKeyResetProvider(Network network);
 
-    boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
+    boolean applyIpAssociations(Network network, boolean continueOnError, boolean reprogramNetworkRules) throws ResourceUnavailableException;
     
     boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException;
 
@@ -388,4 +388,6 @@ public interface NetworkManager  {
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
 
     void prepareAllNicsForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest);
+
+    void removeDhcpServiceInSubnet(NicVO nic);
 }

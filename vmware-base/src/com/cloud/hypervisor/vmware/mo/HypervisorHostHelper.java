@@ -44,6 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
@@ -73,6 +74,7 @@ import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
@@ -88,14 +90,29 @@ public class HypervisorHostHelper {
     private static final String UNTAGGED_VLAN_NAME = "untagged";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context,
-            ObjectContent[] ocs, String name) {
-
+            ObjectContent[] ocs, String name, String instanceNameCustomField) {
+    	
         if(ocs != null && ocs.length > 0) {
             for(ObjectContent oc : ocs) {
-                DynamicProperty prop = oc.getPropSet().get(0);
-                assert(prop != null);
-                if(prop.getVal().toString().equals(name))
-                    return new VirtualMachineMO(context, oc.getObj());
+                String vmNameInvCenter = null;
+                String vmInternalCSName = null;
+                List<DynamicProperty> objProps = oc.getPropSet();
+		        if(objProps != null) {
+		            for(DynamicProperty objProp : objProps) {
+		                if(objProp.getName().equals("name")) {
+		                    vmNameInvCenter = (String)objProp.getVal();
+		                } else if(objProp.getName().contains(instanceNameCustomField)) {
+		                	if(objProp.getVal() != null)
+		                		vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
+		                }
+		                
+                        if ( (vmNameInvCenter != null && name.equalsIgnoreCase(vmNameInvCenter))
+                                || (vmInternalCSName != null && name.equalsIgnoreCase(vmInternalCSName)) ) {
+    		                VirtualMachineMO vmMo = new VirtualMachineMO(context, oc.getObj());
+                            return vmMo;
+                        }
+                    }
+                }
             }
         }
         return null;
@@ -427,7 +444,8 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix,
             HostMO hostMo, String vlanId, String secondaryvlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs,
-            VirtualSwitchType vSwitchType, int numPorts, String gateway, boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType) throws Exception {
+            VirtualSwitchType vSwitchType, int numPorts, String gateway, boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType,
+            Map<String, String> vsmCredentials) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -560,6 +578,10 @@ public class HypervisorHostHelper {
             // TODO(sateesh): Optionally let user specify the burst coefficient
             long burstSize = 5 * averageBandwidth / 8;
 
+            if (vsmCredentials != null) {
+                s_logger.info("Stocking credentials of Nexus VSM");
+                context.registerStockObject("vsmcredentials", vsmCredentials);
+            }
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
                 s_logger.info("Port profile " + networkName + " not found.");
                 createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize, gateway, configureVServiceInNexus);
@@ -1120,7 +1142,7 @@ public class HypervisorHostHelper {
         return morNetwork;
     }
 
-    public static boolean createBlankVm(VmwareHypervisorHost host, String vmName,
+    public static boolean createBlankVm(VmwareHypervisorHost host, String vmName, String vmInternalCSName,
             int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier,
             ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 
@@ -1130,6 +1152,9 @@ public class HypervisorHostHelper {
         // VM config basics
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
+        if (vmInternalCSName == null)
+            vmInternalCSName = vmName;
+
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse);
 
         // Scsi controller
@@ -1157,8 +1182,17 @@ public class HypervisorHostHelper {
         vmConfig.getDeviceChange().add(scsiControllerSpec);
         vmConfig.getDeviceChange().add(videoDeviceSpec);
         if(host.createVm(vmConfig)) {
+            // Here, when attempting to find the VM, we need to use the name
+            // with which we created it. This is the only such place where
+            // we need to do this. At all other places, we always use the
+            // VM's internal cloudstack generated name. Here, we cannot use
+            // the internal name because we can set the internal name into the
+            // VM's custom field CLOUD_VM_INTERNAL_NAME only after we create
+            // the VM.
             VirtualMachineMO vmMo = host.findVmOnHyperHost(vmName);
             assert(vmMo != null);
+
+            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME, vmInternalCSName);
 
             int ideControllerKey = -1;
             while(ideControllerKey < 0) {
@@ -1166,29 +1200,49 @@ public class HypervisorHostHelper {
                 if(ideControllerKey >= 0)
                     break;
 
-                s_logger.info("Waiting for IDE controller be ready in VM: " + vmName);
+                s_logger.info("Waiting for IDE controller be ready in VM: " + vmInternalCSName);
                 Thread.sleep(1000);
             }
 
-            if(snapshotDirToParent) {
-                String snapshotDir = String.format("/vmfs/volumes/%s/", dsMo.getName());
-
-                s_logger.info("Switch snapshot working directory to " + snapshotDir + " for " + vmName);
-                vmMo.setSnapshotDirectory(snapshotDir);
-
-                // Don't have a good way to test if the VM is really ready for use through normal API after configuration file manipulation,
-                // delay 3 seconds
-                Thread.sleep(3000);
-            }
-
-            s_logger.info("Blank VM: " + vmName + " is ready for use");
             return true;
         }
         return false;
     }
 
-    public static String resolveHostNameInUrl(DatacenterMO dcMo, String url) {
+    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, 
+    	DatastoreMO dsMo, String vmName) throws Exception {
+    	
+    	// Allow worker VM to float within cluster so that we will have better chance to
+    	// create it successfully
+    	ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+    	if(morCluster != null)
+    		hyperHost = new ClusterMO(hyperHost.getContext(), morCluster);
+    	
+        VirtualMachineMO workingVM = null;
+        VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+        vmConfig.setName(vmName);
+        vmConfig.setMemoryMB((long) 4);
+        vmConfig.setNumCPUs(1);
+        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
+        VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
+        fileInfo.setVmPathName(dsMo.getDatastoreRootPath());
+        vmConfig.setFiles(fileInfo);
 
+        VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
+        scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
+        scsiController.setBusNumber(0);
+        scsiController.setKey(1);
+        VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
+        scsiControllerSpec.setDevice(scsiController);
+        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+        vmConfig.getDeviceChange().add(scsiControllerSpec);
+        hyperHost.createVm(vmConfig);
+        workingVM = hyperHost.findVmOnHyperHost(vmName);
+        return workingVM;
+    }
+    
+    public static String resolveHostNameInUrl(DatacenterMO dcMo, String url) {
         s_logger.info("Resolving host name in url through vCenter, url: " + url);
 
         URI uri;

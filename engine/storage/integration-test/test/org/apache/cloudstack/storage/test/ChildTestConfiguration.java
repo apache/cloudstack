@@ -18,6 +18,8 @@ package org.apache.cloudstack.storage.test;
 
 import java.io.IOException;
 
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.dao.EventDaoImpl;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -106,7 +108,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
         VMSnapshotDaoImpl.class, OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class,
         ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class, StorageCacheManagerImpl.class, UserDaoImpl.class,
         DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class, DownloadMonitorImpl.class,
-        AccountDaoImpl.class }, includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) },
+        AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class}, includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) },
         useDefaultFilters = false)
 public class ChildTestConfiguration extends TestConfiguration {
 
@@ -183,12 +185,6 @@ public class ChildTestConfiguration extends TestConfiguration {
     @Bean
     public VirtualMachineManager vmMgr() {
         return Mockito.mock(VirtualMachineManager.class);
-    }
-
-
-    @Bean
-    public SnapshotManager snapshotMgr() {
-        return Mockito.mock(SnapshotManager.class);
     }
 
     @Bean

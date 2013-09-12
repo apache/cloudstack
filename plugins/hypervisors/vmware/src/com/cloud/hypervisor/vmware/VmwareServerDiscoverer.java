@@ -27,12 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
-
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -79,7 +75,10 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
 
 
 @Local(value = Discoverer.class)
@@ -137,7 +136,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
 			return null;
 		}
-
+        boolean failureInClusterDiscovery = true;
+        String vsmIp = "";
 		ClusterVO cluster = _clusterDao.findById(clusterId);
         if(cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
         	if(s_logger.isInfoEnabled())
@@ -291,8 +291,13 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		if (privateTrafficLabel != null) {
             s_logger.info("Detected private network label : " + privateTrafficLabel);
 		}
-
-        if (nexusDVS) {
+        Pair<Boolean, Long> vsmInfo = new Pair<Boolean, Long>(false, 0L);
+        if (nexusDVS &&
+                (guestTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) ||
+                ((zoneType == NetworkType.Advanced) && (publicTrafficLabelObj.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch))) {
+            // Expect Cisco Nexus VSM details only if following 2 condition met
+            // 1) The global config parameter vmware.use.nexus.vswitch
+            // 2) Atleast 1 traffic type uses Nexus distributed virtual switch as backend.
 			if (zoneType != NetworkType.Basic) {
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
 				if (publicTrafficLabel != null) {
@@ -304,12 +309,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
             }
-            String vsmIp = _urlParams.get("vsmipaddress");
+            vsmIp = _urlParams.get("vsmipaddress");
             String vsmUser = _urlParams.get("vsmusername");
             String vsmPassword = _urlParams.get("vsmpassword");
             String clusterName = cluster.getName();
             try {
-                _nexusElement.validateVsmCluster(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
+                vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
             } catch(ResourceInUseException ex) {
                 DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
                 throw discEx;
@@ -424,7 +429,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			cluster.setGuid(UUID.nameUUIDFromBytes(
 					String.valueOf(clusterId).getBytes()).toString());
 			_clusterDao.update(clusterId, cluster);
-
+            // Flag cluster discovery success
+            failureInClusterDiscovery = false;
 			return resources;
 		} catch (DiscoveredWithErrorException e) {
 			throw e;
@@ -435,6 +441,13 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		} finally {
 			if (context != null)
 				context.close();
+            if (failureInClusterDiscovery && vsmInfo.first()) {
+                try {
+                    s_logger.debug("Deleting Nexus 1000v VSM " + vsmIp + " because cluster discovery and addition to zone has failed.");
+                    _nexusElement.deleteCiscoNexusVSM(vsmInfo.second().longValue());
+                } catch(Exception e) {
+                }
+            }
 		}
 	}
 
@@ -645,33 +658,24 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             throw e;
         }
 
-        if (defaultVirtualSwitchType.equals(VirtualSwitchType.StandardVirtualSwitch)|| (vSwitchType == null && vSwitchName == null)) {
-            // Case of no cluster level override configuration defined.
-            // Depend only on zone wide traffic label
-            // If global param for dvSwitch is false return default traffic info object with vmware standard vswitch
-            return trafficLabelObj;
-        } else {
-            // Need to persist cluster level override configuration to db
-            clusterDetails = _clusterDetailsDao.findDetails(clusterId);
-        }
-
+        clusterDetails = _clusterDetailsDao.findDetails(clusterId);
         if (vSwitchName != null) {
             trafficLabelObj.setVirtualSwitchName(vSwitchName);
-            if (trafficType == TrafficType.Guest) {
-                clusterDetails.put(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, vSwitchName);
-            } else {
-                clusterDetails.put(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, vSwitchName);
-            }
+        }
+        if (trafficType == TrafficType.Guest) {
+            clusterDetails.put(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, trafficLabelObj.getVirtualSwitchName());
+        } else {
+            clusterDetails.put(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, trafficLabelObj.getVirtualSwitchName());
         }
 
         if (vSwitchType != null) {
             validateVswitchType(vSwitchType);
             trafficLabelObj.setVirtualSwitchType(VirtualSwitchType.getType(vSwitchType));
-            if (trafficType == TrafficType.Guest) {
-                clusterDetails.put(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, vSwitchType);
-            } else {
-                clusterDetails.put(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, vSwitchType);
-            }
+        }
+        if (trafficType == TrafficType.Guest) {
+            clusterDetails.put(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, trafficLabelObj.getVirtualSwitchType().toString());
+        } else {
+            clusterDetails.put(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, trafficLabelObj.getVirtualSwitchType().toString());
         }
 
         // Save cluster level override configuration to cluster details

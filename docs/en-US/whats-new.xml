@@ -26,7 +26,7 @@
     <title>What's New in the API for 4.2</title>
     <xi:include href="added-API-commands-4.2.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="changed-API-commands-4.2.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="removed-api-4.2.xml.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="removed-api-4.2.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   </section>
   <section id="whats-new-in-api-4.1">
     <title>What's New in the API for 4.1</title>

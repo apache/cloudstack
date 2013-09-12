@@ -79,7 +79,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class AncientDataMotionStrategy implements DataMotionStrategy {
+public class
+        AncientDataMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
     @Inject
     EndPointSelector selector;
@@ -176,17 +177,31 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return zoneScope;
     }
 
+    private Scope pickCacheScopeForCopy(DataObject srcData, DataObject destData) {
+        Scope srcScope = srcData.getDataStore().getScope();
+        Scope destScope = destData.getDataStore().getScope();
+
+        Scope selectedScope = null;
+        if (srcScope.getScopeId() != null) {
+            selectedScope = getZoneScope(srcScope);
+        } else if (destScope.getScopeId() != null) {
+            selectedScope = getZoneScope(destScope);
+        } else {
+            s_logger.warn("Cannot find a zone-wide scope for movement that needs a cache storage");
+        }
+        return selectedScope;
+    }
+
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         Answer answer = null;
-        boolean usingCache = false;
         DataObject cacheData = null;
         DataObject srcForCopy = srcData;
         try {
             if (needCacheStorage(srcData, destData)) {
-                Scope destScope = getZoneScope(destData.getDataStore().getScope());
+                Scope destScope = pickCacheScopeForCopy(srcData, destData);
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
@@ -195,15 +210,21 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             answer = ep.sendMessage(cmd);
 
             if (cacheData != null) {
-                if (answer == null || !answer.getResult()) {
+                if (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME) {
+                    // volume transfer from primary to secondary or vice versa. Volume transfer between primary pools are already handled by copyVolumeBetweenPools
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
-                    cacheMgr.releaseCacheObject(srcForCopy);
+                    // for template, we want to leave it on cache for performance reason
+                    if (answer == null || !answer.getResult()) {
+                        cacheMgr.deleteCacheObject(srcForCopy);
+                    } else {
+                        cacheMgr.releaseCacheObject(srcForCopy);
+                    }
                 }
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy object failed: " + e.toString());
+            s_logger.debug("copy object failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
@@ -328,6 +349,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait, _mgmtServer.getExecuteInSequence());
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = ep.sendMessage(cmd);
+            // delete volume on cache store
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
+            }
             return answer;
         }
 
@@ -426,7 +451,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
-                cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
+                Scope selectedScope = pickCacheScopeForCopy(srcData, destData);
+                cacheData = cacheMgr.getCacheObject(srcData, selectedScope);
 
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, _mgmtServer.getExecuteInSequence());
                 cmd.setCacheTO(cacheData.getTO());
@@ -437,26 +463,25 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 EndPoint ep = selector.select(srcData, destData);
                 answer = ep.sendMessage(cmd);
             }
-            // clean up cache entry in case of failure
-            if (answer == null || !answer.getResult()) {
-                if (cacheData != null) {
-                    cacheMgr.deleteCacheObject(cacheData);
-                }
-            }
-            return answer;
-        } catch (Exception e) {
-            s_logger.debug("copy snasphot failed: " + e.toString());
+
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
-            throw new CloudRuntimeException(e.toString());
+
+            return answer;
+        } catch (Exception e) {
+            s_logger.debug("copy snasphot failed: ", e);
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
+            }
+            throw new CloudRuntimeException(e);
         }
 
     }
 
     @Override
     public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-                          AsyncCompletionCallback<CopyCommandResult> callback) {
+            AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);

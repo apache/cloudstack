@@ -24,9 +24,8 @@
 <section id="detach-move-volumes">
   <title>Detaching and Moving Volumes</title>
   <note>
-    <para>This procedure is different from moving disk volumes from one storage pool to another. See
-      VM Storage Migration </para>
-  </note>
+    <para>This procedure is different from moving volumes from one storage pool to another as described in <xref linkend="vm-storage-migration"/>.</para></note>
+  <para/>
   <para>A volume can be detached from a guest VM and attached to another guest. Both &PRODUCT;
     administrators and users can detach volumes from VMs and move them to other VMs.</para>
   <para>If the two VMs are in different clusters, and the volume is large, it may take several

@@ -372,7 +372,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags,
-                                                 String newVnetRangeString, String state, String removeVlan) {
+                                                 String newVnetRangeString, String state) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -920,7 +920,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#applyIpAssociations(com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyIpAssociations(Network network, boolean continueOnError, boolean reprogramNetworkRules) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -1415,6 +1415,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
 
     @Override
     public void prepareAllNicsForMigration(VirtualMachineProfile<? extends VMInstanceVO> vm, DeployDestination dest) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeDhcpServiceInSubnet(NicVO nic) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

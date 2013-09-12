@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -60,8 +61,6 @@ import com.vmware.vim25.VirtualPCNet32;
 import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
-import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -265,18 +264,40 @@ public class VmwareHelper {
 	}
 
 	// vmdkDatastorePath: [datastore name] vmdkFilePath
-	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePathChain[],
+	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
 		ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
 
 		assert(vmdkDatastorePathChain != null);
 		assert(vmdkDatastorePathChain.length >= 1);
 
-		VirtualDisk disk = new VirtualDisk();
+		VirtualDisk disk;
+		VirtualDiskFlatVer2BackingInfo backingInfo;
+		if(device != null) {
+			disk = device;
+			backingInfo = (VirtualDiskFlatVer2BackingInfo)disk.getBacking();
+		} else {
+			disk = new VirtualDisk();
+			backingInfo = new VirtualDiskFlatVer2BackingInfo();
+	        backingInfo.setDatastore(morDs);
+	        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
+			disk.setBacking(backingInfo);
+			
+			if(controllerKey < 0)
+				controllerKey = vmMo.getIDEDeviceControllerKey();
+	        if(deviceNumber < 0)
+	        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
 
-		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-        backingInfo.setDatastore(morDs);
+			disk.setControllerKey(controllerKey);
+		    disk.setKey(-contextNumber);
+		    disk.setUnitNumber(deviceNumber);
+
+		    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+		    connectInfo.setConnected(true);
+		    connectInfo.setStartConnected(true);
+		    disk.setConnectable(connectInfo);
+		}
+		
         backingInfo.setFileName(vmdkDatastorePathChain[0]);
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
         if(vmdkDatastorePathChain.length > 1) {
         	String[] parentDisks = new String[vmdkDatastorePathChain.length - 1];
         	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
@@ -284,22 +305,6 @@ public class VmwareHelper {
 
         	setParentBackingInfo(backingInfo, morDs, parentDisks);
         }
-
-        disk.setBacking(backingInfo);
-
-		if(controllerKey < 0)
-			controllerKey = vmMo.getIDEDeviceControllerKey();
-        if(deviceNumber < 0)
-        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-
-		disk.setControllerKey(controllerKey);
-	    disk.setKey(-contextNumber);
-	    disk.setUnitNumber(deviceNumber);
-
-	    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-	    connectInfo.setConnected(true);
-	    connectInfo.setStartConnected(true);
-	    disk.setConnectable(connectInfo);
 
 	    return disk;
 	}
@@ -611,17 +616,6 @@ public class VmwareHelper {
 		return ipAddress.equals(destName);
 	}
 
-	public static void deleteVolumeVmdkFiles(DatastoreMO dsMo, String volumeName, DatacenterMO dcMo) throws Exception {
-        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeName);
-        dsMo.deleteFile(volumeDatastorePath, dcMo.getMor(), true);
-
-        volumeDatastorePath = String.format("[%s] %s-flat.vmdk", dsMo.getName(), volumeName);
-        dsMo.deleteFile(volumeDatastorePath, dcMo.getMor(), true);
-
-        volumeDatastorePath = String.format("[%s] %s-delta.vmdk", dsMo.getName(), volumeName);
-        dsMo.deleteFile(volumeDatastorePath, dcMo.getMor(), true);
-	}
-
 	public static String getExceptionMessage(Throwable e) {
 		return getExceptionMessage(e, false);
 	}
@@ -693,5 +687,10 @@ public class VmwareHelper {
         }
 
         return hotplugSupportedByLicense;
+    }
+    
+    public static String getVCenterSafeUuid() {
+    	// Object name that is greater than 32 is not safe in vCenter
+    	return UUID.randomUUID().toString().replaceAll("-", "");
     }
 }

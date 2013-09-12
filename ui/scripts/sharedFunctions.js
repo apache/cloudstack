@@ -25,6 +25,8 @@ var g_enableLogging = false;
 var g_timezoneoffset = null;
 var g_timezone = null;
 var g_supportELB = null;
+var g_KVMsnapshotenabled =  null;
+var g_regionsecondaryenabled = null;
 var g_userPublicTemplateEnabled = "true";
 var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
@@ -46,8 +48,6 @@ var md5HashedLogin = false;
 var pageSize = 20;
 
 var rootAccountId = 1;
-var havingSwift = false;
-var havingS3 = false;
 
 //async action
 var pollAsyncJobResult = function(args) {

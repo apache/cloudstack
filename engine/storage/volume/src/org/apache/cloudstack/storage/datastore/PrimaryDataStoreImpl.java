@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -225,34 +226,52 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     public DataObject create(DataObject obj) {
         // create template on primary storage
         if (obj.getType() == DataObjectType.TEMPLATE) {
-            VMTemplateStoragePoolVO templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(),
-                    obj.getId());
-            if (templateStoragePoolRef == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not found (templateId: " + obj.getId() + ", poolId: " + this.getId() + ") in template_spool_ref");
+            try{
+                String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + this.getId();
+                VMTemplateStoragePoolVO templateStoragePoolRef;
+                GlobalLock lock = GlobalLock.getInternLock(templateIdPoolIdString);
+                if (!lock.lock(5)) {
+                    s_logger.debug("Couldn't lock the db on the string " + templateIdPoolIdString);
+                    return null;
                 }
                 try {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Persisting (templateId: " + obj.getId() + ", poolId: " + this.getId() + ") to template_spool_ref");
-                    }
-                    templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
-                    templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
-                } catch (Throwable t) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Failed to insert (templateId: " + obj.getId() + ", poolId: " + this.getId() + ") to template_spool_ref", t);
-                    }
-                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(),
+                            obj.getId());
                     if (templateStoragePoolRef == null) {
-                        throw new CloudRuntimeException("Failed to create template storage pool entry");
-                    } else {
+
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
+                            s_logger.debug("Not found (" + templateIdPoolIdString + ") in template_spool_ref, persisting it");
                         }
+                        templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
+                        templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                     }
+                } catch (Throwable t) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Failed to insert (" + templateIdPoolIdString +  ") to template_spool_ref", t);
+                        }
+                        templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
+                        if (templateStoragePoolRef == null) {
+                            throw new CloudRuntimeException("Failed to create template storage pool entry");
+                        } else {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
+                            }
+                        }
+                }finally {
+                        lock.unlock();
+                        lock.releaseRef();
                 }
+            } catch (Exception e){
+                s_logger.debug("Caught exception ", e);
             }
         } else if (obj.getType() == DataObjectType.SNAPSHOT) {
             return objectInStoreMgr.create(obj, this);
+        } else if (obj.getType() == DataObjectType.VOLUME) {
+            VolumeVO vol = volumeDao.findById(obj.getId());
+            if (vol != null) {
+                vol.setPoolId(this.getId());
+                volumeDao.update(vol.getId(), vol);
+            }
         }
 
         return objectInStoreMgr.get(obj, this);

@@ -270,6 +270,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplTO.setPath(finalDownloadPath);
             newTemplTO.setName(finalFileName);
             newTemplTO.setSize(size);
+            newTemplTO.setPhysicalSize(size);
             newDestTO = newTemplTO;
         } else {
             VolumeObjectTO newVolTO = new VolumeObjectTO();
@@ -374,7 +375,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             FormatInfo info = processor.process(destPath, null, templateUuid);
 
             TemplateLocation loc = new TemplateLocation(_storage, destPath);
-            loc.create(1, true, templateName);
+            loc.create(1, true, templateUuid);
             loc.addFormat(info);
             loc.save();
             TemplateProp prop = loc.getTemplateInfo();
@@ -382,6 +383,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             newTemplate.setPath(destData.getPath() + File.separator + templateName);
             newTemplate.setFormat(ImageFormat.VHD);
             newTemplate.setSize(prop.getSize());
+            newTemplate.setPhysicalSize(prop.getPhysicalSize());
+            newTemplate.setName(templateUuid);
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
             s_logger.debug("Failed to create template from snapshot: " + e.toString());
@@ -405,10 +408,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
             File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
             File destFile = getFile(destData.getPath(), destDataStore.getUrl());
+
+            ImageFormat srcFormat = srcData.getVolume().getFormat();
+
             // get snapshot file name
             String templateName = srcFile.getName();
-            // add kvm file extension for copied template name
-            String destFileFullPath = destFile.getAbsolutePath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension();
+            // add kvm file extension for copied template name    
+            String fileName = templateName + "." + srcFormat.getFileExtension();
+            String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
             s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
             try {
@@ -418,37 +425,56 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 File metaFile = new File(metaFileName);
                 FileWriter writer = new FileWriter(metaFile);
                 BufferedWriter bufferWriter = new BufferedWriter(writer);
+                // KVM didn't change template unique name, just used the template name passed from orchestration layer, so no need
+                // to send template name back.
                 bufferWriter.write("uniquename=" + destData.getName());
                 bufferWriter.write("\n");
-                bufferWriter.write("filename=" + templateName + "." + ImageFormat.QCOW2.getFileExtension());
+                bufferWriter.write("filename=" + fileName);
                 bufferWriter.write("\n");
                 long size = this._storage.getSize(destFileFullPath);
                 bufferWriter.write("size=" + size);
                 bufferWriter.close();
                 writer.close();
-                // template post processing
-                QCOW2Processor processor = new QCOW2Processor();
+
+
+                /**
+                 * Snapshots might be in either QCOW2 or RAW image format
+                 *
+                 * For example RBD snapshots are in RAW format
+                 */
+                Processor processor = null;
+                if (srcFormat == ImageFormat.QCOW2) {
+                    processor = new QCOW2Processor();
+                } else if (srcFormat == ImageFormat.RAW) {
+                    processor = new RawImageProcessor();
+                }
+
                 Map<String, Object> params = new HashMap<String, Object>();
                 params.put(StorageLayer.InstanceConfigKey, _storage);
 
-                processor.configure("qcow2 processor", params);
+                processor.configure("template processor", params);
                 String destPath = destFile.getAbsolutePath();
 
                 FormatInfo info = processor.process(destPath, null, templateName);
                 TemplateLocation loc = new TemplateLocation(_storage, destPath);
-                loc.create(1, true, srcFile.getName());
+                loc.create(1, true, destData.getName());
                 loc.addFormat(info);
                 loc.save();
+
                 TemplateProp prop = loc.getTemplateInfo();
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
-                newTemplate.setPath(destData.getPath() + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension());
-                newTemplate.setFormat(ImageFormat.QCOW2);
+                newTemplate.setPath(destData.getPath() + File.separator + fileName);
+                newTemplate.setFormat(srcFormat);
                 newTemplate.setSize(prop.getSize());
+                newTemplate.setPhysicalSize(prop.getPhysicalSize());
                 return new CopyCmdAnswer(newTemplate);
             } catch (ConfigurationException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
                 return new CopyCmdAnswer(e.toString());
             } catch (IOException e) {
+                s_logger.debug("Failed to create template:" + e.toString());
+                return new CopyCmdAnswer(e.toString());
+            } catch (InternalErrorException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
                 return new CopyCmdAnswer(e.toString());
             }
@@ -503,12 +529,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 TemplateObjectTO template = new TemplateObjectTO();
                 template.setPath(swiftPath);
                 template.setSize(templateFile.length());
+                template.setPhysicalSize(template.getSize());
                 SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
                 template.setFormat(snapshot.getVolume().getFormat());
                 return new CopyCmdAnswer(template);
+            } else if (destDataStore instanceof S3TO) {
+                //create template on the same data store
+                CopyCmdAnswer answer = (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO) srcDataStore,
+                        (TemplateObjectTO) destData, (NfsTO) srcDataStore);
+                if (!answer.getResult()) {
+                    return answer;
+                }
+                TemplateObjectTO newTemplate = (TemplateObjectTO)answer.getNewData();
+                newTemplate.setDataStore(srcDataStore);
+                CopyCommand newCpyCmd = new CopyCommand(newTemplate, destData, cmd.getWait(), cmd.executeInSequence());
+                return copyFromNfsToS3(newCpyCmd);
             }
         }
-        return new CopyCmdAnswer("");
+        s_logger.debug("Failed to create templat from snapshot");
+        return new CopyCmdAnswer("Unsupported prototcol");
     }
 
     protected Answer copyFromNfsToImage(CopyCommand cmd) {
@@ -695,13 +734,40 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return ImageFormat.OVA;
             } else if (ext.equalsIgnoreCase("tar")) {
                 return ImageFormat.TAR;
-            } else if (ext.equalsIgnoreCase("img")) {
+            } else if (ext.equalsIgnoreCase("img") || ext.equalsIgnoreCase("raw")) {
                 return ImageFormat.RAW;
             }
         }
 
         return null;
 
+    }
+
+    protected Long getVirtualSize(File file, ImageFormat format) {
+        Processor processor = null;
+        try {
+            if (format == null) {
+                return file.length();
+            } else if (format == ImageFormat.QCOW2) {
+                processor = new QCOW2Processor();
+            } else if (format == ImageFormat.OVA) {
+                processor = new VmdkProcessor();
+            } else if (format == ImageFormat.VHD) {
+                processor = new VhdProcessor();
+            } else if (format == ImageFormat.RAW) {
+                processor = new RawImageProcessor();
+            }
+
+            if (processor == null) {
+                return file.length();
+            }
+
+            processor.configure("template processor", new HashMap<String, Object>());
+            return processor.getVirtualSize(file);
+        } catch (Exception e) {
+           s_logger.debug("Failed to get virtual size:" ,e);
+        }
+        return file.length();
     }
 
     protected Answer copyFromNfsToS3(CopyCommand cmd) {
@@ -722,8 +788,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
 
             final String bucket = s3.getBucketName();
-            final File srcFile = _storage.getFile(templatePath);
-            ImageFormat format = this.getTemplateFormat(templatePath);
+            File srcFile = _storage.getFile(templatePath);
+            // guard the case where templatePath does not have file extension, since we are not completely sure
+            // about hypervisor, so we check each extension
+            if (!srcFile.exists()) {
+                srcFile = _storage.getFile(templatePath + ".qcow2");
+                if (!srcFile.exists()) {
+                    srcFile = _storage.getFile(templatePath + ".vhd");
+                    if (!srcFile.exists()) {
+                        srcFile = _storage.getFile(templatePath + ".ova");
+                        if (!srcFile.exists()) {
+                            return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                        }
+                    }
+                }
+            }
+            ImageFormat format = this.getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
             putFile(s3, srcFile, bucket, key);
 
@@ -731,7 +811,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(key);
-                newTemplate.setSize(srcFile.length());
+                newTemplate.setSize(getVirtualSize(srcFile, format));
+                newTemplate.setPhysicalSize(srcFile.length());
                 newTemplate.setFormat(format);
                 retObj = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
@@ -739,6 +820,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 newVol.setPath(key);
                 newVol.setSize(srcFile.length());
                 retObj = newVol;
+            } else if (destData.getObjectType() == DataObjectType.SNAPSHOT) {
+                SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                newSnapshot.setPath(key);
+                retObj = newSnapshot;
             }
 
             return new CopyCmdAnswer(retObj);
@@ -1207,20 +1292,29 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO) dstore;
-            String snapshotPath = obj.getPath();
-            if (snapshotPath.startsWith(File.separator)) {
-                snapshotPath = snapshotPath.substring(1);
-            }
-            int index = snapshotPath.lastIndexOf("/");
-            String snapshotName = snapshotPath.substring(index + 1);
-            snapshotPath = snapshotPath.substring(0, index);
-
             String parent = getRootDir(nfs.getUrl());
             if (!parent.endsWith(File.separator)) {
                 parent += File.separator;
             }
+            String snapshotPath = obj.getPath();
+            if (snapshotPath.startsWith(File.separator)) {
+                snapshotPath = snapshotPath.substring(1);
+            }
+            // check if the passed snapshot path is a directory or not. For ImageCache, path is stored as a directory instead of
+            // snapshot file name. If so, since backupSnapshot process has already deleted snapshot in cache, so we just do nothing
+            // and return true.
+            String fullSnapPath = parent + snapshotPath;
+            File snapDir = new File(fullSnapPath);
+            if (snapDir.exists() && snapDir.isDirectory()) {
+                s_logger.debug("snapshot path " + snapshotPath + " is a directory, already deleted during backup snapshot, so no need to delete");
+                return new Answer(cmd, true, null);
+            }
+            // passed snapshot path is a snapshot file path, then get snapshot directory first
+            int index = snapshotPath.lastIndexOf("/");
+            String snapshotName = snapshotPath.substring(index + 1);
+            snapshotPath = snapshotPath.substring(0, index);
             String absoluteSnapshotPath = parent + snapshotPath;
-            // check if directory exists
+            // check if snapshot directory exists
             File snapshotDir = new File(absoluteSnapshotPath);
             String details = null;
             if (!snapshotDir.exists()) {
@@ -1362,7 +1456,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM) {
-            return new Answer(cmd, true, null);
+            return new ListTemplateAnswer(null, null);
         }
 
         DataStoreTO store = cmd.getDataStore();
@@ -1387,7 +1481,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private Answer execute(ListVolumeCommand cmd) {
         if (!_inSystemVM) {
-            return new Answer(cmd, true, null);
+            return new ListVolumeAnswer(cmd.getSecUrl(), null);
         }
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {

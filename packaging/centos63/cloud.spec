@@ -85,7 +85,6 @@ Requires: %{name}-common = %{_ver}
 Requires: %{name}-awsapi = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
-Obsoletes: cloud-daemonize < 4.1.0
 Obsoletes: cloud-server < 4.1.0
 Obsoletes: cloud-test < 4.1.0 
 Provides:  cloud-client
@@ -105,6 +104,7 @@ Obsoletes: cloud-deps < 4.1.0
 Obsoletes: cloud-python < 4.1.0
 Obsoletes: cloud-setup < 4.1.0
 Obsoletes: cloud-cli < 4.1.0
+Obsoletes: cloud-daemonize < 4.1.0
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -286,6 +286,8 @@ install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconf
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
+install -D agent/target/transformed/cloudstack-agent-upgrade ${RPM_BUILD_ROOT}%{_bindir}/%{name}-agent-upgrade
+install -D agent/target/transformed/libvirtqemuhook ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}%{_bindir}/%{name}-ssh
 install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/lib/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
@@ -367,6 +369,7 @@ sed -i /"cloud soft nofile"/d /etc/security/limits.conf
 echo "cloud hard nofile 4096" >> /etc/security/limits.conf
 echo "cloud soft nofile 4096" >> /etc/security/limits.conf
 rm -rf %{_localstatedir}/cache/cloud
+rm -rf %{_localstatedir}/cache/cloudstack
 # user harcoded here, also hardcoded on wscript
 
 # save old configs if they exist (for upgrade). Otherwise we may lose them
@@ -400,7 +403,9 @@ fi
 if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
     mv %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/management/db.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
-    cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    if [ -f "%{_sysconfdir}/cloud.rpmsave/management/key" ]; then    
+        cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    fi
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/cloud.rpmsave/management/db.properties.rpmsave
 fi
@@ -408,27 +413,33 @@ fi
 # Choose server.xml and tomcat.conf links based on old config, if exists
 serverxml=%{_sysconfdir}/%{name}/management/server.xml
 oldserverxml=%{_sysconfdir}/cloud.rpmsave/management/server.xml
-if [ -L $oldserverxml ] ; then
-    if stat -c %N $oldserverxml | grep -q server-nonssl ; then
-        if [ -L $serverxml ]; then rm -f $serverxml; fi
-        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
-    elif stat -c %N $oldserverxml| grep -q server-ssl ; then
-        if [ -L $serverxml ]; then rm -f $serverxml; fi
+if [ -f $oldserverxml ] || [ -L $oldserverxml ]; then
+    if stat -c %N $oldserverxml| grep -q server-ssl ; then
+        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
+    else
+        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
+        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
+
     fi
 else
     echo "Unable to determine ssl settings for server.xml, please run cloudstack-setup-management manually"
 fi
 
+
 tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
 oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat6.conf
-if [ -L $oldtomcatconf ] ; then
-    if stat -c %N $oldtomcatconf | grep -q tomcat6-nonssl ; then
-        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
-    elif stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
-        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
+    if stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
+        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
+    else
+        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
     fi
 else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
@@ -538,12 +549,14 @@ fi
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
+%attr(0755,root,root) %{_bindir}/%{name}-agent-upgrade
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
+%attr(0755,root,root) %{_datadir}/%{name}-agent/lib/libvirtqemuhook
 %dir %{_datadir}/%{name}-agent/plugins
 %{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-agent-%{version}/NOTICE

@@ -57,7 +57,7 @@ public class PrivateGatewayProfile implements PrivateGateway {
     }
 
     @Override
-    public Long getNetworkId() {
+    public long getNetworkId() {
         return vpcGateway.getNetworkId();
     }
 

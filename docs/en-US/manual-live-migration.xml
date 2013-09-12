@@ -26,10 +26,12 @@
 		<para>The &PRODUCT; administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:</para>
 		<itemizedlist>
 			<listitem><para>The root administrator is logged in. Domain admins and users can not perform manual live migration of VMs.</para></listitem>
-			<listitem><para>The VM is running. Stopped VMs can not be live migrated.</para></listitem>
-			<listitem><para>The destination host must be in the same cluster as the original host.</para></listitem>
-			<listitem><para>The VM must not be using local disk storage.</para></listitem>	
+			<listitem><para>The VM is running. Stopped VMs can not be live migrated.</para></listitem>	
 			<listitem><para>The destination host must have enough available capacity. If not, the VM will remain in the "migrating" state until memory becomes available.</para></listitem>
+			<listitem><para>(KVM) The VM must not be using local disk storage. (On XenServer and VMware, VM live migration
+				with local disk is enabled by &PRODUCT; support for XenMotion and vMotion.)</para></listitem>
+			<listitem><para>(KVM) The destination host must be in the same cluster as the original host.
+				(On XenServer and VMware, VM live migration from one cluster to another is enabled by &PRODUCT; support for XenMotion and vMotion.)</para></listitem>				
             <!--            <listitem><para>(OVM) If the VM is running on the OVM hypervisor, it must not have an ISO attached. Live migration of a VM with attached ISO is not supported in OVM.</para></listitem> -->
 		</itemizedlist>
 		<para>To manually live migrate a virtual machine</para>
@@ -44,7 +46,10 @@
 				<textobject><phrase>Migrateinstance.png: button to migrate an instance</phrase></textobject>
 			</inlinemediaobject>
 				</para></listitem>
-			<listitem><para>From the list of hosts, choose the one to which you want to move the VM.</para></listitem>
+			<listitem><para>From the list of  suitable hosts, choose the one to which you want to move the VM.</para>
+				<note><para>If the VM's storage has to be migrated along with the VM, this will be noted in the host
+					list. &PRODUCT; will take care of the storage migration for you.</para></note>
+				<para/></listitem>
 			<listitem><para>Click OK.</para></listitem>
 		</orderedlist>
 	</section>

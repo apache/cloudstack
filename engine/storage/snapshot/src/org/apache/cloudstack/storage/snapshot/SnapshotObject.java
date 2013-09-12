@@ -38,6 +38,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
@@ -107,6 +108,7 @@ public class SnapshotObject implements SnapshotInfo {
                 .create(SnapshotDataStoreVO.class);
         sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, this.store.getId());
         sc.addAnd(sc.getEntity().getRole(), Op.EQ, this.store.getRole());
+        sc.addAnd(sc.getEntity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
         sc.addAnd(sc.getEntity().getParentSnapshotId(), Op.EQ, this.getId());
         SnapshotDataStoreVO vo = sc.find();
         if (vo == null) {
@@ -159,7 +161,7 @@ public class SnapshotObject implements SnapshotInfo {
             throw new CloudRuntimeException("Failed to update state: " + e.toString());
         } finally {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -261,18 +263,32 @@ public class SnapshotObject implements SnapshotInfo {
                     snapshotStore.setParentSnapshotId(0L);
                 }
                 this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+                
+                // update side-effect of snapshot operation
+                if(snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
+                	VolumeVO vol = this.volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
+                	if(vol != null) {
+	                	s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
+	                		+ vol.getPath() + "->" + snapshotTO.getVolume().getPath());
+	                	vol.setPath(snapshotTO.getVolume().getPath());
+	                	this.volumeDao.update(vol.getId(), vol);
+                	} else {
+                		s_logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
+                	}
+                }
             } else {
                 throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }
         this.processEvent(event);
     }
 
+    @Override
     public void incRefCount() {
         if (this.store == null) {
             return;

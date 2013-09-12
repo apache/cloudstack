@@ -2646,7 +2646,7 @@ Copyright (c) 2010-2011 OpenStack, LLC.
 			</by-organisation>
 		</with-license>
     </within>
-    <within dir='tools/appliance/definitions/systemvmtemplate'>
+    <within dir='tools/appliance/definitions/{devcloud,systemvmtemplate,systemvmtemplate64}'>
         <with-license id='MIT'>
             <copyright-notice>
 Copyright (c) 2010-2012 Patrick Debois
@@ -2668,6 +2668,17 @@ Copyright (c) 2010-2012 Patrick Debois
             <by-organisation id='person:patrick.debois'>
                 <resource name='definition.rb' source='https://github.com/jedi4ever/veewee' />
                 <resource name='preseed.cfg' source='https://github.com/jedi4ever/veewee' />
+            </by-organisation>
+        </with-license>
+    </within>
+    <within dir='utils/src/org/apache/commons/httpclient/contrib/ssl'>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2007 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id="apache.org.2">
+                <resource name="EasySSLProtocolSocketFactory.java" />
+                <resource name="EasyX509TrustManager.java" />
             </by-organisation>
         </with-license>
     </within>

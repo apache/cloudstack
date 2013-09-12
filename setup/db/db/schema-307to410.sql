@@ -66,6 +66,7 @@ AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_servi
 UPDATE `cloud`.`configuration` SET description='Do URL encoding for the api response, false by default' WHERE name='encode.api.response';
 INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL);
 UPDATE `cloud`.`configuration` set description ='Uuid of the service offering used by console proxy; if NULL - system offering will be used' where name ='consoleproxy.service.offering';
+UPDATE `cloud`.`configuration` set value = '/var/cloudstack/mnt' where name = 'mount.parent';
 
 
 -- DB upgrade steps from 40-41
@@ -976,7 +977,7 @@ CREATE VIEW `cloud`.`host_view` AS
             left join
         `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
             left join
-        `cloud`.`host_details` ON host.id = host_details.id
+        `cloud`.`host_details` ON host.id = host_details.host_id
             and host_details.name = 'guest.os.category.id'
             left join
         `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT( host_details.value , UNSIGNED)
@@ -1539,6 +1540,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_dhcp_devices`(
   PRIMARY KEY  (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`baremetal_dhcp_devices` CHANGE COLUMN `nsp_id` `nsp_id` bigint unsigned DEFAULT NULL COMMENT 'Network Service Provider ID';
+ALTER TABLE `cloud`.`baremetal_dhcp_devices` CHANGE COLUMN `pod_id` `pod_id` bigint unsigned DEFAULT NULL COMMENT 'Pod id where this dhcp server in';
+ALTER TABLE `cloud`.`baremetal_dhcp_devices` CHANGE COLUMN `device_type` `device_type` varchar(255) DEFAULT NULL COMMENT 'type of the external device';
+ALTER TABLE `cloud`.`baremetal_dhcp_devices` CHANGE COLUMN `physical_network_id` `physical_network_id` bigint unsigned DEFAULT NULL COMMENT 'id of the physical network in to which external dhcp device is added';
+ALTER TABLE `cloud`.`baremetal_dhcp_devices` CHANGE COLUMN `host_id` `host_id` bigint unsigned DEFAULT NULL COMMENT 'host id coresponding to the external dhcp device';
+
 CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_pxe_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) UNIQUE,
@@ -1550,6 +1557,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_pxe_devices` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`baremetal_pxe_devices` CHANGE COLUMN `nsp_id` `nsp_id` bigint unsigned DEFAULT NULL COMMENT 'Network Service Provider ID';
+ALTER TABLE `cloud`.`baremetal_pxe_devices` CHANGE COLUMN `pod_id` `pod_id` bigint unsigned DEFAULT NULL COMMENT 'Pod id where this pxe server in, for pxe per zone this field is null';
+ALTER TABLE `cloud`.`baremetal_pxe_devices` CHANGE COLUMN `device_type` `device_type` varchar(255) DEFAULT NULL COMMENT 'type of the pxe device';
+ALTER TABLE `cloud`.`baremetal_pxe_devices` CHANGE COLUMN `physical_network_id` `physical_network_id` bigint unsigned DEFAULT NULL COMMENT 'id of the physical network in to which external pxe device is added';
+ALTER TABLE `cloud`.`baremetal_pxe_devices` CHANGE COLUMN `host_id` `host_id` bigint unsigned DEFAULT NULL COMMENT 'host id coresponding to the external pxe device';
 
 #drop tables as the feature is not a part of 4.2
 DROP TABLE IF EXISTS `cloud`.`host_updates`;
@@ -1572,3 +1584,4 @@ ALTER TABLE `cloud_usage`.`usage_storage` CHANGE COLUMN `virtual_size` `virtual_
 ALTER TABLE `cloud_usage`.`cloud_usage` CHANGE COLUMN `virtual_size` `virtual_size1` bigint unsigned;
 
 ALTER TABLE `cloud`.`network_offerings` CHANGE COLUMN `concurrent_connections` `concurrent_connections1` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';
+ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id` `iso_id1` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created';

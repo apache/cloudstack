@@ -46,7 +46,7 @@ public interface VmwareHypervisorHost {
 	VirtualMachineMO findVmOnPeerHyperHost(String name) throws Exception;
 	
 	boolean createVm(VirtualMachineConfigSpec vmSpec) throws Exception;
-	boolean createBlankVm(String vmName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB,
+	boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB,
 		String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception;
 	void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption) throws Exception;
 

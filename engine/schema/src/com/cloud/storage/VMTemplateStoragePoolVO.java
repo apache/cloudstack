@@ -266,6 +266,11 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         return this.state;
     }
 
+    //TODO: this should be revisited post-4.2 to completely use state transition machine
+    public void setState(ObjectInDataStoreStateMachine.State state) {
+        this.state = state;
+    }
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }

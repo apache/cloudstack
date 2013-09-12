@@ -79,7 +79,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         // drop keys
         dropKeysIfExist(conn);
         //update templete ID for system Vms
-        updateSystemVms(conn);
+        //updateSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         // update domain network ref
         updateDomainNetworkRef(conn);
         // update networks that use redundant routers to the new network offering
@@ -601,139 +601,6 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         }
     }
 
-    private void updateSystemVms(Connection conn){
-    	PreparedStatement pstmt = null;
-    	ResultSet rs = null;
-    	boolean xenserver = false;
-    	boolean kvm = false;
-    	boolean VMware = false;
-    	s_logger.debug("Updating System Vm template IDs");
-    	try{
-    		//Get all hypervisors in use
-    		try {
-    			pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
-    			rs = pstmt.executeQuery();
-    			while(rs.next()){
-    				if("XenServer".equals(rs.getString(1))){
-    					xenserver = true;
-    				} else if("KVM".equals(rs.getString(1))){
-    					kvm = true;
-    				} else if("VMware".equals(rs.getString(1))){
-    					VMware = true;
-    				}  
-    			}
-    		} catch (SQLException e) {
-    			throw new CloudRuntimeException("Error while listing hypervisors in use", e);
-    		}
-
-    		s_logger.debug("Updating XenSever System Vms");    		
-    		//XenServer
-    		try {
-               //Get 3.0.0 or later xenserer system Vm template Id
-               pstmt = conn.prepareStatement("select max(id) from `cloud`.`vm_template` where name like 'systemvm-xenserver-%' and removed is null");
-    			rs = pstmt.executeQuery();
-    			if(rs.next()){
-    				long templateId = rs.getLong(1);
-    				rs.close();
-    				pstmt.close();
-    				// change template type to SYSTEM
-    				pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-    				pstmt.setLong(1, templateId);
-    				pstmt.executeUpdate();
-    				pstmt.close();
-    				// update templete ID of system Vms
-    				pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
-    				pstmt.setLong(1, templateId);
-    				pstmt.executeUpdate();
-    				pstmt.close();
-    			} else {
-    				if (xenserver){
-                       throw new CloudRuntimeException("3.0.0 or later XenServer SystemVm template not found. Cannot upgrade system Vms");
-    				} else {
-                       s_logger.warn("3.0.0 or later XenServer SystemVm template not found. XenServer hypervisor is not used, so not failing upgrade");
-    				}
-    			}
-    		} catch (SQLException e) {
-    			throw new CloudRuntimeException("Error while updating XenServer systemVm template", e);
-    		}
-
-    		//KVM
-    		s_logger.debug("Updating KVM System Vms");
-    		try {
-               //Get 3.0.0 or later KVM system Vm template Id
-               pstmt = conn.prepareStatement("select max(id) from `cloud`.`vm_template` where name like 'systemvm-kvm-%' and removed is null");
-    			rs = pstmt.executeQuery();
-    			if(rs.next()){
-    				long templateId = rs.getLong(1);
-    				rs.close();
-    				pstmt.close();
-    				// change template type to SYSTEM
-    				pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-    				pstmt.setLong(1, templateId);
-    				pstmt.executeUpdate();
-    				pstmt.close();
-    				// update templete ID of system Vms
-    				pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'KVM'");
-    				pstmt.setLong(1, templateId);
-    				pstmt.executeUpdate();
-    				pstmt.close();
-    			} else {
-    				if (kvm){
-                       throw new CloudRuntimeException("3.0.0 or later KVM SystemVm template not found. Cannot upgrade system Vms");
-    				} else {
-                       s_logger.warn("3.0.0 or later KVM SystemVm template not found. KVM hypervisor is not used, so not failing upgrade");
-    				}
-    			}
-    		} catch (SQLException e) {
-    			throw new CloudRuntimeException("Error while updating KVM systemVm template", e);
-    		}
-
-    		//VMware
-    		s_logger.debug("Updating VMware System Vms");
-    		try {
-               //Get 3.0.0 or later VMware system Vm template Id
-               pstmt = conn.prepareStatement("select max(id) from `cloud`.`vm_template` where name like 'systemvm-vmware-%' and removed is null");
-    			rs = pstmt.executeQuery();
-    			if(rs.next()){
-    				long templateId = rs.getLong(1);
-    				rs.close();
-    				pstmt.close();
-    				// change template type to SYSTEM
-    				pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-    				pstmt.setLong(1, templateId);
-    				pstmt.executeUpdate();
-    				pstmt.close();
-    				// update templete ID of system Vms
-    				pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
-    				pstmt.setLong(1, templateId);
-    				pstmt.executeUpdate();
-    				pstmt.close();
-    			} else {
-    				if (VMware){
-                       throw new CloudRuntimeException("3.0.0 or later VMware SystemVm template not found. Cannot upgrade system Vms");
-    				} else {
-                       s_logger.warn("3.0.0 or later VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
-    				}
-    			}
-    		} catch (SQLException e) {
-    			throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
-    		}
-    		s_logger.debug("Updating System Vm Template IDs Complete");
-    	}
-    	finally {
-    		try {
-    			if (rs != null) {
-    				rs.close();
-    			}
-
-    			if (pstmt != null) {
-    				pstmt.close();
-    			}
-    		} catch (SQLException e) {
-    		}
-    	}
-    }
-    
     private void createNetworkOfferingServices(Connection conn, String externalOfferingName) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;

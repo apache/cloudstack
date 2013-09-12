@@ -19,6 +19,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -56,13 +58,8 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-304to305.sql");
         }
-        
-        String vmWareTemplateInsertScript = Script.findScript("", "db/vmwaretmplinsert-304to305.sql");
-        if (vmWareTemplateInsertScript == null) {
-            throw new CloudRuntimeException("Unable to find db/vmwaretmplinsert-304to305.sql");
-        }
 
-        return new File[] { new File(vmWareTemplateInsertScript), new File(script) };
+        return new File[] { new File(script) };
     }
 
     @Override
@@ -71,8 +68,9 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
         fixZoneUsingExternalDevices(conn);
-        updateSystemVms(conn);
+//        updateSystemVms(conn);
         fixForeignKeys(conn);
+        encryptClusterDetails(conn);
     }
 
     @Override
@@ -459,5 +457,43 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to execute ssh_keypairs table update for adding domain_id foreign key", e);
         }
+    }
+
+    private void encryptClusterDetails(Connection conn) {
+        s_logger.debug("Encrypting cluster details");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, value from `cloud`.`cluster_details` where name = 'password'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String value = rs.getString(2);
+                if (value == null) {
+                    continue;
+                }
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement("update `cloud`.`cluster_details` set value=? where id=?");
+                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting cluster_details");
     }
 }

@@ -146,6 +146,7 @@
   <bean id="securityCheckers" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
       <list>
+		  <ref bean="affinityGroupAccessChecker"/>
           <ref bean="domainChecker"/>
       </list>
     </property>
@@ -173,6 +174,7 @@
           <ref bean="XenServerInvestigator"/>
           <ref bean="UserVmDomRInvestigator"/>
           <ref bean="ManagementIPSystemVMInvestigator"/>
+          <ref bean="KVMInvestigator"/>
       </list>
     </property>
   </bean>
@@ -222,7 +224,6 @@
           <ref bean="LocalStoragePoolAllocator"/>
           <ref bean="clusterScopeStoragePoolAllocator"/>
           <ref bean="zoneWideStoragePoolAllocator"/>
-          <ref bean="garbageCollectingStoragePoolAllocator"/>
       </list>
     </property>
   </bean>

@@ -21,10 +21,13 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.api.BaseCmd;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
@@ -52,6 +55,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject ProjectManager _projectMgr;
     @Inject ProjectAccountDao _projecAccountDao;
     @Inject NetworkModel _networkMgr;
+    @Inject
+    private DedicatedResourceDao _dedicatedDao;
     
     protected DomainChecker() {
         super();
@@ -121,6 +126,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return true;
         } else if (entity instanceof Network && accessType != null && accessType == AccessType.UseNetwork) {
             _networkMgr.checkNetworkPermissions(caller, (Network) entity);
+        } else if (entity instanceof AffinityGroup) {
+            return false;
         } else {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 Account account = _accountDao.findById(entity.getAccountId());
@@ -235,6 +242,18 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			//if account is normal user
 			//check if account's domain is a child of zone's domain
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                // if zone is dedicated to an account check that the accountId
+                // matches.
+                DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
+                if (dedicatedZone != null) {
+                    if (dedicatedZone.getAccountId() != null) {
+                        if (dedicatedZone.getAccountId() == account.getId()) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
                 if (account.getDomainId() == zone.getDomainId()) {
 					return true; //zone and account at exact node
                 } else {

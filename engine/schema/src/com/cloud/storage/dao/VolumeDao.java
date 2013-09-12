@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -75,7 +76,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> findReadyRootVolumesByInstance(long instanceId);
 
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
-
+    List<Long> listZoneWidePoolIdsByVolumeCount(long dcId, long accountId);
     /**
      * Gets the Total Primary Storage space allocated for an account
      * 
@@ -93,4 +94,11 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
      * @return total Secondary Storage space (in bytes) used
      */
     long secondaryStorageUsedForAccount(long accountId);
+
+    /***
+     *
+     * @param volumeId
+     * @return the scope of the storage pool where the volume is present (ZONE/CLUSTER)
+     */
+    ScopeType getVolumeStoragePoolScope(long volumeId);
 }

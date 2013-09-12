@@ -37,7 +37,6 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
-import javax.xml.ws.BindingProvider;
 
 import org.apache.log4j.Logger;
 
@@ -59,12 +58,18 @@ public class VmwareContext {
 
     private static int MAX_CONNECT_RETRY = 5;
     private static int CONNECT_RETRY_INTERVAL = 1000;
+    
+	private int _CHUNKSIZE = 1*1024*1024;		// 1M
 
 	private VmwareClient _vimClient;
 	private String _serverAddress;
 
 	private Map<String, Object> _stockMap = new HashMap<String, Object>();
-	private int _CHUNKSIZE = 1*1024*1024;		// 1M
+
+	private VmwareContextPool _pool;
+	private String _poolKey;
+	
+	private static volatile int s_outstandingCount = 0;
 
 	static {
 		try {
@@ -74,6 +79,14 @@ public class VmwareContext {
 			javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
 			sc.init(null, trustAllCerts, null);
 			javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+		    HostnameVerifier hv = new HostnameVerifier() {
+		    	@Override
+	            public boolean verify(String urlHostName, SSLSession session) {
+		    		return true;
+		        }
+		    };
+		    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 		} catch (Exception e) {
 			s_logger.error("Unexpected exception ", e);
 		}
@@ -84,6 +97,10 @@ public class VmwareContext {
 
 		_vimClient = client;
 		_serverAddress = address;
+		
+		registerOutstandingContext();
+		if(s_logger.isInfoEnabled())
+			s_logger.info("New VmwareContext object, current outstanding count: " + getOutstandingContextCount());
 	}
 
 	public void registerStockObject(String name, Object obj) {
@@ -95,6 +112,12 @@ public class VmwareContext {
 	public void uregisterStockObject(String name) {
 		synchronized(_stockMap) {
 			_stockMap.remove(name);
+		}
+	}
+	
+	public void clearStockObjects() {
+		synchronized(_stockMap) {
+			_stockMap.clear();
 		}
 	}
 
@@ -109,12 +132,6 @@ public class VmwareContext {
 		return _serverAddress;
 	}
 
-	/*
-	public ServiceConnection getServiceConnection() {
-		return _vimClient.getServiceConnection3();
-	}
-	*/
-
 	public VimPortType getService() {
 		return _vimClient.getService();
 	}
@@ -122,12 +139,6 @@ public class VmwareContext {
 	public ServiceContent getServiceContent() {
 		return _vimClient.getServiceContent();
 	}
-
-	/*
-	public ServiceUtil getServiceUtil() {
-		return _vimClient.getServiceUtil3();
-	}
-	*/
 
 	public ManagedObjectReference getPropertyCollector(){
 	    return _vimClient.getPropCol();
@@ -140,7 +151,35 @@ public class VmwareContext {
 	public VmwareClient getVimClient(){
 	    return _vimClient;
 	}
-
+	
+	public void setPoolInfo(VmwareContextPool pool, String poolKey) {
+		_pool = pool;
+		_poolKey = poolKey;
+	}
+	
+	public VmwareContextPool getPool() {
+		return _pool;
+	}
+	
+	public String getPoolKey() {
+		return _poolKey;
+	}
+	
+	public void idleCheck() throws Exception {
+		getRootFolder();
+	}
+	
+	public static int getOutstandingContextCount() {
+		return s_outstandingCount;
+	}
+	
+	public static void registerOutstandingContext() {
+		s_outstandingCount++;
+	}
+	
+	public static void unregisterOutstandingContext() {
+		s_outstandingCount--;
+	}
 
 	public ManagedObjectReference getHostMorByPath(String inventoryPath) throws Exception {
 		assert(inventoryPath != null);
@@ -540,14 +579,6 @@ public class VmwareContext {
 		    s_logger.error("No cookie is found in vmware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
 		}
-	    HostnameVerifier hv = new HostnameVerifier() {
-	    	@Override
-            public boolean verify(String urlHostName, SSLSession session) {
-	    		return true;
-	        }
-	    };
-
-	    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 	    URL url = new URL(urlString);
 	    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 
@@ -561,14 +592,6 @@ public class VmwareContext {
 	}
 
 	public HttpURLConnection getRawHTTPConnection(String urlString) throws Exception {
-	    HostnameVerifier hv = new HostnameVerifier() {
-	    	@Override
-            public boolean verify(String urlHostName, SSLSession session) {
-	    		return true;
-	        }
-	    };
-
-	    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 	    URL url = new URL(urlString);
 	    return (HttpURLConnection)url.openConnection();
 	}
@@ -595,11 +618,18 @@ public class VmwareContext {
 	}
 
 	public void close() {
+		clearStockObjects();
 		try {
 			_vimClient.disconnect();
 		} catch(Exception e) {
 			s_logger.warn("Unexpected exception: ", e);
 		}
+		
+		if(_pool != null) {
+			_pool.unregisterOutstandingContext(this);
+		}
+		
+		unregisterOutstandingContext();
 	}
 
 	public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {

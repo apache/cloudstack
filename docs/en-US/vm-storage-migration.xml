@@ -24,15 +24,23 @@
 <section id="vm-storage-migration">
   <title>VM Storage Migration</title>
   <para>Supported in XenServer, KVM, and VMware.</para>
-  <note>
-    <para>This procedure is different from moving disk volumes from one VM to another. See Detaching
-      and Moving Volumes <xref linkend="detach-move-volumes"/>.</para>
-  </note>
-  <para>You can migrate a virtual machine’s root disk volume or any additional data disk volume from
-    one storage pool to another in the same zone.</para>
-  <para>You can use the storage migration feature to achieve some commonly desired administration
-    goals, such as balancing the load on storage pools and increasing the reliability of virtual
-    machines by moving them away from any storage pool that is experiencing issues.</para>
+  <note><para>This procedure is different from moving disk volumes from one VM to another as described in
+    <xref linkend="detach-move-volumes"/>.</para></note>
+  <para/>
+  <para>You can migrate a virtual machine’s root disk volume or any additional data disk volume from one storage pool to another in the same zone.</para>
+  <para>You can use the storage migration feature to achieve some commonly desired administration goals, such as balancing the load on storage pools and increasing the reliability of virtual machines by moving them away from any storage  pool that is experiencing  issues.</para>
+  <para>On XenServer and VMware, live migration of VM storage is enabled through &PRODUCT;
+    support for XenMotion and vMotion.
+    Live storage migration allows VMs to be moved from one host to another, where the VMs are
+    not located on storage shared between the two hosts. It provides the option to live
+    migrate a VM’s disks along with the VM itself. It is possible to migrate a VM from one
+    XenServer resource pool / VMware cluster to another, or to migrate a VM whose disks are on
+    local storage, or even to migrate a VM’s disks from one storage repository to another, all
+    while the VM is running.</para>
+  <note><para>Because of a limitation in VMware, live migration of storage for a VM is allowed only
+    if the source and target storage pool are accessible to the source host; that is, the host
+    where the VM is running when the live migration operation is requested.</para></note>
+  <para/>
   <xi:include href="migrate-datadisk-volume-new-storage-pool.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="migrate-vm-rootvolume-volume-new-storage-pool.xml"

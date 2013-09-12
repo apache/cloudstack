@@ -37,4 +37,5 @@ public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, DeleteVMSnapshotCommand cmd);
     Answer execute(VmwareHostService hostService, RevertToVMSnapshotCommand cmd);
     boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd);
+    public void createOva(String path, String name);
 }

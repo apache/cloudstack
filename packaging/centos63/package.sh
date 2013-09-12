@@ -42,8 +42,8 @@ if echo $VERSION | grep SNAPSHOT ; then
   DEFPRE="-D_prerelease 1"
   DEFREL="-D_rel SNAPSHOT"
 else
+  REALVER=$VERSION
   DEFVER="-D_ver $REALVER"
-  DEFPRE=
   DEFREL="-D_rel 1"
 fi
 
@@ -58,7 +58,7 @@ mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" -ba SPECS/cloud.spec)
+(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} -ba SPECS/cloud.spec)
 
 exit
 }
@@ -80,7 +80,6 @@ if echo $VERSION | grep SNAPSHOT ; then
 else
   REALVER=`echo $VERSION`
   DEFVER="-D_ver $REALVER"
-  DEFPRE=
   DEFREL="-D_rel 1"
 fi
 
@@ -96,7 +95,7 @@ mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
 cp cloud.spec $RPMDIR/SPECS
 
-(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "$DEFVER" "$DEFREL" "$DEFPRE" "$DEFOSSNOSS" -bb SPECS/cloud.spec)
+(cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+\"${DEFPRE}\"} "${DEFOSSNOSS}" -bb SPECS/cloud.spec)
 
 exit
 }

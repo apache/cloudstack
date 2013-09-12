@@ -135,25 +135,85 @@
     <para>You might want to deploy multiple VPCs with the same super CIDR and guest tier CIDR.
       Therefore, multiple guest VMs from different VPCs can have the same IPs to reach a enterprise
       data center through the private gateway. In such cases, a NAT service need to be configured on
-      the private gateway. If Source NAT is enabled, the guest VMs in VPC reaches the enterprise
-      network via private gateway IP address by using the NAT service. </para>
+      the private gateway to avoid IP conflicts. If Source NAT is enabled, the guest VMs in VPC
+      reaches the enterprise network via private gateway IP address by using the NAT service. </para>
     <para>The Source NAT service on a private gateway can be enabled while adding the private
       gateway. On deletion of a private gateway, source NAT rules specific to the private gateway
       are deleted.</para>
+    <para>To enable source NAT on existing private gateways, delete them and create afresh with
+      source NAT. </para>
   </section>
   <section id="acl-private-gateway">
     <title>ACL on Private Gateway</title>
     <para>The traffic on the VPC private gateway is controlled by creating both ingress and egress
-      network ACL rules. The ACLs contains both allow and deny rules. In addition to the default ACL
-      rules, rules you might have created are also listed in the ACL drop-down list. As per the
-      rule, all the ingress traffic to the private gateway interface and all the egress traffic out
-      from the private gateway interface are blocked. You can change this default behaviour while
-      creating a private gateway.</para>
+      network ACL rules. The ACLs contains both allow and deny rules. As per the rule, all the
+      ingress traffic to the private gateway interface and all the egress traffic out from the
+      private gateway interface are blocked. </para>
+    <para>You can change this default behaviour while creating a private gateway. Alternatively, you
+      can do the following:</para>
+    <orderedlist>
+      <listitem>
+        <para>In a VPC, identify the Private Gateway you want to work with.</para>
+      </listitem>
+      <listitem>
+        <para>In the Private Gateway page, do either of the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Use the Quickview. See <xref linkend="quickview"/>.</para>
+          </listitem>
+          <listitem>
+            <para>Use the Details tab. See <xref linkend="details-tab"/> through .</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem id="quickview">
+        <para>In the Quickview of the selected Private Gateway, click Replace ACL, select the ACL
+          rule, then click OK</para>
+      </listitem>
+      <listitem id="details-tab">
+        <para>Click the IP address of the Private Gateway you want to work with.</para>
+      </listitem>
+      <listitem>
+        <para>In the Detail tab, click the Replace ACL button. <inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/replace-acl-icon.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>replace-acl-icon.png: button to replace the default ACL behaviour.</phrase>
+            </textobject>
+          </inlinemediaobject></para>
+        <para>The Replace ACL dialog is displayed.</para>
+      </listitem>
+      <listitem>
+        <para>select the ACL rule, then click OK.</para>
+        <para>Wait for few seconds. You can see that the new ACL rule is displayed in the Details
+          page.</para>
+      </listitem>
+    </orderedlist>
   </section>
   <section id="static-route">
     <title>Creating a Static Route</title>
     <para>&PRODUCT; enables you to specify routing for the VPN connection you create. You can enter
       one or CIDR addresses to indicate which traffic is to be routed back to the gateway.</para>
+    <orderedlist>
+      <listitem>
+        <para>In a VPC, identify the Private Gateway you want to work with.</para>
+      </listitem>
+      <listitem>
+        <para>In the Private Gateway page, click the IP address of the Private Gateway you want to
+          work with.</para>
+      </listitem>
+      <listitem>
+        <para>Select the Static Routes tab.</para>
+      </listitem>
+      <listitem>
+        <para>Specify the CIDR of destination network.</para>
+      </listitem>
+      <listitem>
+        <para>Click Add.</para>
+        <para>Wait for few seconds until the new route is created.</para>
+      </listitem>
+    </orderedlist>
   </section>
   <section id="blacklist-route">
     <title>Blacklisting Routes</title>

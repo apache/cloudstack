@@ -29,8 +29,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.Storage;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
@@ -108,12 +111,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject NetworkModel _networkMgr;
     @Inject ConfigurationDao _configDao;
+    @Inject ConfigurationServer _configServer;
     @Inject
     NicDao _nicDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    @Inject
+    VMInstanceDao _vmDao;
+    @Inject
+    ClusterDao _clusterDao;
 
     protected VMwareGuru() {
         super();
@@ -180,7 +188,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 break;
             }
         }
-
+        long clusterId = _hostDao.findById( _vmDao.findById(vm.getId()).getHostId()).getClusterId();
+        details.put(Config.VmwareReserveCpu.key(), _configServer.getConfigValue(Config.VmwareReserveCpu.key(), Config.ConfigurationParameterScope.cluster.toString(), clusterId));
+        details.put(Config.VmwareReserveMem.key(), _configServer.getConfigValue(Config.VmwareReserveMem.key(), Config.ConfigurationParameterScope.cluster.toString(), clusterId));
         to.setDetails(details);
 
         if(vm.getVirtualMachine() instanceof DomainRouterVO) {
@@ -270,6 +280,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
+        to.setHostName(vm.getHostName());
         return to;
     }
 
@@ -340,7 +351,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 }
             }
         }
-
+        
         if(!needDelegation) {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }
@@ -412,14 +423,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             return guid;
 
         return tokens[0] + "@" + vCenterIp;
-    }
-
-    @Override
-    public List<Command> finalizeExpunge(VirtualMachine vm) {
-        UnregisterVMCommand unregisterVMCommand = new UnregisterVMCommand(vm.getInstanceName());
-        List<Command> commands = new ArrayList<Command>();
-        commands.add(unregisterVMCommand);
-        return commands;
     }
 
     @Override

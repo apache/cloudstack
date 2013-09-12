@@ -50,6 +50,8 @@
     <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="api-calls.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="working-with-usage-data.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="storage-plugins.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="third-party-ui-plugin.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="working-with-documentation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="tools.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

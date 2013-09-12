@@ -18,15 +18,16 @@
 """
 
 import marvin
+import os
 import time
-from marvin.remoteSSHClient import remoteSSHClient
-from marvin.cloudstackAPI import *
 import logging
 import string
 import random
 import imaplib
 import email
 import datetime
+from marvin.cloudstackAPI import *
+from marvin.remoteSSHClient import remoteSSHClient
 
 
 def restart_mgmt_server(server):
@@ -109,7 +110,7 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=5, timeout=20, keyPairFileLocation=None):
+def is_server_ssh_ready(ipaddress, port, username, password, retries=10, timeout=30, keyPairFileLocation=None):
     """Return ssh handle else wait till sshd is running"""
     try:
         ssh = remoteSSHClient(
@@ -153,6 +154,17 @@ def fetch_api_client(config_file='datacenterCfg'):
         )
     )
 
+def get_host_credentials(config, hostname):
+    """Get login information for a host `hostname` from marvin's `config`
+
+    @return the tuple username, password for the host else raise keyerror"""
+    for zone in config.zones:
+        for pod in zone.pods:
+            for cluster in pod.clusters:
+                for host in cluster.hosts:
+                    if str(host.url).find(str(hostname)) > 0:
+                        return host.username, host.password
+    raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
 
 def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):
@@ -195,3 +207,103 @@ def isAlmostEqual(first_digit, second_digit, range=0):
     except Exception as e:
         raise e
     return digits_equal_within_range
+
+
+def xsplit(txt, seps):
+    """
+    Split a string in `txt` by list of delimiters in `seps`
+    @param txt: string to split
+    @param seps: list of separators
+    @return: list of split units
+    """
+    default_sep = seps[0]
+    for sep in seps[1:]: # we skip seps[0] because that's the default separator
+        txt = txt.replace(sep, default_sep)
+    return [i.strip() for i in txt.split(default_sep)]
+
+def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
+    """
+    Checks whether a snapshot with id (not UUID) `snapshotid` is present on the nfs storage
+
+    @param apiclient: api client connection
+    @param @dbconn:  connection to the cloudstack db
+    @param config: marvin configuration file
+    @param zoneid: uuid of the zone on which the secondary nfs storage pool is mounted
+    @param snapshotid: uuid of the snapshot
+    @return: True if snapshot is found, False otherwise
+    """
+
+    from base import ImageStore, Snapshot
+    secondaryStores = ImageStore.list(apiclient, zoneid=zoneid)
+
+    assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
+    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zoneid
+
+    secondaryStore = secondaryStores[0]
+
+    if str(secondaryStore.providername).lower() != "nfs":
+        raise Exception(
+            "is_snapshot_on_nfs works only against nfs secondary storage. found %s" % str(secondaryStore.providername))
+
+    qresultset = dbconn.execute(
+                        "select id from snapshots where uuid = '%s';" \
+                        % str(snapshotid)
+                        )
+    if len(qresultset) == 0:
+        raise Exception(
+            "No snapshot found in cloudstack with id %s" % snapshotid)
+
+
+    snapshotid = qresultset[0][0]
+    qresultset = dbconn.execute(
+        "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshotid
+    )
+
+    assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshotid
+    assert len(qresultset) != 0, "No such snapshot %s found in the cloudstack db" % snapshotid
+
+    snapshotPath = qresultset[0][0]
+
+    nfsurl = secondaryStore.url
+    # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
+    from urllib2 import urlparse
+    parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
+    host, path = parse_url.netloc, parse_url.path
+
+    if not config.mgtSvr:
+        raise Exception("Your marvin configuration does not contain mgmt server credentials")
+    host, user, passwd = config.mgtSvr[0].mgtSvrIp, config.mgtSvr[0].user, config.mgtSvr[0].passwd
+
+    try:
+        ssh_client = remoteSSHClient(
+            host,
+            22,
+            user,
+            passwd,
+        )
+        cmds = [
+                "mkdir -p %s /mnt/tmp",
+                "mount -t %s %s%s /mnt/tmp" % (
+                    'nfs',
+                    host,
+                    path,
+                    ),
+                "test -f %s && echo 'snapshot exists'" % (
+                    os.path.join("/mnt/tmp", snapshotPath)
+                    ),
+            ]
+
+        for c in cmds:
+            result = ssh_client.execute(c)
+
+        # Unmount the Sec Storage
+        cmds = [
+                "cd",
+                "umount /mnt/tmp",
+            ]
+        for c in cmds:
+            ssh_client.execute(c)
+    except Exception as e:
+        raise Exception("SSH failed for management server: %s - %s" %
+                      (config[0].mgtSvrIp, e))
+    return 'snapshot exists' in result

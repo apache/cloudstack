@@ -193,7 +193,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public String toString() {
-        return new StringBuilder("VolumeHost[").append(id).append("-").append(snapshotId).append("-")
+        return new StringBuilder("SnapshotDataStore[").append(id).append("-").append(snapshotId).append("-")
                 .append(dataStoreId).append(installPath).append("]").toString();
     }
 

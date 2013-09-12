@@ -29,6 +29,12 @@ public interface ResourceLimitAndCountResponse {
 
     public void setNetworkAvailable(String networkAvailable);
 
+    public void setVpcLimit(String vpcLimit);
+
+    public void setVpcTotal(Long vpcTotal);
+
+    public void setVpcAvailable(String vpcAvailable);
+
     public void setCpuLimit(String cpuLimit);
 
     public void setCpuTotal(Long cpuTotal);

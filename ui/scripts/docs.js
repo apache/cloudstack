@@ -36,40 +36,40 @@ cloudStack.docs = {
     //Delete/archive events
     helpEventsDeleteType: {
 
-        desc: 'Delete all the events by specifying its TYPE eg . USER.LOGIN',
+        desc: 'Delete all the events by specifying its TYPE (e.g., USER.LOGIN)',
         externalLink: ''
 
     },
 
     helpEventsDeleteDate: {
 
-        desc: 'Delete all the events which have been created after this date ',
+        desc: 'Delete all the events which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
     helpEventsArchiveType: {
 
-        desc: 'Archive all the events by specifying its TYPE (integer number)',
+        desc: 'Archive all the events by specifying its TYPE (i.e., USER.LOGIN)',
         externalLink: ''
     },
 
     helpEventsArchiveDate: {
 
-        desc: 'Archive all the events which have been created after this date',
+        desc: 'Archive all the events which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
     //Delete/archive Alerts
     helpAlertsDeleteType: {
 
-        desc: 'Delete all the alerts by specifying its TYPE eg . USER.LOGIN',
+        desc: 'Delete all the alerts by specifying its TYPE (integer number)',
         externalLink: ''
 
     },
 
     helpAlertsDeleteDate: {
 
-        desc: 'Delete all the alerts which have been created after this date ',
+        desc: 'Delete all the alerts which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
@@ -81,7 +81,7 @@ cloudStack.docs = {
 
     helpAlertsArchiveDate: {
 
-        desc: 'Archive all the alerts which have been created after this date',
+        desc: 'Archive all the alerts which have been created in date range (specify start and end date)',
         externalLink: ''
     },
 
@@ -186,7 +186,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpClusterName: {
-        desc: 'Any desired cluster name. Used for display only.',
+        desc: 'Cluster name. Used for display only. For VMware hypervisor, this must be a predefined name in VCenter.',
         externalLink: ''
     },
     helpClustervCenterHost: {
@@ -658,6 +658,43 @@ cloudStack.docs = {
     },
     helpSecondaryStoragePath: {
         desc: 'The exported path from the server',
+        externalLink: ''
+    },
+    // S3
+    helpS3AccessKey: {
+        desc: 'This identifies the S3 user account',
+        externalLink: ''
+    },
+    helpS3SecretKey: {
+        desc: 'The password matching the S3 Access Key',
+        externalLink: ''
+    },
+    helpS3Bucket: {
+        desc: 'The S3 bucket to store CloudStack data in. The bucket must be created and owned by the same user identified by the S3 Access Key',
+        externalLink: ''
+    },
+    helpS3Endpoint: {
+        desc: 'The S3 server to use. Non-standard ports can be appended to the hostname as per s3.amazonaws.com:8080',
+        externalLink: ''
+    },
+    helpS3ConnectionTimeout: {
+        desc: 'The number of milliseconds to wait when establishing an S3 connection. This is optional',
+        externalLink: ''
+    },
+    helpS3MaxErrorRetry: {
+        desc: 'The number of times to retry S3 requests before failing. This is optional',
+        externalLink: ''
+    },
+    helpS3SocketTimeout: {
+        desc: 'The number of milliseconds to wait while reading an S3 response. This is optional',
+        externalLink: ''
+    },
+    helpNFSStagingServer: {
+        desc: 'The name or IP address of the NFS secondary staging server',
+        externalLink: ''
+    },
+    helpNFSStagingPath: {
+        desc: 'The exported path to use on the NFS staging server',
         externalLink: ''
     },
     // Add SRX

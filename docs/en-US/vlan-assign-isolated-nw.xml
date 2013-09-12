@@ -21,14 +21,18 @@
 -->
 <section id="vlan-assign-isolated-nw">
   <title>Assigning VLANs to Isolated Networks</title>
-  <para>&PRODUCT; provides you the ability to control VLAN assignment to Isolated networks. You can
-    assign a VLAN ID when a network is created, just the way it's done for Shared networks.</para>
+  <para>&PRODUCT; provides you the ability to control VLAN assignment to Isolated networks. As a
+    Root admin, you can assign a VLAN ID when a network is created, just the way it's done for
+    Shared networks.</para>
   <para>The former behaviour also is supported &mdash; VLAN is randomly allocated to a network from
     the VNET range of the physical network when the network turns to Implemented state. The VLAN is
     released back to the VNET pool when the network shuts down as a part of the Network Garbage
     Collection. The VLAN can be re-used either by the same network when it is implemented again, or
     by any other network. On each subsequent implementation of a network, a new VLAN can be
     assigned.</para>
+  <para>Only the Root admin can assign VLANs because the regular users or domain admin are not aware
+    of the physical network topology. They cannot even view what VLAN is assigned to a
+    network.</para>
   <para>To enable you to assign VLANs to Isolated networks,</para>
   <orderedlist>
     <listitem>

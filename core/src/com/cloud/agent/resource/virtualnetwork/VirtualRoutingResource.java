@@ -1002,6 +1002,41 @@ public class VirtualRoutingResource implements Manager {
 
         return routerProxy("ipassoc.sh", privateIpAddress, args);
     }
+
+    public String checkPublicIpsCount(final String vmName,
+                                        final String privateIpAddress, final String publicIpAddress,
+                                        final boolean firstIP, final boolean sourceNat,
+                                        final String vlanId, final String vlanGateway,
+                                        final String vlanNetmask, final String vifMacAddress, int nicNum, boolean newNic){
+
+        String args = "";
+        args += "-D";
+
+        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+        if (sourceNat) {
+            args +=" -s";
+        }
+        if (firstIP) {
+            args += " -f";
+        }
+        args += " -l ";
+        args += publicIpAddress + "/" + cidrSize;
+
+        String publicNic = "eth" + nicNum;
+        args += " -c ";
+        args += publicNic;
+
+        args +=" -g ";
+        args += vlanGateway;
+
+        if (newNic) {
+            args += " -n";
+        }
+        args += " -d";
+
+        return routerProxy("ipassoc.sh", privateIpAddress, args);
+
+    }
     
     private void deleteBridge(String brName) {
         Script cmd = new Script("/bin/sh", _timeout);
@@ -1219,6 +1254,41 @@ public class VirtualRoutingResource implements Manager {
         s_logger.debug("Unable to logon to " + ipAddress);
 
         return "Unable to connect";
+    }
+
+    public boolean connect(final String ipAddress, int retry, int sleep) {
+        for (int i = 0; i <= retry; i++) {
+            SocketChannel sch = null;
+            try {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Trying to connect to " + ipAddress);
+                }
+                sch = SocketChannel.open();
+                sch.configureBlocking(true);
+
+                final InetSocketAddress addr = new InetSocketAddress(ipAddress, _port);
+                sch.connect(addr);
+                return true;
+            } catch (final IOException e) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Could not connect to " + ipAddress);
+                }
+            } finally {
+                if (sch != null) {
+                    try {
+                        sch.close();
+                    } catch (final IOException e) {}
+                }
+            }
+            try {
+                Thread.sleep(sleep);
+            } catch (final InterruptedException e) {
+            }
+        }
+
+        s_logger.debug("Unable to logon to " + ipAddress);
+
+        return false;
     }
 
 

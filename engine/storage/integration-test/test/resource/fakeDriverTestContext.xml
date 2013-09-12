@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to
+  you under the Apache License, Version 2.0 (the "License"); you may not use
+  this file except in compliance with the License. You may obtain a copy of
+  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required
+  by applicable law or agreed to in writing, software distributed under the
+  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific
+  language governing permissions and limitations under the License. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                         http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                                 http://www.springframework.org/schema/context
+                                          http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+    <context:annotation-config />
+
+    <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
+    <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
+    <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
+    <bean class="org.apache.cloudstack.storage.test.FakeDriverTestConfiguration" />
+    <bean id="instantiatePostProcessor" class="com.cloud.utils.component.ComponentInstantiationPostProcessor">
+        <property name="Interceptors">
+            <list>
+                <ref bean="transactionContextBuilder" />
+                <ref bean="actionEventInterceptor" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl" />
+    <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl" />
+    <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" />
+    <bean id="templateDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl" />
+    <bean id="volumeDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.VolumeDataStoreDaoImpl" />
+    <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
+    <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
+    <bean id="primaryDataStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.volume.db.PrimaryDataStoreDetailsDaoImpl" />
+    <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />
+    <bean id="LocalStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator"/>
+    <bean id="clusterScopeStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.ClusterScopeStoragePoolAllocator" />
+    <bean id="zoneWideStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.ZoneWideStoragePoolAllocator" />
+    <bean id="dataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl" />
+    <bean id="storageCacheManagerImpl" class="org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl"  />
+    <bean id="storageCacheRandomAllocator" class="org.apache.cloudstack.storage.cache.allocator.StorageCacheRandomAllocator" />
+    <bean id="xenserverSnapshotStrategy" class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
+    <bean id="bAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
+    <bean id="dataMotionServiceImpl" class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl" />
+    <bean id="dataObjectManagerImpl" class="org.apache.cloudstack.storage.datastore.DataObjectManagerImpl" />
+    <bean id="dataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.DataStoreManagerImpl" />
+    <bean id="primaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreProviderManagerImpl" />
+    <bean id="imageStoreProviderManagerImpl" class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />
+    <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
+    <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
+    <bean id="templateDataFactoryImpl" class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
+    <bean id="imageStoreHelper" class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
+    <bean id="imageFormatHelper" class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
+    <bean id="templateServiceImpl" class="org.apache.cloudstack.storage.image.TemplateServiceImpl" />
+    <bean id="networkFileSystem" class="org.apache.cloudstack.storage.datastore.type.NetworkFileSystem" />
+    <bean id="OVA" class="org.apache.cloudstack.storage.image.format.OVA" />
+    <bean id="objectInDataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />
+    <bean id="primaryDataStoreHelper" class="org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper" />
+    <bean id="QCOW2" class="org.apache.cloudstack.storage.image.format.QCOW2" />
+    <bean id="snapshotDataFactoryImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotDataFactoryImpl" />
+    <bean id="snapshotServiceImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotServiceImpl" />
+    <bean id="snapshotStateMachineManagerImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManagerImpl" />
+    <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
+    <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
+    <bean id="volumeDataFactoryImpl" class="org.apache.cloudstack.storage.volume.VolumeDataFactoryImpl" />
+    <bean id="volumeServiceImpl" class="org.apache.cloudstack.storage.volume.VolumeServiceImpl" />
+    <bean id="cloudStackImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl" />
+    <bean id="s3ImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl" />
+    <bean id="swiftImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl" />
+    <bean id="BAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
+    <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
+    <bean id="AccountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
+    <bean id="StorageCacheReplacementAlgorithm" class="org.apache.cloudstack.storage.cache.manager.StorageCacheReplacementAlgorithmLRU" />
+    <bean id="ServiceOfferingDetailsDao" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl" />
+    <bean id='SnapshotManagerImpl' class='com.cloud.storage.snapshot.SnapshotManagerImpl'/>
+    <bean id='SnapshotPolicyDao' class='com.cloud.storage.dao.SnapshotPolicyDaoImpl'/>
+    <bean id='SnapshotScheduleDao' class='com.cloud.storage.dao.SnapshotScheduleDaoImpl' />
+    <bean id='UserContextInitializer'  class='com.cloud.user.UserContextInitializer' />
+
+</beans>

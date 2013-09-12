@@ -24,12 +24,13 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 
 public interface HostPodDao extends GenericDao<HostPodVO, Long> {
-	public List<HostPodVO> listByDataCenterId(long id);
+    public List<HostPodVO> listByDataCenterId(long id);
 
     public HostPodVO findByName(String name, long dcId);
-	
-	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
+
+    public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
 
     public List<Long> listDisabledPods(long zoneId);
 
+    public List<Long> listAllPods(long zoneId);
 }

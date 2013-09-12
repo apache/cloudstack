@@ -735,6 +735,14 @@
                             }
 
                         },
+                        
+                        tabFilter: function(args) {
+                        	var hiddenTabs = [];
+                        	if(!isAdmin()) {
+                        		hiddenTabs.push('settings');
+                        	}                        	
+                        	return hiddenTabs;
+                        },
 
                         tabs: {
                             details: {

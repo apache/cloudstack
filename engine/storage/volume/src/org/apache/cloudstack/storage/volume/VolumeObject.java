@@ -293,7 +293,7 @@ public class VolumeObject implements VolumeInfo {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed
                     && (this.volumeVO.getState() != Volume.State.Copying && this.volumeVO.getState() != Volume.State.Uploaded)) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
 
@@ -309,7 +309,7 @@ public class VolumeObject implements VolumeInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -335,7 +335,11 @@ public class VolumeObject implements VolumeInfo {
             return this.volumeVO.getPath();
         } else {
             DataObjectInStore objInStore = this.objectInStoreMgr.findObject(this, dataStore);
-            return objInStore.getInstallPath();
+            if (objInStore != null) {
+                return objInStore.getInstallPath();
+            } else {
+                return null;
+            }
         }
     }
 
@@ -471,7 +475,12 @@ public class VolumeObject implements VolumeInfo {
                     VolumeVO vol = this.volumeDao.findById(this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     vol.setPath(newVol.getPath());
-                    vol.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        vol.setSize(newVol.getSize());
+                    }
+                    if (newVol.getFormat() != null) {
+                        vol.setFormat(newVol.getFormat());
+                    }
                     vol.setPoolId(this.getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 } else if (answer instanceof CreateObjectAnswer) {
@@ -479,8 +488,13 @@ public class VolumeObject implements VolumeInfo {
                     VolumeObjectTO newVol = (VolumeObjectTO) createAnswer.getData();
                     VolumeVO vol = this.volumeDao.findById(this.getId());
                     vol.setPath(newVol.getPath());
-                    vol.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        vol.setSize(newVol.getSize());
+                    }
                     vol.setPoolId(this.getDataStore().getId());
+                    if (newVol.getFormat() != null) {
+                        vol.setFormat(newVol.getFormat());
+                    }
                     volumeDao.update(vol.getId(), vol);
                 }
             } else {
@@ -498,13 +512,15 @@ public class VolumeObject implements VolumeInfo {
                             this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
-                    volStore.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        volStore.setSize(newVol.getSize());
+                    }
                     this.volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }
@@ -560,7 +576,9 @@ public class VolumeObject implements VolumeInfo {
                     VolumeVO vol = this.volumeDao.findById(this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     vol.setPath(newVol.getPath());
-                    vol.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        vol.setSize(newVol.getSize());
+                    }
                     vol.setPoolId(this.getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 } else if (answer instanceof CreateObjectAnswer) {
@@ -568,7 +586,9 @@ public class VolumeObject implements VolumeInfo {
                     VolumeObjectTO newVol = (VolumeObjectTO) createAnswer.getData();
                     VolumeVO vol = this.volumeDao.findById(this.getId());
                     vol.setPath(newVol.getPath());
-                    vol.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        vol.setSize(newVol.getSize());
+                    }
                     vol.setPoolId(this.getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 }
@@ -587,13 +607,15 @@ public class VolumeObject implements VolumeInfo {
                             this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
-                    volStore.setSize(newVol.getSize());
+                    if (newVol.getSize() != null) {
+                        volStore.setSize(newVol.getSize());
+                    }
                     this.volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }
         } catch (RuntimeException ex) {
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
             throw ex;
         }

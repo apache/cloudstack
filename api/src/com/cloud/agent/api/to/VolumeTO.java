@@ -126,6 +126,10 @@ public class VolumeTO implements InternalIdentity {
     public String getChainInfo() {
         return chainInfo;
     }
+    
+    public void setChainInfo(String chainInfo) {
+    	this.chainInfo = chainInfo;
+    }
 
     public String getOsType() {
         return guestOsType;

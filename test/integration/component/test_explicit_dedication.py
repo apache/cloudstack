@@ -178,6 +178,10 @@ class TestExplicitDedication(cloudstackTestCase):
                 empty_host = host
                 break
 
+        #If no empty host is found, return
+        if empty_host:
+           self.skipTest("Did not find any empty hosts, Skipping")
+
         # Create an affinity group for explicit dedication.
         agCmd = createAffinityGroup.createAffinityGroupCmd()
         agCmd.name = "explicit-affinity"

@@ -105,4 +105,14 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     public String getEventDescription() {
         return "updating VPC id=" + getId();
     }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getId();
+    }
 }

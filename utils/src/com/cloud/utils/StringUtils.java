@@ -153,8 +153,10 @@ public class StringUtils {
     // Responsible for stripping sensitive content from request and response strings
     public static String cleanString(String stringToClean){
         String cleanResult = "";
-        cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
-        cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+        if (stringToClean != null) {
+            cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
+            cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+        }
         return cleanResult;
     }
 

@@ -31,4 +31,49 @@
     <para>In Ubuntu:</para>
     <programlisting language="Bash"><command>$ apt-get install cloudstack-agent</command></programlisting>
     <para>The host is now ready to be added to a cluster. This is covered in a later section, see <xref linkend="host-add" />. It is recommended that you continue to read the documentation before adding the host!</para>
+    <section id="config-cpu-model">
+        <title>Configure CPU model for KVM guest (Optional) </title>
+    <para>In additional,the &PRODUCT; Agent allows host administrator to control the guest CPU model which is exposed to KVM instances. By default, the CPU model of KVM instance is likely <emphasis role="italic"> QEMU Virtual CPU version x.x.x</emphasis> with least CPU features exposed. There are a couple of reasons to specify the CPU model:</para>
+    <itemizedlist>
+        <listitem><para>To maximise performance of instances by exposing new host CPU features to the KVM instances;</para>    </listitem>
+        <listitem><para>To ensure a consistent default CPU across all machines,removing reliance of variable QEMU defaults;    </para> </listitem>
+    </itemizedlist>
+    <para> For the most part it will be sufficient for the host administrator to specify the guest CPU config in the per-host configuration file (/etc/cloudstack/agent/agent.properties). This will be achieved by introducing two new configuration parameters: </para>
+    <programlisting language="Bash">guest.cpu.mode=custom|host-model|host-passthrough
+guest.cpu.model=from /usr/share/libvirt/cpu_map.xml(only valid when guest.cpu.mode=custom)
+    </programlisting>
+    <para>There are three choices to fulfill the cpu model changes:</para>
+    <orderedlist>
+        <listitem>
+            <para><emphasis role="bold">custom: </emphasis> you can explicitly specify one of the supported named model in /usr/share/libvirt/cpu_map.xml</para>
+        </listitem>
+        <listitem>
+            <para><emphasis role="bold">host-model: </emphasis> libvirt will identify the CPU model in /usr/share/libvirt/cpu_map.xml which most closely matches the host, and then request additional CPU flags to complete the match. This should give close to maximum functionality/performance, which maintaining good reliability/compatibility if the guest is migrated to another host with slightly different host CPUs.  </para>
+        </listitem>
+        <listitem>
+            <para><emphasis role="bold">host-passthrough: </emphasis> libvirt will tell KVM to passthrough the host CPU with no modifications. The difference to host-model, instead of just matching feature flags, every last detail of the host CPU is matched. This gives absolutely best performance, and can be important to some apps which check low level CPU details, but it comes at a cost with respect to migration: the guest can only be migrated to an exactly matching host CPU.  </para>
+        </listitem>
+    </orderedlist>
+    <para>Here are some examples:</para>
+    <itemizedlist>
+        <listitem>
+            <para>custom</para>
+            <programlisting>guest.cpu.mode=custom
+guest.cpu.model=SandyBridge
+            </programlisting>
+        </listitem>
+        <listitem>
+            <para>host-model</para>
+            <programlisting>guest.cpu.mode=host-model </programlisting>
+        </listitem>
+        <listitem>
+            <para>host-passthrough</para>
+            <programlisting>guest.cpu.mode=host-passthrough </programlisting>
+        </listitem>
+    </itemizedlist>
+    <note>
+        <para>host-passthrough may lead to migration failure,if you have this problem,you should use host-model or custom </para>
+    </note>
+</section>
+
 </section>

@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="health-checks-for-lb-rules">
+  <!-- CLOUDSTACK-443 -->
+  <title>Health Checks for Load Balancer Rules</title>
+  <para>(NetScaler load balancer only; requires NetScaler version 10.0)
+  </para>
+  <para>Health checks are used in load-balanced applications to ensure that requests are forwarded
+    only to running, available services.
+    When creating a load balancer rule, you can specify a health check policy.
+    This is in addition to specifying the
+    stickiness policy, algorithm, and other load balancer rule options.
+    You can configure one health check policy per load balancer rule.</para>
+  <para>Any load balancer rule defined on a NetScaler load balancer in &PRODUCT; can have a health check policy.
+    The policy consists of a ping path, thresholds to define "healthy" and "unhealthy" states,
+    health check frequency, and timeout wait interval.</para>
+  <para>When a health check policy is in effect,
+    the load balancer will stop forwarding requests to any resources that are found to be unhealthy.
+    If the resource later becomes available again, the periodic health check
+    will discover it, and the resource will once again be added to the pool of resources that can
+    receive requests from the load balancer.
+    At any given time, the most recent result of the health check is displayed in the UI.
+    For any VM that is attached to a load balancer rule with a health check configured,
+    the state will be shown as UP or DOWN in the UI depending on the result of the most recent health check.</para>
+  <para>You can delete or modify existing health check policies.</para>
+  <para>To configure how often the health check is performed by default, use the global
+    configuration setting healthcheck.update.interval (default value is 600 seconds).
+    You can override this value for an individual health check policy.</para>
+  <para>For details on how to set a health check policy using the UI, see <xref linkend="add-load-balancer-rule"/>.</para>
+</section>

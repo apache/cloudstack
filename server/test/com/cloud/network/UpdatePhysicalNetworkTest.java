@@ -65,7 +65,7 @@ public class UpdatePhysicalNetworkTest {
         when(_datacenterDao.findById(anyLong())).thenReturn(datacentervo);
         when(_physicalNetworkDao.update(anyLong(), any(physicalNetworkVO.getClass()))).thenReturn(true);
         when(_DatacenterVnetDao.listVnetsByPhysicalNetworkAndDataCenter(anyLong(), anyLong())).thenReturn(existingRange);
-        networkService.updatePhysicalNetwork(1l, null, null, "525-530", null, null);
+        networkService.updatePhysicalNetwork(1l, null, null, "524-524,525-530", null);
         txn.close("updatePhysicalNetworkTest");
         verify(physicalNetworkVO).setVnet(argumentCaptor.capture());
         assertEquals("524-530", argumentCaptor.getValue());

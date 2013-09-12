@@ -24,11 +24,13 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
+import junit.framework.Assert;
 import org.apache.commons.lang.SystemUtils;
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.Random;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -37,7 +39,6 @@ public class LibvirtComputingResourceTest {
 
     String _hyperVisorType = "kvm";
     Random _random = new Random();
-
     /**
         This test tests if the Agent can handle a vmSpec coming
         from a <=4.1 management server.
@@ -102,14 +103,13 @@ public class LibvirtComputingResourceTest {
         vmStr += "<boot dev='cdrom'/>\n";
         vmStr += "<boot dev='hd'/>\n";
         vmStr += "</os>\n";
-        vmStr += "<cputune>\n";
-        vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
-        vmStr += "</cputune>\n";
+        //vmStr += "<cputune>\n";
+        //vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
+        //vmStr += "</cputune>\n";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
         vmStr += "</domain>\n";
-
         assertEquals(vmStr, vm.toString());
     }
 
@@ -178,9 +178,9 @@ public class LibvirtComputingResourceTest {
         vmStr += "<boot dev='cdrom'/>\n";
         vmStr += "<boot dev='hd'/>\n";
         vmStr += "</os>\n";
-        vmStr += "<cputune>\n";
-        vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
-        vmStr += "</cputune>\n";
+        //vmStr += "<cputune>\n";
+        //vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
+        //vmStr += "</cputune>\n";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
@@ -196,5 +196,18 @@ public class LibvirtComputingResourceTest {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Pair<Double, Double> stats = LibvirtComputingResource.getNicStats("lo");
         assertNotNull(stats);
+    }
+
+    @Test
+    public void testUUID() {
+        String uuid = "1";
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        uuid =lcr.getUuid(uuid);
+        Assert.assertTrue(!uuid.equals("1"));
+
+        String oldUuid = UUID.randomUUID().toString();
+        uuid = oldUuid;
+        uuid = lcr.getUuid(uuid);
+        Assert.assertTrue(uuid.equals(oldUuid));
     }
 }

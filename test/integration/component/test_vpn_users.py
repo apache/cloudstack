@@ -19,6 +19,7 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
+from marvin.cloudstackException import cloudstackAPIException
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.integration.lib.base import (
                                         Account,
@@ -127,32 +128,36 @@ class TestVPNUsers(cloudstackTestCase):
         return
 
     def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.account = Account.create(
-                            self.apiclient,
-                            self.services["account"],
-                            domainid=self.domain.id
-                            )
-        self.virtual_machine = VirtualMachine.create(
+        try:
+            self.apiclient = self.testClient.getApiClient()
+            self.dbclient = self.testClient.getDbConnection()
+            self.account = Account.create(
                                 self.apiclient,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                serviceofferingid=self.service_offering.id
+                                self.services["account"],
+                                domainid=self.domain.id
                                 )
-        self.public_ip = PublicIPAddress.create(
-                                           self.apiclient,
-                                           self.virtual_machine.account,
-                                           self.virtual_machine.zoneid,
-                                           self.virtual_machine.domainid,
-                                           self.services["virtual_machine"]
-                                           )
-        self.cleanup = [
-                        self.account,
-                        ]
-        return
+            self.cleanup = [
+                            self.account,
+                            ]
+            self.virtual_machine = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    templateid=self.template.id,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    serviceofferingid=self.service_offering.id
+                                    )
+            self.public_ip = PublicIPAddress.create(
+                                               self.apiclient,
+                                               accountid=self.virtual_machine.account,
+                                               zoneid=self.virtual_machine.zoneid,
+                                               domainid=self.virtual_machine.domainid,
+                                               services=self.services["virtual_machine"]
+                                               )
+            return
+        except cloudstackAPIException as e:
+                self.tearDown()
+                raise e
 
     def tearDown(self):
         try:

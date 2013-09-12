@@ -35,9 +35,6 @@ def user(Name, DomainName, AcctType):
 class cloudstackTestCase(unittest.case.TestCase):
     clstestclient = None
 
-    def __init__(self, args):
-        unittest.case.TestCase.__init__(self, args)
-
     @classmethod
     def getClsTestClient(cls):
         return cls.clstestclient

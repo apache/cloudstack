@@ -96,8 +96,6 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
                     }
                     rangeResponse.setPortableIpResponses(portableIpResponses);
                 }
-
-                rangeResponse.setObjectName("portableiprange");
                 responses.add(rangeResponse);
             }
         }

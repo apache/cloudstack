@@ -19,13 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.Project;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value=Project.class)
 @SuppressWarnings("unused")
@@ -182,7 +183,7 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     }
 
     public void setOwner(String owner) {
-        this.ownerName = owner;
+        ownerName = owner;
     }
 
     public void setState(String state) {
@@ -194,7 +195,7 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     }
 
     public void addTag(ResourceTagResponse tag){
-        this.tags.add(tag);
+        tags.add(tag);
     }
     
     @Override
@@ -296,7 +297,22 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
     }
+
+    @Override
+    public void setVpcLimit(String vpcLimit) {
+        this.vpcLimit = networkLimit;
+    }
+
+    @Override
+    public void setVpcTotal(Long vpcTotal) {
+        this.vpcTotal = vpcTotal;
+    }
     
+    @Override
+    public void setVpcAvailable(String vpcAvailable) {
+        this.vpcAvailable = vpcAvailable;
+    }
+
     @Override
     public void setCpuLimit(String cpuLimit) {
         this.cpuLimit = cpuLimit;

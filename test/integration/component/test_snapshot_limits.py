@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
@@ -23,6 +22,8 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
+from marvin.integration.lib.utils import is_snapshot_on_nfs
+import os
 
 
 class Services:
@@ -86,12 +87,6 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "mgmt_server": {
-                                    "ipaddress": '192.168.100.21',
-                                    "username": "root",
-                                    "password": "password",
-                                    "port": 22,
-                                },
                         "recurring_snapshot": {
                                     "intervaltype": 'HOURLY',
                                     # Frequency of snapshots
@@ -135,48 +130,57 @@ class TestSnapshotLimit(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
 
-        template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["server"]["zoneid"] = cls.zone.id
-
-        cls.services["template"] = template.id
-
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.name
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls.virtual_machine = VirtualMachine.create(
+        try:
+            template = get_template(
                                 cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
+                                cls.zone.id,
+                                cls.services["ostype"]
                                 )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.services["server"]["zoneid"] = cls.zone.id
+
+            cls.services["template"] = template.id
+
+            # Create VMs, NAT Rules etc
+            cls.account = Account.create(
+                                cls.api_client,
+                                cls.services["account"],
+                                domainid=cls.domain.id
+                                )
+            cls._cleanup.append(cls.account)
+
+            cls.services["account"] = cls.account.name
+
+            if cls.zone.localstorageenabled:
+                cls.services["service_offering"]["storagetype"] = "local"
+            cls.service_offering = ServiceOffering.create(
+                                                cls.api_client,
+                                                cls.services["service_offering"]
+                                                )
+            cls._cleanup.append(cls.service_offering)
+            cls.virtual_machine = VirtualMachine.create(
+                                    cls.api_client,
+                                    cls.services["server"],
+                                    templateid=template.id,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    serviceofferingid=cls.service_offering.id
+                                    )
+            cls._cleanup.append(cls.virtual_machine)
+        except Exception, e:
+            cls.tearDownClass()
+            unittest.SkipTest("setupClass fails for %s" % cls.__name__)
+            raise e
+        else:
+            cls._cleanup.remove(cls.account)
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -285,100 +289,5 @@ class TestSnapshotLimit(cloudstackTestCase):
         snapshot = snapshots[0]
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
-
-        # Fetch values from database
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % snapshot.id
-                        )
-        self.assertEqual(
-                            isinstance(qresultset, list),
-                            True,
-                            "Check DBQuery returns a valid list"
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
-
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                                 )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Stripping end ':' from storage type
-            storage_type = parse_url[0][:-1]
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            if sec_storage_ip[-1] != ":":
-                sec_storage_ip = sec_storage_ip + ":"
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-            try:
-                # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient(
-                                    self.services["mgmt_server"]["ipaddress"],
-                                    self.services["mgmt_server"]["port"],
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["password"],
-                                    )
-
-                cmds = [
-                    "mkdir -p %s" % self.services["paths"]["mount_dir"],
-                    "mount -t %s %s/%s %s" % (
-                                         storage_type,
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["paths"]["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["paths"]["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                ]
-
-                for c in cmds:
-                    result = ssh_client.execute(c)
-
-                uuids.append(result)
-
-                # Unmount the Sec Storage
-                cmds = [
-                    "umount %s" % (self.services["paths"]["mount_dir"]),
-                    ]
-                for c in cmds:
-                    result = ssh_client.execute(c)
-            except Exception as e:
-                raise Exception(
-                        "SSH access failed for management server: %s - %s" %
-                                    (self.services["mgmt_server"]["ipaddress"], e))
-
-        res = str(uuids)
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return

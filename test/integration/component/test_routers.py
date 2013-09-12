@@ -24,7 +24,6 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 
 #Import System modules
 import time
@@ -204,20 +203,22 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list router response"
                              )
         for router in routers:
-            self.assertEqual(
-                        router.state,
-                        'Running',
-                        "Check list router response for router state"
-                    )
             self.debug("Router ID: %s & Router state: %s" % (
                                                              router.id,
                                                              router.state
                                                              ))
+            self.assertEqual(
+                        router.state,
+                        'Running',
+                        "Router state is not running but is  %s" % router.state
+                    )
+
         # Network state associated with account should be 'Implemented'
         networks = list_networks(
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -231,15 +232,16 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list networks response"
                              )
         for network in networks:
+            self.debug("Network ID: %s & Network state: %s" % (
+                                                             network.id,
+                                                             network.state
+                                                             ))
             self.assertIn(
                         network.state,
                         ['Implemented', 'Allocated'],
                         "Check list network response for network state"
                     )
-            self.debug("Network ID: %s & Network state: %s" % (
-                                                             network.id,
-                                                             network.state
-                                                             ))
+
         # VM state associated with account should be 'Running'
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
@@ -273,6 +275,7 @@ class TestRouterServices(cloudstackTestCase):
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -348,20 +351,22 @@ class TestRouterServices(cloudstackTestCase):
                              )
         # Router associated with account should be in running state
         for router in routers:
+            self.debug("Router ID: %s & Router state: %s" % (
+                                                             router.id,
+                                                             router.state
+                                                             ))
             self.assertEqual(
                         router.state,
                         'Running',
                         "Check list router response for router state"
                     )
-            self.debug("Router ID: %s & Router state: %s" % (
-                                                             router.id,
-                                                             router.state
-                                                             ))
+
         # Network state associated with account should be 'Implemented'
         networks = list_networks(
                                  self.apiclient,
                                  account=self.account.name,
                                  domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -375,15 +380,16 @@ class TestRouterServices(cloudstackTestCase):
                              )
         # Check if network in 'Implemented' state
         for network in networks:
+            self.debug("Network ID: %s & Network state: %s" % (
+                                                             network.id,
+                                                             network.state
+                                                             ))
             self.assertIn(
                         network.state,
                         ['Implemented', 'Allocated'],
                         "Check list network response for network state"
                     )
-            self.debug("Network ID: %s & Network state: %s" % (
-                                                             network.id,
-                                                             network.state
-                                                             ))
+
         # VM state associated with account should be 'Running'
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
@@ -402,15 +408,16 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list virtual machines response"
                              )
         for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
             self.assertEqual(
                         virtual_machine.state,
                         'Running',
                         "Check list VM response for Running state"
                     )
-            self.debug("VM ID: %s & VM state: %s" % (
-                                                     virtual_machine.id,
-                                                     virtual_machine.state
-                                                    ))
+
             # Stop virtual machine
             cmd = stopVirtualMachine.stopVirtualMachineCmd()
             cmd.id = virtual_machine.id
@@ -460,15 +467,16 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list router response"
                              )
         for router in routers:
+            self.debug("Router ID: %s & Router state: %s" % (
+                                                             router.id,
+                                                             router.state
+                                                             ))
             self.assertEqual(
                         router.state,
                         'Stopped',
                         "Check list router response for router state"
                     )
-            self.debug("Router ID: %s & Router state: %s" % (
-                                                             router.id,
-                                                             router.state
-                                                             ))
+
         # Cleanup Vm_2 - Not required for further tests
         self.cleanup.append(self.vm_2)
         return
@@ -483,6 +491,35 @@ class TestRouterServices(cloudstackTestCase):
         # 3. when listVirtualMachines reports the userVM to be in state=Running
         # 4. listRouters should report router to have come back to "Running" state
         # 5. All other VMs in the account should remain in "Stopped" state
+
+
+        #stop all pre-existing virtual machines if they are in 'Running' state
+        virtual_machines = list_virtual_machines(
+                                self.apiclient,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
+                                )
+
+        self.assertEqual(
+                        isinstance(virtual_machines, list),
+                        True,
+                        "Check for list virtual machines response return valid data"
+                        )
+        self.assertNotEqual(
+                             len(virtual_machines),
+                             0,
+                             "Check list virtual machines response"
+                             )
+        for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
+            if virtual_machine.state == 'Running':
+                # Stop virtual machine
+                cmd = stopVirtualMachine.stopVirtualMachineCmd()
+                cmd.id = virtual_machine.id
+                self.apiclient.stopVirtualMachine(cmd)
 
         vm = VirtualMachine.create(
                                     self.apiclient,
@@ -540,15 +577,16 @@ class TestRouterServices(cloudstackTestCase):
         # Routers associated with account should be 'Running' after deployment
         # of VM
         for router in routers:
+            self.debug("Router ID: %s & Router state: %s" % (
+                                                             router.id,
+                                                             router.state
+                                                             ))
             self.assertEqual(
                         router.state,
                         'Running',
                         "Check list router response for router state"
                     )
-            self.debug("Router ID: %s & Router state: %s" % (
-                                                             router.id,
-                                                             router.state
-                                                             ))
+
 
         # All other VMs (VM_1) should be in 'Stopped'
         virtual_machines = list_virtual_machines(
@@ -570,15 +608,16 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list virtual machines response"
                              )
         for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
             self.assertEqual(
                         virtual_machine.state,
                         'Stopped',
                         "Check list VM response for Stopped state"
                     )
-            self.debug("VM ID: %s & VM state: %s" % (
-                                                     virtual_machine.id,
-                                                     virtual_machine.state
-                                                    ))
+
         return
 
 
@@ -1211,20 +1250,24 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         )
         host = hosts[0]
         # For DNS and DHCP check 'dnsmasq' process status
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                router.linklocalip,
-                                'iptables -t nat -L'
-                                )
-        self.debug("iptables -t nat -L: %s" % result)
-        self.debug("Public IP: %s" % public_ip.ipaddress)
-        res = str(result)
-        self.assertEqual(
-                            res.count(str(public_ip.ipaddress)),
-                            1,
-                            "Check public IP address"
-                        )
+        try:
+            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+            result = get_process_status(
+                host.ipaddress,
+                22,
+                host.user,
+                host.passwd,
+                router.linklocalip,
+                'iptables -t nat -L'
+            )
+            self.debug("iptables -t nat -L: %s" % result)
+            self.debug("Public IP: %s" % public_ip.ipaddress)
+            res = str(result)
+            self.assertEqual(
+                res.count(str(public_ip.ipaddress)),
+                1,
+                "Check public IP address"
+            )
+        except KeyError:
+            self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
         return

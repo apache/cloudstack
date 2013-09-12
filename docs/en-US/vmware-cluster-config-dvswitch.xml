@@ -20,11 +20,11 @@
  under the License.
 -->
 <section id="vmware-cluster-config-dvswitch">
-  <title>Configuring a vSphere Cluster with VMware Distributed Virtual Switch</title>
-  <para>&PRODUCT; supports VMware vNetwork Distributed Switch (VDS) for virtual network configuration
-    in a VMware vSphere environment. This section helps you configure VMware VDS in a &PRODUCT;
-    deployment. Each vCenter server instance can support up to 128 VDS instances and each VDS
-    instance can manage up to 500 VMware hosts.</para>
+  <title>Configuring a VMware Datacenter with VMware Distributed Virtual Switch</title>
+  <para>&PRODUCT; supports VMware vNetwork Distributed Switch (VDS) for virtual network
+    configuration in a VMware vSphere environment. This section helps you configure VMware VDS in a
+    &PRODUCT; deployment. Each vCenter server instance can support up to 128 VDS instances and each
+    VDS instance can manage up to 500 VMware hosts.</para>
   <section id="about-dvswitch">
     <title>About VMware Distributed Virtual Switch</title>
     <para>VMware VDS is an aggregation of host-level virtual switches on a VMware vCenter server.
@@ -41,9 +41,7 @@
     <title>Prerequisites and Guidelines</title>
     <itemizedlist>
       <listitem>
-        <para>Do not attempt to configure VDS by altering VMware traffic label when configuring
-          physical networks. This will only work for Standard Virtual Switch and should not be
-          distributed.</para>
+        <para>VMware VDS is supported only on Public and Guest traffic in &PRODUCT;.</para>
       </listitem>
       <listitem>
         <para>VMware VDS does not support multiple VDS per traffic type. If a user has many VDS
@@ -51,20 +49,122 @@
           traffic.</para>
       </listitem>
       <listitem>
+        <para>Additional switches of any type can be added for each cluster in the same zone. While
+          adding the clusters with different switch type, traffic labels is overridden at the
+          cluster level.</para>
+      </listitem>
+      <listitem>
         <para>Management and Storage network does not support VDS. Therefore, use Standard Switch
           for these networks.</para>
       </listitem>
+      <listitem>
+        <para>When you remove a guest network, the corresponding dvportgroup will not be removed on
+          the vCenter. You must manually delete them on the vCenter.</para>
+      </listitem>
     </itemizedlist>
+  </section>
+  <section id="preconfig-checklist-vds">
+    <title>Preparation Checklist</title>
+    <para>For a smoother configuration of VMware VDS, note down the VDS name you have added in the
+      datacenter before you start:</para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/vds-name.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>vds-name.png: Name of the dvSwitch as specified in the vCenter.</phrase>
+      </textobject>
+    </mediaobject>
+    <para>Use this VDS name when you specify the switch name in the traffic label while creating the
+      zone. Traffic label format is [["Name of vSwitch/dvSwitch/EthernetPortProfile"][,"VLAN
+      ID"[,"vSwitch Type"]]]</para>
+    <para>The possible values for traffic labels are:</para>
+    <itemizedlist>
+      <listitem><para>empty string</para></listitem>
+      <listitem><para>dvSwitch0</para></listitem>
+      <listitem><para> dvSwitch0,200</para></listitem>
+      <listitem><para>dvSwitch1,300,vmwaredvs</para></listitem>
+      <listitem><para>myEthernetPortProfile,,nexusdvs</para></listitem>
+      <listitem><para>dvSwitch0,,vmwaredvs</para></listitem>
+    </itemizedlist>
+    
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/traffic-label.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>traffic-label.png: Traffic label specified while zone creation.</phrase>
+      </textobject>
+    </mediaobject>
+    <informaltable frame="all">
+      <tgroup cols="3" align="left" colsep="1" rowsep="1">
+        <colspec colname="c1"/>
+        <colspec colname="c2"/>
+        <colspec colname="c3"/>
+        <thead>
+          <row>
+            <entry><para>Fields</para></entry>
+            <entry><para>Name</para></entry>
+            <entry><para>Description</para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>1</para></entry>
+            <entry><para>Represents the name of the virtual / distributed virtual switch at
+                vCenter.</para></entry>
+            <entry><para>The default value depends on the type of virtual switch:</para>
+              <para><emphasis role="bold">vSwitch0</emphasis>: If type of virtual switch is VMware
+                vNetwork Standard virtual switch </para>
+              <para><emphasis role="bold">dvSwitch0</emphasis>: If type of virtual switch is VMware
+                vNetwork Distributed virtual switch</para>
+              <para><emphasis role="bold">epp0</emphasis>: If type of virtual switch is Cisco Nexus
+                1000v Distributed virtual switch</para></entry>
+          </row>
+          <row>
+            <entry><para>2</para></entry>
+            <entry><para>VLAN ID to be used for this traffic wherever applicable.</para></entry>
+            <entry><para>This field would be used for only public traffic as of now. In case of guest traffic this
+                field would be ignored and could be left empty for guest traffic. By default empty
+                string would be assumed which translates to untagged VLAN for that specific traffic
+                type.</para></entry>
+          </row>
+          <row>
+            <entry><para>3</para></entry>
+            <entry><para>Type of virtual switch. Specified as string.</para></entry>
+            <entry><para>Possible valid values are vmwaredvs, vmwaresvs, nexusdvs. </para>
+              <para><emphasis role="bold">vmwaresvs</emphasis>: Represents VMware vNetwork Standard
+                virtual switch</para>
+              <para><emphasis role="bold">vmwaredvs</emphasis>: Represents VMware vNetwork
+                distributed virtual switch</para>
+              <para><emphasis role="bold">nexusdvs</emphasis>: Represents Cisco Nexus 1000v
+                distributed virtual switch.</para>
+              <para>If nothing specified (left empty), zone-level default virtual switch would be
+                defaulted, based on the value of global parameter you specify. </para>
+              <para>Following are the global configuration parameters:</para>
+              <para><emphasis role="bold">vmware.use.dvswitch</emphasis>: Set to true to enable any
+                kind (VMware DVS and Cisco Nexus 1000v) of distributed virtual switch in a &PRODUCT;
+                deployment. If set to false, the virtual switch that can be used in that &PRODUCT;
+                deployment is Standard virtual switch. </para>
+              <para><emphasis role="bold">vmware.use.nexus.vswitch</emphasis>: This parameter is
+                ignored if vmware.use.dvswitch is set to false. Set to true to enable Cisco Nexus
+                1000v distributed virtual switch in a &PRODUCT; deployment.</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
   <section id="enable-dvswitch">
     <title>Enabling Virtual Distributed Switch in &PRODUCT;</title>
     <para>To make a &PRODUCT; deployment VDS enabled, set the vmware.use.dvswitch parameter to true
       by using the Global Settings page in the &PRODUCT; UI and restart the Management Server.
       Unless you enable the vmware.use.dvswitch parameter, you cannot see any UI options specific to
-      VDS, and &PRODUCT; ignores the VDS-specific parameters given in the AddClusterCmd API call.
-      Additionally, &PRODUCT; uses VDS for virtual network infrastructure if the value of
-      vmware.use.dvswitch parameter is true and the value of vmware.use.nexus.dvswitch parameter is
-      false.</para>
+      VDS, and &PRODUCT; ignores the VDS-specific parameters that you specify. Additionally,
+      &PRODUCT; uses VDS for virtual network infrastructure if the value of vmware.use.dvswitch
+      parameter is true and the value of vmware.use.nexus.dvswitch parameter is false. Another
+      global parameter that defines VDS configuration is vmware.ports.per.dvportgroup. This is the
+      default number of ports per VMware dvPortGroup in a VMware environment. Default value is 256.
+      This number directly associated with the number of guest network you can create.</para>
     <para>&PRODUCT; supports orchestration of virtual networks in a deployment with a mix of Virtual
       Distributed Switch, Standard Virtual Switch and Nexus 1000v Virtual Switch. </para>
   </section>
@@ -97,12 +197,12 @@
           <row>
             <entry><para>Cluster Name</para></entry>
             <entry><para>Enter the name of the cluster you created in vCenter. For example,
-                &quot;cloud.cluster&quot;.</para></entry>
+                &quot;cloudcluster&quot;.</para></entry>
           </row>
           <row>
             <entry><para>vCenter Host</para></entry>
-            <entry><para>Enter the name or the IP address of the vCenter host where you have deployed the VMware
-                VDS.</para></entry>
+            <entry><para>Enter the name or the IP address of the vCenter host where you have
+                deployed the VMware VDS.</para></entry>
           </row>
           <row>
             <entry><para>vCenter User name</para></entry>
@@ -116,7 +216,7 @@
           <row>
             <entry><para>vCenter Datacenter</para></entry>
             <entry><para>Enter the vCenter datacenter that the cluster is in. For example,
-                &quot;cloud.dc.VM&quot;.</para></entry>
+                &quot;clouddcVM&quot;.</para></entry>
           </row>
           <row>
             <entry><para>Override Public Traffic</para></entry>
@@ -153,41 +253,5 @@
         </tbody>
       </tgroup>
     </informaltable>
-  </section>
-  <section id="vmware-dvswitch-remove">
-    <title>Removing VMware Virtual Switch</title>
-    <orderedlist>
-      <listitem>
-        <para>In the vCenter datacenter that is served by the VDS, ensure that you delete all the
-          hosts in the corresponding cluster.</para>
-      </listitem>
-      <listitem>
-        <para>Log in with Admin permissions to the &PRODUCT; administrator UI.</para>
-      </listitem>
-      <listitem>
-        <para>In the left navigation bar, select Infrastructure.</para>
-      </listitem>
-      <listitem>
-        <para>In the Infrastructure page, click View all under Clusters.</para>
-      </listitem>
-      <listitem>
-        <para>Select the cluster where you want to remove the virtual switch.</para>
-      </listitem>
-      <listitem>
-        <para>In the VMware dvSwitch tab, click the name of the virtual switch.</para>
-      </listitem>
-      <listitem>
-        <para> In the Details page, click Delete VMware dvSwitch icon. <inlinemediaobject>
-            <imageobject>
-              <imagedata fileref="./images/delete-button.png"/>
-            </imageobject>
-            <textobject>
-              <phrase>DeleteButton.png: button to delete dvSwitch</phrase>
-            </textobject>
-          </inlinemediaobject>
-        </para>
-        <para>Click Yes in the confirmation dialog box.</para>
-      </listitem>
-    </orderedlist>
   </section>
 </section>

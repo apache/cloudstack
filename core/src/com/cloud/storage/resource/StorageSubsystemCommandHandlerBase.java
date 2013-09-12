@@ -39,7 +39,7 @@ import com.cloud.storage.Volume;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
     private static final Logger s_logger = Logger.getLogger(StorageSubsystemCommandHandlerBase.class);
-    private StorageProcessor processor;
+    protected StorageProcessor processor;
     public StorageSubsystemCommandHandlerBase(StorageProcessor processor) {
         this.processor = processor;
     }

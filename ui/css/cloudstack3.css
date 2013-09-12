@@ -124,7 +124,7 @@ table thead th.sorted.asc {
 
 table tbody td,
 table th {
-  padding: 9px 5px 8px 0px;
+  padding: 9px 5px 4px 5px;
   border-right: 1px solid #BFBFBF;
   color: #495A76;
   clear: none;
@@ -3645,7 +3645,7 @@ Dialogs*/
   display: block;
   cursor: pointer;
   float: left;
-  width: 82px;
+  width: 110px;
   height: 31px;
   border: none;
   background: url(../images/gradients.png) -2px -481px;
@@ -5434,7 +5434,7 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .progress ul li span {
-  left: 36px;
+  left: 26px;
 }
 
 .multi-wizard .progress ul li span.multiline {
@@ -5478,7 +5478,7 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .progress ul li span.number {
-  left: 16px;
+  left: 8px;
 }
 
 .multi-wizard.instance-wizard .progress ul li span.multiline {
@@ -6493,12 +6493,12 @@ label.error {
   width: 100%;
   font-size: 18px;
   color: #2C4159;
-  background: url(../images/icons.png) no-repeat 104px -224px;
-  padding: 2px 0 1px;
+  background: url(../images/icons.png) no-repeat 74px -224px;
+  padding: 6px 0 1px;
   text-align: center;
   /*+placement:shift 0px 153px;*/
   position: relative;
-  left: 0px;
+  left: -10px;
   top: 153px;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
@@ -6634,7 +6634,7 @@ label.error {
 
 .multi-wizard.zone-wizard .select-network-model .select-area .desc {
   width: 373px;
-  height: 62px;
+  height: 70px;
   color: #727272;
   background: #EFEFEF;
   padding: 12px 18px 25px;
@@ -6662,7 +6662,7 @@ label.error {
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area {
   width: 586px;
-  height: 31px;
+  height: 61px;
   overflow: hidden;
   margin: 0;
   padding: 0px 0 9px;
@@ -6679,14 +6679,14 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area input {
-  margin: 24px 8px 0 36px !important;
+  margin: 24px 8px 0 12px !important;
   padding: 0 !important;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area .desc {
   padding: 6px 7px 11px;
   width: 388px;
-  height: 9px;
+  height: 29px;
   font-size: 11px;
   margin-right: 9px;
   background: #EFEFEF;
@@ -7743,7 +7743,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   text-shadow: 0px 1px #FFFFFF;
 }
 
-.multi-edit .disabled .button.add-vm .button.custom-action {
+.multi-edit td.disabled .button.add-vm.custom-action {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
@@ -8763,7 +8763,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .system-dashboard.zone .status_box li .icon {
   background: url(../images/infrastructure-icons.png) no-repeat 0px 0px;
-  padding: 65px 65px 5px;
+  padding: 65px 80px 5px;
   /*+placement:shift 25px 19px;*/
   position: relative;
   left: 25px;
@@ -9866,7 +9866,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   color: #838181;
   /*+placement:shift 488px 9px;*/
   position: relative;
-  left: 488px;
+  left: 480px;
   top: 9px;
   margin: 19px 0 0 40px;
 }
@@ -11822,12 +11822,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .stop .icon,
-.removeVmwareDc .icon {
+.removeVmwareDc .icon,
+.release .icon {
   background-position: 0px -31px;
 }
 
 .stop:hover .icon,
-.removeVmwareDc:hover .icon {
+.removeVmwareDc:hover .icon,
+.release:hover .icon {
   background-position: 0px -613px;
 }
 

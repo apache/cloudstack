@@ -18,6 +18,7 @@ package com.cloud.template;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -48,10 +49,13 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.org.Grouping;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
@@ -80,6 +84,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Inject VMTemplateZoneDao templateZoneDao;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    DataCenterDao _dcDao;
 
     @Override
     public String getName() {
@@ -180,13 +186,34 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if ( imageStores == null || imageStores.size() == 0 ){
             throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
         }
+
+        Collections.shuffle(imageStores);// For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
+            // skip data stores for a disabled zone
+            Long zoneId = imageStore.getScope().getScopeId();
+            if (zoneId != null) {
+                DataCenterVO zone = _dcDao.findById(zoneId);
+                if (zone == null) {
+                    s_logger.warn("Unable to find zone by id " + zoneId + ", so skip downloading template to its image store " + imageStore.getId());
+                    continue;
+                }
+
+                // Check if zone is disabled
+                if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+                    s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
+                    continue;
+                }
+            }
+
             TemplateInfo tmpl = this.imageFactory.getTemplate(template.getId(), imageStore);
             CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
             AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
             this.imageService.createTemplateAsync(tmpl, imageStore, caller);
+            if( !(profile.getIsPublic() || profile.getFeatured()) ){  // If private template then break
+                break;
+            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 
@@ -323,15 +350,19 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
         if (success) {
-            s_logger.info("Delete template from template table");
-            // remove template from vm_templates table
-            if (_tmpltDao.remove(template.getId())) {
-                // Decrement the number of templates and total secondary storage
-                // space used by the account
-                Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
-                _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
-                _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(),
-                        ResourceType.secondary_storage.getOrdinal());
+
+            // find all eligible image stores for this template
+            List<DataStore> iStores = this.templateMgr.getImageStoreByTemplate(template.getId(), null);
+            if (iStores == null || iStores.size() == 0) {
+                // remove template from vm_templates table
+                if (_tmpltDao.remove(template.getId())) {
+                    // Decrement the number of templates and total secondary storage
+                    // space used by the account
+                    Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
+                    _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
+                    _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(),
+                            ResourceType.secondary_storage.getOrdinal());
+                }
             }
         }
         return success;

@@ -314,7 +314,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw e;
             }
         } finally {
-            s_accessLogger.info(StringUtils.cleanString(sb.toString()));
+            s_accessLogger.info(sb.toString());
             UserContext.unregisterContext();
         }
     }

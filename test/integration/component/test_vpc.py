@@ -1652,8 +1652,9 @@ class TestVPC(cloudstackTestCase):
         if self.zone.domain == None:
             cmd = updateZone.updateZoneCmd()
             cmd.id = self.zone.id
-            cmd.domain = "ROOT"
+            cmd.domain = "test.domain.org"
             self.apiclient.updateZone(cmd)
+            self.zone = Zone.list(self.apiclient, id=self.zone.id)[0]
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %

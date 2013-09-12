@@ -167,7 +167,7 @@ public class TemplateObject implements TemplateInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }
@@ -198,10 +198,19 @@ public class TemplateObject implements TemplateInfo {
                     templateStoreRef.setDownloadPercent(100);
                     templateStoreRef.setDownloadState(Status.DOWNLOADED);
                     templateStoreRef.setSize(newTemplate.getSize());
+                    if (newTemplate.getPhysicalSize() != null) {
+                        templateStoreRef.setPhysicalSize(newTemplate.getPhysicalSize());
+                    }
                     templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
                     if (this.getDataStore().getRole() == DataStoreRole.Image) {
                         VMTemplateVO templateVO = this.imageDao.findById(this.getId());
-                        templateVO.setFormat(newTemplate.getFormat());
+                        if (newTemplate.getFormat() != null) {
+                            templateVO.setFormat(newTemplate.getFormat());
+                        }
+                        if (newTemplate.getName() != null ){
+                            // For template created from snapshot, template name is determine by resource code.
+                            templateVO.setUniqueName(newTemplate.getName());
+                        }
                         templateVO.setSize(newTemplate.getSize());
                         this.imageDao.update(templateVO.getId(), templateVO);
                     }
@@ -218,7 +227,7 @@ public class TemplateObject implements TemplateInfo {
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.delete(this);
+                objectInStoreMgr.deleteIfNotReady(this);
             }
         }
     }

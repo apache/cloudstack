@@ -590,19 +590,19 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
                             s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
+                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
                             throw ce;
                         } else {
                             s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true);
+                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true);
+                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
+                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
@@ -616,7 +616,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             // this is tricky part for secondary storage
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
-            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
+            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
         }
 
         agentStatusTransitTo(host, Event.Ready, _nodeId);
@@ -815,7 +815,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
-    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event, boolean transitState) {
+    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event, boolean transitState, boolean removeAgent) {
         long hostId = attache.getId();
 
         s_logger.info("Host " + hostId + " is disconnecting with event " + event);
@@ -850,9 +850,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
         }
 
-        //remove the attache
         removeAgent(attache, nextStatus);
-
         //update the DB
         if (host != null && transitState) {
             disconnectAgent(host, event, _nodeId);
@@ -930,7 +928,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
 
-        handleDisconnectWithoutInvestigation(attache, event, true);
+        handleDisconnectWithoutInvestigation(attache, event, true, true);
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host, true);
@@ -956,7 +954,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (_investigate == true) {
                     handleDisconnectWithInvestigation(_attache, _event);
                 } else {
-                    handleDisconnectWithoutInvestigation(_attache, _event, true);
+                    handleDisconnectWithoutInvestigation(_attache, _event, true, false);
                 }
             } catch (final Exception e) {
                 s_logger.error("Exception caught while handling disconnect: ", e);
@@ -1051,7 +1049,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             AgentAttache attache = null;
             attache = findAttache(hostId);
             if (attache != null) {
-                handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
+                handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
             }
             return true;
         } else if (event == Event.ShutdownRequested) {

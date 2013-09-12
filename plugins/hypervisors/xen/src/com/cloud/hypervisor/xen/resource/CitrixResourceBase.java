@@ -16,92 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import com.google.gson.Gson;
-
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import com.cloud.agent.api.to.DhcpTO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.PIF.Record;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadAsyncResult;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.ConsoleProtocol;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.OperationNotAllowed;
-import com.xensource.xenapi.Types.SrFull;
-import com.xensource.xenapi.Types.VbdType;
-import com.xensource.xenapi.Types.VmBadPowerState;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
-import com.xensource.xenapi.XenAPIObject;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -142,6 +56,8 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmDiskStatsAnswer;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -242,6 +158,7 @@ import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -299,6 +216,83 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.google.gson.Gson;
+import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Bond;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Console;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostCpu;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.PIF.Record;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadAsyncResult;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.ConsoleProtocol;
+import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.OperationNotAllowed;
+import com.xensource.xenapi.Types.SrFull;
+import com.xensource.xenapi.Types.VbdType;
+import com.xensource.xenapi.Types.VmBadPowerState;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VBDMetrics;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
+import com.xensource.xenapi.XenAPIObject;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -497,6 +491,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetHostStatsCommand) cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return execute((GetVmStatsCommand) cmd);
+        } else if (clazz == GetVmDiskStatsCommand.class) {
+            return execute((GetVmDiskStatsCommand) cmd);
         } else if (clazz == CheckHealthCommand.class) {
             return execute((CheckHealthCommand) cmd);
         } else if (clazz == StopCommand.class) {
@@ -661,14 +657,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // weight based allocation
 
-            cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
+            cpuWeight = (int)((speed * 0.99) / _host.speed * _maxWeight);
             if (cpuWeight > _maxWeight) {
                 cpuWeight = _maxWeight;
             }
 
             if (vmSpec.getLimitCpuUse()) {
                 long utilization = 0; // max CPU cap, default is unlimited
-                utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
+                utilization = (int) ((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
                 //vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization)); currently xenserver doesnot support Xapi to add VCPUs params live.
                 callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName() );
             }
@@ -1207,7 +1203,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Volume.Type type = volume.getType();
 
         VDI vdi = mount(conn, vmName, volume);
-
+        if ( vdi != null ) {
+            Map<String, String> smConfig = vdi.getSmConfig(conn);
+            for (String key : smConfig.keySet()) {
+                if (key.startsWith("host_")) {
+                    vdi.removeFromSmConfig(conn, key);
+                    break;
+                }
+            }
+        }
         VBD.Record vbdr = new VBD.Record();
         vbdr.VM = vm;
         if (vdi != null) {
@@ -2295,6 +2299,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (add && correctVif == null) {
                 addVif = true;
             }
+            if (!add && correctVif == null) {
+               return; // it is a disassociateIp and it has already happened
+            }
 
             if (addVif) {
                 // Add a new VIF to DomR
@@ -2351,6 +2358,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
             }
+
+            if (!add) {
+                args += " -d";
+                String zeroIpsRes = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (zeroIpsRes == null || zeroIpsRes.isEmpty()) {
+                    //There are no ip address set on the interface. So unplug the interface
+                    // If it is not unplugged then the interface is not resuable.
+                    removeVif = true;
+                }
+            }
+
+
 
             if (removeVif) {
                 network = correctVif.getNetwork(conn);
@@ -2477,10 +2496,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             Set<VM> vms = VM.getByNameLabel(conn, cmd.getName());
             if(vms.size() == 1) {
-                int vncport = getVncPort(conn, vms.iterator().next());
                 String consoleurl;
                 consoleurl = "consoleurl=" +getVncUrl(conn, vms.iterator().next()) + "&" +"sessionref="+ conn.getSessionReference();
-                return new GetVncPortAnswer(cmd, consoleurl, vncport);
+                return new GetVncPortAnswer(cmd, consoleurl, -1);
             } else {
                 return new GetVncPortAnswer(cmd, "There are " + vms.size() + " VMs named " + cmd.getName());
             }
@@ -2744,6 +2762,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return vmResponseMap;
+    }
+
+    protected GetVmDiskStatsAnswer execute(GetVmDiskStatsCommand cmd) {
+        return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
 
     protected Object[] getRRDData(Connection conn, int flag) {
@@ -3390,47 +3412,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         return new ReadyAnswer(cmd);
-    }
-
-    //
-    // using synchronized on VM name in the caller does not prevent multiple
-    // commands being sent against
-    // the same VM, there will be a race condition here in finally clause and
-    // the main block if
-    // there are multiple requests going on
-    //
-    // Therefore, a lazy solution is to add a synchronized guard here
-    protected int getVncPort(Connection conn, VM vm) {
-        VM.Record record;
-        try {
-            record = vm.getRecord(conn);
-            Set<Console> consoles = record.consoles;
-            if (consoles.isEmpty()) {
-                s_logger.warn("There are no Consoles available to the vm : " + record.nameDescription);
-                return -1;
-            }
-            consoles.iterator();
-        } catch (XenAPIException e) {
-            String msg = "Unable to get vnc-port due to " + e.toString();
-            s_logger.warn(msg, e);
-            return -1;
-        } catch (XmlRpcException e) {
-            String msg = "Unable to get vnc-port due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            return -1;
-        }
-        String hvm = "true";
-        if (record.HVMBootPolicy.isEmpty()) {
-            hvm = "false";
-        }
-
-        String vncport = callHostPlugin(conn, "vmops", "getvncport", "domID", record.domid.toString(), "hvm", hvm, "version", _host.product_version);
-        if (vncport == null || vncport.isEmpty()) {
-            return -1;
-        }
-
-        vncport = vncport.replace("\n", "");
-        return NumbersUtil.parseInt(vncport, -1);
     }
 
     protected String getVncUrl(Connection conn, VM vm) {
@@ -6540,11 +6521,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    // for about 1 GiB of physical size, about 4 MiB seems to be used for metadata
-    private long getMetadata(long physicalSize) {
-    	return (long)(physicalSize * 0.00390625); // 1 GiB / 4 MiB = 0.00390625
-    }
-
     protected VDI handleSrAndVdiAttach(String iqn, String storageHostName,
             String chapInitiatorName, String chapInitiatorPassword) throws Types.XenAPIException, XmlRpcException, CloudRuntimeException {
         VDI vdi = null;
@@ -6564,13 +6540,31 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vdir.nameLabel = iqn;
             vdir.SR = sr;
             vdir.type = Types.VdiType.USER;
-            vdir.virtualSize = sr.getPhysicalSize(conn) - sr.getPhysicalUtilisation(conn) - getMetadata(sr.getPhysicalSize(conn));
+
+            long totalSpace = sr.getPhysicalSize(conn);
+            long unavailableSpace = sr.getPhysicalUtilisation(conn);
+
+            vdir.virtualSize = totalSpace - unavailableSpace;
 
             if (vdir.virtualSize < 0) {
-            	throw new CloudRuntimeException("VDI virtual size cannot be less than 0.");
+                throw new CloudRuntimeException("VDI virtual size cannot be less than 0.");
             }
 
-            vdi = VDI.create(conn, vdir);
+            long maxNumberOfTries = (totalSpace / unavailableSpace >= 1) ? (totalSpace / unavailableSpace) : 1;
+            long tryNumber = 0;
+
+            while (tryNumber <= maxNumberOfTries) {
+                try {
+                    vdi = VDI.create(conn, vdir);
+
+                    break;
+                }
+                catch (Exception ex) {
+                    tryNumber++;
+
+                    vdir.virtualSize -= unavailableSpace;
+                }
+            }
         }
         else {
             vdi = sr.getVDIs(conn).iterator().next();
@@ -7437,70 +7431,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, fullbackup);
     }
 
-    private static List<String> serializeProperties(final Object object,
-            final Class<?> propertySet) {
-
-        assert object != null;
-        assert propertySet != null;
-        assert propertySet.isAssignableFrom(object.getClass());
-
-        try {
-
-            final BeanInfo beanInfo = Introspector.getBeanInfo(propertySet);
-            final PropertyDescriptor[] descriptors = beanInfo
-                    .getPropertyDescriptors();
-
-            final List<String> serializedProperties = new ArrayList<String>();
-            for (final PropertyDescriptor descriptor : descriptors) {
-
-                serializedProperties.add(descriptor.getName());
-                final Object value = descriptor.getReadMethod().invoke(object);
-                serializedProperties.add(value != null ? value.toString()
-                        : "null");
-
-            }
-
-            return Collections.unmodifiableList(serializedProperties);
-
-        } catch (IntrospectionException e) {
-            s_logger.warn(
-                    "Ignored IntrospectionException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        } catch (IllegalArgumentException e) {
-            s_logger.warn(
-                    "Ignored IllegalArgumentException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        } catch (IllegalAccessException e) {
-            s_logger.warn(
-                    "Ignored IllegalAccessException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        } catch (InvocationTargetException e) {
-            s_logger.warn(
-                    "Ignored InvocationTargetException when serializing class "
-                            + object.getClass().getCanonicalName(), e);
-        }
-
-        return Collections.emptyList();
-
-    }
-
     private boolean backupSnapshotToS3(final Connection connection,
-            final S3TO s3, final String srUuid, final String snapshotUuid,
-            final Boolean iSCSIFlag, final int wait) {
+                                       final S3TO s3, final String srUuid, final String snapshotUuid,
+                                       final Boolean iSCSIFlag, final int wait) {
 
         final String filename = iSCSIFlag ? "VHD-" + snapshotUuid
                 : snapshotUuid + ".vhd";
         final String dir = (iSCSIFlag ? "/dev/VG_XenStorage-"
                 : "/var/run/sr-mount/") + srUuid;
-        final String key = StringUtils.join("/", "snapshots", snapshotUuid);
+        final String key = String.format("/snapshots/%1$s", snapshotUuid);
 
         try {
 
-            final List<String> parameters = new ArrayList<String>(
-                    serializeProperties(s3, S3Utils.ClientOptions.class));
-            parameters.addAll(Arrays.asList("operation", "put", "directory",
-                    dir, "filename", filename, "iSCSIFlag",
-                    iSCSIFlag.toString(), "key", key));
+            final List<String> parameters = newArrayList(flattenProperties(s3,
+                    S3Utils.ClientOptions.class));
+            // https workaround for Introspector bug that does not
+            // recognize Boolean accessor methods ...
+            parameters.addAll(Arrays.asList("operation", "put", "filename",
+                    dir + "/" + filename, "iSCSIFlag", iSCSIFlag.toString(),
+                    "bucket", s3.getBucketName(), "key", key, "https",
+                    s3.isHttps() != null ? s3.isHttps().toString()
+                            : "null"));
             final String result = callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));

@@ -19,8 +19,11 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
@@ -97,7 +100,6 @@ import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.service.dao.ServiceOfferingDetailsDaoImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
-import com.cloud.storage.dao.S3DaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
@@ -148,7 +150,6 @@ import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
         DcDetailsDaoImpl.class,
         NicSecondaryIpDaoImpl.class,
         UserIpv6AddressDaoImpl.class,
-        S3DaoImpl.class,
         UserDaoImpl.class,
         NicDaoImpl.class,
         NetworkDomainDaoImpl.class,
@@ -353,6 +354,16 @@ public class ChildTestConfiguration {
     @Bean
     public DataStoreManager dataStoreManager() {
         return Mockito.mock(DataStoreManager.class);
+    }
+
+    @Bean
+    public AffinityGroupDao affinityGroupDao() {
+        return Mockito.mock(AffinityGroupDao.class);
+    }
+
+    @Bean
+    public AffinityGroupService affinityGroupService() {
+        return Mockito.mock(AffinityGroupService.class);
     }
 
     public static class Library implements TypeFilter {

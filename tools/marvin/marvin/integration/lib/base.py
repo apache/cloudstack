@@ -269,7 +269,7 @@ class VirtualMachine:
                 cmd.securitygroupids = [basic_mode_security_group.id]
 
     @classmethod
-    def access_ssh_over_nat(cls, apiclient, services, virtual_machine):
+    def access_ssh_over_nat(cls, apiclient, services, virtual_machine, allow_egress=False):
         """
         Program NAT and PF rules to open up ssh access to deployed guest
         @return:
@@ -295,6 +295,13 @@ class VirtualMachine:
             services=services,
             ipaddressid=public_ip.ipaddress.id
         )
+        if allow_egress:
+            EgressFireWallRule.create(
+                apiclient=apiclient,
+                networkid=virtual_machine.nic[0].networkid,
+                protocol='All',
+                cidrlist='0.0.0.0/0'
+            )
         virtual_machine.ssh_ip = nat_rule.ipaddress
         virtual_machine.public_ip = nat_rule.ipaddress
 
@@ -337,8 +344,16 @@ class VirtualMachine:
 
         if networkids:
             cmd.networkids = networkids
+            allow_egress = False
         elif "networkids" in services:
             cmd.networkids = services["networkids"]
+            allow_egress = False
+        else:
+            # When no networkids are passed, network
+            # is created using the "defaultOfferingWithSourceNAT"
+            # which has an egress policy of DENY. But guests in tests
+            # need access to test network connectivity
+            allow_egress = True
 
         if templateid:
             cmd.templateid = templateid
@@ -394,7 +409,7 @@ class VirtualMachine:
 
         #program ssh access over NAT via PF
         if mode.lower() == 'advanced':
-            cls.access_ssh_over_nat(apiclient, services, virtual_machine)
+            cls.access_ssh_over_nat(apiclient, services, virtual_machine, allow_egress=allow_egress)
         elif mode.lower() == 'basic':
             virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
             virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
@@ -555,8 +570,8 @@ class VirtualMachine:
             response = apiclient.resetPasswordForVirtualMachine(cmd)
         except Exception as e:
             raise Exception("Reset Password failed! - %s" % e)
-        if isinstance(response, list):
-            return response[0].password
+        if response is not None:
+            return response.password
 
     def assign_virtual_machine(self, apiclient, account, domainid):
         """Move a user VM to another user under same domain."""
@@ -570,6 +585,20 @@ class VirtualMachine:
             return response
         except Exception as e:
             raise Exception("assignVirtualMachine failed - %s" %e)
+
+    def update_affinity_group(self, apiclient, affinitygroupids=None,
+                              affinitygroupnames=None):
+        """Update affinity group of a VM"""
+        cmd = updateVMAffinityGroup.updateVMAffinityGroupCmd()
+        cmd.id = self.id
+
+        if affinitygroupids:
+            cmd.affinitygroupids = affinitygroupids
+
+        if affinitygroupnames:
+            cmd.affinitygroupnames = affinitygroupnames
+
+        return apiclient.updateVMAffinityGroup(cmd)
 
 
 class Volume:
@@ -1073,8 +1102,8 @@ class PublicIPAddress:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, accountid=None, zoneid=None, domainid=None,
-               isportable=None, services=None, networkid=None, projectid=None, vpcid=None):
+    def create(cls, apiclient, accountid=None, zoneid=None, domainid=None, services=None,
+               networkid=None, projectid=None, vpcid=None, isportable=False):
         """Associate Public IP address"""
         cmd = associateIpAddress.associateIpAddressCmd()
 
@@ -1244,6 +1273,45 @@ class StaticNATRule:
         cmd.ipaddressid = ipaddressid
         apiclient.disableStaticNat(cmd)
         return
+
+
+class EgressFireWallRule:
+    """Manage Egress Firewall rule"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, networkid, protocol, cidrlist=None,
+               startport=None, endport=None):
+        """Create Egress Firewall Rule"""
+        cmd = createEgressFirewallRule.createEgressFirewallRuleCmd()
+        cmd.networkid = networkid
+        cmd.protocol = protocol
+        if cidrlist:
+            cmd.cidrlist = cidrlist
+        if startport:
+            cmd.startport = startport
+        if endport:
+            cmd.endport = endport
+
+        return EgressFireWallRule(apiclient.createEgressFirewallRule(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Egress Firewall rule"""
+        cmd = deleteEgressFirewallRule.deleteEgressFirewallRuleCmd()
+        cmd.id = self.id
+        apiclient.deleteEgressFirewallRule(cmd)
+        return
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all Egress Firewall Rules matching criteria"""
+
+        cmd = listEgressFirewallRules.listEgressFirewallRulesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listEgressFirewallRules(cmd))
+
 
 
 class FireWallRule:
@@ -2291,28 +2359,74 @@ class PortablePublicIpRange:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listPortableIpRanges(cmd))
 
-class SecondaryStorage:
-    """Manage Secondary storage"""
+class SecondaryStagingStore:
+    """Manage Staging Store"""
 
     def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services):
-        """Create Secondary Storage"""
-        cmd = addSecondaryStorage.addSecondaryStorageCmd()
+    def create(cls, apiclient, url, provider, services=None):
+        """Create Staging Storage"""
+        cmd = createSecondaryStagingStore.createSecondaryStagingStoreCmd()
+        cmd.url = url
+        cmd.provider = provider
+        if services:
+            if "zoneid" in services:
+                cmd.zoneid = services["zoneid"]
+            if "details" in services:
+                cmd.details = services["details"]
+            if "scope" in services:
+                cmd.scope = services["scope"]
 
-        cmd.url = services["url"]
-        if "zoneid" in services:
-            cmd.zoneid = services["zoneid"]
-        return SecondaryStorage(apiclient.addSecondaryStorage(cmd).__dict__)
+        return SecondaryStagingStore(apiclient.createSecondaryStagingStore(cmd).__dict__)
 
     def delete(self, apiclient):
-        """Delete Secondary Storage"""
-
-        cmd = deleteHost.deleteHostCmd()
+        """Delete Staging Storage"""
+        cmd = deleteSecondaryStagingStore.deleteSecondaryStagingStoreCmd()
         cmd.id = self.id
-        apiclient.deleteHost(cmd)
+        apiclient.deleteSecondaryStagingStore(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listSecondaryStagingStores.listSecondaryStagingStoresCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listSecondaryStagingStores(cmd))
+
+
+class ImageStore:
+    """Manage image stores"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, url, provider, services=None):
+        """Add Image Store"""
+        cmd = addImageStore.addImageStoreCmd()
+        cmd.url = url
+        cmd.provider = provider
+        if services:
+            if "zoneid" in services:
+                cmd.zoneid = services["zoneid"]
+            if "details" in services:
+                cmd.details = services["details"]
+            if "scope" in services:
+                cmd.scope = services["scope"]
+
+        return ImageStore(apiclient.addImageStore(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Image Store"""
+        cmd = deleteImageStore.deleteImageStoreCmd()
+        cmd.id = self.id
+        apiclient.deleteImageStore(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listImageStores.listImageStoresCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listImageStores(cmd))
 
 
 class PhysicalNetwork:
@@ -3032,6 +3146,9 @@ class AffinityGroup:
 
 class StaticRoute:
     """Manage static route lifecycle"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+
     @classmethod
     def create(cls, apiclient, cidr, gatewayid):
         """Create static route"""

@@ -82,6 +82,29 @@ public class QCOW2Processor extends AdapterBase implements Processor {
         return info;
 	}
 
+     public Long getVirtualSize(File file) {
+         FileInputStream strm = null;
+         byte[] b = new byte[8];
+         try {
+             strm = new FileInputStream(file);
+             strm.skip(24);
+             strm.read(b);
+         } catch (Exception e) {
+             s_logger.warn("Unable to read qcow2 file " + file, e);
+             return null;
+         } finally {
+             if (strm != null) {
+                 try {
+                     strm.close();
+                 } catch (IOException e) {
+                 }
+             }
+         }
+
+         long templateSize = NumbersUtil.bytesToLong(b);
+         return templateSize;
+     }
+
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {

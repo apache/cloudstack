@@ -104,8 +104,7 @@ class TestImplicitPlanner(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        # Set Zones and disk offerings
-        cls.services["small"]["zoneid"] = cls.zone.id
+        # Set template id
         cls.services["small"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
@@ -153,6 +152,45 @@ class TestImplicitPlanner(cloudstackTestCase):
         # 1. Deploy a vm using implicit planner. It should go on to a
         #    host that is empty (not running vms of any other account)
         # 2. Deploy another vm it should get deployed on the same host.
+
+        # list and find an empty host
+        all_hosts = list_hosts(
+                           self.apiclient,
+                           type='Routing',
+                           )
+
+        empty_host = None
+        for host in all_hosts:
+            vms_on_host = list_virtual_machines(
+                                                self.api_client,
+                                                hostid=host.id,
+                                                listall=True)
+
+            # If no user vms on host, then further check for any System vms running
+            if vms_on_host is None:
+                ssvms_on_host = list_ssvms(
+                                           self.api_client,
+                                           hostid=host.id,
+                                           listall=True)
+
+                # If no ssvms running on host, then further check for routers
+                if ssvms_on_host is None:
+                    routers_on_host = list_routers(
+                                                   self.api_client,
+                                                   hostid=host.id,
+                                                   listall=True)
+
+                    # If no routers are running on host, then this host can be considered
+                    # as empty for implicit dedication
+
+                    if routers_on_host is None:
+                        empty_host = host
+                        self.services["small"]["zoneid"] = host.zoneid
+                        break
+
+        #If no empty host is found, return
+        if empty_host is None:
+           self.skipTest("Did not find any empty hosts, Skipping")
 
         #create a virtual machine
         virtual_machine_1 = VirtualMachine.create(

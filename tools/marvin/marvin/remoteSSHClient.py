@@ -24,7 +24,7 @@ from contextlib import closing
 
 
 class remoteSSHClient(object):
-    def __init__(self, host, port, user, passwd, retries=10, delay=5,
+    def __init__(self, host, port, user, passwd, retries=10, delay=30,
                  log_lvl=logging.INFO, keyPairFileLocation=None):
         self.host = host
         self.port = port
@@ -39,7 +39,7 @@ class remoteSSHClient(object):
         self.logger.addHandler(ch)
 
         retry_count = retries
-        while True:
+        while retry_count >= 0:
             try:
                 if keyPairFileLocation is None:
                     self.ssh.connect(str(host), int(port), user, passwd)
@@ -57,19 +57,20 @@ class remoteSSHClient(object):
                         (str(host), user, keyPairFileLocation))
                     self.logger.debug("SSH connect: %s@%s with passwd %s" %
                                       (user, str(host), passwd))
-            except paramiko.SSHException, sshex:
+            #except paramiko.AuthenticationException, authEx:
+            #    raise cloudstackException. \
+            #        InvalidParameterException("Invalid credentials to "
+            #                                  + "login to %s on port %s" %
+            #                                  (str(host), port))
+            except Exception as se:
                 if retry_count == 0:
                     raise cloudstackException. \
-                        InvalidParameterException(repr(sshex))
-                retry_count = retry_count - 1
-                time.sleep(delay)
-            except paramiko.AuthenticationException, authEx:
-                raise cloudstackException. \
-                    InvalidParameterException("Invalid credentials to "
-                                              + "login to %s on port %s" %
-                                              (str(host), port))
+                        InvalidParameterException(repr(se))
             else:
                 return
+
+            retry_count = retry_count - 1
+            time.sleep(delay)
 
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)

@@ -49,4 +49,24 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(expected, ifDef.toString());
     }
 
+    public void testCpuModeDef(){
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem");
+
+        String expected1 = "<cpu mode='custom' match='exact'><model fallback='allow'>Nehalem</model></cpu>";
+
+        assertEquals(expected1, cpuModeDef.toString());
+
+        cpuModeDef.setMode("host-model");
+        String expected2 = "<cpu mode='host-model'><model fallback='allow'></model></cpu>";
+
+        assertEquals(expected2, cpuModeDef.toString());
+
+        cpuModeDef.setMode("host-passthrough");
+        String expected3 = "<cpu mode='host-passthrough'></cpu>";
+        assertEquals(expected3, cpuModeDef.toString());
+
+    }
+
 }

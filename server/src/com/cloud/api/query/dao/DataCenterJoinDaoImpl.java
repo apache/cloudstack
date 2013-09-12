@@ -94,6 +94,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setZoneToken(dataCenter.getZoneToken());
         zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
+        zoneResponse.setAffinityGroupId(dataCenter.getAffinityGroupUuid());
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }

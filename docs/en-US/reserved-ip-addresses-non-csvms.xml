@@ -28,8 +28,8 @@
     of the IP address space that is primarily provided to the guest network.</para>
   <para>In an Advanced zone, an IP address range or a CIDR is assigned to a network when the network
     is defined. The &PRODUCT; virtual router acts as the DHCP server and uses CIDR for assigning IP
-    addresses to the guest VMs. If you decide to reserve IP ranges for non-&PRODUCT; purposes, you
-    can specify a part of the IP address range or the CIDR that should only be allocated by the DHCP
+    addresses to the guest VMs. If you decide to reserve CIDR for non-&PRODUCT; purposes, you can
+    specify a part of the IP address range or the CIDR that should only be allocated by the DHCP
     service of the virtual router to the guest VMs created in &PRODUCT;. The remaining IPs in that
     network are called Reserved IP Range. When IP reservation is configured, the administrator can
     add additional VMs or physical servers that are not part of &PRODUCT; to the same network and
@@ -39,6 +39,9 @@
     <title>IP Reservation Considerations</title>
     <para>Consider the following before you reserve an IP range for non-&PRODUCT; machines:</para>
     <itemizedlist>
+      <listitem>
+        <para>IP Reservation is supported only in Isolated networks.</para>
+      </listitem>
       <listitem>
         <para>IP Reservation can be applied only when the network is in Implemented state.</para>
       </listitem>

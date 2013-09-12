@@ -25,11 +25,10 @@ package com.cloud.baremetal.networkservice;
 import java.util.List;
 
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
-import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
+import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.host.Host;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
@@ -47,7 +46,7 @@ public interface BaremetalPxeService extends Adapter {
 	
     BaremetalPxeResponse getApiResponse(BaremetalPxeVO vo);
 	
-	List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxePingServersCmd cmd);
+	List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
 	
 	String getPxeServiceType();
 	

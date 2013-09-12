@@ -25,7 +25,9 @@
 <section id="best-practices-primary-storage">
         <title>Best Practices for Primary Storage</title>
         <itemizedlist>
-            <listitem><para>The speed of primary storage will impact guest performance. If possible, choose smaller, higher RPM drives for primary storage.</para></listitem>
-            <listitem><para>Ensure that nothing is stored on the server. Adding the server to &PRODUCT; will destroy any existing data</para></listitem>            
+            <listitem><para>The speed of primary storage will impact guest performance. If possible, choose smaller, higher RPM drives or SSDs for primary storage.</para></listitem>
+            <listitem><para>There are two ways CloudStack can leverage primary storage:</para>
+            <para>Static: This is CloudStack's traditional way of handling storage. In this model, a preallocated amount of storage (ex. a volume from a SAN) is given to CloudStack. CloudStack then permits many of its volumes to be created on this storage (can be root and/or data disks). If using this technique, ensure that nothing is stored on the storage. Adding the storage to &PRODUCT; will destroy any existing data.</para>
+            <para>Dynamic: This is a newer way for CloudStack to manage storage. In this model, a storage system (rather than a preallocated amount of storage) is given to CloudStack. CloudStack, working in concert with a storage plug-in, dynamically creates volumes on the storage system and each volume on the storage system maps to a single CloudStack volume. This is highly useful for features such as storage Quality of Service. Currently this feature is supported for data disks (Disk Offerings).</para></listitem>
         </itemizedlist>
     </section>

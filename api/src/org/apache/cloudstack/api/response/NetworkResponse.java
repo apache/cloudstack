@@ -76,6 +76,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName("networkofferingdisplaytext") @Param(description="display text of the network offering the network is created from")
     private String networkOfferingDisplayText;
 
+    @SerializedName("networkofferingconservemode") @Param(description="true if network offering is ip conserve mode enabled")
+    private Boolean networkOfferingConserveMode;
+    
     @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
     private String networkOfferingAvailability;
 
@@ -247,7 +250,11 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setNetworkOfferingDisplayText(String networkOfferingDisplayText) {
         this.networkOfferingDisplayText = networkOfferingDisplayText;
     }
-
+    
+    public void setNetworkOfferingConserveMode(Boolean networkOfferingConserveMode) {
+        this.networkOfferingConserveMode = networkOfferingConserveMode;
+    }
+        
     public void setDisplaytext(String displaytext) {
         this.displaytext = displaytext;
     }

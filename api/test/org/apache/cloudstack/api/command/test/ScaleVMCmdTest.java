@@ -24,16 +24,12 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-import static org.mockito.Matchers.anyInt;
-
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,6 +41,7 @@ public class ScaleVMCmdTest extends TestCase{
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
 

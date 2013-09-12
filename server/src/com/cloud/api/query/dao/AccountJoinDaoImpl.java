@@ -173,9 +173,9 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         String vpcLimitDisplay = (accountIsAdmin || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit);
         long vpcTotal = (account.getVpcTotal() == null) ? 0 : account.getVpcTotal();
         String vpcAvail = (accountIsAdmin || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit - vpcTotal);
-        response.setNetworkLimit(vpcLimitDisplay);
-        response.setNetworkTotal(vpcTotal);
-        response.setNetworkAvailable(vpcAvail);
+        response.setVpcLimit(vpcLimitDisplay);
+        response.setVpcTotal(vpcTotal);
+        response.setVpcAvailable(vpcAvail);
 
         //get resource limits for cpu cores
         long cpuLimit = ApiDBUtils.findCorrectResourceLimit(account.getCpuLimit(), account.getType(), ResourceType.cpu);

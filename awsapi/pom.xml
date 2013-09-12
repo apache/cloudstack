@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.2.0</version>
   </parent>
   <dependencies>
     <dependency>
@@ -68,6 +68,16 @@
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>${cs.log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-syslog-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-snmp-alerts</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.neethi</groupId>

@@ -47,6 +47,7 @@
   <xi:include href="detach-move-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="vm-storage-migration.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="resizing-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="reset-volume-on-reboot.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="volume-deletion-garbage-collection.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

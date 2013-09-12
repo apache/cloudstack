@@ -16,4 +16,4 @@
 # under the License.
 
 
-configureSimulator=com.cloud.api.commands.ConfigureSimulator;1
+configureSimulator=com.cloud.api.commands.ConfigureSimulatorCmd;1

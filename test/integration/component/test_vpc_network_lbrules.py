@@ -43,6 +43,7 @@ from marvin.integration.lib.common import (get_domain,
                                         cleanup_resources,
                                         list_routers)
 import socket
+import time
 
 class Services:
     """Test VPC network services Load Balancing Rules Test data
@@ -126,10 +127,10 @@ class Services:
                                     "alg": "leastconn",
                                     # Algorithm used for load balancing
                                     "privateport": 22,
-                                    "publicport": 2222,
+                                    "publicport": 22,
                                     "openfirewall": False,
                                     "startport": 22,
-                                    "endport": 2222,
+                                    "endport": 22,
                                     "protocol": "TCP",
                                     "cidrlist": '0.0.0.0/0',
                                 },
@@ -138,10 +139,10 @@ class Services:
                                     "alg": "leastconn",
                                     # Algorithm used for load balancing
                                     "privateport": 80,
-                                    "publicport": 8888,
+                                    "publicport": 80,
                                     "openfirewall": False,
                                     "startport": 80,
-                                    "endport": 8888,
+                                    "endport": 80,
                                     "protocol": "TCP",
                                     "cidrlist": '0.0.0.0/0',
                                 },
@@ -338,14 +339,14 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         try:
             urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
             if not testnegative:
-                self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                self.debug("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
             else:
-                self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
-        except:
+                self.fail("Successful to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+        except Exception, e:
             if not testnegative:
-                self.fail("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                self.fail("Failed to wget from VM=%s http server on public_ip=%s because of %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
             else:
-                self.debug("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                self.debug("Failed to wget from VM=%s http server on public_ip=%s because of %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
 
     def create_StaticNatRule_For_VM(self, vm, public_ip, network):
         self.debug("Enabling static NAT for IP: %s" %
@@ -488,6 +489,14 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                 )
         self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray[0], vmarray[1]))
         lb_rule.assign(self.apiclient, vmarray)
+
+        self.debug("Adding NetworkACl rules to make NAT rule accessible")
+        nwacl_nat = NetworkACL.create(self.apiclient,
+                                    objservices,
+                                    networkid=network.id,
+                                    traffictype='Ingress'
+                                    )
+        self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return lb_rule
 
     def create_egress_Internet_Rule(self, network):
@@ -514,8 +523,9 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 5. Deploy vm1 and vm2 in network1.
         # 6. Deploy vm3 and vm4 in network2.
         # 7. Use the Create LB rule for vm1 and vm2 in network1.
-        # 8. Use the Create LB rule for vm3 amd vm4 in network2.
-        # 11. List LB rule
+        # 8. Use the Create LB rule for vm3 amd vm4 in network2, should fail
+        # because it's no_lb offering
+        # 9. List LB rule
 
         network_1 = self.create_Network(self.services["network_offering"])
         network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -525,54 +535,13 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_3 = self.create_VM_in_Network(network_2)
         vm_4 = self.create_VM_in_Network(network_2)
         public_ip_1 = self.acquire_Public_IP(network_1)
-        lb_rule1 = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2])
+        lb_rule1 = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2]) #
         public_ip_2 = self.acquire_Public_IP(network_2)
-        lb_rule2 = self.create_LB_Rule(public_ip_2, network_2, [vm_3, vm_4])
+        with self.assertRaises(Exception):
+            self.create_LB_Rule(public_ip_2, network_2, [vm_3, vm_4])
+
         lb_rules = LoadBalancerRule.list(self.apiclient,
                                         id=lb_rule1.id,
-                                        listall=True
-                                        )
-        self.failIfEqual(lb_rules,
-                        None,
-                        "Failed to list the LB Rule"
-                        )
-        lb_rules = LoadBalancerRule.list(self.apiclient,
-                                        id=lb_rule2.id,
-                                        listall=True
-                                        )
-        self.failIfEqual(lb_rules,
-                        None,
-                        "Failed to list the LB Rule"
-                        )
-        return
-
-    @attr(tags=["advanced", "intervlan"])
-    def test_02_VPC_LBRulesAndVMListing(self):
-        """ Test case no 211 and 228: List only VMs suitable for the Virtual Network on VPC for LB Rule
-        """
-
-        # Validate the following
-        # 1. Create a VPC with cidr - 10.1.1.1/16
-        # 2. Create a Network offering - NO1 with all supported services
-        # 3. Add network1(10.1.1.1/24) using N01 to this VPC.
-        # 4. Add network2(10.1.2.1/24) using N01 to this VPC.
-        # 5. Deploy vm1 and vm2 in network1 on primary host.
-        # 6. Deploy vm3 and vm4 in network2 on secondary host.
-        # 7. Use the Create LB rule for vm1 and vm2 in network1.
-        # 9. List LB rule for network1 list vms on network1 for selection of LB rule.
-
-        network_1 = self.create_Network(self.services["network_offering"])
-        network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
-        vm_1 = self.create_VM_in_Network(network_1)
-        vm_2 = self.create_VM_in_Network(network_1)
-        vm_3 = self.create_VM_in_Network(network_2)
-        self.debug('vm_3=%s' % vm_3.id)
-        vm_4 = self.create_VM_in_Network(network_2)
-        self.debug('vm_4=%s' % vm_4.id)
-        public_ip_1 = self.acquire_Public_IP(network_1)
-        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2])
-        lb_rules = LoadBalancerRule.list(self.apiclient,
-                                        id=lb_rule.id,
                                         listall=True
                                         )
         self.failIfEqual(lb_rules,
@@ -590,7 +559,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    def test_03_VPC_CreateLBRuleInMultipleNetworks(self):
+    def test_02_VPC_CreateLBRuleInMultipleNetworks(self):
         """ Test Create LB rules for 1 network which is part of a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
         """
@@ -599,17 +568,15 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 1. Create a VPC with cidr - 10.1.1.1/16
         # 2. Create a Network offering - NO1 with all supported services
         # 3. Add network1(10.1.1.1/24) using N01 to this VPC.
-        # 4. Add network2(10.1.2.1/24) using N01 to this VPC.
-        # 5. Deploy vm1, vm2 and vm3 in network1 on primary host.
-        # 7. Use the Create LB rule for vm1 and vm2 in network1.
-        # 8. Add vm3 to LB rule.
-        # 9. wget a file and check for LB rule.
+        # 4. Deploy vm1, vm2 and vm3 in network1 on primary host.
+        # 5. Use the Create LB rule for vm1 and vm2 in network1.
+        # 6. Add vm3 to LB rule.
+        # 7. wget a file and check for LB rule.
 
         network_1 = self.create_Network(self.services["network_offering"])
-        network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
         vm_1 = self.create_VM_in_Network(network_1)
         vm_2 = self.create_VM_in_Network(network_1)
-        vm_3 = self.create_VM_in_Network(network_2)
+        vm_3 = self.create_VM_in_Network(network_1)
         public_ip_1 = self.acquire_Public_IP(network_1)
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
         lb_rule.assign(self.apiclient, [vm_3])
@@ -617,7 +584,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
+    def test_03_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a 
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
         """
@@ -636,10 +603,19 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
         vm_1 = self.create_VM_in_Network(network_1)
         vm_2 = self.create_VM_in_Network(network_1)
-        vm_3 = self.create_VM_in_Network(network_2)
+        vm_3 = self.create_VM_in_Network(network_1)
+
+        # wait until VM is up before stop the VR
+        time.sleep(120)
+
+        router = self.stop_VPC_VRouter()
+
         public_ip_1 = self.acquire_Public_IP(network_1)
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
         lb_rule.assign(self.apiclient, [vm_3])
+
+        self.start_VPC_VRouter(router)
+
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         return    
 
@@ -695,10 +671,16 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_1 = self.create_VM_in_Network(network_1)
         vm_2 = self.create_VM_in_Network(network_1)
         vm_3 = self.create_VM_in_Network(network_1)
+        # wait until VM is up before stop the VR
+        time.sleep(120)
+
+        router = self.stop_VPC_VRouter()
         public_ip_1  = self.acquire_Public_IP(network_1)
         lb_rule_http = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2, vm_3], self.services["lbrule_http"])
         lb_rule_nat  = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2, vm_3])
         self.debug('lb_rule_http=%s' % lb_rule_http.__dict__)
+        self.start_VPC_VRouter(router)
+
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         lb_rule_nat.delete(self.apiclient)
@@ -799,11 +781,11 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_3 = self.create_VM_in_Network(network_2)
         vm_4 = self.create_VM_in_Network(network_2)
         public_ip_1 = self.acquire_Public_IP(network_1)
-        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2])
+        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
         self.debug('lb_rule=%s' % lb_rule.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         try:
-            lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_3, vm_4])
+            lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_3, vm_4], self.services["lbrule_http"])
             self.fail('Successfully created LB rule for vm_3, vm_4 in network1')
         except:
             self.debug('Failed to Create LB rule vm_3 and vm_4')
@@ -836,11 +818,11 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_4 = self.create_VM_in_Network(network_3)
         self.debug('vm_4=%s' % vm_4.id)
         public_ip_1 = self.acquire_Public_IP(network_1)
-        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2])
+        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
         self.debug('lb_rule=%s' % lb_rule.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         try:
-            lb_rule = self.create_LB_Rule(public_ip_1, network_2, [vm_3, vm_4])
+            lb_rule = self.create_LB_Rule(public_ip_1, network_2, [vm_3, vm_4], self.services["lbrule_http"])
             self.fail('Successfully created LB rule for vm_3, vm_4 in network2')
         except:
             self.debug('Failed to Create LB rule vm_3 and vm_4 in network2')
@@ -874,11 +856,11 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_4 = self.create_VM_in_Network(network_2)
         self.debug('vm_4=%s' % vm_4.id)
         public_ip_1 = self.acquire_Public_IP(network_1)
-        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2])
+        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
         self.debug('lb_rule=%s' % lb_rule.__dict__)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         try:
-            lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_3, vm_1])
+            lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_3, vm_1], self.services["lbrule_http"])
             self.fail('Successfully created LB rule for vm_3, vm_1 in network1')
         except:
             self.debug('Failed to Create LB rule vm_3 and vm_1')
@@ -964,7 +946,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         vm_2 = self.create_VM_in_Network(network_1)
         public_ip_1 = self.acquire_Public_IP(network_1)
         self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
-        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         try:
             lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_2, vm_1])
             self.fail('Successfully created LB rule for vm_2, vm_1 in network1 %s=' % lb_rule.__dict__)
@@ -994,14 +975,10 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         public_ip_1 = self.acquire_Public_IP(network_1)
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_2, vm_1])
         public_ip_1.delete(self.apiclient)
-        lb_rules = LoadBalancerRule.list(self.apiclient,
+
+        with self.assertRaises(Exception):
+            lb_rules = LoadBalancerRule.list(self.apiclient,
                                         id=lb_rule.id,
                                         listall=True
                                         )
-        self.assertEqual(lb_rules,
-                        None,
-                        "Failed LB rule is present on the VR"
-                        )
-
-
         return

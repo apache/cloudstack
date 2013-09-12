@@ -214,9 +214,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                 if(resourceType == TaggedResourceType.Volume){
                     VolumeDetailVO v = new VolumeDetailVO(id, key, value);
                     _volumeDetailDao.persist(v);
-                }else {
+                }else if (resourceType == TaggedResourceType.Nic){
                     NicDetailVO n = new NicDetailVO(id, key, value);
                     _nicDetailDao.persist(n);
+                }else{
+                    throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
                 }
 
         }

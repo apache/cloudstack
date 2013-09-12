@@ -1275,10 +1275,17 @@
                     },
 
                     scaleUp: {
-                        label: 'Scale UP Virtual Machine',
+                        label: 'label.change.service.offering',
                         createForm: {
-                            title: 'Scale UP Virtual Machine',
-                            desc: 'For VMware-based Linux VMs, please read the dynamic scaling section in the admin guide before scaling.',                            
+                            title: 'label.change.service.offering',
+                            desc: function(args) {
+                            	var description = '';                            	
+                            	var vmObj = args.jsonObj;                            	
+                            	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
+                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                            	}                             
+                                return description;                  	                
+                            },
                             fields: {
                                 serviceOffering: {
                                     label: 'label.compute.offering',
@@ -1859,10 +1866,13 @@
             allowedActions.push("stop");
             allowedActions.push("restart");
             allowedActions.push("snapshot");
-            allowedActions.push("destroy");
-            allowedActions.push("changeService");
+            allowedActions.push("destroy");            
             allowedActions.push("reset");
-            allowedActions.push("scaleUp");
+             
+            //when userVm is running, scaleUp is not supported for KVM
+            if (jsonObj.hypervisor != 'KVM') {
+            	allowedActions.push("scaleUp");
+            }              
 
             if (isAdmin())
                 allowedActions.push("migrate");
@@ -1885,7 +1895,7 @@
             allowedActions.push("destroy");
             allowedActions.push("reset");
             allowedActions.push("snapshot");
-            allowedActions.push("scaleUp");
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
             allowedActions.push("changeAffinity");
 
             if (isAdmin())
@@ -1896,8 +1906,7 @@
             } else {
                 allowedActions.push("detachISO");
             }
-            allowedActions.push("resetPassword");
-            allowedActions.push("changeService");
+            allowedActions.push("resetPassword");            
             if (jsonObj.hypervisor == "BareMetal") {
                 allowedActions.push("createTemplate");
             }

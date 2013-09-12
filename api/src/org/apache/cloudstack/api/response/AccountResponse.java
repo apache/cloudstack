@@ -19,13 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = Account.class)
@@ -189,7 +190,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
 
     @Override
     public String getObjectId() {
-        return this.id;
+        return id;
     }
 
     public void setId(String id) {
@@ -351,7 +352,22 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
     }
+
+    @Override
+    public void setVpcLimit(String vpcLimit) {
+        this.vpcLimit = networkLimit;
+    }
+
+    @Override
+    public void setVpcTotal(Long vpcTotal) {
+        this.vpcTotal = vpcTotal;
+    }
     
+    @Override
+    public void setVpcAvailable(String vpcAvailable) {
+        this.vpcAvailable = vpcAvailable;
+    }
+
     @Override
     public void setCpuLimit(String cpuLimit) {
         this.cpuLimit = cpuLimit;

@@ -95,7 +95,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
 
     protected <T extends VirtualMachine> VirtualMachineTO  toVirtualMachineTO(VirtualMachineProfile<T> vmProfile) {
-
         ServiceOffering offering = vmProfile.getServiceOffering();
         VirtualMachine vm = vmProfile.getVirtualMachine();
         Long minMemory = (long) (offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());

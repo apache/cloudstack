@@ -47,7 +47,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface VolumeManager extends VolumeApiService {
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId,
             Long destPoolClusterId, HypervisorType dataDiskHyperType)
-            throws ConcurrentOperationException;
+            throws ConcurrentOperationException, StorageUnavailableException;
 
     @Override
     VolumeVO uploadVolume(UploadVolumeCmd cmd)
@@ -78,7 +78,7 @@ public interface VolumeManager extends VolumeApiService {
 
     void destroyVolume(VolumeVO volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, VMTemplateVO template, Account owner);
     @Override
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
@@ -97,7 +97,7 @@ public interface VolumeManager extends VolumeApiService {
 
     boolean storageMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            StoragePool destPool);
+            StoragePool destPool) throws StorageUnavailableException;
 
     void prepareForMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,
@@ -119,4 +119,6 @@ public interface VolumeManager extends VolumeApiService {
     String getStoragePoolOfVolume(long volumeId);
 
     boolean validateVolumeSizeRange(long size);
+    
+    void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
 }

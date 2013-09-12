@@ -44,19 +44,44 @@
     </listitem>
   </itemizedlist>
   <note>
-    <para>Archived alerts or events cannot be viewed in the UI, or by using the API. They are
+    <para>Archived alerts or events cannot be viewed in the UI or by using the API. They are
       maintained in the database for auditing or compliance purposes.</para>
   </note>
-  <formalpara>
+  <section id="permissions-events">
     <title>Permissions</title>
     <para>Consider the following:</para>
-  </formalpara>
-  <itemizedlist>
-    <listitem>
-      <para>The root admin can delete or archive one or multiple alerts or events.</para>
-    </listitem>
-    <listitem>
-      <para>The domain admin or end user can delete or archive one or multiple events.</para>
-    </listitem>
-  </itemizedlist>
+    <itemizedlist>
+      <listitem>
+        <para>The root admin can delete or archive one or multiple alerts or events.</para>
+      </listitem>
+      <listitem>
+        <para>The domain admin or end user can delete or archive one or multiple events.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="del-archive">
+    <title>Procedure</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in as administrator to the &PRODUCT; UI.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, click Events.</para>
+      </listitem>
+      <listitem>
+        <para>Perform either of the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para>To archive events, click Archive Events, and specify event type and date.</para>
+          </listitem>
+          <listitem>
+            <para>To archive events, click Delete Events, and specify event type and date.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>Click OK.</para>
+      </listitem>
+    </orderedlist>
+  </section>
 </section>

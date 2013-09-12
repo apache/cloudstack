@@ -20,7 +20,9 @@
 (function($, cloudStack, _l, _s) {
     var uiActions = {
         standard: function($instanceRow, args, additional) {
-            var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
+        	var isAddAction = args.action.isAdd;
+        	        	
+        	var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
             var notification = args.action.notification ? args.action.notification : {};
             var messages = args.action ? args.action.messages : {};
             var preAction = args.action ? args.action.preAction : {};
@@ -254,7 +256,7 @@
 
                                     function(errorArgs) {
                                         if (!isHeader) {
-                                            if ($instanceRow.data('list-view-new-item')) {
+                                            if (isAddAction == true && $instanceRow.data('list-view-new-item')) {
                                                 // For create forms
                                                 $instanceRow.remove();
                                             } else {
@@ -702,7 +704,7 @@
 
         // Actions column
         var actionsArray = actions ? $.map(actions, function(v, k) {
-            if (k == 'add') {
+            if (k == 'add' || k == 'rootAdminAddGuestNetwork') {
                 v.isAdd = true;
             }
 

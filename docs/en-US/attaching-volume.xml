@@ -37,7 +37,7 @@
       <para>In Select View, choose Volumes.</para>
     </listitem>
     <listitem>
-      <para>4. Click the volume name in the Volumes list, then click the Attach Disk button<inlinemediaobject>
+      <para>Click the volume name in the Volumes list, then click the Attach Disk button<inlinemediaobject>
           <imageobject>
             <imagedata fileref="./images/attach-disk-icon.png"/>
           </imageobject>

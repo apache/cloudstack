@@ -30,9 +30,8 @@
         <title>The First Region: The Default Region</title>
     <para>If you do not take action to define regions, then all the zones in your cloud will be
             automatically grouped into a single default region. This region is assigned the region
-            ID of 1.</para>
-        <para>You can change the name or URL of the default region by using the API command updateRegion. For example:</para>
-        <programlisting>http://&lt;IP_of_Management_Server&gt;:8080/client/api?command=updateRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+            ID of 1. You can change the name or URL of the default region by displaying the region in
+            the &PRODUCT; UI and clicking the Edit button.</para>
     </section>
     <section id="region-add-2">
         <title>Adding a Region</title>
@@ -43,17 +42,29 @@
                     geographic area where you want to set up the new region. Use the steps in the
                     Installation guide. When you come to the step where you set up the database, use
                     the additional command-line flag <code>-r &lt;region_id&gt;</code> to set a
-                    region ID for the new region. The default region is automatically assigned a
-                    region ID of 1, so your first additional region might be region 2.</para>
-      <programlisting>cloudstack-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting>
+          region ID for the new region. The default region is automatically assigned a
+          region ID of 1, so your first additional region might be region 2.</para>
+          <programlisting>cloudstack-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting>
       </listitem>
       <listitem><para>By the end of the installation procedure, the Management Server should have been started. Be sure that the Management Server installation was successful and complete.</para></listitem>
-      <listitem><para>Add region 2 to region 1. Use the API command addRegion. (For information about how to make an API call, see the Developer's Guide.)</para>
-        <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=2&amp;name=Western&amp;endpoint=http://&lt;region_2_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+      <listitem><para>Now add the new region to region 1 in &PRODUCT;.</para>
+          <orderedlist numeration="loweralpha">
+              <listitem><para>Log in to &PRODUCT; in the first region as root administrator
+                  (that is, log in to &lt;region.1.IP.address&gt;:8080/client).</para></listitem>
+              <listitem><para>In the left navigation bar, click Regions.</para></listitem>
+              <listitem><para>Click Add Region. In the dialog, fill in the following fields:</para>
+                  <itemizedlist>
+                      <listitem><para>ID. A unique identifying number. Use the same number
+                          you set in the database during Management Server installation in the new region;
+                          for example, 2.</para></listitem>
+                      <listitem><para>Name. Give the new region a descriptive name.</para></listitem>
+                      <listitem><para>Endpoint. The URL where you can log in to the Management Server in the new region.
+                          This has the format &lt;region.2.IP.address&gt;:8080/client.</para></listitem>
+                  </itemizedlist>
+              </listitem>
+          </orderedlist>
       </listitem>
-      <listitem><para>Now perform the same command in reverse, adding region 1 to region 2.</para>
-          <programlisting>http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
-      </listitem>
+      <listitem><para>Now perform the same procedure in reverse. Log in to region 2, and add region 1.</para></listitem>
       <listitem><para>Copy the account, user, and domain tables from the region 1 database to the region 2 database.</para>
           <para>In the following commands, it is assumed that you have set the root password on the
               database, which is a &PRODUCT; recommended best practice. Substitute your own MySQL
@@ -84,16 +95,23 @@
             <listitem><para>Install &PRODUCT; in each additional region. Set the region ID for each region during the database setup step.</para>
                 <programlisting>cloudstack-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt; -r &lt;region_id&gt;</programlisting></listitem>
             <listitem><para>Once the Management Server is running, add your new region to all existing regions by
-                    repeatedly calling the API command addRegion. For example, if you were adding
+                    repeatedly using the Add Region button in the UI. For example, if you were adding
                     region 3:</para>
-                <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=3&amp;name=Eastern&amp;endpoint=http://&lt;region_3_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
-
-http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=3&amp;name=Eastern&amp;endpoint=http://&lt;region_3_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting></listitem>
+                <orderedlist numeration="loweralpha">
+                    <listitem><para>Log in to &PRODUCT; in the first region as root administrator
+                        (that is, log in to &lt;region.1.IP.address&gt;:8080/client), and add a region with ID 3, the name of region 3, and the endpoint &lt;region.3.IP.address&gt;:8080/client.</para></listitem>
+                    <listitem><para>Log in to &PRODUCT; in the second region as root administrator (that is, log in to &lt;region.2.IP.address&gt;:8080/client), and add a region with ID 3, the name of region 3, and the endpoint &lt;region.3.IP.address&gt;:8080/client.</para></listitem>
+                </orderedlist>
+            </listitem>
             <listitem><para>Repeat the procedure in reverse to add all existing regions to the new region. For example,
                     for the third region, add the other two existing regions:</para>
-                <programlisting>http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=1&amp;name=Northern&amp;endpoint=http://&lt;region_1_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
-
-http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegion&amp;id=2&amp;name=Western&amp;endpoint=http://&lt;region_2_IP_address_here&gt;:8080/client&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting></listitem>
+                <orderedlist numeration="loweralpha">
+                    <listitem><para>Log in to &PRODUCT; in the third region as root administrator
+                        (that is, log in to &lt;region.3.IP.address&gt;:8080/client).</para></listitem>
+                    <listitem><para>Add a region with ID 1, the name of region 1, and the endpoint &lt;region.1.IP.address&gt;:8080/client.</para></listitem>
+                    <listitem><para>Add a region with ID 2, the name of region 2, and the endpoint &lt;region.2.IP.address&gt;:8080/client.</para></listitem>
+                </orderedlist>
+            </listitem>
             <listitem><para>Copy the account, user, and domain tables from any existing region's database to the new
                     region's database.</para>
                 <para>In the following commands, it is assumed that you have set the root password on the
@@ -109,7 +127,7 @@ http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegio
                     </listitem>
                 </orderedlist>
             </listitem>
-            <listitem><para>Remove project accounts. Run these commands on the region 2 database:</para>
+            <listitem><para>Remove project accounts. Run these commands on the region 3 database:</para>
                 <programlisting>mysql&gt; delete from account where type = 5;</programlisting>
             </listitem>
             <listitem><para>Set the default zone as null:</para>
@@ -120,9 +138,14 @@ http://&lt;IP_of_region_3_Management_Server&gt;:8080/client/api?command=addRegio
     </section>
     <section id="region-delete">
         <title>Deleting a Region</title>
-        <para>To delete a region, use the API command removeRegion. Repeat the call to remove the region from all other regions. For example, to remove the 3rd region in a three-region cloud:</para>
-        <programlisting>http://&lt;IP_of_region_1_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
-
-http://&lt;IP_of_region_2_Management_Server&gt;:8080/client/api?command=removeRegion&amp;id=3&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+       <para>Log in to each of the other regions, navigate to the one you want to delete, and click Remove Region.
+            For example, to remove the third region in a 3-region cloud:</para>
+            <orderedlist>
+                <listitem><para>Log in to &lt;region.1.IP.address&gt;:8080/client.</para></listitem>
+                <listitem><para>In the left navigation bar, click Regions.</para></listitem>
+                <listitem><para>Click the name of the region you want to delete.</para></listitem>
+                <listitem><para>Click the Remove Region button.</para></listitem>
+                <listitem><para>Repeat these steps for &lt;region.2.IP.address&gt;:8080/client.</para></listitem>
+            </orderedlist>
     </section>
 </section>

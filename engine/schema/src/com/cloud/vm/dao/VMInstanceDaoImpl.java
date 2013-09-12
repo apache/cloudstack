@@ -228,6 +228,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
+        
+        SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+        nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+
+        DistinctHostNameSearch = createSearchBuilder(String.class);
+        DistinctHostNameSearch.selectField(DistinctHostNameSearch.entity().getHostName());
+
+        DistinctHostNameSearch.and("types", DistinctHostNameSearch.entity().getType(), SearchCriteria.Op.IN);
+        DistinctHostNameSearch.and("removed", DistinctHostNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        DistinctHostNameSearch.join("nicSearch", nicSearch, DistinctHostNameSearch.entity().getId(),
+                nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+        DistinctHostNameSearch.done();
+        
     }
 
     @Override
@@ -629,21 +642,6 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types) {
-        if (DistinctHostNameSearch == null) {
-
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-
-            DistinctHostNameSearch = createSearchBuilder(String.class);
-            DistinctHostNameSearch.selectField(DistinctHostNameSearch.entity().getHostName());
-
-            DistinctHostNameSearch.and("types", DistinctHostNameSearch.entity().getType(), SearchCriteria.Op.IN);
-            DistinctHostNameSearch.and("removed", DistinctHostNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-            DistinctHostNameSearch.join("nicSearch", nicSearch, DistinctHostNameSearch.entity().getId(),
-                    nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-            DistinctHostNameSearch.done();
-        }
-
         SearchCriteria<String> sc = DistinctHostNameSearch.create();
         if (types != null && types.length != 0) {
             sc.setParameters("types", (Object[]) types);

@@ -2138,12 +2138,10 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
-        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.account = Account.create(
@@ -2169,7 +2167,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                             cls.services["network_offering"],
                                             conservemode=False
                                             )
-        cls._cleanup.append(cls.nw_off)
         # Enable Network offering
         cls.nw_off.update(cls.api_client, state='Enabled')
 
@@ -2283,7 +2280,9 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                   )
         for vm in vms:
             if vm.state == "Stopped":
-                vm.start(self.apiclient)
+                cmd = startVirtualMachine.startVirtualMachineCmd()
+                cmd.id = vm.id
+                self.apiclient.startVirtualMachine(cmd)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -2338,8 +2337,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_01_wait_network_gc(self):
-        """ Test stop all the Vms that are part of the a Network
-            (Wait for network GC).Start 1 Vm from the network.
+        """ Test network gc after shutdown of vms in the network
         """
 
         # Validate the following
@@ -2356,7 +2354,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.debug("Waiting for network garbage collection thread to run")
         # Wait for the network garbage collection thread to run
         wait_for_cleanup(self.apiclient,
-                         ["network.gc.interval", "network.gc.wait"])
+                         ["network.gc.interval", "network.gc.wait"]*2)
         self.debug("Check if the VPC router is in stopped state?")
         routers = Router.list(
                               self.apiclient,
@@ -2374,13 +2372,13 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.assertEqual(
                     router.state,
                     "Stopped",
-                    "Router state should be stopped after netwrok.gc.interval"
+                    "Router state should be stopped after network gc"
                  )
         return
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_start_vm_network_gc(self):
-        """ Test network rules after starting an instance in VPC
+        """ Test network rules after starting a VpcVr that was shutdown after network.gc
         """
 
         # Validate the following

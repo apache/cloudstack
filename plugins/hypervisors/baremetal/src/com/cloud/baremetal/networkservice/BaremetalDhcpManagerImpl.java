@@ -223,14 +223,9 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
                     + " is in shutdown state in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
         }
 
-        HostPodVO pod = _podDao.findById(cmd.getPodId());
-        if (pod == null) {
-            throw new IllegalArgumentException("Could not find pod with ID: " + cmd.getPodId());
-        }
-
-        List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.BaremetalDhcp, null, cmd.getPodId(), zoneId);
+        List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.BaremetalDhcp, null, null, zoneId);
         if (dhcps.size() != 0) {
-            throw new IllegalArgumentException("Already had a DHCP server in Pod: " + cmd.getPodId() + " zone: " + zoneId);
+            throw new IllegalArgumentException("Already had a DHCP server in zone: " + zoneId);
         }
 
         URI uri;
@@ -242,16 +237,17 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
         }
 
         String ipAddress = uri.getHost();
-        String guid = getDhcpServerGuid(Long.toString(zoneId) + "-" + Long.toString(cmd.getPodId()), "ExternalDhcp", ipAddress);
+        if (ipAddress == null) {
+            ipAddress = cmd.getUrl(); // the url is raw ip. For backforward compatibility, we have to support http://ip format as well
+        }
+        String guid = getDhcpServerGuid(Long.toString(zoneId), "ExternalDhcp", ipAddress);
         Map params = new HashMap<String, String>();
         params.put("type", cmd.getDhcpType());
         params.put("zone", Long.toString(zoneId));
-        params.put("pod", cmd.getPodId().toString());
         params.put("ip", ipAddress);
         params.put("username", cmd.getUsername());
         params.put("password", cmd.getPassword());
         params.put("guid", guid);
-        params.put("gateway", pod.getGateway());
         String dns = zone.getDns1();
         if (dns == null) {
             dns = zone.getDns2();
@@ -284,7 +280,6 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
         vo.setHostId(dhcpServer.getId());
         vo.setNetworkServiceProviderId(ntwkSvcProvider.getId());
         vo.setPhysicalNetworkId(cmd.getPhysicalNetworkId());
-        vo.setPodId(cmd.getPodId());
         Transaction txn = Transaction.currentTxn();
         txn.start();
         _extDhcpDao.persist(vo);
@@ -296,26 +291,32 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
     public BaremetalDhcpResponse generateApiResponse(BaremetalDhcpVO vo) {
         BaremetalDhcpResponse response = new BaremetalDhcpResponse();
         response.setDeviceType(vo.getDeviceType());
-        response.setId(String.valueOf(vo.getId()));
-        response.setPhysicalNetworkId(String.valueOf(vo.getPhysicalNetworkId()));
-        response.setProviderId(String.valueOf(vo.getNetworkServiceProviderId()));
+        response.setId(vo.getUuid());
+        HostVO host = _hostDao.findById(vo.getHostId());
+        response.setUrl(host.getPrivateIpAddress());
+        PhysicalNetworkVO nwVO = _physicalNetworkDao.findById(vo.getPhysicalNetworkId());
+        response.setPhysicalNetworkId(nwVO.getUuid());
+        PhysicalNetworkServiceProviderVO providerVO = _physicalNetworkServiceProviderDao.findById(vo.getNetworkServiceProviderId());
+        response.setProviderId(providerVO.getUuid());
+        response.setObjectName("baremetaldhcp");
         return response;
     }
 
     @Override
     public List<BaremetalDhcpResponse> listBaremetalDhcps(ListBaremetalDhcpCmd cmd) {
+        List<BaremetalDhcpResponse> responses = new ArrayList<BaremetalDhcpResponse>();
+        if (cmd.getId() != null) {
+            BaremetalDhcpVO vo = _extDhcpDao.findById(cmd.getId());
+            responses.add(generateApiResponse(vo));
+            return responses;
+        }
+
         SearchCriteriaService<BaremetalDhcpVO, BaremetalDhcpVO> sc = SearchCriteria2.create(BaremetalDhcpVO.class);
         if (cmd.getDeviceType() != null) {
         	sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, cmd.getDeviceType());
         }
-        if (cmd.getPodId() != null) {
-            sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cmd.getPodId());
-            if (cmd.getId() != null) {
-                sc.addAnd(sc.getEntity().getId(), Op.EQ, cmd.getId());
-            }
-        }
+
         List<BaremetalDhcpVO> vos = sc.list();
-        List<BaremetalDhcpResponse> responses = new ArrayList<BaremetalDhcpResponse>(vos.size());
         for (BaremetalDhcpVO vo : vos) {
             responses.add(generateApiResponse(vo));
         }

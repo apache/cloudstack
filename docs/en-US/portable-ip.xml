@@ -24,10 +24,10 @@
     <title>About Portable IP</title>
     <para>Portable IPs in &PRODUCT; are region-level pool of IPs, which are elastic in nature, that
       can be transferred across geographically separated zones. As an administrator, you can
-      provision a pool of portable IPs at region level and are available for user consumption. The
-      users can acquire portable IPs if admin has provisioned portable public IPs at the region
-      level they are part of. These IPs can be use for any service within an advanced zone. You can
-      also use portable IPs for EIP services in basic zones. </para>
+      provision a pool of portable public IPs at region level and are available for user
+      consumption. The users can acquire portable IPs if admin has provisioned portable IPs at the
+      region level they are part of. These IPs can be use for any service within an advanced zone.
+      You can also use portable IPs for EIP services in basic zones. </para>
     <para>The salient features of Portable IP are as follows:<itemizedlist>
         <listitem>
           <para>IP is statically allocated </para>
@@ -36,25 +36,26 @@
           <para>IP need not be associated with a network </para>
         </listitem>
         <listitem>
-          <para>Network association is transferable across networks </para>
+          <para>IP association is transferable across networks </para>
         </listitem>
         <listitem>
           <para>IP is transferable across both Basic and Advanced zones </para>
         </listitem>
         <listitem>
-          <para>IP is transferable across VPC, non-VPC Isolated and Shared networks </para>
+          <para>IP is transferable across VPC, non-VPC isolated and shared networks </para>
         </listitem>
         <listitem>
-          <para/>
-        </listitem>
-        <listitem>
-          <para/>
+          <para>Portable IP transfer is available only for static NAT. </para>
         </listitem>
       </itemizedlist></para>
+    <formalpara>
+      <title>Guidelines</title>
+      <para>Before transferring to another network, ensure that no network rules (Firewall, Static
+        NAT, Port Forwarding, and so on) exist on that portable IP.</para>
+    </formalpara>
   </section>
   <section id="config-pip">
     <title>Configuring Portable IPs</title>
-    <para/>
     <orderedlist>
       <listitem>
         <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
@@ -128,5 +129,17 @@
           can now use the IP address in port forwarding or static NAT rules.</para>
       </listitem>
     </orderedlist>
+  </section>
+  <section id="transfer-pip">
+    <title>Transferring Portable IP</title>
+    <para>An IP can be transferred from one network to another only if Static NAT is enabled.
+      However, when a portable IP is associated with a network, you can use it for any service in
+      the network. </para>
+    <para>To transfer a portable IP across the networks, execute the following API:</para>
+    <programlisting>http://localhost:8096/client/api?command=enableStaticNat&amp;response=json&amp;ipaddressid=a4bc37b2-4b4e-461d-9a62-b66414618e36&amp;virtualmachineid=a242c476-ef37-441e-9c7b-b303e2a9cb4f&amp;networkid=6e7cd8d1-d1ba-4c35-bdaf-333354cbd49810 </programlisting>
+    <para>Replace the UUID with appropriate UUID. For example, if you want to transfer a portable IP
+      to network X and VM Y in a network, execute the following:</para>
+    <programlisting>http://localhost:8096/client/api?command=enableStaticNat&amp;response=json&amp;ipaddressid=a4bc37b2-4b4e-461d-9a62-b66414618e36&amp;virtualmachineid=Y&amp;networkid=X
+      </programlisting>
   </section>
 </section>

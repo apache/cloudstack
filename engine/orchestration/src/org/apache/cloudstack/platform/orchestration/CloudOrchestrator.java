@@ -229,7 +229,6 @@ public class CloudOrchestrator implements OrchestrationService {
     	//load vm instance and offerings and call virtualMachineManagerImpl
     	VMInstanceVO vm = _vmDao.findByUuid(id);
 
-
 		Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
@@ -266,7 +265,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
 		HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-    	if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
+        if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null, plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
 			return null;
 		}
 

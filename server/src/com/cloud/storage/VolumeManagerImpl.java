@@ -31,7 +31,11 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.*;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.EnumUtils;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -135,7 +139,6 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -227,8 +230,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
-    @Inject
-    protected VMTemplateS3Dao _vmTemplateS3Dao;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject
@@ -339,7 +340,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId,
             Long destPoolPodId, Long destPoolClusterId,
             HypervisorType dataDiskHyperType)
-                    throws ConcurrentOperationException {
+                    throws ConcurrentOperationException, StorageUnavailableException {
 
         // Find a destination storage pool with the specified criteria
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume
@@ -1095,12 +1096,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Can't resize a volume that has never been attached, not sure which hypervisor type. Recreate volume to resize.");
         }
 
-        /* Only works for KVM/Xen for now */
+        /* Only works for KVM/Xen/VMware for now */
         if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM
                 && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
                 && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware) {
             throw new InvalidParameterValueException(
-                    "Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
+                    "Cloudstack currently only supports volumes marked as KVM or XenServer or ESX hypervisor for resize");
         }
 
 
@@ -1143,7 +1144,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
 
             if (diskOffering.getTags() != null) {
-                if (!newDiskOffering.getTags().equals(diskOffering.getTags())) {
+                if (newDiskOffering.getTags() == null || !newDiskOffering.getTags().equals(diskOffering.getTags())) {
                     throw new InvalidParameterValueException(
                             "Tags on new and old disk offerings must match");
                 }
@@ -1243,7 +1244,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vol.addPayload(payload);
 
             AsyncCallFuture<VolumeApiResult> future = volService.resize(vol);
-            future.get();
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.warn("Failed to resize the volume " + volume);
+                return null;
+            }
+            
             volume = _volsDao.findById(volume.getId());
 
             if (newDiskOffering != null) {
@@ -1264,11 +1270,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
             return volume;
         } catch (InterruptedException e) {
-            s_logger.debug("failed get resize volume result", e);
+            s_logger.warn("failed get resize volume result", e);
         } catch (ExecutionException e) {
-            s_logger.debug("failed get resize volume result", e);
+            s_logger.warn("failed get resize volume result", e);
         } catch (Exception e) {
-            s_logger.debug("failed get resize volume result", e);
+            s_logger.warn("failed get resize volume result", e);
         }
 
         return null;
@@ -1335,6 +1341,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             Volume.class.getName(), volume.getUuid());
                 }
             }
+            // Mark volume as removed if volume has not been created on primary or secondary
+            if (volume.getState() == Volume.State.Allocated) {
+                _volsDao.remove(volumeId);
+                stateTransitTo(volume, Volume.Event.DestroyRequested);
+                return true;
+            }
             // expunge volume from primary if volume is on primary
             VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
             if (volOnPrimary != null) {
@@ -1380,7 +1392,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @Override
     public DiskProfile allocateRawVolume(Type type,
-            String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, Account owner) {
+            String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, VMTemplateVO template, Account owner) {
+        Long isoId=null;
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -1397,6 +1410,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             vol.setDeviceId(0l);
         } else {
             vol.setDeviceId(1l);
+        }
+        if (template.getFormat() == ImageFormat.ISO) {
+            vol.setIsoId(template.getId());
         }
 
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
@@ -1543,6 +1559,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
     private boolean needMoveVolume(VolumeVO rootVolumeOfVm, VolumeInfo volume) {
+        if (rootVolumeOfVm.getPoolId() == null || volume.getPoolId() == null) {
+            return false;
+        }
+
         DataStore storeForRootVol = dataStoreMgr.getPrimaryDataStore(rootVolumeOfVm.getPoolId());
         DataStore storeForDataVol = dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
 
@@ -1804,55 +1824,80 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         HypervisorType dataDiskHyperType = _volsDao.getHypervisorType(volume
                 .getId());
-        if (dataDiskHyperType != HypervisorType.None
-                && rootDiskHyperType != dataDiskHyperType) {
-            throw new InvalidParameterValueException(
-                    "Can't attach a volume created by: " + dataDiskHyperType
-                    + " to a " + rootDiskHyperType + " vm");
-        }
 
+        VolumeVO dataDiskVol = _volsDao.findById(volume.getId());
+        StoragePoolVO dataDiskStoragePool = _storagePoolDao.findById(dataDiskVol.getPoolId());
+
+        // managed storage can be used for different types of hypervisors
+        // only perform this check if the volume's storage pool is not null and not managed
+        if (dataDiskStoragePool != null && !dataDiskStoragePool.isManaged()) {
+            if (dataDiskHyperType != HypervisorType.None
+                && rootDiskHyperType != dataDiskHyperType) {
+                throw new InvalidParameterValueException(
+                        "Can't attach a volume created by: " + dataDiskHyperType
+                        + " to a " + rootDiskHyperType + " vm");
+            }
+        }
 
         deviceId = getDeviceId(vmId, deviceId);
         VolumeInfo volumeOnPrimaryStorage = volume;
-        if (volume.getState().equals(Volume.State.Allocated)
-                || volume.getState() == Volume.State.Uploaded) {
-            try {
-                volumeOnPrimaryStorage = createVolumeOnPrimaryStorage(vm, rootVolumeOfVm, volume, rootDiskHyperType);
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to create volume on primary storage", e);
-                throw new CloudRuntimeException("Failed to create volume on primary storage", e);
-            }
+
+        // Check if volume is stored on secondary storage
+        boolean isVolumeOnSec = false;
+        VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
+        if (volOnSecondary != null) {
+            isVolumeOnSec = true;
+        }
+        
+        boolean createVolumeOnBackend = true;
+        if (rootVolumeOfVm.getState() == Volume.State.Allocated) {
+            createVolumeOnBackend = false;
         }
 
-        // reload the volume from db
-        volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
-        boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
-
-        if (moveVolumeNeeded) {
-            PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)volumeOnPrimaryStorage.getDataStore();
-            if (primaryStore.isLocal()) {
-                throw new CloudRuntimeException(
-                        "Failed to attach local data volume "
-                                + volume.getName()
-                                + " to VM "
-                                + vm.getDisplayName()
-                                + " as migration of local data volume is not allowed");
+        // Create volume on the backend only when VM's root volume is allocated
+        if (createVolumeOnBackend) {
+            if (volume.getState().equals(Volume.State.Allocated)
+                    || volume.getState() == Volume.State.Uploaded) {
+                try {
+                    volumeOnPrimaryStorage = createVolumeOnPrimaryStorage(vm, rootVolumeOfVm, volume, rootDiskHyperType);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to create volume on primary storage", e);
+                    throw new CloudRuntimeException("Failed to create volume on primary storage", e);
+                }
             }
-            StoragePoolVO vmRootVolumePool = _storagePoolDao
-                    .findById(rootVolumeOfVm.getPoolId());
 
-            try {
-                volumeOnPrimaryStorage = moveVolume(volumeOnPrimaryStorage,
-                        vmRootVolumePool.getDataCenterId(),
-                        vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(),
-                        dataDiskHyperType);
-            } catch (ConcurrentOperationException e) {
-                s_logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
+            // reload the volume from db
+            volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
+            boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
+
+            if (moveVolumeNeeded) {
+                PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)volumeOnPrimaryStorage.getDataStore();
+                if (primaryStore.isLocal()) {
+                    throw new CloudRuntimeException(
+                            "Failed to attach local data volume "
+                                    + volume.getName()
+                                    + " to VM "
+                                    + vm.getDisplayName()
+                                    + " as migration of local data volume is not allowed");
+                }
+                StoragePoolVO vmRootVolumePool = _storagePoolDao
+                        .findById(rootVolumeOfVm.getPoolId());
+
+                try {
+                    volumeOnPrimaryStorage = moveVolume(volumeOnPrimaryStorage,
+                            vmRootVolumePool.getDataCenterId(),
+                            vmRootVolumePool.getPodId(),
+                            vmRootVolumePool.getClusterId(),
+                            dataDiskHyperType);
+                } catch (ConcurrentOperationException e) {
+                    s_logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
+                } catch (StorageUnavailableException e) {
+                    s_logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
+                }
             }
         }
-
 
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
                 .getCurrentExecutor();
@@ -1981,6 +2026,16 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         String errorMsg = "Failed to detach volume: " + volume.getName()
                 + " from VM: " + vm.getHostName();
         boolean sendCommand = (vm.getState() == State.Running);
+        Long hostId = vm.getHostId();
+        if (hostId == null) {
+            hostId = vm.getLastHostId();
+            HostVO host = _hostDao.findById(hostId);
+            if (host != null
+                    && host.getHypervisorType() == HypervisorType.VMware) {
+                sendCommand = true;
+            }
+        }
+        
         Answer answer = null;
 
         if (sendCommand) {
@@ -1999,7 +2054,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             cmd.set_iScsiName(volume.get_iScsiName());
 
             try {
-                answer = _agentMgr.send(vm.getHostId(), cmd);
+                answer = _agentMgr.send(hostId, cmd);
             } catch (Exception e) {
                 throw new CloudRuntimeException(errorMsg + " due to: "
                         + e.getMessage());
@@ -2115,7 +2170,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @DB
     @Override
-    public Volume migrateVolume(MigrateVolumeCmd cmd) {
+    public Volume migrateVolume(MigrateVolumeCmd cmd){
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
 
@@ -2128,6 +2183,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (vol.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException(
                     "Volume must be in ready state");
+        }
+
+        if (storagePoolId == vol.getPoolId()) {
+            throw new InvalidParameterValueException("Specified destination pool and the current volume storage pool are same");
         }
 
         boolean liveMigrateVolume = false;
@@ -2154,12 +2213,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
-        // If the disk is not attached to any VM then it can be moved. Otherwise, it needs to be attached to a vm
-        // running on a hypervisor that supports storage motion so that it be be migrated.
-        if (instanceId != null && !liveMigrateVolume) {
-            throw new InvalidParameterValueException("Volume needs to be detached from VM");
-        }
-
         if (liveMigrateVolume && !cmd.isLiveMigrate()) {
             throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " +
                     "the parameter livemigrate should be specified");
@@ -2181,28 +2234,32 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (liveMigrateVolume) {
             newVol = liveMigrateVolume(vol, destPool);
         } else {
-            newVol = migrateVolume(vol, destPool);
+            try {
+                newVol = migrateVolume(vol, destPool);
+            } catch(StorageUnavailableException e) {
+               s_logger.debug("Failed to migrate volume: ", e);
+            }
         }
         return newVol;
     }
 
     @DB
-    protected Volume migrateVolume(Volume volume, StoragePool destPool) {
+    protected Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(vol, (DataStore)destPool);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 s_logger.error("migrate volume failed:" + result.getResult());
-                return null;
+                throw new StorageUnavailableException("migrate volume failed: " + result.getResult(), destPool.getId());
             }
             return result.getVolume();
         } catch (InterruptedException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new StorageUnavailableException("migrate vlume failed:" + e.toString(), destPool.getId());
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new StorageUnavailableException("migrate vlume failed:" + e.toString(), destPool.getId());
         }
     }
 
@@ -2269,7 +2326,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     public boolean storageMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            StoragePool destPool) {
+            StoragePool destPool) throws StorageUnavailableException {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         List<Volume> volumesNeedToMigrate = new ArrayList<Volume>();
 
@@ -2530,8 +2587,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 vol = task.volume;
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
-                migrateVolume(task.volume, pool);
-                vol = task.volume;
+                vol = migrateVolume(task.volume, pool);
             } else if (task.type == VolumeTaskType.RECREATE) {
                 Pair<VolumeVO, DataStore> result = recreateVolume(task.volume, vm, dest);
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
@@ -2577,9 +2633,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
-
-
-
 
     @Override
     public boolean canVmRestartOnAnotherServer(long vmId) {
@@ -2633,8 +2686,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     public void destroyVolume(VolumeVO volume) {
         try {
-            volService.destroyVolume(volume.getId());
-        } catch (ConcurrentOperationException e) {
+            // Mark volume as removed if volume has not been created on primary
+            if (volume.getState() == Volume.State.Allocated) {
+                _volsDao.remove(volume.getId());
+                stateTransitTo(volume, Volume.Event.DestroyRequested);
+            } else {
+                volService.destroyVolume(volume.getId());
+            }
+        } catch (Exception e) {
             s_logger.debug("Failed to destroy volume" + volume.getId(), e);
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);
         }
@@ -2768,12 +2827,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         // Clean up code to remove all those previous uploadVO and uploadMonitor code. Previous code is trying to fake an async operation purely in
         // db table with uploadVO and async_job entry, but internal implementation is actually synchronous.
-        StoragePool srcPool = (StoragePool) dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
         ImageStoreEntity secStore = (ImageStoreEntity) dataStoreMgr.getImageStore(zoneId);
-        String secondaryStorageURL = secStore.getUri();
 
-        String value = _configDao.getValue(Config.CopyVolumeWait.toString());
-        int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
@@ -2830,5 +2885,23 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public String getStoragePoolOfVolume(long volumeId) {
         VolumeVO vol = _volsDao.findById(volumeId);
         return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
+    }
+    
+    public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
+        VolumeVO vol = _volsDao.findById(volumeId);
+        boolean needUpdate = false;
+        if(!vol.getPath().equalsIgnoreCase(path))
+        	needUpdate = true;
+        
+        if(chainInfo != null && (vol.getChainInfo() == null || !chainInfo.equalsIgnoreCase(vol.getChainInfo())))
+        	needUpdate = true;
+        
+        if(needUpdate) {
+        	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path 
+        		+ ", " + vol.getChainInfo() + " -> " + chainInfo);
+	        vol.setPath(path);
+	        vol.setChainInfo(chainInfo);
+	        _volsDao.update(volumeId, vol);
+        }
     }
 }

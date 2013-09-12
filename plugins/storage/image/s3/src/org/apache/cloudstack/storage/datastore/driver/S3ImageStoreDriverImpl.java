@@ -36,6 +36,7 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 
 public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
@@ -79,7 +80,11 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
         s_logger.info("Generating pre-signed s3 entity extraction URL.");
         Date expiration = new Date();
         long milliSeconds = expiration.getTime();
-        milliSeconds += 1000 * 60 * 60; // expired after one hour.
+        
+        // get extract url expiration interval set in global configuration (in seconds)
+        String urlExpirationInterval = _configDao.getValue(Config.ExtractURLExpirationInterval.toString());
+        int expirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
+        milliSeconds += 1000 * expirationInterval; // expired after configured interval (in milliseconds)
         expiration.setTime(milliSeconds);
 
         URL s3url = S3Utils.generatePresignedUrl(s3, s3.getBucketName(), key, expiration);

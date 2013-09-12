@@ -75,9 +75,9 @@
       </listitem>
       <listitem>
         <para>Click Acquire New Secondary IP, and click Yes in the confirmation dialog.</para>
-        <para>You need to specify the secondary IP address on the guest VM. &PRODUCT; will not
-          automatically configure the acquired IP address on the VM. Ensure that you assign IPs to
-          NIC each time the VM reboots.</para>
+        <para>You need to configure the IP on the guest VM NIC manually. &PRODUCT; will not
+          automatically configure the acquired IP address on the VM. Ensure that the IP address
+          configuration persist on VM reboot.</para>
         <para>Within a few moments, the new IP address should appear with the state Allocated. You
           can now use the IP address in Port Forwarding or StaticNAT rules.</para>
       </listitem>

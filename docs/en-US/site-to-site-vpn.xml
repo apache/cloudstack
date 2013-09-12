@@ -3,6 +3,7 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
 <!-- Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
@@ -10,7 +11,9 @@
     to you under the Apache License, Version 2.0 (the
     "License"); you may not use this file except in compliance
     with the License.  You may obtain a copy of the License at
+    
     http://www.apache.org/licenses/LICENSE-2.0
+    
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,6 +28,10 @@
     establishing a VPN connection to the virtual router of the account from a device in the
     datacenter of the enterprise. Having this facility eliminates the need to establish VPN
     connections to individual VMs.</para>
+  <para>The difference from Remote VPN is that Site-to-site VPNs connects entire networks to each
+    other, for example, connecting a branch office network to a company headquarters network. In a
+    site-to-site VPN, hosts do not have VPN client software; they send and receive normal TCP/IP
+    traffic through a VPN gateway.</para>
   <para>The supported endpoints on the remote datacenters are: </para>
   <itemizedlist>
     <listitem>
@@ -39,6 +46,7 @@
       that any Cisco or Juniper device running on the supported operating systems are able to
       establish VPN connections.</para>
   </note>
+  <para></para>
   <para> To set up a Site-to-Site VPN connection, perform the following:</para>
   <orderedlist>
     <listitem>
@@ -55,9 +63,6 @@
       <para>Create VPN connection from the VPC VPN gateway to the customer VPN gateway.</para>
     </listitem>
   </orderedlist>
-  <note><para>Appropriate events are generated on the &PRODUCT; UI when status of a Site-to-Site VPN
-      connection changes from connected to disconnected, or vice versa. Currently no events are generated
-      when establishing a VPN connection fails or pending.</para></note>
   <xi:include href="create-vpn-customer-gateway.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="create-vpn-gateway-for-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="create-vpn-connection-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

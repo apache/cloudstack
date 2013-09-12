@@ -41,6 +41,8 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
@@ -71,35 +73,36 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-	protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
-    	super.fillHostInfo(conn, cmd);
-    	cmd.setCaps(cmd.getCapabilities() + " , hvm");
+    protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
+        super.fillHostInfo(conn, cmd);
+        cmd.setCaps(cmd.getCapabilities() + " , hvm");
     }
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
-    		return "Debian Squeeze 6.0 (64-bit)";
-    	} else {
-    		return CitrixHelper.getXcpGuestOsType(stdType);
-    	}
+        if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
+            return "Debian Squeeze 6.0 (64-bit)";
+        } else {
+            return CitrixHelper.getXcpGuestOsType(stdType);
+        }
     }
 
+    @Override
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
-    	if (_host.localSRuuid != null) {
-    		//create an iso vdi on it
-    		String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
-    		if (result == null || result.equalsIgnoreCase("Failed")) {
-    			 throw new CloudRuntimeException("can not create systemvm vdi");
-    		}
+        if (_host.localSRuuid != null) {
+            //create an iso vdi on it
+            String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
+            if (result == null || result.equalsIgnoreCase("Failed")) {
+                throw new CloudRuntimeException("can not create systemvm vdi");
+            }
 
-    		Set<VDI> vdis = VDI.getByNameLabel(conn, "systemvm-vdi");
-    		if (vdis.size() != 1) {
-    			throw new CloudRuntimeException("can not find systemvmiso");
-    		}
-    		VDI systemvmVDI = vdis.iterator().next();
+            Set<VDI> vdis = VDI.getByNameLabel(conn, "systemvm-vdi");
+            if (vdis.size() != 1) {
+                throw new CloudRuntimeException("can not find systemvmiso");
+            }
+            VDI systemvmVDI = vdis.iterator().next();
 
-    		VBD.Record cdromVBDR = new VBD.Record();
+            VBD.Record cdromVBDR = new VBD.Record();
             cdromVBDR.VM = vm;
             cdromVBDR.empty = false;
             cdromVBDR.bootable = false;
@@ -109,9 +112,9 @@ public class XcpOssResource extends CitrixResourceBase {
             cdromVBDR.VDI = systemvmVDI;
             VBD cdromVBD = VBD.create(conn, cdromVBDR);
             return cdromVBD;
-    	} else {
-    		 throw new CloudRuntimeException("can not find local sr");
-    	}
+        } else {
+            throw new CloudRuntimeException("can not find local sr");
+        }
     }
 
 
@@ -143,36 +146,44 @@ public class XcpOssResource extends CitrixResourceBase {
 
     @Override
     public StartAnswer execute(StartCommand cmd) {
-    	StartAnswer answer = super.execute(cmd);
+        StartAnswer answer = super.execute(cmd);
 
-    	VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-    	if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy) {
-    		Connection conn = getConnection();
-    		String publicIp = null;
-    		for (NicTO nic : vmSpec.getNics()) {
-    			if (nic.getType() == TrafficType.Guest) {
-    				publicIp = nic.getIp();
-    			}
-    		}
-    		callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
-    	}
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy) {
+            Connection conn = getConnection();
+            String publicIp = null;
+            for (NicTO nic : vmSpec.getNics()) {
+                if (nic.getType() == TrafficType.Guest) {
+                    publicIp = nic.getIp();
+                }
+            }
+            callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
+        }
 
-    	return answer;
+        return answer;
     }
 
     @Override
     public StopAnswer execute(StopCommand cmd) {
-    	StopAnswer answer = super.execute(cmd);
-    	String vmName = cmd.getVmName();
-    	if (vmName.startsWith("v-")) {
-    		Connection conn = getConnection();
-    		callHostPlugin(conn, "vmops", "setDNATRule", "add", "false");
-    	}
-    	return answer;
+        StopAnswer answer = super.execute(cmd);
+        String vmName = cmd.getVmName();
+        if (vmName.startsWith("v-")) {
+            Connection conn = getConnection();
+            callHostPlugin(conn, "vmops", "setDNATRule", "add", "false");
+        }
+        return answer;
     }
 
     @Override
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }
+
+    @Override
+    protected StorageSubsystemCommandHandler getStorageHandler() {
+        XenServerStorageProcessor processor = new XenServerStorageProcessor(this);
+        processor.setBaseMountPointOnHost("/run/cloud_mount"); // sr mount point on devcloud
+        return new StorageSubsystemCommandHandlerBase(processor);
+    }
+
 }

@@ -39,6 +39,7 @@ from marvin.integration.lib.common import (get_domain,
                                                         cleanup_resources,
                                                         list_routers)
 import socket
+import time
 
 
 class Services:
@@ -557,6 +558,10 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         network_2 = self.create_network(self.services["network_offering_no_lb"], '10.1.2.1')
         vm_1 = self.deployvm_in_network(network_1)
         vm_2 = self.deployvm_in_network(network_2)
+
+        # wait until VM is up before stop the VR
+        time.sleep(120)
+
         public_ip_1 = self.acquire_publicip(network_1)
         public_ip_2 = self.acquire_publicip(network_2)
         router = self.stop_vpcrouter()
@@ -581,8 +586,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 6. Deploy vm2 in network2.
         # 7. Use the Create PF rule for vm1 in network1.
         # 8. Use the Create PF rule for vm2 in network2.
-        # 9. Start VPC Virtual Router.
-        # 10. Successfully ssh into the Guest VM1 and VM2 using the PF rule
+        # 9. Successfully ssh into the Guest VM1 and VM2 using the PF rule
 
         network_1 = self.create_network(self.services["network_offering"])
         network_2 = self.create_network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -590,10 +594,8 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         vm_2 = self.deployvm_in_network(network_2)
         public_ip_1 = self.acquire_publicip(network_1)
         public_ip_2 = self.acquire_publicip(network_2)
-        router = self.stop_vpcrouter()
         self.create_natrule(vm_1, public_ip_1, network_1)
         self.create_natrule(vm_2, public_ip_2, network_2)
-        self.start_vpcrouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
@@ -621,7 +623,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         public_ip_1 = self.acquire_publicip(network_1)
         self.create_natrule(vm_1, public_ip_1, network_1)
         http_rule = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
-        #http_rule = self.create_egress_Internet_Rule(network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         router = self.stop_vpcrouter()
@@ -651,7 +652,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         public_ip_1 = self.acquire_publicip(network_1)
         self.create_natrule(vm_1, public_ip_1, network_1)
         http_rule=self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
-        #http_rule = self.create_egress_Internet_Rule(network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         http_rule.delete(self.apiclient)
@@ -682,7 +682,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         public_ip_1 = self.acquire_publicip(network_1)
         nat_rule  = self.create_natrule(vm_1, public_ip_1, network_1)
         http_rule = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
-        #http_rule = self.create_egress_Internet_Rule(network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         router = self.stop_vpcrouter()
@@ -715,7 +714,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         public_ip_1 = self.acquire_publicip(network_1)
         nat_rule  = self.create_natrule(vm_1, public_ip_1, network_1)
         http_rule = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
-        #http_rule = self.create_egress_Internet_Rule(network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         http_rule.delete(self.apiclient)

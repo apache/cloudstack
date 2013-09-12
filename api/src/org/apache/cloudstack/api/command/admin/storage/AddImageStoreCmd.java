@@ -60,7 +60,7 @@ public class AddImageStoreCmd extends BaseCmd {
 
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the image store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
-    private Map<String, String> details;
+    private Map details;
 
 
 
@@ -81,19 +81,19 @@ public class AddImageStoreCmd extends BaseCmd {
         return zoneId;
     }
 
-     public Map<String, String> getDetails() {
-         Map<String, String> detailsMap = null;
-         if (details != null && !details.isEmpty()) {
-             detailsMap = new HashMap<String, String>();
-             Collection<?> props = details.values();
-             Iterator<?> iter = props.iterator();
-             while (iter.hasNext()) {
-                 HashMap<String, String> detail = (HashMap<String, String>) iter.next();
-                 String key = detail.get("key");
-                 String value = detail.get("value");
-                 detailsMap.put(key, value);
-             }
-         }
+    public Map<String, String> getDetails() {
+        Map<String, String> detailsMap = null;
+        if (details != null && !details.isEmpty()) {
+            detailsMap = new HashMap<String, String>();
+            Collection<?> props = details.values();
+            Iterator<?> iter = props.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                String key = detail.get("key");
+                String value = detail.get("value");
+                detailsMap.put(key, value);
+            }
+        }
         return detailsMap;
     }
 
@@ -139,10 +139,10 @@ public class AddImageStoreCmd extends BaseCmd {
             ImageStore result = _storageService.discoverImageStore(this);
             ImageStoreResponse storeResponse = null;
             if (result != null ) {
-                    storeResponse = _responseGenerator.createImageStoreResponse(result);
-                    storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("imagestore");
-                    this.setResponseObject(storeResponse);
+                storeResponse = _responseGenerator.createImageStoreResponse(result);
+                storeResponse.setResponseName(getCommandName());
+                storeResponse.setObjectName("imagestore");
+                this.setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }

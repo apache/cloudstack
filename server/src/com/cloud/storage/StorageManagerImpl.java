@@ -141,6 +141,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -205,6 +206,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected VMInstanceDao _vmInstanceDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao = null;
+    @Inject
+    protected StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject
     protected ImageStoreDao _imageStoreDao = null;
     @Inject
@@ -788,7 +791,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        Map<String, String> updatedDetails = new HashMap<String, String>();
+
         if (tags != null) {
+            Map<String, String> existingDetails = _storagePoolDetailsDao.getDetails(id);
+            Set<String> existingKeys = existingDetails.keySet();
+
+            Map<String, String> existingDetailsToKeep = new HashMap<String, String>();
+
+            for (String existingKey : existingKeys) {
+                String existingValue = existingDetails.get(existingKey);
+
+                if (!Boolean.TRUE.toString().equalsIgnoreCase(existingValue)) {
+                    existingDetailsToKeep.put(existingKey, existingValue);
+                }
+            }
+
             Map<String, String> details = new HashMap<String, String>();
             for (String tag : tags) {
                 tag = tag.trim();
@@ -797,10 +815,58 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            _storagePoolDao.updateDetails(id, details);
+            Set<String> existingKeysToKeep = existingDetailsToKeep.keySet();
+
+            for (String existingKeyToKeep : existingKeysToKeep) {
+                String existingValueToKeep = existingDetailsToKeep.get(existingKeyToKeep);
+
+                if (details.containsKey(existingKeyToKeep)) {
+                    throw new CloudRuntimeException("Storage tag '" + existingKeyToKeep + "' conflicts with a stored property of this primary storage. No changes were made.");
+                }
+
+                details.put(existingKeyToKeep, existingValueToKeep);
+            }
+
+            updatedDetails.putAll(details);
         }
 
-        return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+        Long updatedCapacityBytes = null;
+        Long capacityBytes = cmd.getCapacityBytes();
+
+        if (capacityBytes != null) {
+            if (capacityBytes > pool.getCapacityBytes()) {
+                updatedCapacityBytes = capacityBytes;
+            }
+            else if (capacityBytes < pool.getCapacityBytes()) {
+                throw new CloudRuntimeException("The value of 'Capacity bytes' cannot be reduced in this version.");
+            }
+        }
+
+        Long updatedCapacityIops = null;
+        Long capacityIops = cmd.getCapacityIops();
+
+        if (capacityIops != null) {
+            if (capacityIops > pool.getCapacityIops()) {
+                updatedCapacityIops = capacityIops;
+            }
+            else if (capacityIops < pool.getCapacityIops()) {
+                throw new CloudRuntimeException("The value of 'Capacity IOPS' cannot be reduced in this version.");
+            }
+        }
+
+        if (updatedDetails.size() > 0) {
+            _storagePoolDao.updateDetails(id, updatedDetails);
+        }
+
+        if (updatedCapacityBytes != null) {
+            _storagePoolDao.updateCapacityBytes(id, capacityBytes);
+        }
+
+        if (updatedCapacityIops != null) {
+            _storagePoolDao.updateCapacityIops(id, capacityIops);
+        }
+
+        return (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 
     @Override
@@ -918,16 +984,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(),
                     storagePool.getClusterId(), allocated, totalOverProvCapacity, capacityType);
-            AllocationState allocationState = null;
+
             if (storagePool.getScope() == ScopeType.ZONE) {
                 DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
-                allocationState = dc.getAllocationState();
+                AllocationState allocationState = dc.getAllocationState();
+                CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled
+                        : CapacityState.Enabled;
+                capacity.setCapacityState(capacityState);
             } else {
-                allocationState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(storagePool.getClusterId()));
+                if (storagePool.getClusterId() != null) {
+                    ClusterVO cluster = ApiDBUtils.findClusterById(storagePool.getClusterId());
+                    if (cluster != null) {
+                        AllocationState allocationState = _configMgr.findClusterAllocationState(cluster);
+                        CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled
+                                : CapacityState.Enabled;
+                        capacity.setCapacityState(capacityState);
+                    }
+                }
             }
-            CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-
-            capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
@@ -1061,6 +1135,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Error);
                     for (SnapshotVO snapshotVO : snapshots) {
                         try {
+                            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
+                            for(SnapshotDataStoreVO ref : storeRefs) {
+                                _snapshotStoreDao.expunge(ref.getId());
+                            }
                             _snapshotDao.expunge(snapshotVO.getId());
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy " + snapshotVO.getId(), e);
@@ -1218,6 +1296,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
+                        _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
                         _snapshotStoreDao.remove(destroyedSnapshotStoreVO.getId());
                     }
 

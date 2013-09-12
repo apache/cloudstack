@@ -66,7 +66,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the virtual machine")
-    private String instanceName;
+    private String name;
 
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
             description="the pod ID")
@@ -130,8 +130,8 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return id;
     }
 
-    public String getInstanceName() {
-        return instanceName;
+    public String getName() {
+        return name;
     }
 
     public Long getPodId() {

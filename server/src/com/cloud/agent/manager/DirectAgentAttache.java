@@ -184,6 +184,10 @@ public class DirectAgentAttache extends AgentAttache {
                     try {
                         if (resource != null) {
                             answer = resource.executeRequest(cmds[i]);
+                            if(answer == null) {
+                            	s_logger.warn("Resource returned null answer!");
+                                answer = new Answer(cmds[i], false, "Resource returned null answer");
+                            }
                         } else {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }

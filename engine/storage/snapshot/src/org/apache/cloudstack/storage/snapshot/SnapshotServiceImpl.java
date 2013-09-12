@@ -210,10 +210,6 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             result = future.get();
-            if (result.isFailed()) {
-                s_logger.debug("Failed to create snapshot:" + result.getResult());
-                throw new CloudRuntimeException(result.getResult());
-            }
             return result;
         } catch (InterruptedException e) {
             s_logger.debug("Failed to create snapshot", e);
@@ -222,7 +218,6 @@ public class SnapshotServiceImpl implements SnapshotService {
             s_logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
-
     }
 
     // if a snapshot has parent snapshot, the new snapshot should be stored in
@@ -252,7 +247,6 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         SnapshotResult result = new SnapshotResult(snapshot, null);
         try {
-
             snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
             DataStore imageStore = this.findSnapshotImageStore(snapshot);

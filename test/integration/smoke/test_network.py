@@ -624,6 +624,9 @@ class TestRebootRouter(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
 
+        # Wait for VM to come up
+        time.sleep(120)
+
         src_nat_ip_addrs = list_publicIP(
                                     self.apiclient,
                                     account=self.account.name,

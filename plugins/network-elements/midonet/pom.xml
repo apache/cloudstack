@@ -23,21 +23,21 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.2.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 <repositories>
     <repository>
         <id>mido-maven-public-releases</id>
         <name>mido-maven-public-releases</name>
-        <url>https://googledrive.com/host/0B7iVfAZ_5GmJTk9PUDFNLTl5MVk/releases</url>
+        <url>http://cs-maven.midokura.com/releases</url>
     </repository>
 </repositories>
   <dependencies>
     <dependency>
-      <groupId>com.midokura</groupId>
+      <groupId>org.midonet</groupId>
       <artifactId>midonet-client</artifactId>
-      <version>12.12.2</version>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>

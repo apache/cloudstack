@@ -43,7 +43,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      */
     void markHostsAsDisconnected(long msId, long lastPing);
 
-	List<HostVO> findLostHosts(long timeout);
+    List<HostVO> findLostHosts(long timeout);
 
     List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
 
@@ -61,15 +61,14 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     long countRoutingHostsByDataCenter(long dcId);
 
-	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
+    List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
 
-	HostVO findByGuid(String guid);
-	
-	HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
-	List<HostVO> findHypervisorHostInCluster(long clusterId);
+    HostVO findByGuid(String guid);
 
+    HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
+    List<HostVO> findHypervisorHostInCluster(long clusterId);
 
     /**
      * @param type
@@ -86,4 +85,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> findByClusterId(Long clusterId);
 
     List<HostVO> listByDataCenterId(long id);
+
+    List<Long> listAllHosts(long zoneId);
 }

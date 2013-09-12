@@ -196,6 +196,7 @@ patch() {
 
 patch_log4j() {
 log_it "Updating log4j-cloud.xml"
+mkdir -p /usr/local/cloud/systemvm/conf
 cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
@@ -484,7 +485,7 @@ disable_hvc() {
 
 enable_vpc_rpsrfs() {
     local enable=$1
-    if [ $eanble -eq 0]
+    if [ $enable -eq 0 ]
     then
         echo 0 > /etc/rpsrfsenable
     else
@@ -497,7 +498,7 @@ enable_vpc_rpsrfs() {
 enable_rpsrfs() {
   local enable=$1
 
-  if [ $eanble -eq 0]
+  if [ $enable -eq 0 ]
   then
       echo 0 > /etc/rpsrfsenable
       return 0
@@ -634,6 +635,9 @@ setup_common() {
 
 setup_dnsmasq() {
   log_it "Setting up dnsmasq"
+
+  touch /etc/dhcpopts.txt
+
   [ -z $DHCP_RANGE ] && [ $ETH0_IP ] && DHCP_RANGE=$ETH0_IP
   [ $ETH0_IP6 ] && DHCP_RANGE_IP6=$ETH0_IP6
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
@@ -724,6 +728,15 @@ setup_dnsmasq() {
       then
        echo "$ETH0_IP6 data-server" >> /etc/hosts
   fi
+#add the dhcp-client-update only if dnsmasq version is 2.6 and above
+  dnsmasqVersion=$(dnsmasq -v |  grep version -m 1 | grep -o  "[[:digit:]]\.[[:digit:]]")
+  major=$(echo "$dnsmasqVersion" | cut -d '.' -f 1)
+  minor=$(echo "$dnsmasqVersion" | cut -d '.' -f 2)
+  if [ "$major" -eq '2' -a  "$minor" -ge '6' ] || [ "$major" -gt '2' ]
+  then
+      sed -i -e "/^dhcp-client-update/d" /etc/dnsmasq.conf
+      echo 'dhcp-client-update' >> /etc/dnsmasq.conf
+  fi
 }
 
 setup_sshd(){
@@ -754,7 +767,15 @@ setup_vpc_apache2() {
 }
 
 
+clean_ipalias_config() {
+rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
+rm -f /etc/apache2/sites-available/ipAlias*
+rm -f /etc/apache2/sites-enabled/ipAlias*
+rm -rf /etc/failure_config
+}
+
 setup_apache2() {
+  clean_ipalias_config
   log_it "Setting up apache web server"
   local ip=$1
   [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
@@ -916,10 +937,6 @@ setup_router() {
 setup_vpcrouter() {
   log_it "Setting up VPC virtual router system vm"
 
-  if [ "$hyp" == "vmware" ]; then
-    setup_vmware_extra_nics
-  fi
-
   if [ -f /etc/hosts ]; then
     grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
   fi
@@ -964,6 +981,11 @@ EOF
      if [ "$hyp" == "vmware" ]
      then
          ip route add $MGMTNET via $LOCAL_GW dev eth0
+         
+          # a hacking way to activate vSwitch under VMware
+         ping -n -c 3 $LOCAL_GW &
+         sleep 3
+         pkill ping
      fi
   fi
 

@@ -347,7 +347,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     @Override
     public List<VlanVO> listZoneWideNonDedicatedVlans(long zoneId) {
         SearchCriteria<VlanVO> sc = ZoneWideNonDedicatedVlanSearch.create();
-        sc.setParameters("ZoneWideNonDedicatedVlanSearch", "zoneId", zoneId);
+        sc.setParameters("zoneId", zoneId);
         return listBy(sc);
     }
 

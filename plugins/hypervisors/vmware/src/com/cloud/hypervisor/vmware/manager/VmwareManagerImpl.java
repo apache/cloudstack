@@ -162,6 +162,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     int _portsPerDvPortGroup = 256;
     boolean _nexusVSwitchActive;
     boolean _fullCloneFlag;
+    boolean _instanceNameFlag;
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
@@ -232,6 +233,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         } else {
             _fullCloneFlag = Boolean.parseBoolean(value);
         }
+
+        value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
+        if (value == null) {
+            _instanceNameFlag = false;
+        } else {
+            _instanceNameFlag = Boolean.parseBoolean(value);
+        }
+
         _portsPerDvPortGroup = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePortsPerDVPortGroup.key()), _portsPerDvPortGroup);
 
         _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
@@ -506,10 +515,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public void setupResourceStartupParams(Map<String, Object> params) {
         params.put("vmware.create.full.clone", _fullCloneFlag);
+        params.put("vm.instancename.flag", _instanceNameFlag);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
-        params.put("vmware.reserve.cpu", _reserveCpu);
-        params.put("vmware.reserve.mem", _reserveMem);
         params.put("vmware.root.disk.controller", _rootDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
         params.put("ports.per.dvportgroup", _portsPerDvPortGroup);
@@ -755,11 +763,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         // Change permissions for the mountpoint
         script = new Script(true, "chmod", _timeout, s_logger);
-        script.add("777", mountPoint);
+        script.add("-R", "777", mountPoint);
         result = script.execute();
         if (result != null) {
             s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
-            return null;
         }
         return mountPoint;
     }
@@ -1163,9 +1170,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Check if zone with specified id exists
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "Can't find zone by the id specified.");
-            throw ex;
+            throw new InvalidParameterValueException("Can't find zone by the id specified.");
+        }
+        // Check if zone is legacy zone
+        if (isLegacyZone(zoneId)) {
+            throw new InvalidParameterValueException("The specified zone is legacy zone. Adding VMware datacenter to legacy zone is not supported.");
+        } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("The specified zone is not legacy zone.");
+            }
         }
     }
 

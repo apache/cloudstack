@@ -24,7 +24,7 @@
 
 <section id="creating-disk-offerings">
     <title>Creating a New Disk Offering</title>
-    <para>To create a system service offering:</para>
+    <para>To create a new disk offering:</para>
     <orderedlist>
         <listitem><para>Log in with admin privileges to the &PRODUCT; UI.</para></listitem>
         <listitem><para>In the left navigation bar, click Service Offerings.</para></listitem>
@@ -32,11 +32,15 @@
         <listitem><para>Click Add Disk Offering.</para></listitem>
         <listitem><para>In the dialog, make the following choices:</para>
         <itemizedlist>
-            <listitem><para>Name. Any desired name for the system offering.</para></listitem>
+            <listitem><para>Name. Any desired name for the disk offering.</para></listitem>
             <listitem><para>Description. A short description of the offering that can be displayed to users</para></listitem>
             <listitem><para>Custom Disk Size. If checked, the user can set their own disk size. If not checked, the root administrator must define a value in Disk Size.</para></listitem>
             <listitem><para>Disk Size. Appears only if Custom Disk Size is not selected. Define the volume size in GB.</para></listitem>
-            <listitem><para>(Optional)Storage Tags.  The tags that should be associated with the primary storage for this disk. Tags are a comma separated list of attributes of the storage.  For example "ssd,blue".  Tags are also added on Primary Storage.  &PRODUCT; matches tags on a disk offering to tags on the storage.  If a tag is present on a disk offering that tag (or tags) must also be present on Primary Storage for the volume to be provisioned.  If no such primary storage exists, allocation from the disk offering will fail..</para></listitem>
+            <listitem><para>QoS Type. Three options: Empty (no Quality of Service), hypervisor (rate limiting enforced on the hypervisor side), and storage (guaranteed minimum and maximum IOPS enforced on the storage side). If leveraging QoS, make sure that the hypervisor or storage system supports this feature.</para></listitem>
+            <listitem><para>Custom IOPS. If checked, the user can set their own IOPS. If not checked, the root administrator can define values. If the root admin does not set values when using storage QoS, default values are used (the defauls can be overridden if the proper parameters are passed into &PRODUCT; when creating the primary storage in question).</para></listitem>
+            <listitem><para>Min IOPS. Appears only if storage QoS is to be used. Set a guaranteed minimum number of IOPS to be enforced on the storage side.</para></listitem>
+            <listitem><para>Max IOPS. Appears only if storage QoS is to be used. Set a maximum number of IOPS to be enforced on the storage side (the system may go above this limit in certain circumstances for short intervals).</para></listitem>
+            <listitem><para>(Optional)Storage Tags. The tags that should be associated with the primary storage for this disk. Tags are a comma separated list of attributes of the storage.  For example "ssd,blue". Tags are also added on Primary Storage. &PRODUCT; matches tags on a disk offering to tags on the storage. If a tag is present on a disk offering that tag (or tags) must also be present on Primary Storage for the volume to be provisioned. If no such primary storage exists, allocation from the disk offering will fail..</para></listitem>
             <listitem><para>Public.  Indicate whether the service offering should be available all domains or only some domains. Choose Yes to make it available to all domains. Choose No to limit the scope to a subdomain; &PRODUCT; will then prompt for the subdomain's name.</para></listitem>
         </itemizedlist></listitem> 
         <listitem><para>Click Add.</para></listitem>        

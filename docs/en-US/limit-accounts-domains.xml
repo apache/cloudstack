@@ -164,7 +164,7 @@
     </itemizedlist>
   </section>
   <section id="per-domain-limits">
-    <title>Per-Domain Limits</title>
+    <title>Limiting Resource Usage in a Domain</title>
     <para>&PRODUCT; allows the configuration of limits on a domain basis. With a domain limit in
       place, all users still have their account limits. They are additionally limited, as a group,
       to not exceed the resource limits set on their domain. Domain limits aggregate the usage of

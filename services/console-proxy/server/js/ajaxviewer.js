@@ -140,9 +140,13 @@ KeyboardMapper.prototype = {
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SELECT_KEY] 		= AjaxViewer.X11_KEY_SELECT_KEY;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
 			this.jsKeyPressX11KeysymMap[45] 				= [{type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
-			                                				   {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: false }];
+															   {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
+															   {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: false },
+															   {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: false }];
 			this.jsKeyPressX11KeysymMap[47] 				= [{type: AjaxViewer.KEY_DOWN, code: 0x2f, modifiers: 0, shift: true },
-			                                				   {type: AjaxViewer.KEY_DOWN, code: 0x2f, modifiers: 0, shift: false }];
+															   {type: AjaxViewer.KEY_UP, code: 0x2f, modifiers: 0, shift: true },
+															   {type: AjaxViewer.KEY_DOWN, code: 0x2f, modifiers: 0, shift: false },
+															   {type: AjaxViewer.KEY_UP, code: 0x2f, modifiers: 0, shift: false }];
 		}
 	},
 	RawkeyboardInputHandler : function(eventType, code, modifiers, guestos, browser, browserVersion) {

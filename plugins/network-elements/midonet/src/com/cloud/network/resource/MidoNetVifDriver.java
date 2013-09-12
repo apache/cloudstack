@@ -21,31 +21,23 @@ package com.cloud.network.resource;
 
 import com.cloud.hypervisor.kvm.resource.*;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.midokura.midonet.client.resource.Bridge;
-import com.midokura.midonet.client.resource.Router;
-import com.midokura.midonet.client.resource.BridgePort;
-import com.midokura.midonet.client.resource.RouterPort;
-import com.midokura.midonet.client.resource.Host;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
-
 import com.sun.jersey.core.util.MultivaluedMapImpl;
-import com.midokura.midonet.client.MidonetApi;
-
 import javax.ws.rs.core.MultivaluedMap;
-
 import javax.naming.ConfigurationException;
-import javax.ws.rs.core.MultivaluedMap;
-import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
+
+import org.midonet.client.resource.Bridge;
+import org.midonet.client.resource.BridgePort;
+import org.midonet.client.resource.Host;
+import org.midonet.client.MidonetApi;
 
 public class MidoNetVifDriver extends VifDriverBase {
 

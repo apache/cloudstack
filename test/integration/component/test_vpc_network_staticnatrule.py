@@ -39,6 +39,7 @@ from marvin.integration.lib.common import (get_domain,
                                                         cleanup_resources,
                                                         list_routers)
 import socket
+import time
 
 
 class Services:
@@ -361,6 +362,21 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                 self.fail("Failed to enable static NAT on IP: %s - %s" % (
                                                     public_ip.ipaddress.ipaddress, e))
 
+    def delete_StaticNatRule_For_VM(self, vm, public_ip):
+        self.debug("Disabling static NAT for IP: %s" %
+                                                        public_ip.ipaddress.ipaddress)
+        try:
+                StaticNATRule.disable(
+                                        self.apiclient,
+                                        ipaddressid=public_ip.ipaddress.id,
+                                        virtualmachineid=vm.id,
+                                        )
+                self.debug("Static NAT disabled for IP: %s" %
+                                                        public_ip.ipaddress.ipaddress)
+        except Exception as e:
+                self.fail("Failed to disabled static NAT on IP: %s - %s" % (
+                                                    public_ip.ipaddress.ipaddress, e))
+
     def acquire_Public_IP(self, network):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(self.apiclient,
@@ -559,6 +575,10 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         vm_2 = self.create_VM_in_Network(network_2)
         public_ip_1 = self.acquire_Public_IP(network_1)
         public_ip_2 = self.acquire_Public_IP(network_2)
+
+        # wait for VM to boot up
+        time.sleep(120)
+
         router = self.stop_VPC_VRouter()
         self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
         self.create_StaticNatRule_For_VM(vm_2, public_ip_2, network_2)
@@ -594,10 +614,8 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         vm_2 = self.create_VM_in_Network(network_2)
         public_ip_1 = self.acquire_Public_IP(network_1)
         public_ip_2 = self.acquire_Public_IP(network_2)
-        router = self.stop_VPC_VRouter()
         self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
         self.create_StaticNatRule_For_VM(vm_2, public_ip_2, network_2)
-        self.start_VPC_VRouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
@@ -613,7 +631,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 2. Create a Network offering - NO1 with all supported services
         # 3. Add network1(10.1.1.1/24) using N01 to this VPC.
         # 4. Deploy vm1 in network1.
-        # 5. Use the Create PF rule for vm in network1.
+        # 5. Use the Create static nat rule for vm in network1.
         # 6. Successfully ssh into the Guest VM using the PF rule.
         # 7. Successfully wget a file on http server of VM1.
         # 8. Delete all PF rule
@@ -626,12 +644,10 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
 
         vm_1 = self.create_VM_in_Network(network_1)
         public_ip_1 = self.acquire_Public_IP(network_1)
-        nat_rule  = self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
-        http_rule = self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1, self.services["http_rule"])
+        self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
-        http_rule.delete(self.apiclient)
-        nat_rule.delete(self.apiclient)
+        self.delete_StaticNatRule_For_VM(vm_1, public_ip_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
@@ -671,10 +687,10 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         public_ip_2 = self.acquire_Public_IP(network_1)
         public_ip_3 = self.acquire_Public_IP(network_2)
         public_ip_4 = self.acquire_Public_IP(network_2)
-        nat_rule1  = self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
-        nat_rule2  = self.create_StaticNatRule_For_VM(vm_2, public_ip_2, network_1)
-        nat_rule3  = self.create_StaticNatRule_For_VM(vm_3, public_ip_3, network_2)
-        nat_rule4  = self.create_StaticNatRule_For_VM(vm_4, public_ip_4, network_2)
+        self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
+        self.create_StaticNatRule_For_VM(vm_2, public_ip_2, network_1)
+        self.create_StaticNatRule_For_VM(vm_3, public_ip_3, network_2)
+        self.create_StaticNatRule_For_VM(vm_4, public_ip_4, network_2)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         self.check_ssh_into_vm(vm_3, public_ip_1, testnegative=False)
@@ -683,10 +699,10 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_2, public_ip_2, testnegative=False)
         self.check_wget_from_vm(vm_3, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_4, public_ip_2, testnegative=False)
-        nat_rule1.delete(self.apiclient)
-        nat_rule2.delete(self.apiclient)
-        nat_rule3.delete(self.apiclient)
-        nat_rule4.delete(self.apiclient)
+        self.delete_StaticNatRule_For_VM(vm_1, public_ip_1)
+        self.delete_StaticNatRule_For_VM(vm_2, public_ip_2)
+        self.delete_StaticNatRule_For_VM(vm_3, public_ip_3)
+        self.delete_StaticNatRule_For_VM(vm_4, public_ip_4)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=True)
         self.check_ssh_into_vm(vm_3, public_ip_1, testnegative=True)

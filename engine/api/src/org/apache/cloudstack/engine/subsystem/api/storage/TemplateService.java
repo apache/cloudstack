@@ -61,4 +61,6 @@ public interface TemplateService {
     void downloadBootstrapSysTemplate(DataStore store);
 
     void addSystemVMTemplatesToSecondary(DataStore store);
+    
+    void associateCrosszoneTemplatesToZone(long dcId);
 }

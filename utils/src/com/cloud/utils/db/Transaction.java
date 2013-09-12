@@ -297,7 +297,9 @@ public class Transaction {
         final StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
         StackElement se = txn.peekInStack(CURRENT_TXN);
         if (se == null) {
-            return false;
+        	// disable @DB check until we make run-time ComponentContext.inject() work with @DB
+        	// return false;
+    		return true;
         }
         
         StringBuffer sb = new StringBuffer();

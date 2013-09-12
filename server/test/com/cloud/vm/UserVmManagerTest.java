@@ -31,6 +31,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
@@ -102,6 +103,7 @@ public class UserVmManagerTest {
     @Mock VolumeVO _volumeMock;
     @Mock List<VolumeVO> _rootVols;
     @Mock Account _accountMock2;
+    @Mock ServiceOfferingDao _offeringDao;
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
@@ -117,6 +119,7 @@ public class UserVmManagerTest {
         _userVmMgr._userDao = _userDao;
         _userVmMgr._accountMgr = _accountMgr;
         _userVmMgr._configMgr = _configMgr;
+        _userVmMgr._offeringDao= _offeringDao;
         _userVmMgr._capacityMgr = _capacityMgr;
         _userVmMgr._scaleRetry = 2;
 
@@ -309,10 +312,8 @@ public class UserVmManagerTest {
 
         ServiceOffering so1 =  (ServiceOffering) getSvcoffering(512);
         ServiceOffering so2 =  (ServiceOffering) getSvcoffering(256);
-
         when(_configMgr.getServiceOffering(anyLong())).thenReturn(so1);
-        when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
-
+        when(_offeringDao.findByIdIncludingRemoved(anyLong())).thenReturn((ServiceOfferingVO) so1);
         _userVmMgr.upgradeVirtualMachine(cmd);
 
     }

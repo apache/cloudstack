@@ -16,8 +16,13 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
 
 public final class CopyCommand extends Command implements StorageSubSystemCommand {
     private DataTO srcTO;
@@ -31,11 +36,31 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         this.srcTO = srcData;
         this.destTO = destData;
         this.setWait(timeout);
-        this.executeInSequence = executeInSequence;
+        this.executeInSequence = executeInSequence; // default is to run in parallel, so false here
+/*        
+        // special handling for vmware parallel vm deployment bug https://issues.apache.org/jira/browse/CLOUDSTACK-3568
+        if (srcTO instanceof TemplateObjectTO && destTO instanceof VolumeObjectTO) {
+            // create a volume wrapper vm from a template on primary storage
+            TemplateObjectTO srcTmplt = (TemplateObjectTO) srcTO;
+            VolumeObjectTO destVol = (VolumeObjectTO) destTO;
+            if (srcTmplt.getHypervisorType() == HypervisorType.VMware && srcTmplt.getDataStore().getRole() == DataStoreRole.Primary
+                    && destVol.getDataStore().getRole() == DataStoreRole.Primary) {
+                this.executeInSequence = true;
+            }
+        }
+*/
     }
 
     public DataTO getDestTO() {
         return this.destTO;
+    }
+
+    public void setSrcTO(DataTO srcTO) {
+        this.srcTO = srcTO;
+    }
+
+    public void setDestTO(DataTO destTO) {
+        this.destTO = destTO;
     }
 
     public DataTO getSrcTO() {

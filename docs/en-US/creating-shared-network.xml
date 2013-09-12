@@ -23,7 +23,7 @@
   <title>Configuring a Shared Guest Network</title>
   <orderedlist>
     <listitem>
-      <para>Log in to the CloudPlatform UI as administrator.</para>
+      <para>Log in to the &PRODUCT; UI as administrator.</para>
     </listitem>
     <listitem>
       <para>In the left navigation, choose Infrastructure.</para>

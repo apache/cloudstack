@@ -72,7 +72,7 @@ public enum Config {
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null, ConfigurationParameterScope.zone.toString()),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
-    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unsed data on cache storage (in days).", null),
+    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unused data on cache storage (in days).", null),
     StorageCacheReplacementEnabled("Storage", ManagementServer.class, Boolean.class, "storage.cache.replacement.enabled", "true", "enable or disable cache storage replacement algorithm.", null),
     StorageCacheReplacementInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.interval", "86400", "time interval between cache replacement threads (in seconds).", null),
     MaxUploadVolumeSize("Storage",  ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),
@@ -144,8 +144,8 @@ public enum Config {
     SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum monthly snapshots for a volume", null),
     SnapshotPollInterval("Snapshots", SnapshotManager.class, Integer.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    BackupSnapshotAferTakingSnapshot("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.backup.rightafter", "true", "backup snapshot right after snapshot is taken", null),
-    KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "KVM.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
+    BackupSnapshotAfterTakingSnapshot("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.backup.rightafter", "true", "backup snapshot right after snapshot is taken", null),
+    KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
 	// Advanced
     JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
@@ -202,7 +202,7 @@ public enum Config {
 	CPUOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "cpu.overprovisioning.factor", "1", "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", null, ConfigurationParameterScope.cluster.toString()),
 	MemOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "mem.overprovisioning.factor", "1", "Used for memory overprovisioning calculation", null, ConfigurationParameterScope.cluster.toString()),
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
-	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC, "The list of hypervisors that this deployment will use.", "hypervisorList"),
+	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC, "The list of hypervisors that this deployment will use.", "hypervisorList"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "15", "Events older than specified number days will be purged. Set this value to 0 to never delete events", null),
@@ -264,7 +264,8 @@ public enum Config {
     EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
     EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
     RecreateSystemVmEnabled("Advanced", ManagementServer.class, Boolean.class, "recreate.systemvm.enabled", "false", "If true, will recreate system vm root disk whenever starting system vm", "true,false"),
-    SetVmInternalNameUsingDisplayName("Advanced", ManagementServer.class, Boolean.class, "vm.instancename.flag", "false", "If true, will append guest VM's display Name (if set) to its internal instance name", "true,false"),
+    SetVmInternalNameUsingDisplayName("Advanced", ManagementServer.class, Boolean.class, "vm.instancename.flag", "false",
+            "If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname", "true,false"),
     IncorrectLoginAttemptsAllowed("Advanced", ManagementServer.class, Integer.class, "incorrect.login.attempts.allowed", "5", "Incorrect login attempts allowed before the user is disabled", null),
     // Ovm
     OvmPublicNetwork("Hidden", ManagementServer.class, String.class, "ovm.public.network.device", null, "Specify the public bridge on host for public network", null),
@@ -286,14 +287,14 @@ public enum Config {
     VmwareUseNexusVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.nexus.vswitch", "false", "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment", null),
     VmwareUseDVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.dvswitch", "false", "Enable/Disable Nexus/Vmware dvSwitch in VMware environment", null),
     VmwarePortsPerDVPortGroup("Network", ManagementServer.class, Integer.class, "vmware.ports.per.dvportgroup", "256", "Default number of ports per Vmware dvPortGroup in VMware environment", null),
-    VmwareCreateFullClone("Advanced", ManagementServer.class, Boolean.class, "vmware.create.full.clone", "false", "If set to true, creates guest VMs as full clones on ESX", null),
+    VmwareCreateFullClone("Advanced", ManagementServer.class, Boolean.class, "vmware.create.full.clone", "true", "If set to true, creates guest VMs as full clones on ESX", null),
     VmwareServiceConsole("Advanced", ManagementServer.class, String.class, "vmware.service.console", "Service Console", "Specify the service console network name(for ESX hosts)", null),
     VmwareManagementPortGroup("Advanced", ManagementServer.class, String.class, "vmware.management.portgroup", "Management Network", "Specify the management network name(for ESXi hosts)", null),
     VmwareAdditionalVncPortRangeStart("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.start", "50000", "Start port number of additional VNC port range", null),
     VmwareAdditionalVncPortRangeSize("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.size", "1000", "Start port number of additional VNC port range", null),
     //VmwareGuestNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.guest.nic.device.type", "E1000", "Ethernet card type used in guest VM, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
-    VmwareReserveCpu("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.cpu", "false", "Specify whether or not to reserve CPU based on CPU overprovisioning factor", null),
-    VmwareReserveMem("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.mem", "false", "Specify whether or not to reserve memory based on memory overprovisioning factor", null),
+    VmwareReserveCpu("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.cpu", "false", "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu", null, ConfigurationParameterScope.cluster.toString()),
+    VmwareReserveMem("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.mem", "false", "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory", null, ConfigurationParameterScope.cluster.toString()),
     VmwareRootDiskControllerType("Advanced", ManagementServer.class, String.class, "vmware.root.disk.controller", "ide", "Specify the default disk controller for root volumes, valid values are scsi, ide", null),
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
@@ -307,6 +308,8 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
+    KvmSshToAgentEnabled("Advanced", ManagementServer.class, Boolean.class, "kvm.ssh.to.agent", "true", "Specify whether or not the management server is allowed to SSH into KVM Agents", null),
+
 	// Usage
 	UsageExecutionTimezone("Usage", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
 	UsageStatsJobAggregationRange("Usage", ManagementServer.class, Integer.class, "usage.stats.job.aggregation.range", "1440", "The range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly.", null),
@@ -432,10 +435,10 @@ public enum Config {
 	           "routes", ConfigurationParameterScope.zone.toString()),
 	
     InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, String.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
-    ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side." +
-    		" If set to false, these commands become asynchronous. Default value is false.", null),
-    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." + 
-            " If set to false, these commands become asynchronous. Default value is false.", null),
+    ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "true", "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side." +
+    		" If set to false, these commands become asynchronous. Default value is true.", null),
+    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "true", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." +
+            " If set to false, these commands become asynchronous. Default value is true.", null),
 	
 	UCSSyncBladeInterval("Advanced", ManagementServer.class, Integer.class, "ucs.sync.blade.interval", "3600", "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", null);
 	
@@ -570,7 +573,9 @@ public enum Config {
             return "TemplateManager";
         } else if (_componentClass == VpcManager.class) {
             return "VpcManager";
-        }else {
+        } else if (_componentClass == SnapshotManager.class) {
+            return "SnapshotManager";
+        } else {
             return "none";
         }
     }

@@ -125,6 +125,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -137,8 +138,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
     @Inject
     protected VMTemplateDao _templateDao;
-    @Inject
-    protected HostDao _hostDao;
     @Inject
     protected UserVmDao _vmDao;
     @Inject
@@ -155,8 +154,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     protected SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
-    @Inject
-    protected EventDao _eventDao;
     @Inject
     protected SnapshotPolicyDao _snapshotPolicyDao = null;
     @Inject
@@ -461,7 +458,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         while (snaps.size() > maxSnaps && snaps.size() > 1) {
             SnapshotVO oldestSnapshot = snaps.get(0);
             long oldSnapId = oldestSnapshot.getId();
-            s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
+            if (policy != null) {
+                s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
+            }
             if(deleteSnapshot(oldSnapId)){
             	//log Snapshot delete event
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
@@ -904,16 +903,25 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
 
 
-    private boolean hostSupportSnapsthot(HostVO host) {
+    private boolean hostSupportSnapsthotForVolume(HostVO host, VolumeInfo volume) {
 		if (host.getHypervisorType() != HypervisorType.KVM) {
 			return true;
 		}
 
-        //Turn off snapshot by default for KVM, unless it is set in the global flag
-        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
-        if (!snapshotEnabled) {
-             return false;
-        }
+        //Turn off snapshot by default for KVM if the volume attached to vm that is not in the Stopped/Destroyed state,
+		//unless it is set in the global flag
+		Long vmId = volume.getInstanceId();
+		if (vmId != null) {
+		    VMInstanceVO vm = _vmDao.findById(vmId);
+		    if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
+		        boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
+	            if (!snapshotEnabled) {
+	                 s_logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
+	                 return false;
+	            }
+		    }
+		}
+        
 		// Determine host capabilities
 		String caps = host.getCapabilities();
 
@@ -929,21 +937,34 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 	}
 
     private boolean supportedByHypervisor(VolumeInfo volume) {
-    	StoragePool storagePool = (StoragePool)volume.getDataStore();
-        ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
-        if (cluster != null && cluster.getHypervisorType() == HypervisorType.Ovm) {
+        HypervisorType hypervisorType;
+        StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
+        ScopeType scope = storagePool.getScope();
+        if (scope.equals(ScopeType.ZONE)) {
+            hypervisorType = storagePool.getHypervisor();
+        } else {
+            hypervisorType = volume.getHypervisorType();
+        }
+
+        if (hypervisorType.equals(HypervisorType.Ovm)) {
             throw new InvalidParameterValueException("Ovm won't support taking snapshot");
         }
 
-		if (volume.getHypervisorType().equals(HypervisorType.KVM)) {
-			List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
-			if (hosts != null && !hosts.isEmpty()) {
-				HostVO host = hosts.get(0);
-				if (!hostSupportSnapsthot(host)) {
-					throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
-				}
-			}
-		}
+        if (hypervisorType.equals(HypervisorType.KVM)) {
+            List<HostVO> hosts = null;
+            if(scope.equals(ScopeType.CLUSTER)){
+                ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
+                hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
+            } else if (scope.equals(ScopeType.ZONE)){
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, volume.getDataCenterId());
+            }
+            if (hosts != null && !hosts.isEmpty()) {
+                HostVO host = hosts.get(0);
+                if (!hostSupportSnapsthotForVolume(host, volume)) {
+                    throw new CloudRuntimeException("KVM Snapshot is not supported: " + host.getId());
+                }
+            }
+        }
 
 		// if volume is attached to a vm in destroyed or expunging state; disallow
 		if (volume.getInstanceId() != null) {
@@ -977,6 +998,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 		return true;
 	}
     @Override
+    @DB
     public SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException {
         CreateSnapshotPayload payload = (CreateSnapshotPayload)volume.getpayload();
         Long snapshotId = payload.getSnapshotId();
@@ -995,15 +1017,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             if (!processed) {
                 throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshotId);
             }
-            postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
-                    snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-                    volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+            try {
+                postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-
-            _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
-
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
+                        snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
+                        volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+            } catch (Exception e) {
+                s_logger.debug("post process snapshot failed", e);
+            }
         } catch(Exception e) {
             s_logger.debug("Failed to create snapshot", e);
             if (backup) {
@@ -1023,7 +1047,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
         _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
-        backup = Boolean.parseBoolean(this._configDao.getValue(Config.BackupSnapshotAferTakingSnapshot.toString()));
+        backup = Boolean.parseBoolean(_configDao.getValue(Config.BackupSnapshotAfterTakingSnapshot.toString()));
 
         Type.HOURLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         Type.DAILY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.daily"), DAILYMAX));

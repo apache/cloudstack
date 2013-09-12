@@ -1242,7 +1242,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         //Check if its a scale "up"
         ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceOfferingId);
-        ServiceOffering currentServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
+        ServiceOffering currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
         int newCpu = newServiceOffering.getCpu();
         int newMemory = newServiceOffering.getRamSize();
         int newSpeed = newServiceOffering.getSpeed();
@@ -1253,7 +1253,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // Don't allow to scale when (Any of the new values less than current values) OR (All current and new values are same)
         if( (newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu)
                 ||  ( newSpeed == currentSpeed && newMemory == currentMemory && newCpu == currentCpu)){
-            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
+            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering(speed="+ newSpeed + ",cpu=" + newCpu + ",memory=," + newMemory + ")" +
+                    " should have at least one value(cpu/ram) greater than old value and no resource value less than older(speed="+ currentSpeed + ",cpu=" + currentCpu + ",memory=," + currentMemory + ")");
         }
 
         // Check resource limits
@@ -1547,14 +1548,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 new UserVmStateListener(_usageEventDao, _networkDao, _nicDao));
 
         value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
-
-        if(value == null) {
-            _instanceNameFlag = false;
-        }
-        else
-        {
-            _instanceNameFlag = Boolean.parseBoolean(value);
-        }
+        _instanceNameFlag = (value == null)?false:Boolean.parseBoolean(value);
 
        _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
 
@@ -2519,20 +2513,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + zone.getId());
         }
 
-        boolean isExplicit = false;
-        // check affinity group type Explicit dedication
-        if (affinityGroupIdList != null) {
-            for (Long affinityGroupId : affinityGroupIdList) {
-                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
-                String agType = ag.getType();
-                if (agType.equals("ExplicitDedication")) {
-                    isExplicit = true;
-                }
-            }
-        }
         // check if zone is dedicated
         DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
-        if (isExplicit && dedicatedZone != null) {
+        if (dedicatedZone != null) {
             DomainVO domain = _domainDao.findById(dedicatedZone.getDomainId());
             if (domain == null) {
                 throw new CloudRuntimeException("Unable to find the domain "
@@ -2588,13 +2571,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + " ,type: " + ag.getType() + " , Please try again after removing the affinity group");
                 } else {
                     // verify permissions
-                    _accountMgr.checkAccess(caller, null, true, owner, ag);
-                    // Root admin has access to both VM and AG by default, but
-                    // make sure the owner of these entities is same
-                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
-                        if (ag.getAccountId() != owner.getAccountId()) {
-                            throw new PermissionDeniedException("Affinity Group " + ag
-                                    + " does not belong to the VM's account");
+                    if (ag.getAclType() == ACLType.Domain) {
+                        _accountMgr.checkAccess(caller, null, false, owner, ag);
+                        // Root admin has access to both VM and AG by default,
+                        // but
+                        // make sure the owner of these entities is same
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                            if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
+                                throw new PermissionDeniedException("Affinity Group " + ag
+                                        + " does not belong to the VM's domain");
+                            }
+                        }
+                    } else {
+                        _accountMgr.checkAccess(caller, null, true, owner, ag);
+                        // Root admin has access to both VM and AG by default,
+                        // but
+                        // make sure the owner of these entities is same
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                            if (ag.getAccountId() != owner.getAccountId()) {
+                                throw new PermissionDeniedException("Affinity Group " + ag
+                                        + " does not belong to the VM's account");
+                            }
                         }
                     }
                 }
@@ -2729,58 +2726,59 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
-        String instanceName;
-        if (_instanceNameFlag && displayName != null) {
-            // Check if the displayName conforms to RFC standards.
-            checkNameForRFCCompliance(displayName);
-            instanceName = VirtualMachineName.getVmName(id, owner.getId(), displayName);
-            if (instanceName.length() > MAX_VM_NAME_LEN) {
-                throw new InvalidParameterValueException("Specified display name " + displayName + " causes VM name to exceed 80 characters in length");
-            }
-            // Search whether there is already an instance with the same instance name
-            // that is not in the destroyed or expunging state.
-            VMInstanceVO vm = _vmInstanceDao.findVMByInstanceName(instanceName);
-            if (vm != null && vm.getState() != VirtualMachine.State.Expunging) {
-                throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
-            }
-        } else {
-            instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        if (hostName != null) {
+            // Check is hostName is RFC compliant
+            checkNameForRFCCompliance(hostName);
         }
 
+        String instanceName = null;
         String uuidName = UUID.randomUUID().toString();
-
-        // verify hostname information
-        if (hostName == null) {
-            hostName = uuidName;
-        } else {
-            //1) check is hostName is RFC compliant
-            checkNameForRFCCompliance(hostName);
-            // 2) hostName has to be unique in the network domain
-            Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
-            for (NetworkVO network : networkList) {
-                String ntwkDomain = network.getNetworkDomain();
-                if (!ntwkDomains.containsKey(ntwkDomain)) {
-                    List<Long> ntwkIds = new ArrayList<Long>();
-                    ntwkIds.add(network.getId());
-                    ntwkDomains.put(ntwkDomain, ntwkIds);
+        if (_instanceNameFlag && hypervisor.equals(HypervisorType.VMware)) {
+            if (hostName == null) {
+                if (displayName != null) {
+                    hostName = displayName;
                 } else {
-                    List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
-                    ntwkIds.add(network.getId());
-                    ntwkDomains.put(ntwkDomain, ntwkIds);
+                    hostName = uuidName;
                 }
             }
+        } else {
+            if (hostName == null) {
+                hostName = uuidName;
+            }
+        }
 
-            for (String ntwkDomain : ntwkDomains.keySet()) {
-                for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
-                    // * get all vms hostNames in the network
-                    List<String> hostNames = _vmInstanceDao
-                            .listDistinctHostNames(ntwkId);
-                    // * verify that there are no duplicates
-                    if (hostNames.contains(hostName)) {
-                        throw new InvalidParameterValueException("The vm with hostName " + hostName
-                                + " already exists in the network domain: " + ntwkDomain + "; network="
-                                + _networkModel.getNetwork(ntwkId));
-                    }
+        instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+
+        // Check if VM with instanceName already exists.
+        VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
+        if (vmObj != null && vmObj.getState() != VirtualMachine.State.Expunging) {
+            throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
+        }
+
+        // Check that hostName is unique in the network domain
+        Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
+        for (NetworkVO network : networkList) {
+            String ntwkDomain = network.getNetworkDomain();
+            if (!ntwkDomains.containsKey(ntwkDomain)) {
+                List<Long> ntwkIds = new ArrayList<Long>();
+                ntwkIds.add(network.getId());
+                ntwkDomains.put(ntwkDomain, ntwkIds);
+            } else {
+                List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
+                ntwkIds.add(network.getId());
+                ntwkDomains.put(ntwkDomain, ntwkIds);
+            }
+        }
+
+        for (String ntwkDomain : ntwkDomains.keySet()) {
+            for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
+                // * get all vms hostNames in the network
+                List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
+                // * verify that there are no duplicates
+                if (hostNames.contains(hostName)) {
+                    throw new InvalidParameterValueException("The vm with hostName " + hostName
+                        + " already exists in the network domain: " + ntwkDomain + "; network="
+                        + _networkModel.getNetwork(ntwkId));
                 }
             }
         }
@@ -3490,8 +3488,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public void collectVmDiskStatistics (UserVmVO userVm) {
         // support KVM only util 2013.06.25
         if (!userVm.getHypervisorType().equals(HypervisorType.KVM))
-            return;        
-    	// Collect vm disk statistics from host before stopping Vm
+            return;
+    	s_logger.debug("Collect vm disk statistics from host before stopping Vm");
     	long hostId = userVm.getHostId();
     	List<String> vmNames = new ArrayList<String>();
     	vmNames.add(userVm.getInstanceName());
@@ -3513,8 +3511,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             try {
                 txn.start();
                 HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsByName = diskStatsAnswer.getVmDiskStatsMap();
+                if (vmDiskStatsByName == null)
+                    return;
                 List<VmDiskStatsEntry> vmDiskStats = vmDiskStatsByName.get(userVm.getInstanceName());
-
                 if (vmDiskStats == null)
 		    return;
 
@@ -3950,6 +3949,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Cannot migrate VM, destination host is not in correct state, has status: "
                             + destinationHost.getStatus() + ", state: "
                             + destinationHost.getResourceState());
+        }
+
+        if (vm.getType() != VirtualMachine.Type.User) {
+            // for System VMs check that the destination host is within the same
+            // cluster
+            HostVO srcHost = _hostDao.findById(srcHostId);
+            if (srcHost != null && srcHost.getClusterId() != null && destinationHost.getClusterId() != null) {
+                if (srcHost.getClusterId().longValue() != destinationHost.getClusterId().longValue()) {
+                    throw new InvalidParameterValueException(
+                            "Cannot migrate the VM, destination host is not in the same cluster as current host of the VM");
+                }
+            }
         }
 
         checkHostsDedication(vm, srcHostId, destinationHost.getId());
@@ -4970,7 +4981,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
         UserVmVO vm = _vmDao.findById(profile.getId());
-        if (vm.getState() == State.Running)
+        if (vm != null && vm.getState() == State.Stopping)
             collectVmDiskStatistics(vm);
     }
     

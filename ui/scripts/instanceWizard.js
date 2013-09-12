@@ -320,15 +320,27 @@
                 $.ajax({
                     url: createURL('listAffinityGroups'),
                     success: function(json) {
-                        var items = json.listaffinitygroupsresponse.affinitygroup;
+                        var affinitygroups = json.listaffinitygroupsresponse.affinitygroup;
                         var data = {
-                            affinityGroups: items
+                            affinityGroups: affinitygroups
                         };
-                        if ('affinityGroups' in args.context) {
-                            $.extend(data, {
-                                selectedObj: args.context.affinityGroups[0]
+                      
+                        if(selectedZoneObj.domainid != null && selectedZoneObj.affinitygroupid != null) {
+                        	var defaultAffinityGroup;                        	
+                        	if(affinitygroups != null) {
+                        		for(var i = 0; i < affinitygroups.length; i++) {
+                        			if(affinitygroups[i].id == selectedZoneObj.affinitygroupid) {
+                        				defaultAffinityGroup = affinitygroups[i];
+                        				break;
+                        			}
+                        		}
+                        	}                        	
+                        	$.extend(data, {
+                                selectedObj: defaultAffinityGroup,
+                                selectedObjNonEditable: true
                             });
-                        }
+                        }                        
+                        
                         args.response.success({
                             data: data
                         });

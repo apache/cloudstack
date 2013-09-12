@@ -54,6 +54,8 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
 
+    protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
+
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
     @Inject
@@ -90,6 +92,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ZoneClusterSearch = createSearchBuilder();
         ZoneClusterSearch.and("dataCenterId", ZoneClusterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneClusterSearch.done();
+
+        ClusterIdSearch = createSearchBuilder(Long.class);
+        ClusterIdSearch.selectField(ClusterIdSearch.entity().getId());
+        ClusterIdSearch.and("dataCenterId", ClusterIdSearch.entity().getDataCenterId(), Op.EQ);
+        ClusterIdSearch.done();
     }
 
     @Override
@@ -168,11 +175,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             while (rs.next()) {
                 Long podId = rs.getLong(1);
                 Long clusterIdInPod  = rs.getLong(2);
-                if(result.containsKey(podId)){
+                if (result.containsKey(podId)) {
                     List<Long> clusterList = result.get(podId);
                     clusterList.add(clusterIdInPod);
                     result.put(podId, clusterList);
-                }else{
+                } else {
                     List<Long> clusterList = new ArrayList<Long>();
                     clusterList.add(clusterIdInPod);
                     result.put(podId, clusterList);
@@ -191,12 +198,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
         clusterIdSearch.selectField(clusterIdSearch.entity().getId());
         clusterIdSearch.and("dataCenterId", clusterIdSearch.entity().getDataCenterId(), Op.EQ);
-        if(podId != null){
+        if (podId != null) {
             clusterIdSearch.and("podId", clusterIdSearch.entity().getPodId(), Op.EQ);
         }
         clusterIdSearch.and("allocationState", clusterIdSearch.entity().getAllocationState(), Op.EQ);
         clusterIdSearch.done();
-
 
         SearchCriteria<Long> sc = clusterIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
@@ -250,4 +256,10 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         return result;
     }
 
+    @Override
+    public List<Long> listAllCusters(long zoneId) {
+        SearchCriteria<Long> sc = ClusterIdSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        return customSearch(sc, null);
+    }
 }

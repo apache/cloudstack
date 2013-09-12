@@ -19,7 +19,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.2.0-SNAPSHOT</version>
+  <version>4.2.0</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
@@ -83,9 +83,10 @@
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.4.9</cs.libvirt-java.version>
-    <cs.rados-java.version>0.1.1</cs.rados-java.version>
+    <cs.rados-java.version>0.1.3</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
     <cs.daemon.version>1.0.10</cs.daemon.version>
+    <cs.jna.version>3.0.9</cs.jna.version>
   </properties>
 
   <distributionManagement>
@@ -317,7 +318,6 @@
         <plugin>
           <groupId>org.apache.rat</groupId>
           <artifactId>apache-rat-plugin</artifactId>
-          <version>0.8</version>
           <configuration>
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>

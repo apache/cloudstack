@@ -25,6 +25,16 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.delete.events': '<fmt:message key="label.delete.events" />',
+'label.delete.alerts': '<fmt:message key="label.delete.alerts" />',
+'label.archive.events': '<fmt:message key="label.archive.events" />',
+'label.archive.alerts': '<fmt:message key="label.archive.alerts" />',
+'label.by.alert.type': '<fmt:message key="label.by.alert.type" />',
+'label.by.event.type': '<fmt:message key="label.by.event.type" />',
+'label.by.date.start': '<fmt:message key="label.by.date.start" />',
+'label.by.date.end': '<fmt:message key="label.by.date.end" />',
+'label.switch.type': '<fmt:message key="label.switch.type" />',
+'label.service.state': '<fmt:message key="label.service.state" />',
 'label.egress.default.policy': '<fmt:message key="label.egress.default.policy" />',
 'label.routing': '<fmt:message key="label.routing" />',
 'message.validate.invalid.characters': '<fmt:message key="message.validate.invalid.characters" />',

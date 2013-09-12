@@ -81,6 +81,17 @@ public class VmdkProcessor extends AdapterBase implements Processor {
         return info;
     }
 
+    @Override
+    public Long getVirtualSize(File file) {
+        try {
+            long size = getTemplateVirtualSize(file.getParent(), file.getName());
+            return size;
+        } catch (Exception e) {
+
+        }
+        return file.length();
+    }
+
     public long getTemplateVirtualSize(String templatePath, String templateName) throws InternalErrorException {
         // get the virtual size from the OVF file meta data
         long virtualSize=0;

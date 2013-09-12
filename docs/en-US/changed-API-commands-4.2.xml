@@ -217,9 +217,9 @@
         </row>
         <row>
           <entry><para>updateCluster</para></entry>
-          <entry><para>The following new request parameters are added: cpuovercommitratio
-              (optional), memoryovercommitratio (optional) </para>
-            <para>The following new response parameters are added: cpuovercommitratio,
+          <entry><para>The following new request parameters are removed: cpuovercommitratio,
+              memoryovercommitratio</para>
+            <para>The following new response parameters are removed: cpuovercommitratio,
               memoryovercommitratio </para></entry>
         </row>
         <row>
@@ -388,24 +388,22 @@
         <row>
           <entry><para>listCapabilities</para></entry>
           <entry><para>The following new response parameters are added: apilimitinterval and
-              apilimitmax.</para>
-            <para>See <xref linkend="api-request-throttling"/>.</para></entry>
+              apilimitmax.</para></entry>
         </row>
         <row>
           <entry><para>createServiceOffering</para></entry>
           <entry><para>The following new request parameters are added: deploymentplanner (optional),
               isvolatile (optional), serviceofferingdetails (optional). </para>
             <para>isvolatie indicates whether the service offering includes Volatile VM capability,
-              which will discard the VM's root disk and create a new one on reboot. See <xref
-                linkend="reset-vm-reboot"/>.</para>
+              which will discard the VM's root disk and create a new one on reboot.</para>
             <para>The following new response parameters are added: deploymentplanner, isvolatile
             </para></entry>
         </row>
         <row>
           <entry><para>restoreVirtualMachine</para></entry>
-          <entry><para>The following request parameter is added: templateID (optional). This is used
-              to point to the new template ID when the base image is updated. See <xref
-                linkend="update-vm-image"/>.</para>
+          <entry><para>The following request parameter is added: templateID (optional). This is used to point to the
+              new template ID when the base image is updated. The parameter templateID can be an ISO
+              ID in case of restore vm deployed using ISO.</para>
             <para>The following response parameters are added: diskioread, diskiowrite, diskkbsread,
               diskkbswrite, displayvm, isdynamicallyscalable, affinitygroup</para></entry>
         </row>
@@ -561,11 +559,9 @@
         </row>
         <row>
           <entry><para>addCluster</para></entry>
-          <entry><para>The following request parameters are added: cpuovercommitratio (optional),
-              guestvswitchtype (optional), guestvswitchtype (optional), memoryovercommitratio
+          <entry><para>The following request parameters are added: guestvswitchtype (optional), guestvswitchtype
               (optional), publicvswitchtype (optional), publicvswitchtype (optional)</para>
-            <para>See <xref linkend="cpu-ram-overcommit"/>.</para>
-            <para>The following request parameters are added: cpuovercommitratio,
+            <para>The following request parameters are removed: cpuovercommitratio,
               memoryovercommitratio </para>
           </entry>
         </row>
@@ -573,7 +569,6 @@
           <entry><para>updateCluster</para></entry>
           <entry><para>The following request parameters are added: cpuovercommitratio,
               ramovercommitratio</para>
-            <para>See <xref linkend="cpu-ram-overcommit"/>.</para>
           </entry>
         </row>
         <row>
@@ -584,7 +579,6 @@
             <para>The following request parameters are added: hypervisor (optional), provider
               (optional), scope (optional) </para>
             <para>The following request parameters have been made mandatory: podid, clusterid</para>
-            <para>See <xref linkend="zone-wide-primary-storage"/>.</para>
             <para>The following response parameter has been added: hypervisor, scope,
               suitableformigration </para>
           </entry>
@@ -592,7 +586,6 @@
         <row>
           <entry><para>listStoragePools</para></entry>
           <entry><para>The following request parameter is added: scope (optional)</para>
-            <para>See <xref linkend="zone-wide-primary-storage"/>.</para>
             <para>The following response parameters are added: hypervisor, scope,
               suitableformigration </para></entry>
         </row>

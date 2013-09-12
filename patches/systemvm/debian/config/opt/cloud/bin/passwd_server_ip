@@ -20,7 +20,7 @@
 addr=$1;
 while [ "$ENABLED" == "1" ]
 do
-	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$addr SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
+	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,fork,crnl,bind=$addr SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
 
 	rc=$?
 	if [ $rc -ne 0 ]

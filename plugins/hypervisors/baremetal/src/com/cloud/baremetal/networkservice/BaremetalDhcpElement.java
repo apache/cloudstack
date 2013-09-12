@@ -66,6 +66,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         Capability cap = new Capability(BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_CAPABITLITY);
         Map<Capability, String> baremetalCaps = new HashMap<Capability, String>();
         baremetalCaps.put(cap, null);
+        baremetalCaps.put(Capability.DhcpAccrossMultipleSubnets, Boolean.TRUE.toString());
         capabilities = new HashMap<Service, Map<Capability, String>>();
         capabilities.put(Service.Dhcp, baremetalCaps);
     }

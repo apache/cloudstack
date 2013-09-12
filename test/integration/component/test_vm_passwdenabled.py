@@ -45,6 +45,25 @@ class Services:
                 # ensure unique username generated each time
                 "password": "password",
                 },
+            "small":
+            # Create a small virtual machine instance with disk offering
+                {
+                    "displayname": "testserver",
+                    "username": "root", # VM creds for SSH
+                    "password": "password",
+                    "ssh_port": 22,
+                    "hypervisor": 'XenServer',
+                    "privateport": 22,
+                    "publicport": 22,
+                    "protocol": 'TCP',
+                    },
+            "egress": {
+                    "name": 'web',
+                    "protocol": 'TCP',
+                    "startport": 80,
+                    "endport": 80,
+                    "cidrlist": '0.0.0.0/0',
+                },
             "service_offerings":
                 {
                     "small":
@@ -89,8 +108,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             cls.services["ostype"]
         )
         # Set Zones and disk offerings
-        cls.services["service_offerings"]["small"]["zoneid"] = zone.id
-        cls.services["service_offerings"]["small"]["template"] = template.id
+        cls.services["small"]["zoneid"] = zone.id
+        cls.services["small"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
@@ -112,6 +131,35 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )
+
+        networkid = cls.virtual_machine.nic[0].networkid
+
+        # create egress rule to allow wget of my cloud-set-guest-password script
+        if zone.networktype.lower() == 'advanced':
+            EgressFireWallRule.create(cls.api_client,
+                                  networkid=networkid,
+                                  protocol=cls.services["egress"]["protocol"],
+                                  startport=cls.services["egress"]["startport"],
+                                  endport=cls.services["egress"]["endport"],
+                                  cidrlist=cls.services["egress"]["cidrlist"])
+
+        cls.virtual_machine.password = cls.services["small"]["password"]
+        ssh = cls.virtual_machine.get_ssh_client()
+
+        #below steps are required to get the new password from VR(reset password)
+        #http://cloudstack.org/dl/cloud-set-guest-password
+        #Copy this file to /etc/init.d
+        #chmod +x /etc/init.d/cloud-set-guest-password
+        #chkconfig --add cloud-set-guest-password
+
+        cmds = [
+            "cd /etc/init.d;wget http://people.apache.org/~tsp/cloud-set-guest-password",
+            "chmod +x /etc/init.d/cloud-set-guest-password",
+            "chkconfig --add cloud-set-guest-password",
+            ]
+        for c in cmds:
+            result = ssh.execute(c)
+
         #Stop virtual machine
         cls.virtual_machine.stop(cls.api_client)
 
@@ -134,7 +182,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
             if timeout == 0:
                 raise Exception(
-                    "Failed to stop VM (ID: %s) in change service offering" %
+                    "Failed to stop VM (ID: %s) " %
                     vm.id)
 
             timeout = timeout - 1
@@ -149,7 +197,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             cls.volume = list_volume[0]
         else:
             raise Exception(
-                "Exception: Unable to find root volume foe VM: %s" %
+                "Exception: Unable to find root volume for VM: %s" %
                 cls.virtual_machine.id)
 
         cls.services["template"]["ostype"] = cls.services["ostype"]
@@ -224,7 +272,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         self.assertEqual(
             isinstance(vms, list),
             True,
-            "List VMs should retun valid response for VM: %s" % self.vm.name
+            "List VMs should return valid response for VM: %s" % self.vm.name
         )
         virtual_machine = vms[0]
 

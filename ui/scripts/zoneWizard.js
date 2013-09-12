@@ -34,7 +34,34 @@
         physicalNetworkID = zoneType == 'Advanced' ? physicalNetworkID : 0;
         var physicalNetwork = data.physicalNetworks ? data.physicalNetworks[physicalNetworkID] : null;
         var trafficConfig = physicalNetwork ? physicalNetwork.trafficTypeConfiguration[trafficTypeID] : null;
-        var trafficLabel = trafficConfig ? trafficConfig.label : null;
+                
+        var trafficLabel;       
+        if (trafficConfig != null) {
+        	if ('label' in trafficConfig) {
+        		trafficLabel = trafficConfig.label;
+        	}
+        	else {
+        		trafficLabel = '';
+        		
+        		if ('vSwitchName' in trafficConfig) {
+        			trafficLabel += trafficConfig.vSwitchName;
+        		}
+        		if ('vlanId' in trafficConfig) {
+        			if (trafficLabel.length > 0)
+        				trafficLabel += ',';
+        			trafficLabel += trafficConfig.vlanId;
+        		}
+        		if ('vSwitchType' in trafficConfig) {
+        			if (trafficLabel.length > 0)
+        				trafficLabel += ',';
+        			trafficLabel += trafficConfig.vSwitchType;
+        		}
+        		
+        		if (trafficLabel.length == 0) //trafficLabel == ''
+        			trafficLabel = null;
+        	}
+        }
+        
         var hypervisorAttr, trafficLabelStr;
 
         switch (hypervisor) {
@@ -579,15 +606,14 @@
                             required: false
                         }
                     },
-                    ispublic: {
-                        //isReverse: true,
+                    isdedicated: {                        
                         isBoolean: true,
-                        label: 'Dedicate',
-                        isChecked: false //checked by default (public zone)
+                        label: 'Dedicated',
+                        isChecked: false 
                     },
                     domain: {
                         label: 'label.domain',
-                        dependsOn: 'ispublic',
+                        dependsOn: 'isdedicated',
                         isHidden: true,
                         select: function(args) {
                             $.ajax({
@@ -612,10 +638,10 @@
                         }
                     },
 
-                    accountId: {
+                    account: {
                         label: 'Account',
                         isHidden: true,
-                        dependsOn: 'ispublic',
+                        dependsOn: 'isdedicated',
                         //docID:'helpAccountForDedication',
                         validation: {
                             required: false
@@ -904,14 +930,16 @@
                                 if ($(this).val() == "VMware") {
                                     //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                                     if (dvSwitchEnabled) {
-                                        /*   $fields.filter('[rel=vSwitchPublicType]').css('display', 'inline-block');
-                        $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
+                                        /*   
+										$fields.filter('[rel=vSwitchPublicType]').css('display', 'inline-block');
+										$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
 
-                        $form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
-                        $form.find('.form-item[rel=vSwitchGuestName]').css('display','inline-block');
+										$form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
+										$form.find('.form-item[rel=vSwitchGuestName]').css('display','inline-block');
 
-                       $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').css('display','inline-block');
-                        $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').css('display','inline-block');*/
+										$form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').css('display','inline-block');
+										$form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').css('display','inline-block');
+						                */
 
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');
                                         $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').removeAttr('checked');
@@ -922,10 +950,12 @@
 
 
                                     } else {
-                                        /*    $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
-                         $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
-                          $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
-                          $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');*/
+                                        /*    
+										$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+									    $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+									    $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
+									    $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');
+						                */
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                         $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
 
@@ -947,10 +977,10 @@
 
                                     $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                     $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
-                                    $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
+                                    //$form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
 
 
                                     $form.find('[rel=vCenterHost]').css('display', 'none');
@@ -1005,7 +1035,7 @@
 
                     },
 
-
+                    /*
                     vSwitchPublicType: {
                         label: 'Public Traffic vSwitch Type',
                         select: function(args) {
@@ -1068,15 +1098,16 @@
                         isHidden: true,
                         dependsOn: 'overridepublictraffic'
                     },
-
+                    */
+					
+					/*
                     vSwitchPublicName: {
                         label: 'Public Traffic vSwitch Name',
                         dependsOn: 'overridepublictraffic',
                         isHidden: true
-
-
                     },
-
+                    */
+					
                     overrideguesttraffic: {
                         label: 'Override Guest-Traffic',
                         isBoolean: true,
@@ -1084,7 +1115,7 @@
 
                     },
 
-
+                    /*
                     vSwitchGuestType: {
                         label: 'Guest Traffic vSwitch Type',
                         select: function(args) {
@@ -1149,33 +1180,35 @@
                         dependsOn: 'overrideguesttraffic'
 
                     },
-
+                    */
+					
+					/*
                     vSwitchGuestName: {
                         label: 'Guest Traffic vSwitch Name',
                         dependsOn: 'overrideguesttraffic',
                         isHidden: true
-
                     },
+					*/
 
                     //Cisco Nexus Vswitch
                     vsmipaddress: {
                         label: 'Nexus 1000v IP Address',
                         validation: {
-                            required: true
+                            required: false
                         },
                         isHidden: true
                     },
                     vsmusername: {
                         label: 'Nexus 1000v Username',
                         validation: {
-                            required: true
+                            required: false
                         },
                         isHidden: true
                     },
                     vsmpassword: {
                         label: 'Nexus 1000v Password',
                         validation: {
-                            required: true
+                            required: false
                         },
                         isPassword: true,
                         isHidden: true
@@ -2076,57 +2109,41 @@
                     if (internaldns2 != null && internaldns2.length > 0)
                         array1.push("&internaldns2=" + todb(internaldns2));
 
-                    if (args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
-                        //	if(args.data.zone.ispublic != null){ //public checkbox in zone wizard is unchecked
-                        //		array1.push("&domainid=" + args.data.zone.domain);
-
-                        // }
-                    }
-
                     if (args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
                         array1.push("&domain=" + todb(args.data.zone.networkdomain));
-
-                    var dedicatedZoneId = null;
 
                     $.ajax({
                         url: createURL("createZone" + array1.join("")),
                         dataType: "json",
                         async: false,
-                        success: function(json) {
+                        success: function(json) {                        	
+                            if (args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
+                                if(args.data.zone.isdedicated == 'on'){ //dedicated checkbox in zone wizard is checked    
+                            	    message(dictionary['message.dedicate.zone']);                            	    
+                            	    var data = {
+                            	    	zoneid: json.createzoneresponse.zone.id	
+                            	    };    
+                                    if (args.data.zone.domain != null) 
+                                    	$.extend(data, {
+                                    		domainid: args.data.zone.domain
+                                    	});  
+                                    if (args.data.zone.account != "") 
+                                    	$.extend(data, {
+                                    		account: args.data.zone.account
+                                    	});   
+                                    $.ajax({
+                                        url: createURL('dedicateZone'),
+                                        data: data,
+                                        success: function(json) {}
+                                    });                                    
+                                }
+                            }                        	                       	
+                        	
                             stepFns.addPhysicalNetworks({
                                 data: $.extend(args.data, {
                                     returnedZone: json.createzoneresponse.zone
                                 })
                             });
-
-                            // dedicatedZoneId = json.createzoneresponse.zone.id;
-                            // //EXPLICIT ZONE DEDICATION
-                            // if (args.data.pluginFrom == null && args.data.zone.ispublic != null) {
-                            //     var array2 = [];
-                            //     if (args.data.zone.domain != null)
-                            //         array2.push("&domainid=" + args.data.zone.domain);
-                            //     if (args.data.zone.accountId != "")
-                            //         array2.push("&account=" + todb(args.data.zone.accountId));
-
-                            //     if (dedicatedZoneId != null) {
-                            //         $.ajax({
-                            //             url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
-                            //             dataType: "json",
-                            //             success: function(json) {
-                            //                 var dedicatedObj = json.dedicatezoneresponse.jobid;
-                            //                 //args.response.success({ data: $.extend(item, dedicatedObj)});
-
-                            //             },
-
-                            //             error: function(json) {
-
-                            //                 args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                            //             }
-                            //         });
-
-                            //     }
-                            // }
-
                         },
                         error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -3762,26 +3779,37 @@
                         array1.push("&password=" + todb(args.data.cluster.vCenterPassword));
 
                         //dvswitch is enabled
+						/*
                         if (args.data.cluster.vSwitchPublicType != "")
                             array1.push('&publicvswitchtype=' + args.data.cluster.vSwitchPublicType);
+						*/
 
+						/*
                         if (args.data.cluster.vSwitchPublicName != "")
                             array1.push("&publicvswitchname=" + args.data.cluster.vSwitchPublicName);
+                        */
 
-
-
+                        /*
                         if (args.data.cluster.vSwitchGuestType != "")
                             array1.push('&guestvswitchtype=' + args.data.cluster.vSwitchGuestType);
-
+                        */
+						
+						/*
                         if (args.data.cluster.vSwitchGuestName != "")
                             array1.push("&guestvswitchname=" + args.data.cluster.vSwitchGuestName);
+						*/
 
-
-                        if (args.data.cluster.vsmipaddress) { // vSwitch is enabled
+                        if (args.data.cluster.vsmipaddress != null && args.data.cluster.vsmipaddress.length > 0) { 
                             array1.push('&vsmipaddress=' + args.data.cluster.vsmipaddress);
-                            array1.push('&vsmusername=' + args.data.cluster.vsmusername);
-                            array1.push('&vsmpassword=' + args.data.cluster.vsmpassword);
                         }
+                        
+                        if(args.data.cluster.vsmusername != null && args.data.cluster.vsmusername.length > 0) {
+                        	array1.push('&vsmusername=' + args.data.cluster.vsmusername);
+                        }
+                          
+                        if(args.data.cluster.vsmpassword != null && args.data.cluster.vsmpassword.length > 0) {
+                        	array1.push('&vsmpassword=' + args.data.cluster.vsmpassword);
+                        }  
 
                         var hostname = args.data.cluster.vCenterHost;
                         var dcName = args.data.cluster.vCenterDatacenter;
@@ -4029,21 +4057,10 @@
                 },
 
                 addSecondaryStorage: function(args) {
-
-                    var dedicatedZone = (args.data.pluginFrom == null && args.data.zone.ispublic != null);
-
                 	if (args.data.secondaryStorage.provider == '') {
-
-                        if (dedicatedZone) {
-                            stepFns.dedicateZone({
-                                data: args.data
-                            });
-                        } else {
-                            complete({
-                                data: args.data
-                            })
-                        }
-
+                        complete({
+                            data: args.data
+                        });                        
                         return; //skip addSecondaryStorage if provider dropdown is blank
                 	}
                 	
@@ -4072,21 +4089,11 @@
                             url: createURL('addImageStore'),
                             data: data,
                             success: function(json) {
-                                
-                                if (dedicatedZone) {
-                                    stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
-                                } else {
-                                    complete({
-                                        data: $.extend(args.data, {
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
-                                    });
-                                }
-
+                                });
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4133,21 +4140,14 @@
                         $.ajax({
                             url: createURL('addImageStore'),
                             data: data,
-                            success: function(json) {
-                                if (dedicatedZone) {
-                                    stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
+                            success: function(json) {   
+                            	g_regionsecondaryenabled = true;
+                            	
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
-                                } else {
-                                    complete({
-                                        data: $.extend(args.data, {
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
-                                    });
-                                }
-                                
+                                });
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4210,20 +4210,14 @@
                         $.ajax({
                             url: createURL('addImageStore'),
                             data: data,
-                            success: function(json) {
-                                if (dedicatedZone) {
-                                    stepFns.dedicateZone({
-                                        data: $.extend(args.data, {                                               
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
+                            success: function(json) {  
+                            	g_regionsecondaryenabled = true;
+                            	
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
                                     })
-                                } else {
-                                    complete({
-                                        data: $.extend(args.data, {
-                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                        })
-                                    });
-                                }
+                                });                                
                             },
                             error: function(XMLHttpResponse) {
                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4234,62 +4228,7 @@
                             }
                         });
                     }
-                },
-                dedicateZone: function(args) {
-
-                    if(args.data.pluginFrom == null && args.data.zone.ispublic != null) {
-                        var dedicatedZoneId = args.data.returnedZone.id;
-                	    message(dictionary['message.dedicate.zone']);
-
-                        var array2 = [];
-                        if (args.data.zone.domain != null)
-                            array2.push("&domainid=" + args.data.zone.domain);
-                        if (args.data.zone.accountId != "")
-                            array2.push("&account=" + todb(args.data.zone.accountId));
-
-                        if (dedicatedZoneId != null) {
-                            $.ajax({
-                                url: createURL("dedicateZone&ZoneId=" + dedicatedZoneId + array2.join("")),
-                                dataType: "json",
-                                success: function(json) {
-                                    var jobId = json.dedicatezoneresponse.jobid;
-                                    var dedicatedZoneIntervalId = setInterval(function() {
-                                        $.ajax({
-                                            url: createURL("queryAsyncJobResult&jobid=" + jobId),
-                                            dataType: "json",
-                                            success: function(json) {
-                                                if (json.queryasyncjobresultresponse.jobstatus == 0) { // not complete
-                                                    return;
-                                                } else {
-                                                    clearInterval(dedicatedZoneIntervalId);
-                                                    if(json.queryasyncjobresultresponse.jobstatus == 1) { // successed
-                                                        complete({
-                                                            data: $.extend(args.data, {
-                                                                returnedDedicateZone: json.queryasyncjobresultresponse.jobresult
-                                                            })
-                                                        });
-                                                    } else if(json.queryasyncjobresultresponse.jobstatus == 2) { // failed
-                                                        error('addZone', json.queryasyncjobresultresponse.jobresult.errortext, {
-                                                            fn: 'dedicateZone',
-                                                            args: args
-                                                        })
-                                                    }
-                                                }
-                                                
-                                            }
-                                        });
-                                    }, g_queryAsyncJobResultInterval);
-                                }
-                            });
-
-                        }
-                    } else {
-                        complete({
-                            data: args.data
-                        });
-                    }
-                    
-                }
+                }                
             };
 
             var complete = function(args) {

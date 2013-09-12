@@ -300,7 +300,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     }
 
     public String toString() {
-        return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(dataStoreId)
+        return new StringBuilder("VolumeDataStore[").append(id).append("-").append(volumeId).append("-").append(dataStoreId)
                 .append(installPath).append("]").toString();
     }
 
