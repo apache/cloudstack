@@ -931,7 +931,7 @@ def getvmId(vmName):
        sys.exit(3)
 
     try:
-        dom = (conn.lookupByName (domain))
+        dom = (conn.lookupByName (vmName))
     except libvirt.libvirtError:
         return None
 
