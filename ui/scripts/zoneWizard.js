@@ -1792,27 +1792,43 @@
                     provider: {
                         label: 'Provider',
                         select: function(args) {
-                            $.ajax({
-                                url: createURL('listStorageProviders'),
-                                data: {
-                                    type: 'image'
-                                },
-                                success: function(json) {
-                                    var objs = json.liststorageprovidersresponse.dataStoreProvider;
-                                    var items = [{ id: '', description: ''}];
-                                    if (objs != null) {
-                                        for (var i = 0; i < objs.length; i++) {    
-                                            items.push({
-                                                id: objs[i].name,
-                                                description: objs[i].name
-                                            });
-                                        }
-                                    }
+                        	var storageproviders = [];      
+                        	$.ajax({
+                        		url: createURL('listImageStores'),
+                        		data: {
+                        			provider: 'S3'
+                        		},
+                        		async: true,
+                        		success: function(json) {                        			
+                        			var s3stores = json.listimagestoresresponse.imagestore;
+                        			if(s3stores != null && s3stores.length > 0) {                        				
+                        				storageproviders.push({ id: 'S3', description: 'S3'});
+                        			} else {
+                        				$.ajax({
+                                            url: createURL('listStorageProviders'),
+                                            data: {
+                                                type: 'image'
+                                            },
+                                            async: false,
+                                            success: function(json) {
+                                                var objs = json.liststorageprovidersresponse.dataStoreProvider;
+                                                storageproviders.push({ id: '', description: ''}); 
+                                                if (objs != null) {
+                                                    for (var i = 0; i < objs.length; i++) {    
+                                                    	storageproviders.push({
+                                                            id: objs[i].name,
+                                                            description: objs[i].name
+                                                        });
+                                                    }
+                                                }                                    
+                                            }
+                                        });
+                        			}                        		                    			
                                     args.response.success({
-                                        data: items
-                                    });
-
-                                    args.$select.change(function() {
+                                        data: storageproviders
+                                    });                                                      
+                                    
+                                    args.$select.change(function() {                                    
                                         var $form = $(this).closest('form');
                                         var $fields = $form.find('.field');
 
@@ -1874,6 +1890,14 @@
                                             $fields.filter('[rel=key]').hide();
                                         } else if ($(this).val() == "S3") {
                                         	$fields.filter('[rel=name]').css('display', 'inline-block');
+                                        	                                        	
+                                        	if(s3stores != null && s3stores.length > 0) {
+                                        		$fields.filter('[rel=name]').find('input').val(s3stores[0].name);
+                                        		$fields.filter('[rel=name]').find('input').attr("disabled", "disabled");
+                                        	} else {
+                                        		//$fields.filter('[rel=name]').find('input').val("");
+                                        		$fields.filter('[rel=name]').find('input').removeAttr("disabled");
+                                        	}                                        	
                                         	
                                         	//NFS
                                             $fields.filter('[rel=zoneid]').hide();
@@ -1881,19 +1905,36 @@
                                             $fields.filter('[rel=path]').hide();
 
                                             //S3
-                                            $fields.filter('[rel=accesskey]').css('display', 'inline-block');
-                                            $fields.filter('[rel=secretkey]').css('display', 'inline-block');
-                                            $fields.filter('[rel=bucket]').css('display', 'inline-block');
-                                            $fields.filter('[rel=endpoint]').css('display', 'inline-block');
-                                            $fields.filter('[rel=usehttps]').css('display', 'inline-block');
-                                            $fields.filter('[rel=connectiontimeout]').css('display', 'inline-block');
-                                            $fields.filter('[rel=maxerrorretry]').css('display', 'inline-block');
-                                            $fields.filter('[rel=sockettimeout]').css('display', 'inline-block');
+                                            if(s3stores != null && s3stores.length > 0) {
+                                            	 $fields.filter('[rel=accesskey]').hide();
+                                                 $fields.filter('[rel=secretkey]').hide();
+                                                 $fields.filter('[rel=bucket]').hide();
+                                                 $fields.filter('[rel=endpoint]').hide();
+                                                 $fields.filter('[rel=usehttps]').hide();
+                                                 $fields.filter('[rel=connectiontimeout]').hide();
+                                                 $fields.filter('[rel=maxerrorretry]').hide();
+                                                 $fields.filter('[rel=sockettimeout]').hide();
 
-                                            $fields.filter('[rel=createNfsCache]').find('input').attr('checked', 'checked');
-                                            $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');
-                                            $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
-                                            $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=createNfsCache]').find('input').attr('checked', 'checked');
+                                                 $fields.filter('[rel=createNfsCache]').find('input').attr("disabled", "disabled");
+                                                 $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
+                                            } else {
+                                            	 $fields.filter('[rel=accesskey]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=secretkey]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=bucket]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=endpoint]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=usehttps]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=connectiontimeout]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=maxerrorretry]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=sockettimeout]').css('display', 'inline-block');
+
+                                                 $fields.filter('[rel=createNfsCache]').find('input').attr('checked', 'checked');
+                                                 $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
+                                            }      
 
                                             //Swift
                                             $fields.filter('[rel=url]').hide();
@@ -1929,11 +1970,10 @@
                                             $fields.filter('[rel=username]').css('display', 'inline-block');
                                             $fields.filter('[rel=key]').css('display', 'inline-block');
                                         }
-                                    });
-
-                                    args.$select.change();
-                                }
-                            });
+                                    });                                  
+                                    args.$select.change();     
+                        		}
+                        	});                         	
                         }
                     },
 
@@ -2055,7 +2095,9 @@
             }
         },
 
-        action: function(args) {
+        action: function(args) {      	
+        	var $wizard = args.wizard;
+        	        	
             var advZoneConfiguredVirtualRouterCount = 0; //for multiple physical networks in advanced zone. Each physical network has 2 virtual routers: regular one and VPC one.
 
             var success = args.response.success;
@@ -4108,62 +4150,69 @@
                                 });
                             }
                         });
-                    } else if (args.data.secondaryStorage.provider == 'S3') {
-                        $.extend(data, {
-                            provider: args.data.secondaryStorage.provider,
-                            'details[0].key': 'accesskey',
-                            'details[0].value': args.data.secondaryStorage.accesskey,
-                            'details[1].key': 'secretkey',
-                            'details[1].value': args.data.secondaryStorage.secretkey,
-                            'details[2].key': 'bucket',
-                            'details[2].value': args.data.secondaryStorage.bucket,
-                            'details[3].key': 'usehttps',
-                            'details[3].value': (args.data.secondaryStorage.usehttps != null && args.data.secondaryStorage.usehttps == 'on' ? 'true' : 'false')
-                        });
+                    } else if (args.data.secondaryStorage.provider == 'S3') {           	               	                	
+                    	if($wizard.find('form[rel=secondaryStorage]').find('div[rel=name]').find('input').attr("disabled") == "disabled") { //Name textbox is disabled (and populated with S3 image setore name) when S3 image store exists. In this case, do not call addImageStore to create S3 image store.                    		
+                            complete({
+                                data: args.data
+                            });        		
+                    	} else { //Name textbox is not disabled when S3 image store does not exist. In this case, call addImageStore to create S3 image store.                    	
+                    		$.extend(data, {
+                                provider: args.data.secondaryStorage.provider,
+                                'details[0].key': 'accesskey',
+                                'details[0].value': args.data.secondaryStorage.accesskey,
+                                'details[1].key': 'secretkey',
+                                'details[1].value': args.data.secondaryStorage.secretkey,
+                                'details[2].key': 'bucket',
+                                'details[2].value': args.data.secondaryStorage.bucket,
+                                'details[3].key': 'usehttps',
+                                'details[3].value': (args.data.secondaryStorage.usehttps != null && args.data.secondaryStorage.usehttps == 'on' ? 'true' : 'false')
+                            });
 
-                        var index = 4;
-                        if (args.data.secondaryStorage.endpoint != null && args.data.secondaryStorage.endpoint.length > 0) {
-                            data['details[' + index.toString() + '].key'] = 'endpoint';
-                            data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.endpoint;
-                            index++;
-                        }
-                        if (args.data.secondaryStorage.connectiontimeout != null && args.data.secondaryStorage.connectiontimeout.length > 0) {
-                            data['details[' + index.toString() + '].key'] = 'connectiontimeout';
-                            data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.connectiontimeout;
-                            index++;
-                        }
-                        if (args.data.secondaryStorage.maxerrorretry != null && args.data.secondaryStorage.maxerrorretry.length > 0) {
-                            data['details[' + index.toString() + '].key'] = 'maxerrorretry';
-                            data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.maxerrorretry;
-                            index++;
-                        }
-                        if (args.data.secondaryStorage.sockettimeout != null && args.data.secondaryStorage.sockettimeout.length > 0) {
-                            data['details[' + index.toString() + '].key'] = 'sockettimeout';
-                            data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.sockettimeout;
-                            index++;
-                        }
-                        $.ajax({
-                            url: createURL('addImageStore'),
-                            data: data,
-                            success: function(json) {   
-                            	g_regionsecondaryenabled = true;
-                            	
-                                complete({
-                                    data: $.extend(args.data, {
-                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
-                                    })
-                                });
-                            },
-                            error: function(XMLHttpResponse) {
-                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                error('addSecondaryStorage', errorMsg, {
-                                    fn: 'addSecondaryStorage',
-                                    args: args
-                                });
+                            var index = 4;
+                            if (args.data.secondaryStorage.endpoint != null && args.data.secondaryStorage.endpoint.length > 0) {
+                                data['details[' + index.toString() + '].key'] = 'endpoint';
+                                data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.endpoint;
+                                index++;
                             }
-                        });
-
-                        if (args.data.secondaryStorage.createNfsCache == 'on') {
+                            if (args.data.secondaryStorage.connectiontimeout != null && args.data.secondaryStorage.connectiontimeout.length > 0) {
+                                data['details[' + index.toString() + '].key'] = 'connectiontimeout';
+                                data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.connectiontimeout;
+                                index++;
+                            }
+                            if (args.data.secondaryStorage.maxerrorretry != null && args.data.secondaryStorage.maxerrorretry.length > 0) {
+                                data['details[' + index.toString() + '].key'] = 'maxerrorretry';
+                                data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.maxerrorretry;
+                                index++;
+                            }
+                            if (args.data.secondaryStorage.sockettimeout != null && args.data.secondaryStorage.sockettimeout.length > 0) {
+                                data['details[' + index.toString() + '].key'] = 'sockettimeout';
+                                data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.sockettimeout;
+                                index++;
+                            }
+                            $.ajax({
+                                url: createURL('addImageStore'),
+                                data: data,
+                                success: function(json) {   
+                                	g_regionsecondaryenabled = true;
+                                	
+                                    complete({
+                                        data: $.extend(args.data, {
+                                            returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                        })
+                                    });
+                                },
+                                error: function(XMLHttpResponse) {
+                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                    error('addSecondaryStorage', errorMsg, {
+                                        fn: 'addSecondaryStorage',
+                                        args: args
+                                    });
+                                }
+                            });                 
+                    	}
+                    	                     
+                        //NFS Cache
+                        if ($wizard.find('form[rel=secondaryStorage]').find('div[rel=createNfsCache]').find("input[type=checkbox]").is(':checked') == true) {
                             var zoneid = args.data.secondaryStorage.nfsCacheZoneid;
                             var nfs_server = args.data.secondaryStorage.nfsCacheNfsServer;
                             var path = args.data.secondaryStorage.nfsCachePath;
