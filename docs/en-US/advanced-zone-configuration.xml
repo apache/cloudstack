@@ -84,6 +84,14 @@
       <para>These traffic labels will be defined only for the hypervisor selected for the first
         cluster. For all other hypervisors, the labels can be configured after the zone is
         created.</para>
+      <para>(VMware only) If you have enabled Nexus dvSwitch in the environment, you must specify
+        the corresponding Ethernet port profile names as network traffic label for each traffic type
+        on the physical network. For more information on Nexus dvSwitch, see Configuring a vSphere
+        Cluster with Nexus 1000v Virtual Switch in the Installation Guide. If you have enabled
+        VMware dvSwitch in the environment, you must specify the corresponding Switch name as
+        network traffic label for each traffic type on the physical network. For more information,
+        see Configuring a VMware Datacenter with VMware Distributed Virtual Switch in the
+        Installation Guide. </para>
     </listitem>
     <listitem>
       <para>Click Next.</para>
@@ -219,9 +227,9 @@
         </listitem>
         <listitem>
           <para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI,
-            or PreSetup. For KVM, choose NFS, SharedMountPoint, CLVM, and RBD. For vSphere choose either VMFS
-            (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on
-            what you choose here.</para>
+            or PreSetup. For KVM, choose NFS, SharedMountPoint, CLVM, and RBD. For vSphere choose
+            either VMFS (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary
+            depending on what you choose here.</para>
           <informaltable frame="all">
             <tgroup cols="2" align="left" colsep="1" rowsep="1">
               <colspec colname="c1"/>
@@ -362,7 +370,8 @@
         Secondary Storage :</para>
       <itemizedlist>
         <listitem>
-          <para><emphasis role="bold">NFS Server.</emphasis> The IP address of the server or fully qualified domain name of the server.</para>
+          <para><emphasis role="bold">NFS Server.</emphasis> The IP address of the server or fully
+            qualified domain name of the server.</para>
         </listitem>
         <listitem>
           <para><emphasis role="bold">Path.</emphasis> The exported path from the server.</para>
