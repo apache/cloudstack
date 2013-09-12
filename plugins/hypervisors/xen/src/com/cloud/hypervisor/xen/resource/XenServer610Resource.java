@@ -19,8 +19,8 @@ package com.cloud.hypervisor.xen.resource;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,35 +28,37 @@ import javax.ejb.Local;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
 import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
+import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
 import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
 import com.cloud.agent.api.MigrateWithStorageSendAnswer;
 import com.cloud.agent.api.MigrateWithStorageSendCommand;
-import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
-import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.network.Networks.TrafficType;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.api.to.NicTO;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import com.cloud.vm.VirtualMachine.State;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
@@ -447,4 +449,8 @@ public class XenServer610Resource extends XenServer56FP1Resource {
         return dynamicMinRam;
     }
 
+    @Override
+    protected void plugDom0Vif(Connection conn, VIF dom0Vif) throws XmlRpcException, XenAPIException {
+        // do nothing. In xenserver 6.1 and beyond this step isn't needed.
+    }
 }
