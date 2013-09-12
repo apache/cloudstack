@@ -1006,6 +1006,7 @@
 
                 args.action({
                     data: data,
+                    wizard: $wizard,
                     startFn: $wizard.data('startfn'),
                     uiSteps: $.map(
                         $wizard.find('.steps > div'),
