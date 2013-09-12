@@ -33,8 +33,8 @@
       shows a few of the more useful parameters.</para>
     <informaltable frame="all">
       <tgroup cols="2" align="left" colsep="1" rowsep="1">
-        <colspec colnum="1" colname="c1" colwidth="2*"/>
-        <colspec colnum="2" colname="c2" colwidth="1*"/>
+        <colspec colnum="1" colname="c1" colwidth="1.0*"/>
+        <colspec colnum="2" colname="c2" colwidth="3.55*"/>
         <thead>
           <row>
             <entry><para>Field</para></entry>
@@ -126,5 +126,173 @@
       <listitem><para>Use the search box to narrow down the list to those you are interested in.</para></listitem>
       <listitem><para>In the Actions column, click the Edit icon to modify a value.</para></listitem>
     </orderedlist>
+  </section>
+  <section id="granular-param">
+    <title>Granular Global Configuration Parameters</title>
+    <para>The following global configuration parameters have been made more granular. The parameters
+      are listed under three different scopes: account, cluster, and zone. </para>
+    <informaltable frame="all">
+      <tgroup cols="3" align="left" colsep="1" rowsep="1">
+        <colspec colnum="1" colname="c1" colwidth="1.0*"/>
+        <colspec colnum="2" colname="c2" colwidth="2.08*"/>
+        <colspec colnum="3" colname="c3" colwidth="11.86*"/>
+        <thead>
+          <row>
+            <entry><para>Field</para></entry>
+            <entry><para>Field</para></entry>
+            <entry><para>Value</para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>account</para></entry>
+            <entry><para>remote.access.vpn.client.iprange </para></entry>
+            <entry><para>The range of IPs to be allocated to remotely access the VPN clients. The
+                first IP in the range is used by the VPN server.</para></entry>
+          </row>
+          <row>
+            <entry><para>account</para></entry>
+            <entry><para>allow.public.user.templates</para></entry>
+            <entry><para>If false, users will not be able to create public templates.</para></entry>
+          </row>
+          <row>
+            <entry><para>account</para></entry>
+            <entry><para>use.system.public.ips</para></entry>
+            <entry><para>If true and if an account has one or more dedicated public IP ranges, IPs
+                are acquired from the system pool after all the IPs dedicated to the account have
+                been consumed.</para></entry>
+          </row>
+          <row>
+            <entry><para>account</para></entry>
+            <entry><para>use.system.guest.vlans </para></entry>
+            <entry><para>If true and if an account has one or more dedicated guest VLAN ranges,
+                VLANs are allocated from the system pool after all the VLANs dedicated to the
+                account have been consumed.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cluster.storage.allocated.capacity.notificationthreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of allocated storage utilization above which
+                alerts are sent that the storage is below the threshold.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cluster.storage.capacity.notificationthreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of storage utilization above which alerts are sent
+                that the available storage is below the threshold.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cluster.cpu.allocated.capacity.notificationthreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of cpu utilization above which alerts are sent
+                that the available CPU is below the threshold.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cluster.memory.allocated.capacity.notificationthreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of memory utilization above which alerts are sent
+                that the available memory is below the threshold.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cluster.cpu.allocated.capacity.disablethreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of CPU utilization above which allocators will
+                disable that cluster from further usage. Keep the corresponding notification
+                threshold lower than this value to be notified beforehand.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cluster.memory.allocated.capacity.disablethreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of memory utilization above which allocators will
+                disable that cluster from further usage. Keep the corresponding notification
+                threshold lower than this value to be notified beforehand.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>cpu.overprovisioning.factor</para></entry>
+            <entry><para>Used for CPU over-provisioning calculation; the available CPU will be the mathematical product
+                of  actualCpuCapacity and cpu.overprovisioning.factor.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>mem.overprovisioning.factor </para></entry>
+            <entry><para>Used for memory over-provisioning calculation.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>vmware.reserve.cpu </para></entry>
+            <entry><para>Specify whether or not to reserve CPU when not over-provisioning; In case of CPU
+                over-provisioning, CPU is always reserved.</para></entry>
+          </row>
+          <row>
+            <entry><para>cluster</para></entry>
+            <entry><para>vmware.reserve.mem </para></entry>
+            <entry><para>Specify whether or not to reserve memory when not over-provisioning; In case of memory
+                over-provisioning memory is always reserved.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>pool.storage.allocated.capacity.disablethreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of allocated storage utilization above which
+                allocators will disable that pool because the available allocated storage is below
+                the threshold.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>pool.storage.capacity.disablethreshold </para></entry>
+            <entry><para>The percentage, as a value between 0 and 1, of storage utilization above which allocators will
+                disable the pool because the available storage capacity is below the
+                threshold.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>storage.overprovisioning.factor </para></entry>
+            <entry><para>Used for storage over-provisioning calculation; available storage will be the mathematical
+                product of  actualStorageSize and storage.overprovisioning.factor.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>network.throttling.rate </para></entry>
+            <entry><para>Default data transfer rate in megabits per second allowed in a network.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>guest.domain.suffix </para></entry>
+            <entry><para>Default domain name for VMs inside a virtual networks with a router.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>router.template.xen </para></entry>
+            <entry><para>Name of the default router template on Xenserver.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>router.template.kvm </para></entry>
+            <entry><para>Name of the default router template on KVM.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>router.template.vmware </para></entry>
+            <entry><para>Name of the default router template on VMware.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>enable.dynamic.scale.vm</para></entry>
+            <entry><para>Enable or diable dynamically scaling of a VM.</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>use.external.dns </para></entry>
+            <entry><para>Bypass internal DNS, and use the external DNS1 and DNS2</para></entry>
+          </row>
+          <row>
+            <entry><para>zone</para></entry>
+            <entry><para>blacklisted.routes </para></entry>
+            <entry><para>Routes that are blacklisted cannot be used for creating static routes for a VPC Private
+                Gateway.</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
   </section>
 </chapter>
