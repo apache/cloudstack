@@ -162,6 +162,19 @@ Group: System Environment/Libraries
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
+
+%package baremetal-agent
+Summary: CloudStack baremetal agent
+Requires: tftp-server
+Requires: xinetd
+Requires: syslinux
+Requires: chkconfig
+Requires: dhcp
+Requires: httpd
+Group:     System Environment/Libraries
+%description baremetal-agent
+The CloudStack baremetal agent
+
 %prep
 echo Doing CloudStack build
 
@@ -236,6 +249,7 @@ install -D client/target/utilities/bin/cloud-set-guest-sshkey ${RPM_BUILD_ROOT}%
 install -D client/target/utilities/bin/cloud-setup-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-databases
 install -D client/target/utilities/bin/cloud-setup-encryption ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-encryption
 install -D client/target/utilities/bin/cloud-setup-management ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-management
+install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-baremetal
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 
@@ -603,6 +617,8 @@ fi
 %{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
 
+%files baremetal-agent
+%attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
 * Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
