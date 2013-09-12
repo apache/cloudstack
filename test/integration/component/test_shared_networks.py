@@ -1710,7 +1710,7 @@ class TestSharedNetworks(cloudstackTestCase):
         if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
-	@unittest.skip("skipped - This is a redundant case and also this is causing issue for rest fo the cases ")
+    @unittest.skip("skipped - This is a redundant case and also this is causing issue for rest fo the cases ")
     @attr(tags=["advanced", "advancedns"])
     def test_createSharedNetwork_usedVlan(self):
         """ Test Shared Network with used vlan 01 """
