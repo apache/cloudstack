@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -321,17 +320,13 @@ import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
-import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRelocateSpec;
 import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
-import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
-
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -367,7 +362,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected int _portsPerDvPortGroup;
     protected boolean _fullCloneFlag = false;
     protected boolean _instanceNameFlag = false;
-
 
     protected boolean _recycleHungWorker = false;
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
@@ -4547,7 +4541,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (!dsMo.fileExists(volumeDatastorePath)) {
             String dummyVmName = getWorkerName(context, cmd, 0);
 
-            VirtualMachineMO vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
+            VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
 
             if (vmMo == null) {
                 throw new Exception("Unable to create a dummy VM for volume creation");
@@ -5702,7 +5696,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     VirtualMachineMO vmMo = null;
 
                     try {
-                        vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
+                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
                         if (vmMo == null) {
                             throw new Exception("Unable to create a dummy VM for volume creation");
                         }
@@ -5759,7 +5753,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumeUuid);
                 String dummyVmName = getWorkerName(context, cmd, 0);
                 try {
-                    vmMo = prepareVolumeHostDummyVm(hyperHost, dsMo, dummyVmName);
+                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
                     if (vmMo == null) {
                         throw new Exception("Unable to create a dummy VM for volume creation");
                     }
@@ -5794,34 +5788,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return (int)(bytes / (1024L * 1024L));
     }
 
-    protected VirtualMachineMO prepareVolumeHostDummyVm(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName) throws Exception {
-        assert (hyperHost != null);
-
-        VirtualMachineMO vmMo = null;
-        VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
-        vmConfig.setName(vmName);
-        vmConfig.setMemoryMB((long) 4); // vmware request minimum of 4 MB
-        vmConfig.setNumCPUs(1);
-        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
-        VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
-        fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
-        vmConfig.setFiles(fileInfo);
-
-        // Scsi controller
-        VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
-        scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
-        scsiController.setBusNumber(0);
-        scsiController.setKey(1);
-        VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
-        scsiControllerSpec.setDevice(scsiController);
-        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-        vmConfig.getDeviceChange().add(scsiControllerSpec );
-        hyperHost.createVm(vmConfig);
-        vmMo = hyperHost.findVmOnHyperHost(vmName);
-        return vmMo;
-    }
-
     @Override
     public void disconnected() {
     }
@@ -5848,70 +5814,53 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	            if(hyperHost.isHyperHostConnected()) {
 	                mgr.gcLeftOverVMs(context);
 	
-	                if(_recycleHungWorker) {
-	                    s_logger.info("Scan hung worker VM to recycle");
-	                    
-	            		int key = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
-	            		if(key == 0) {
-	            			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
-	            		}
-	            		String instanceNameCustomField = "value[" + key + "]";
-	
-	                    // GC worker that has been running for too long
-	                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
-	                            new String[] {"name", "config.template", "runtime.powerState", "runtime.bootTime", instanceNameCustomField });
-	                    if(ocs != null) {
-	                        for(ObjectContent oc : ocs) {
-	                            List<DynamicProperty> props = oc.getPropSet();
-	                            if(props != null) {
-	                                String vmName = null;
-	                                String internalName = null;
-	                                boolean template = false;
-	                                VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
-	                                GregorianCalendar bootTime = null;
-	
-	                                for(DynamicProperty prop : props) {
-	                                    if (prop.getName().equals("name"))
-	                                        vmName = prop.getVal().toString();
-	                                    else if(prop.getName().startsWith("value[")) {
-	            		                	if(prop.getVal() != null)
-	            		                		internalName = ((CustomFieldStringValue)prop.getVal()).getValue();
-	            		                } 
-	                                    else if(prop.getName().equals("config.template"))
-	                                        template = (Boolean)prop.getVal();
-	                                    else if(prop.getName().equals("runtime.powerState"))
-	                                        powerState = (VirtualMachinePowerState)prop.getVal();
-	                                    else if(prop.getName().equals("runtime.bootTime"))
-	                                        bootTime = (GregorianCalendar)prop.getVal();
-	                                }
-	
-	                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
-	                                String name = null;
-	                                if (internalName != null) {
-	                                    name = internalName;
-	                                } else {
-	                                    name = vmName;
-	                                }
-	                                
-	                                if(!template && name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
-	                                    boolean recycle = false;
-	
-	                                    // recycle stopped worker VM and VM that has been running for too long (hard-coded 10 hours for now)
-	                                    if(powerState == VirtualMachinePowerState.POWERED_OFF)
-	                                        recycle = true;
-	                                    else if(bootTime != null && (new Date().getTime() - bootTime.getTimeInMillis() > 10*3600*1000))
-	                                        recycle = true;
-	
-	                                    if(recycle) {
-	                                        s_logger.info("Recycle pending worker VM: " + name);
-	
-	                                        vmMo.powerOff();
-	                                        vmMo.destroy();
-	                                    }
-	                                }
-	                            }
-	                        }
-	                    }
+                    s_logger.info("Scan hung worker VM to recycle");
+                    
+            		int workerKey = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_WORKER);
+            		int workerTagKey = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_WORKER_TAG);
+            		String workerPropName = String.format("value[%d]", workerKey);
+            		String workerTagPropName = String.format("value[%d]", workerTagKey);
+
+                    // GC worker that has been running for too long
+                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
+                            new String[] {"name", "config.template", workerPropName, workerTagPropName, 
+                            		 });
+                    if(ocs != null) {
+                        for(ObjectContent oc : ocs) {
+                            List<DynamicProperty> props = oc.getPropSet();
+                            if(props != null) {
+                                boolean template = false;
+                                boolean isWorker = false;
+                                String workerTag = null;
+
+                                for(DynamicProperty prop : props) {
+                                    if(prop.getName().equals("config.template")) {
+                                        template = (Boolean)prop.getVal();
+                                    } else if(prop.getName().equals(workerPropName)) {
+                                    	CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
+                                    	if(val != null && val.getValue() != null && val.getValue().equalsIgnoreCase("true"))
+                                    		isWorker = true;
+                                    }
+                                    else if(prop.getName().equals(workerTagPropName)) {
+                                    	CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
+                                    	workerTag = val.getValue();
+                                    }
+                                }
+
+                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                                if(!template && isWorker) {
+                                    boolean recycle = false;
+                                    recycle = mgr.needRecycle(workerTag);
+
+                                    if(recycle) {
+                                        s_logger.info("Recycle pending worker VM: " + vmMo.getName());
+
+                                        vmMo.powerOff();
+                                        vmMo.destroy();
+                                    }
+                                }
+                            }
+                        }
 	                }
 	            } else {
 	                s_logger.error("Host is no longer connected.");
@@ -6692,6 +6641,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
 	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
 	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_WORKER);
+	            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_WORKER_TAG);
 	
 	            VmwareHypervisorHost hostMo = this.getHyperHost(context);
 	            _hostName = hostMo.getHyperHostName();
