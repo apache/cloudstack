@@ -937,7 +937,7 @@ def getvmId(vmName):
 
     conn.close()
 
-    return dom.ID()
+    return str(dom.ID())
 
 def addFWFramework(brname):
     try:
