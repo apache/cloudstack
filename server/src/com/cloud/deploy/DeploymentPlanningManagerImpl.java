@@ -37,6 +37,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -78,6 +79,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -1081,11 +1083,24 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 if (!pool.isInMaintenance()) {
                     if (!avoid.shouldAvoid(pool)) {
                         long exstPoolDcId = pool.getDataCenterId();
-
                         long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
                         long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
+                        boolean canReusePool = false;
                         if (plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId
                                 && plan.getClusterId() == exstPoolClusterId) {
+                            canReusePool = true;
+                        } else if (plan.getDataCenterId() == exstPoolDcId) {
+                            DataStore dataStore = this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                            if (dataStore != null && dataStore.getScope() != null
+                                    && dataStore.getScope().getScopeType() == ScopeType.ZONE) {
+                                canReusePool = true;
+                            }
+                        } else {
+                            s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
+                            canReusePool = false;
+                        }
+
+                        if (canReusePool) {
                             s_logger.debug("Planner need not allocate a pool for this volume since its READY");
                             suitablePools.add(pool);
                             suitableVolumeStoragePools.put(toBeCreated, suitablePools);
@@ -1093,8 +1108,6 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                 readyAndReusedVolumes.add(toBeCreated);
                             }
                             continue;
-                        } else {
-                            s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
                         }
                     } else {
                         s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
