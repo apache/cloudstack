@@ -2510,7 +2510,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     sdc.addOr("accountId", SearchCriteria.Op.EQ, account.getId());
                     sdc.addOr("accountId", SearchCriteria.Op.NULL);
 
-                    sc.addAnd("account", SearchCriteria.Op.SC, sdc);
+                    sc.addAnd("accountId", SearchCriteria.Op.SC, sdc);
                 }
 
             } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
@@ -2539,7 +2539,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
                 sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
                 sdc.addOr("domainId", SearchCriteria.Op.NULL);
-                sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
+                sc.addAnd("domainId", SearchCriteria.Op.SC, sdc);
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
@@ -2550,7 +2550,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sdc2.addOr("accountId", SearchCriteria.Op.EQ, account.getId());
                 sdc2.addOr("accountId", SearchCriteria.Op.NULL);
 
-                sc.addAnd("account", SearchCriteria.Op.SC, sdc2);
+                sc.addAnd("accountId", SearchCriteria.Op.SC, sdc2);
 
                 // remove Dedicated zones not dedicated to this domainId or
                 // subdomainId
@@ -2590,7 +2590,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
                 sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
                 sdc.addOr("domainId", SearchCriteria.Op.NULL);
-                sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
+                sc.addAnd("domainId", SearchCriteria.Op.SC, sdc);
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
@@ -2619,7 +2619,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     if (dcIds.size() == 0) {
                         return new Pair<List<DataCenterJoinVO>, Integer>(new ArrayList<DataCenterJoinVO>(), 0);
                     } else {
-                        sc.addAnd("idIn", SearchCriteria.Op.IN, dcIds.toArray());
+                        sc.addAnd("id", SearchCriteria.Op.IN, dcIds.toArray());
                     }
 
                 }
