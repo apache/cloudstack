@@ -86,11 +86,10 @@ class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
         self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
 
 
-
 class DefaultSharedNetworkOfferingFactory(NetworkOfferingFactory):
 
-    displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%d" % n)
-    name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%d" % n)
+    displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%s" % random_gen())
+    name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%s" % random_gen())
     availability = "Optional"
     supportedservices = "Dns,Dhcp,UserData"
     guestiptype = "Shared"
