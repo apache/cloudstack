@@ -90,7 +90,7 @@ class Entity(object):
                                   'if %s and len(%s) > 0 else None' % (
                                   entity, entity.lower(), entity.lower(), entity.lower()))
                 else:
-                    m.body.append(self.tabspace + 'return %s if %s else None' % (entity.lower(), entity.lower()))
+                    m.body.append(self.tabspace + 'return self.__update__(%s.__dict__) if %s else None' % (entity.lower(), entity.lower()))
             else:
                 if len(details['args']) > 0: #has required arguments
                     m.signature = 'def __init__(self, apiclient=None, %s, factory=None, **kwargs):' % (
