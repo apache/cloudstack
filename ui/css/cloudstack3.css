@@ -11890,14 +11890,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .detach .icon,
 .detachISO .icon,
-.detachDisk .icon 
-.disassociateProfileFromBlade .icon{
+.detachDisk .icon,
+.disassociateProfileFromBlade .icon {
   background-position: -101px -65px;
 }
 
 .detach:hover .icon,
 .detachISO:hover .icon,
-.detachDisk:hover .icon {
+.detachDisk:hover .icon,
+.disassociateProfileFromBlade:hover .icon {
   background-position: -101px -647px;
 }
 
