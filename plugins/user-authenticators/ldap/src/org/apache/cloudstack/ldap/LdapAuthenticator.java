@@ -19,6 +19,7 @@ package org.apache.cloudstack.ldap;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -44,6 +45,15 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
 		super();
 		_ldapManager = ldapManager;
 		_userAccountDao = userAccountDao;
+	}
+
+	@Override
+	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+		if (name == null) {
+			name = "LDAP";
+		}
+		super.configure(name, params);
+		return true;
 	}
 
 	@Override
