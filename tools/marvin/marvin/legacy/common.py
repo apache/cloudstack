@@ -21,7 +21,7 @@
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
 from marvin.legacy.utils import *
-from marvin.integration.lib.base import Configurations
+from marvin.legacy.base import Configurations
 
 #Import System modules
 import time

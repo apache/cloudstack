@@ -242,7 +242,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     @return: True if snapshot is found, False otherwise
     """
 
-    from entity import ImageStore, Snapshot
+    from base import ImageStore, Snapshot
     secondaryStores = ImageStore.list(apiclient, zoneid=zoneid)
 
     assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
