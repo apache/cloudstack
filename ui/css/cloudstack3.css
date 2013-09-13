@@ -11890,7 +11890,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .detach .icon,
 .detachISO .icon,
-.detachDisk .icon {
+.detachDisk .icon 
+.disassociateProfileFromBlade .icon{
   background-position: -101px -65px;
 }
 

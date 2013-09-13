@@ -6129,14 +6129,7 @@
                                                         	}                                                        	
                                                         }
                                                     });                         
-                                                    // for testing only (begin)
-                                                    /*
-						                            selectedZoneObj.vmwaredcName = "datacenter";
-						                            selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
-						                            selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
-						                            */
-                                                    // for testing only (end)
-
+                                                    
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,
                                                         data: selectedZoneObj
@@ -13999,7 +13992,78 @@
                                             notification: {
                                                 poll: pollAsyncJobResult
                                             }
-                                        }
+                                        },
+                                                                                
+                                        disassociateProfileFromBlade: {
+                                            label: 'Disassociate Profile from Blade',
+                                            addRow: 'false',
+                                            messages: {
+                                            	confirm: function(args) {
+                                            		return 'Please confirm that you want to disassociate Profile from Blade.';
+                                            	},
+                                                notification: function(args) {
+                                                    return 'Disassociate Profile from Blade';
+                                                }
+                                            },                                           
+                                            action: function(args) {                                            	
+                                                $.ajax({
+                                                    url: createURL('disassociateUcsProfileFromBlade'), 
+                                                    data: {
+                                                        //ucsmanagerid: args.context.ucsManagers[0].id,                                                        
+                                                        bladeid: args.context.blades[0].id
+                                                    },
+                                                    success: function(json) {   
+                                                    	//for testing only (begin)
+                                                    	/*
+                                                    	json = {
+                                                        	    "disassociateucsprofilefrombladeresponse": {
+                                                        	        "jobid": "e371592e-31be-4e53-9346-a5c565d420df"
+                                                        	    }
+                                                        	}
+                                                    	*/
+                                                    	//for testing only (end)
+                                                    	                                                    	
+                                                    	var jid = json.disassociateucsprofilefrombladeresponse.jobid;
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jid,
+                                                                getUpdatedItem: function(json) {  
+                                                                	//for testing only (begin)
+                                                                	/*
+                                                                	json = {
+                                                                		    "queryasyncjobresultresponse": {
+                                                                		        "accountid": "b24f6e36-f0ca-11e2-8c16-d637902e3581",
+                                                                		        "userid": "b24f7d8d-f0ca-11e2-8c16-d637902e3581",
+                                                                		        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
+                                                                		        "jobstatus": 1,
+                                                                		        "jobprocstatus": 0,
+                                                                		        "jobresultcode": 0,
+                                                                		        "jobresulttype": "object",
+                                                                		        "jobresult": {
+                                                                		            "ucsblade": {
+                                                                		                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
+                                                                		                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                                		                "bladedn": "sys/chassis-1/blade-4"
+                                                                		            }
+                                                                		        },
+                                                                		        "created": "2013-07-26T13:53:01-0700",
+                                                                		        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                                		    }
+                                                                		};
+                                                                	*/
+                                                                	//for testing only (end)
+                                                                	                                                                	                                  	    
+                                                                    return json.queryasyncjobresultresponse.jobresult.ucsblade;
+                                                                }
+                                                            }
+                                                        });                                                    	
+                                                    }
+                                                });
+                                            },
+                                            notification: {
+                                                poll: pollAsyncJobResult
+                                            }
+                                        }                                        
                                     }                                 
                                 }
                             }                         
@@ -16091,7 +16155,9 @@
         var allowedActions = [];
         if(jsonObj.profiledn == null) {
         	allowedActions.push("associateProfileToBlade");
-        }        
+        } else {
+        	allowedActions.push("disassociateProfileFromBlade");
+        }     
         return allowedActions;
     }
 
