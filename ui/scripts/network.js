@@ -3842,10 +3842,20 @@
                                                     virtualmachineid: args.itemData[0].id,
                                                     openfirewall: false
                                                 };
+                                                
+                                                if (args.context.ipAddresses[0].isportable) {
+                                                    var subselect = args.itemData[0]._subselect.split(',');
+                                                    //var networkid = subselect[0];
+                                                    var vmguestip = subselect[1];
 
-                                                if (args.itemData[0]._subselect && args.itemData[0]._subselect != -1) {
+                                                    //data.networkid = networkid;
+
+                                                    if (parseInt(vmguestip) !== -1) {
+                                                        data.vmguestip = vmguestip;
+                                                    }
+                                                } else if (args.itemData[0]._subselect && args.itemData[0]._subselect != -1) {
                                                     data.vmguestip = args.itemData[0]._subselect;
-                                                }
+                                                }                                                
 
                                                 if ('vpc' in args.context) { //from VPC section
                                                     if (args.data.tier == null) {
