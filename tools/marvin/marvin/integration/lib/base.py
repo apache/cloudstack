@@ -2360,7 +2360,9 @@ class PortablePublicIpRange:
         cmd.startip = services["startip"]
         cmd.endip = services["endip"]
         cmd.regionid = services["regionid"]
-        cmd.vlan = services["vlan"]
+
+        if "vlan" in services:
+            cmd.vlan = services["vlan"]
 
         return PortablePublicIpRange(apiclient.createPortableIpRange(cmd).__dict__)
 

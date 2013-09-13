@@ -686,3 +686,38 @@ def get_resource_type(resource_id):
                  }
 
         return lookup[resource_id]
+
+def get_portable_ip_range_services(config):
+    """ Reads config values related to portable ip and fills up
+    services accordingly"""
+
+    services = {}
+    attributeError = False
+
+    if config.portableIpRange.startip:
+        services["startip"] = config.portableIpRange.startip
+    else:
+        attributeError = True
+
+    if config.portableIpRange.endip:
+        services["endip"] = config.portableIpRange.endip
+    else:
+        attributeError = True
+
+    if config.portableIpRange.netmask:
+        services["netmask"] = config.portableIpRange.netmask
+    else:
+        attributeError = True
+
+    if config.portableIpRange.gateway:
+        services["gateway"] = config.portableIpRange.gateway
+    else:
+        attributeError = True
+
+    if config.portableIpRange.vlan:
+        services["vlan"] = config.portableIpRange.vlan
+
+    if attributeError:
+        services = None
+
+    return services
