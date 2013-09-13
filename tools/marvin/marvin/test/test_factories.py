@@ -18,6 +18,7 @@
 import unittest
 import logging
 from nose.plugins.attrib import attr
+from should_dsl import should, should_not
 
 from marvin.cloudstackTestClient import cloudstackTestClient
 
@@ -31,14 +32,13 @@ from marvin.factory.data.network import *
 from marvin.factory.virtualmachine import *
 
 from marvin.entity.serviceoffering import ServiceOffering
+from marvin.entity.networkoffering import NetworkOffering
 from marvin.entity.zone import Zone
 from marvin.entity.account import Account
 from marvin.entity.template import Template
 from marvin.entity.user import User
 from marvin.entity.network import Network
-
 from marvin.entity.ipaddress import IpAddress
-
 
 
 class BuildVsCreateStrategyTest(unittest.TestCase):
@@ -115,6 +115,65 @@ class NetworkOfferingFactoryTest(unittest.TestCase):
         pass
 
 
+class UserFactorySubFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factory.cloudstack')).getApiClient()
+
+    def tearDown(self):
+        pass
+
+    @unittest.skip("This is a chicken and egg problem")
+    def test_userSubFactory(self):
+        """
+        Skip because users are contained in accounts but
+        cannot be created until accounts exist
+
+        A subfactory is unsuitable as the semantics of the
+        caller is not to create the user before creating the account
+        @return:
+        """
+        uf = UserFactory(apiclient=self.apiClient)
+        user = User.list(apiclient=self.apiClient, username=uf.username)
+        self.assert_(uf.username == user[0].username, msg="Usernames don't match")
+
+
+class NetworkFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost',
+            logging=logging.getLogger('factory.cloudstack')).getApiClient()
+
+    def tearDown(self):
+        self.accnt.delete(apiclient=self.apiClient)
+
+    @attr(tags='network')
+    def test_isolatedGuestNetwork(self):
+        """Test to create a network within a guest account
+        @return:
+        """
+        self.accnt = UserAccountFactory(apiclient=self.apiClient)
+        zones = Zone.list(apiclient=self.apiClient)
+        network = GuestIsolatedNetworkFactory(
+            apiclient=self.apiClient,
+            zoneid=zones[0].id
+            )
+        logging.getLogger('factory.cloudstack').debug("network created with id %s, name %s" %(network.id, network.name))
+
+
+class NetworkOfferingFactoryWithMultiplePostHooksTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost',
+            logging=logging.getLogger('factory.cloudstack')).getApiClient()
+
+    @attr(tags='post')
+    def test_multiplePostHooksNetworkOffering(self):
+        sharedOffering = DefaultSharedNetworkOfferingFactory(apiclient=self.apiClient)
+        sharedOffering |should| be_instance_of(NetworkOffering)
+        sharedOffering |should_not| equal_to(None)
+        sharedOffering.state |should| equal_to('Enabled')
+        logging.getLogger('factory.cloudstack').debug("networkoffering created with id %s, name %s, state %s"
+                                                      %(sharedOffering.id, sharedOffering.name, sharedOffering.state))
+
+
 class VirtualMachineFactoryTest(unittest.TestCase):
     def setUp(self):
         self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factory.cloudstack')).getApiClient()
@@ -137,29 +196,6 @@ class VirtualMachineFactoryTest(unittest.TestCase):
                                           zoneid = zones[0].id,
                                           account = accnt.name,
                                           domainid = accnt.domainid)
-
-
-
-class UserFactorySubFactoryTest(unittest.TestCase):
-    def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost', logging=logging.getLogger('factory.cloudstack')).getApiClient()
-
-    def tearDown(self):
-        pass
-
-    @unittest.skip("This is a chicken and egg problem")
-    def test_userSubFactory(self):
-        """
-        Skip because users are contained in accounts but
-        cannot be created until accounts exist
-
-        A subfactory is unsuitable as the semantics of the
-        caller is not to create the user before creating the account
-        @return:
-        """
-        uf = UserFactory(apiclient=self.apiClient)
-        user = User.list(apiclient=self.apiClient, username=uf.username)
-        self.assert_(uf.username == user[0].username, msg="Usernames don't match")
 
 
 class IpAddressFactoryTest(unittest.TestCase):
@@ -193,25 +229,3 @@ class IpAddressFactoryTest(unittest.TestCase):
         networks = Network.list(apiclient=self.apiClient,
             account = accnt.name, domainid = accnt.domainid)
         firstip.associate(apiclient=self.apiClient, networkid = networks[0].id)
-
-
-class NetworkFactoryTest(unittest.TestCase):
-    def setUp(self):
-        self.apiClient = cloudstackTestClient(mgtSvr='localhost',
-            logging=logging.getLogger('factory.cloudstack')).getApiClient()
-
-    def tearDown(self):
-        self.accnt.delete(apiclient=self.apiClient)
-
-    @attr(tags='network')
-    def test_isolatedGuestNetwork(self):
-        """Test to create a network within a guest account
-        @return:
-        """
-        self.accnt = UserAccountFactory(apiclient=self.apiClient)
-        zones = Zone.list(apiclient=self.apiClient)
-        network = GuestIsolatedNetworkFactory(
-            apiclient=self.apiClient,
-            zoneid=zones[0].id
-            )
-        logging.getLogger('factory.cloudstack').debug("network created with id %s, name %s" %(network.id, network.name))
