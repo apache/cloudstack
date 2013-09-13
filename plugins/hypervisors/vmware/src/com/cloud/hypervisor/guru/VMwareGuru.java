@@ -54,6 +54,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.host.Host;
@@ -115,6 +116,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    @Inject ClusterManager _clusterMgr;
 
     protected VMwareGuru() {
         super();
@@ -365,6 +367,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             CommandExecLogVO execLog = new CommandExecLogVO(cmdTarget.first().getId(), cmdTarget.second().getId(), cmd.getClass().getSimpleName(), 1);
             _cmdExecLogDao.persist(execLog);
             cmd.setContextParam("execid", String.valueOf(execLog.getId()));
+    		cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
 
             if(cmd instanceof BackupSnapshotCommand ||
                     cmd instanceof CreatePrivateTemplateFromVolumeCommand ||

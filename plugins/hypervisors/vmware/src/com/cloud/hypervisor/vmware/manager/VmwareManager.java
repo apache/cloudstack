@@ -52,6 +52,7 @@ public interface VmwareManager {
 
     VmwareStorageManager getStorageManager();
     void gcLeftOverVMs(VmwareContext context);
+    boolean needRecycle(String workerTag);
 
     Pair<Integer, Integer> getAddiionalVncPortRange();
 

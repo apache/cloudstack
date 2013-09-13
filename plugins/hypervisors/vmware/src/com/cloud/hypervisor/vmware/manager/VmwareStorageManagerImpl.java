@@ -315,46 +315,41 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String prevBackupUuid = cmd.getPrevBackupUuid();
         VirtualMachineMO workerVm=null;
         String workerVMName = null;
-		String volumePath = cmd.getVolumePath();
-		ManagedObjectReference morDs = null;
-		DatastoreMO dsMo=null;
+        String volumePath = cmd.getVolumePath();
+        ManagedObjectReference morDs = null;
+        DatastoreMO dsMo=null;
 
-		// By default assume failure
-		String details = null;
-		boolean success = false;
-		String snapshotBackupUuid = null;
+        // By default assume failure
+        String details = null;
+        boolean success = false;
+        String snapshotBackupUuid = null;
 
-		VmwareContext context = hostService.getServiceContext(cmd);
-		VirtualMachineMO vmMo = null;
-		try {
-			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-			morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPool().getUuid());
+        VmwareContext context = hostService.getServiceContext(cmd);
+        VirtualMachineMO vmMo = null;
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPool().getUuid());
 
-			try {
-				vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
-				if (vmMo == null) {
-					if(s_logger.isDebugEnabled())
-						s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
+            try {
+                vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+                if (vmMo == null) {
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
+                    }
 
-					vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
-					if(vmMo == null) {
-						dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
+                    vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
+                    if(vmMo == null) {
+                        dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 
-						workerVMName = hostService.getWorkerName(context, cmd, 0);
+                        workerVMName = hostService.getWorkerName(context, cmd, 0);
+                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+                        
+                        if (vmMo == null) {
+                            throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
+                        }
+                        workerVm = vmMo;
 
-						// attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
-						if (!hyperHost.createBlankVm(workerVMName, null, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier.OTHER_GUEST.value(), morDs, false)) {
-							String msg = "Unable to create worker VM to execute BackupSnapshotCommand";
-							s_logger.error(msg);
-							throw new Exception(msg);
-						}
-						vmMo = hyperHost.findVmOnHyperHost(workerVMName);
-						if (vmMo == null) {
-							throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
-						}
-						workerVm = vmMo;
-
-						// attach volume to worker VM
+                        // attach volume to worker VM
                         String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
                         vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
                     }
@@ -1071,28 +1066,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             if (vmMo == null) {
                 // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-                //restrict VM name to 32 chars, (else snapshot descriptor file name will be truncated to 32 chars of vm name)
-                VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
-                vmConfig.setName(workerVmName);
-                vmConfig.setMemoryMB((long) 4);
-                vmConfig.setNumCPUs(1);
-                vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
-                VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
-                fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
-                vmConfig.setFiles(fileInfo);
-
-                // Scsi controller
-                VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
-                scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
-                scsiController.setBusNumber(0);
-                scsiController.setKey(1);
-                VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
-                scsiControllerSpec.setDevice(scsiController);
-                scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                vmConfig.getDeviceChange().add(scsiControllerSpec);
-
-                hyperHost.createVm(vmConfig);
-                workerVm = hyperHost.findVmOnHyperHost(workerVmName);
+                workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
+                
                 if (workerVm == null) {
                     String msg = "Unable to create worker VM to execute CopyVolumeCommand";
                     s_logger.error(msg);

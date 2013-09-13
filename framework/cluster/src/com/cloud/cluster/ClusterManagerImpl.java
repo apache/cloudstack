@@ -1076,6 +1076,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         }
         return true;
     }
+    
+    public long getManagementNodeId() {
+    	return _msId;
+    }
 
     public long getCurrentRunId() {
         return _runId;

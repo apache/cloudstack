@@ -55,6 +55,8 @@ public interface ClusterManager extends Manager {
     ManagementServerHost getPeer(String peerName);
     
     String getSelfPeerName();
+    long getManagementNodeId();
+    long getCurrentRunId();
 
     public interface Dispatcher {
         String getName();

@@ -1233,8 +1233,24 @@ public class HypervisorHostHelper {
         scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
         vmConfig.getDeviceChange().add(scsiControllerSpec);
-        hyperHost.createVm(vmConfig);
-        workingVM = hyperHost.findVmOnHyperHost(vmName);
+        if(hyperHost.createVm(vmConfig)) {
+        	// Ugly work-around, it takes time for newly created VM to appear
+        	for(int i = 0; i < 10 && workingVM == null; i++) {
+        		workingVM = hyperHost.findVmOnHyperHost(vmName);
+        		
+        		try {
+        			Thread.sleep(1000);
+        		} catch(InterruptedException e) {
+        		}
+        	}
+        }
+        
+        if(workingVM != null) {
+        	workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+        	String workerTag = String.format("%d-%s", System.currentTimeMillis(), 
+        		hyperHost.getContext().getStockObject("noderuninfo"));
+           	workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
+        }
         return workingVM;
     }
     

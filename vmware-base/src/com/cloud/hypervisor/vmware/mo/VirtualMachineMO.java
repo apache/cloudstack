@@ -1559,15 +1559,11 @@ public class VirtualMachineMO extends BaseMO {
 	    assert(disks.length >= 1);
 
 		HostMO hostMo = getRunningHost();
-		VirtualMachineConfigInfo vmConfigInfo = getConfigInfo();
 
-		if(!hostMo.createBlankVm(clonedVmName, null, 1, cpuSpeedMHz, 0, false, memoryMb, 0, vmConfigInfo.getGuestId(), morDs, false))
-		    throw new Exception("Unable to create a blank VM");
-
-		VirtualMachineMO clonedVmMo = hostMo.findVmOnHyperHost(clonedVmName);
+		VirtualMachineMO clonedVmMo = HypervisorHostHelper.createWorkerVM(hostMo, new DatastoreMO(hostMo.getContext(), morDs), clonedVmName);
 		if(clonedVmMo == null)
 		    throw new Exception("Unable to find just-created blank VM");
-
+		
 		boolean bSuccess = false;
 		try {
     		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();

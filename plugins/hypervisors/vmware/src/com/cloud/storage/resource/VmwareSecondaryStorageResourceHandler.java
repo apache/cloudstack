@@ -218,6 +218,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             if (context != null) {
                 context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
                 context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
+                context.registerStockObject("noderuninfo", cmd.getContextParam("noderuninfo"));
             }
             currentContext.set(context);
             return context;
