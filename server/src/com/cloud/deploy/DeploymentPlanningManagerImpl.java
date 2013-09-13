@@ -1052,6 +1052,11 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
         List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
 
+        // There should be atleast the ROOT volume of the VM in usable state
+        if (volumesTobeCreated.isEmpty()) {
+            throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM");
+        }
+
         // for each volume find list of suitable storage pools by calling the
         // allocators
         for (VolumeVO toBeCreated : volumesTobeCreated) {
