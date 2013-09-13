@@ -2197,6 +2197,11 @@ public class Upgrade410to420 implements DbUpgrade {
                 storeInsert.setDate(9, nfs_created);
                 storeInsert.executeUpdate();
             }
+
+            s_logger.debug("Marking NFS secondary storage in host table as removed");
+            pstmt = conn.prepareStatement("UPDATE `cloud`.`host` SET removed = now() WHERE type = 'SecondaryStorage' and removed is null");
+            pstmt.executeUpdate();
+            pstmt.close();
         }
         catch (SQLException e) {
             String msg = "Unable to migrate secondary storages." + e.getMessage();
