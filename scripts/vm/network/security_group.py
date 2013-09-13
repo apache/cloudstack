@@ -752,7 +752,7 @@ def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     logfilename = logpath + vm_name + ".log"
     logging.debug("Writing log to " + logfilename)
     logf = open(logfilename, 'w')
-    output = ','.join([vmName, vmID, vmIP, domID, signature, seqno])
+    output = ','.join([vmName, vmID, vmIP, str(domID), signature, seqno])
     result = True
     try:
         logf.write(output)
@@ -937,7 +937,7 @@ def getvmId(vmName):
 
     conn.close()
 
-    return str(dom.ID())
+    return dom.ID()
 
 def addFWFramework(brname):
     try:
