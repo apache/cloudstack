@@ -18,7 +18,7 @@
 """
 """
 #Import Local Modules
-#import unittest
+import unittest
 from nose.plugins.attrib           import attr
 from marvin.cloudstackTestCase     import cloudstackTestCase
 from marvin.integration.lib.base   import (Account,
@@ -198,7 +198,6 @@ class TestEgressFWRules(cloudstackTestCase):
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
-
     def create_vm(self, pfrule=False, egress_policy=True, RR=False):
         self.create_network_offering(egress_policy, RR)
          # Creating network using the network offering created
@@ -229,20 +228,7 @@ class TestEgressFWRules(cloudstackTestCase):
 
     def exec_script_on_user_vm(self, script, exec_cmd_params, expected_result, negative_test=False):
         try:
-            if self.apiclient.hypervisor.lower() == 'vmware':
-                #SSH is done via management server for Vmware
-                sourceip = self.apiclient.connection.mgtSvr
-            else:
-                #For others, we will have to get the ipaddress of host connected to vm
-                hosts = list_hosts(self.apiclient,
-                                   id=self.virtual_machine.hostid)
-                self.assertEqual(isinstance(hosts, list),
-                                 True,
-                                 "Check list response returns a valid list")
-                host = hosts[0]
-                sourceip = host.ipaddress
-            #Once host or mgt server is reached, SSH to the router connected to VM
-            # look for Router for Cloudstack VM network.
+
             vm_network_id = self.virtual_machine.nic[0].networkid
             vm_ipaddress  = self.virtual_machine.nic[0].ipaddress
             list_routers_response = list_routers(self.apiclient,
@@ -253,6 +239,26 @@ class TestEgressFWRules(cloudstackTestCase):
                              True,
                              "Check for list routers response return valid data")
             router = list_routers_response[0]
+
+            #Once host or mgt server is reached, SSH to the router connected to VM
+            # look for Router for Cloudstack VM network.
+            if self.apiclient.hypervisor.lower() == 'vmware':
+                #SSH is done via management server for Vmware
+                sourceip = self.apiclient.connection.mgtSvr
+            else:
+                #For others, we will have to get the ipaddress of host connected to vm
+                hosts = list_hosts(self.apiclient,
+                                   id=router.hostid)
+                self.assertEqual(isinstance(hosts, list),
+                                 True,
+                                 "Check list response returns a valid list")
+                host = hosts[0]
+                sourceip = host.ipaddress
+
+            self.debug("Sleep %s seconds for network on router to be up"
+                        % self.services['sleep'])
+            time.sleep(self.services['sleep'])
+
             if self.apiclient.hypervisor.lower() == 'vmware':
                 key_file = " -i /var/cloudstack/management/.ssh/id_rsa "
             else:
@@ -266,7 +272,6 @@ class TestEgressFWRules(cloudstackTestCase):
                           "expect \"root@%s's password: \"\n"  % (vm_ipaddress) + \
                           "send \"password\r\"\n" + \
                           "interact\n"
-
             self.debug("expect_script>>\n%s<<expect_script" % expect_script)
 
             script_file = '/tmp/expect_script.exp'
@@ -391,7 +396,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
                                     negative_test=False)
-
 
     @attr(tags = ["advanced"])
     @log_test_exceptions
