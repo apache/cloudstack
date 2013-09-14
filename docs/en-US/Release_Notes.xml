@@ -57,1007 +57,965 @@ under the License.
   </chapter>
   <chapter id="version-4.2">
     <title>What's New in 4.2.0</title>
-    <section id="whats-new-in-4.2">
-      <para>&PRODUCT; 4.2 includes the following new features.</para>
-      <section id="workloads">
-        <title>Features to Support Heterogeneous Workloads</title>
-        <para>The following new features help &PRODUCT; 4.2 better support both legacy and cloud-era
-          style zones.</para>
-        <section id="regions">
-          <title>Regions</title>
-          <para>To increase reliability of the cloud, you can optionally group resources into
-            geographic regions. A region is the largest available organizational unit within a cloud
-            deployment. A region is made up of several availability zones, where each zone is
-            equivalent to a datacenter. Each region is controlled by its own cluster of Management
-            Servers, running in one of the zones. The zones in a region are typically located in
-            close geographical proximity. Regions are a useful technique for providing fault
-            tolerance and disaster recovery.</para>
-          <para>By grouping zones into regions, the cloud can achieve higher availability and
-            scalability. User accounts can span regions, so that users can deploy VMs in multiple,
-            widely-dispersed regions. Even if one of the regions becomes unavailable, the services
-            are still available to the end-user through VMs deployed in another region. And by
-            grouping communities of zones under their own nearby Management Servers, the latency of
-            communications within the cloud is reduced compared to managing widely-dispersed zones
-            from a single central Management Server.</para>
-          <para>Usage records can also be consolidated and tracked at the region level, creating
-            reports or invoices for each geographic region.</para>
-        </section>
-        <section id="object-store">
-          <title>Object Storage Plugin Architecture</title>
-          <para>Artifacts such as templates, ISOs and snapshots are kept in storage which &PRODUCT;
-            refers to as secondary storage. To improve scalability and performance, as when a number
-            of hosts access secondary storage concurrently, object storage can be used for secondary
-            storage. Object storage can also provide built-in high availability capability. When
-            using object storage, access to secondary storage data can be made available across
-            multiple zones in a region. This is a huge benefit, as it is no longer necessary to copy
-            templates, snapshots etc. across zones as would be needed in an NFS-only
-            environment.</para>
-          <para>Object storage is provided through third-party software such as Amazon Simple
-            Storage Service (S3) or any other object storage that supports the S3 interface. These
-            third party object storages can be integrated with &PRODUCT; by writing plugin software
-            that uses the object storage plugin capability introduced in &PRODUCT; 4.2. Several new
-            pluggable service interfaces are available so that different storage providers can
-            develop vendor-specific plugins based on the well-defined contracts that can be
-            seamlessly managed by &PRODUCT;.</para>
-        </section>
-        <section id="zone-wide-primary-storage">
-          <title>Zone-Wide Primary Storage</title>
-          <para>(Supported on KVM and VMware)</para>
-          <para>In &PRODUCT; 4.2, you can provision primary storage on a per-zone basis. Data
-            volumes in the primary storage can be attached to any VM on any host in the zone.</para>
-          <para>In previous &PRODUCT; versions, each cluster had its own primary storage. Data in
-            the primary storage was directly available only to VMs within that cluster. If a VM in a
-            different cluster needed some of the data, it must be copied from one cluster to
-            another, using the zone's secondary storage as an intermediate step. This operation was
-            unnecessarily time-consuming.</para>
-        </section>
-        <section id="vmware-datacenter">
-          <title>VMware Datacenter Now Visible As a &PRODUCT; Zone</title>
-          <para>In order to support zone-wide functions for VMware, changes have been made so that
-            &PRODUCT; is now aware of VMware Datacenters and can map each Datacenter to a &PRODUCT;
-            zone. Previously, &PRODUCT; was only aware of VMware Clusters, a smaller organizational
-            unit than Datacenters. This implies that a single &PRODUCT; zone could possibly contain
-            clusters from different VMware Datacenters. In order for zone-wide functions, such as
-            zone-wide primary storage, to work for VMware hosts, &PRODUCT; has to make sure that a
-            zone contains only a single VMware Datacenter. Therefore, when you are creating a new
-            &PRODUCT; zone, you will now be able to select a VMware Datacenter for the zone. If you
-            are provisioning multiple VMware Datacenters, each one will be set up as a single zone
-            in &PRODUCT;. </para>
-          <note>
-            <para>If you are upgrading from a previous &PRODUCT; version, and your existing
-              deployment contains a zone with clusters from multiple VMware Datacenters, that zone
-              will not be forcibly migrated to the new model. It will continue to function as
-              before. However, any new zone-wide operations, such as zone-wide primary storage, will
-              not be available in that zone.</para>
-          </note>
-          <para/>
-        </section>
+    <para>&PRODUCT; 4.2 includes the following new features.</para>
+    <section id="workloads">
+      <title>Features to Support Heterogeneous Workloads</title>
+      <para>The following new features help &PRODUCT; 4.2 better support both legacy and cloud-era
+        style zones.</para>
+      <section id="regions">
+        <title>Regions</title>
+        <para>To increase reliability of the cloud, you can optionally group resources into
+          geographic regions. A region is the largest available organizational unit within a cloud
+          deployment. A region is made up of several availability zones, where each zone is
+          equivalent to a datacenter. Each region is controlled by its own cluster of Management
+          Servers, running in one of the zones. The zones in a region are typically located in close
+          geographical proximity. Regions are a useful technique for providing fault tolerance and
+          disaster recovery.</para>
+        <para>By grouping zones into regions, the cloud can achieve higher availability and
+          scalability. User accounts can span regions, so that users can deploy VMs in multiple,
+          widely-dispersed regions. Even if one of the regions becomes unavailable, the services are
+          still available to the end-user through VMs deployed in another region. And by grouping
+          communities of zones under their own nearby Management Servers, the latency of
+          communications within the cloud is reduced compared to managing widely-dispersed zones
+          from a single central Management Server.</para>
+        <para>Usage records can also be consolidated and tracked at the region level, creating
+          reports or invoices for each geographic region.</para>
       </section>
-      <section id="third-party-plugin">
-        <title>Third-Party UI Plugin Framework</title>
-        <para>Using the new third-party plugin framework, you can write and install extensions to
-          &PRODUCT;. The installed and enabled plugins will appear in the UI alongside the
-          Citrix-provided features.</para>
-        <para>The basic procedure for adding a UI plugin is explained in the Developer Guide. In
-          summary, the plugin developer creates the plugin code itself (in Javascript), a thumbnail
-          image, the plugin listing, and a CSS file. The &PRODUCT; administrator adds the folder
-          containing the plugin code under the &PRODUCT; PLUGINS folder and adds the plugin name to
-          a configuration file (plugins.js).</para>
-        <para>The next time the user refreshes the UI in the browser, the plugin will appear under
-          the Plugins button in the left navigation bar.</para>
+      <section id="object-store">
+        <title>Object Storage Plugin Architecture</title>
+        <para>Artifacts such as templates, ISOs and snapshots are kept in storage which &PRODUCT;
+          refers to as secondary storage. To improve scalability and performance, as when a number
+          of hosts access secondary storage concurrently, object storage can be used for secondary
+          storage. Object storage can also provide built-in high availability capability. When using
+          object storage, access to secondary storage data can be made available across multiple
+          zones in a region. This is a huge benefit, as it is no longer necessary to copy templates,
+          snapshots etc. across zones as would be needed in an NFS-only environment.</para>
+        <para>Object storage is provided through third-party software such as Amazon Simple Storage
+          Service (S3) or any other object storage that supports the S3 interface. These third party
+          object storages can be integrated with &PRODUCT; by writing plugin software that uses the
+          object storage plugin capability introduced in &PRODUCT; 4.2. Several new pluggable
+          service interfaces are available so that different storage providers can develop
+          vendor-specific plugins based on the well-defined contracts that can be seamlessly managed
+          by &PRODUCT;.</para>
       </section>
-      <section id="networking">
-        <title>Networking Enhancements</title>
-        <para>The following new features provide additional networking functionality in &PRODUCT;
-          4.2.</para>
-        <section id="ipv6">
-          <title>IPv6 (Technical Preview)</title>
-          <para>&PRODUCT; 4.2 introduces initial support for IPv6. This feature is provided as a
-            technical preview only. Full support is planned for a future release.</para>
-        </section>
-        <section id="portable-ip">
-          <title>Portable IPs</title>
-          <para>Portable IPs in &PRODUCT; are elastic IPs that can be transferred across
-            geographically separated zones. As an administrator, you can provision a pool of
-            portable IPs at region level and are available for user consumption. The users can
-            acquire portable IPs if admin has provisioned portable public IPs at the region level
-            they are part of. These IPs can be used for any service within an advanced zone. You can
-            also use portable IPs for EIP service in Basic zones. Additionally, a portable IP can be
-            transferred from one network to another network.</para>
-        </section>
-        <section id="ntier-apps">
-          <title>N-Tier Applications</title>
-          <para>In &PRODUCT; 3.0.6, a functionality was added to allow users to create a multi-tier
-            application connected to a single instance of a Virtual Router that supports inter-VLAN
-            routing. Such a multi-tier application is called a virtual private cloud (VPC). Users
-            were also able to connect their multi-tier applications to a private Gateway or a
-            Site-to-Site VPN tunnel and route certain traffic to those gateways. For &PRODUCT; 4.2,
-            additional features are implemented to enhance VPC applications.</para>
-          <itemizedlist>
-            <listitem>
-              <para><xref linkend="kvm-vpc"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="add-loadbalancer-rule-vpc"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="current-lb-vpc"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="across-tiers-lb"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="ns-support"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="configure-acl"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="acl-private-gateway"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="allow-acl"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="acl-deny"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="add-vm-tier-sharednw"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="add-gateway-vpc"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="sourcenat-private-gateway"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="eightvpn"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="static-route"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="blacklist-route"/></para>
-            </listitem>
-          </itemizedlist>
-          <section id="kvm-vpc"><title>Support for KVM</title>VPC is now supported on KVM
-            hypervisors.</section>
-          <section id="add-loadbalancer-rule-vpc">
-            <title>Load Balancing Support for VPC</title>
-            <para>In a VPC, you can configure two types of load balancing&mdash;external LB and
-              internal LB. External LB is nothing but a LB rule created to redirect the traffic
-              received at a public IP of the VPC virtual router. The traffic is load balanced within
-              a tier based on your configuration. Citrix NetScaler and VPC virtual router are
-              supported for external LB. When you use internal LB service, traffic received at a
-              tier is load balanced across different VMs within that tier. For example, traffic
-              reached at Web tier is redirected to another VM in that tier. External load balancing
-              devices are not supported for internal LB. The service is provided by a internal LB VM
-              configured on the target tier.</para>
-            <section id="current-lb-vpc">
-              <title>Load Balancing Within a Tier (External LB)</title>
-              <para>A &PRODUCT; user or administrator may create load balancing rules that balance
-                traffic received at a public IP to one or more VMs that belong to a network tier
-                that provides load balancing service in a VPC. A user creates a rule, specifies an
-                algorithm, and assigns the rule to a set of VMs within a tier.</para>
-            </section>
-            <section id="across-tiers-lb">
-              <title>Load Balancing Across Tiers</title>
-              <para>&PRODUCT; supports sharing workload across different tiers within your VPC.
-                Assume that multiple tiers are set up in your environment, such as Web tier and
-                Application tier. Traffic to each tier is balanced on the VPC virtual router on the
-                public side. If you want the traffic coming from the Web tier to the Application
-                tier to be balanced, use the internal load balancing feature offered by
-                &PRODUCT;.</para>
-            </section>
-            <section id="ns-support">
-              <title>Netscaler Support for VPC</title>
-              <para>Citrix NetScaler is supported for external LB. Certified version for this
-                feature is NetScaler 10.0 Build 74.4006.e.</para>
-            </section>
+      <section id="zone-wide-primary-storage">
+        <title>Zone-Wide Primary Storage</title>
+        <para>(Supported on KVM and VMware)</para>
+        <para>In &PRODUCT; 4.2, you can provision primary storage on a per-zone basis. Data volumes
+          in the primary storage can be attached to any VM on any host in the zone.</para>
+        <para>In previous &PRODUCT; versions, each cluster had its own primary storage. Data in the
+          primary storage was directly available only to VMs within that cluster. If a VM in a
+          different cluster needed some of the data, it must be copied from one cluster to another,
+          using the zone's secondary storage as an intermediate step. This operation was
+          unnecessarily time-consuming.</para>
+      </section>
+      <section id="vmware-datacenter">
+        <title>VMware Datacenter Now Visible As a &PRODUCT; Zone</title>
+        <para>In order to support zone-wide functions for VMware, changes have been made so that
+          &PRODUCT; is now aware of VMware Datacenters and can map each Datacenter to a &PRODUCT;
+          zone. Previously, &PRODUCT; was only aware of VMware Clusters, a smaller organizational
+          unit than Datacenters. This implies that a single &PRODUCT; zone could possibly contain
+          clusters from different VMware Datacenters. In order for zone-wide functions, such as
+          zone-wide primary storage, to work for VMware hosts, &PRODUCT; has to make sure that a
+          zone contains only a single VMware Datacenter. Therefore, when you are creating a new
+          &PRODUCT; zone, you will now be able to select a VMware Datacenter for the zone. If you
+          are provisioning multiple VMware Datacenters, each one will be set up as a single zone in
+          &PRODUCT;. </para>
+        <note>
+          <para>If you are upgrading from a previous &PRODUCT; version, and your existing deployment
+            contains a zone with clusters from multiple VMware Datacenters, that zone will not be
+            forcibly migrated to the new model. It will continue to function as before. However, any
+            new zone-wide operations, such as zone-wide primary storage, will not be available in
+            that zone.</para>
+        </note>
+        <para/>
+      </section>
+    </section>
+    <section id="third-party-plugin">
+      <title>Third-Party UI Plugin Framework</title>
+      <para>Using the new third-party plugin framework, you can write and install extensions to
+        &PRODUCT;. The installed and enabled plugins will appear in the UI.</para>
+      <para>The basic procedure for adding a UI plugin is explained in the Developer Guide. In
+        summary, the plugin developer creates the plugin code itself (in Javascript), a thumbnail
+        image, the plugin listing, and a CSS file. The &PRODUCT; administrator adds the folder
+        containing the plugin code under the &PRODUCT; PLUGINS folder and adds the plugin name to a
+        configuration file (plugins.js).</para>
+      <para>The next time the user refreshes the UI in the browser, the plugin will appear under the
+        Plugins button in the left navigation bar.</para>
+    </section>
+    <section id="networking">
+      <title>Networking Enhancements</title>
+      <para>The following new features provide additional networking functionality in &PRODUCT;
+        4.2.</para>
+      <section id="ipv6">
+        <title>IPv6 </title>
+        <para>&PRODUCT; 4.2 introduces initial support for IPv6. This feature is provided as a
+          technical preview only. Full support is planned for a future release.</para>
+      </section>
+      <section id="portable-ip">
+        <title>Portable IPs</title>
+        <para>Portable IPs in &PRODUCT; are elastic IPs that can be transferred across
+          geographically separated zones. As an administrator, you can provision a pool of portable
+          IPs at region level and are available for user consumption. The users can acquire portable
+          IPs if admin has provisioned portable public IPs at the region level they are part of.
+          These IPs can be used for any service within an advanced zone. You can also use portable
+          IPs for EIP service in Basic zones. Additionally, a portable IP can be transferred from
+          one network to another network.</para>
+      </section>
+      <section id="ntier-apps">
+        <title>N-Tier Applications</title>
+        <para>In &PRODUCT; 3.0.6, a functionality was added to allow users to create a multi-tier
+          application connected to a single instance of a Virtual Router that supports inter-VLAN
+          routing. Such a multi-tier application is called a virtual private cloud (VPC). Users were
+          also able to connect their multi-tier applications to a private Gateway or a Site-to-Site
+          VPN tunnel and route certain traffic to those gateways. For &PRODUCT; 4.2, additional
+          features are implemented to enhance VPC applications.</para>
+        <itemizedlist>
+          <listitem>
+            <para><xref linkend="kvm-vpc"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="add-loadbalancer-rule-vpc"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="current-lb-vpc"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="across-tiers-lb"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="ns-support"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="configure-acl"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="acl-private-gateway"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="allow-acl"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="acl-deny"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="add-vm-tier-sharednw"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="add-gateway-vpc"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="sourcenat-private-gateway"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="eightvpn"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="static-route"/></para>
+          </listitem>
+          <listitem>
+            <para><xref linkend="blacklist-route"/></para>
+          </listitem>
+        </itemizedlist>
+        <section id="kvm-vpc"><title>Support for KVM</title><para>VPC is now supported on KVM
+          hypervisors.</para></section>
+        <section id="add-loadbalancer-rule-vpc">
+          <title>Load Balancing Support for VPC</title>
+          <para>In a VPC, you can configure two types of load balancing&mdash;external LB and
+            internal LB. External LB is nothing but a LB rule created to redirect the traffic
+            received at a public IP of the VPC virtual router. The traffic is load balanced within a
+            tier based on your configuration. Citrix NetScaler and VPC virtual router are supported
+            for external LB. When you use internal LB service, traffic received at a tier is load
+            balanced across different VMs within that tier. For example, traffic reached at Web tier
+            is redirected to another VM in that tier. External load balancing devices are not
+            supported for internal LB. The service is provided by a internal LB VM configured on the
+            target tier.</para>
+          <section id="current-lb-vpc">
+            <title>Load Balancing Within a Tier (External LB)</title>
+            <para>A &PRODUCT; user or administrator may create load balancing rules that balance
+              traffic received at a public IP to one or more VMs that belong to a network tier that
+              provides load balancing service in a VPC. A user creates a rule, specifies an
+              algorithm, and assigns the rule to a set of VMs within a tier.</para>
           </section>
-          <section id="configure-acl">
-            <title>Enhanced Access Control List</title>
-            <para>Network Access Control List (ACL) on the VPC virtual router is enhanced. The
-              network ACLs can be created for the tiers only if the NetworkACL service is supported.
-              In &PRODUCT; terminology, Network ACL is a group of Network ACL items. Network ACL
-              items are nothing but numbered rules that are evaluated in order, starting with the
-              lowest numbered rule. These rules determine whether traffic is allowed in or out of
-              any tier associated with the network ACL. You need to add the Network ACL items to the
-              Network ACL, then associate the Network ACL with a tier. Network ACL is associated
-              with a VPC and can be assigned to multiple VPC tiers within a VPC. A Tier is
-              associated with a Network ACL at all the times. Each tier can be associated with only
-              one ACL. </para>
-            <para>The default Network ACL is used when no ACL is associated. Default behavior is all
-              incoming traffic to guest networks is blocked and all outgoing traffic from guest
-              networks is allowed. Default network ACL cannot be removed or modified.</para>
-            <section id="acl-private-gateway">
-              <title>ACL on Private Gateway</title>
-              <para>The traffic on the VPC private gateway is controlled by creating both ingress
-                and egress network ACL rules. The ACLs contains both allow and deny rules. As per
-                the rule, all the ingress traffic to the private gateway interface and all the
-                egress traffic out from the private gateway interface are blocked. You can change
-                this default behaviour while creating a private gateway.</para>
-            </section>
-            <section id="allow-acl">
-              <title>Allow ACL on All Level 4 Protocols</title>
-              <para>In addition to the existing protocol support for ICMP, TCP, UDP, support for All
-                Level 4 protocols is added. The protocol numbers from 0 to 255 are supported.</para>
-            </section>
-            <section id="acl-deny">
-              <title>Support for ACL Deny Rules</title>
-              <para>In addition to the existing support for ACL Allow rules, support for ACL Deny
-                rules has been added in &PRODUCT; 4.2. As part of this, two operations are
-                supported: Number and Action. You can configure a rule, allow or deny, by using
-                action. Use Number to add a rule number.</para>
-            </section>
+          <section id="across-tiers-lb">
+            <title>Load Balancing Across Tiers</title>
+            <para>&PRODUCT; supports sharing workload across different tiers within your VPC. Assume
+              that multiple tiers are set up in your environment, such as Web tier and Application
+              tier. Traffic to each tier is balanced on the VPC virtual router on the public side.
+              If you want the traffic coming from the Web tier to the Application tier to be
+              balanced, use the internal load balancing feature offered by &PRODUCT;.</para>
           </section>
-          <section id="add-vm-tier-sharednw">
-            <title>Deploying VMs to a VPC Tier and Shared Networks</title>
-            <para>&PRODUCT; allows you to deploy VMs on a VPC tier and one or more shared networks.
-              With this feature, the VMs deployed in a multi-tier application can receive services
-              offered by a service provider over the shared network. One example of such a service
-              is monitoring service.</para>
-          </section>
-          <section id="add-gateway-vpc">
-            <title>Adding a Private Gateway to a VPC</title>
-            <para>A private gateway can be added by the root admin only. The VPC private network has
-              1:1 relationship with the NIC of the physical network. You can configure multiple
-              private gateways to a single VPC. No gateways with duplicated VLAN and IP are allowed
-              in the same data center.</para>
-            <section id="sourcenat-private-gateway">
-              <title>Source NAT on Private Gateway</title>
-              <para>You might want to deploy multiple VPCs with the same super CIDR and guest tier
-                CIDR. Therefore, multiple guest VMs from different VPCs can have the same IPs to
-                reach a enterprise data center through the private gateway. In such cases, a NAT
-                service need to be configured on the private gateway. If Source NAT is enabled, the
-                guest VMs in VPC reaches the enterprise network via private gateway IP address by
-                using the NAT service. </para>
-              <para>The Source NAT service on a private gateway can be enabled while adding the
-                private gateway. On deletion of a private gateway, source NAT rules specific to the
-                private gateway are deleted.</para>
-            </section>
-            <section id="eightvpn">
-              <title>VPN Gateways</title>
-              <para>Support up to 8 VPN Gateways is added.</para>
-            </section>
-            <section id="static-route">
-              <title>Creating a Static Route</title>
-              <para>&PRODUCT; enables you to specify routing for the VPN connection you create. You
-                can enter one or CIDR addresses to indicate which traffic is to be routed back to
-                the gateway.</para>
-            </section>
-            <section id="blacklist-route">
-              <title>Blacklisting Routes</title>
-              <para>&PRODUCT; enables you to block a list of routes so that they are not assigned to
-                any of the VPC private gateways. Specify the list of routes that you want to
-                blacklist in the <code>blacklisted.routes</code> global parameter. Note that the
-                parameter update affects only new static route creations. If you block an existing
-                static route, it remains intact and continue functioning. You cannot add a static
-                route if the route is blacklisted for the zone. </para>
-            </section>
+          <section id="ns-support">
+            <title>Netscaler Support for VPC</title>
+            <para>Citrix NetScaler is supported for external LB. Certified version for this feature
+              is NetScaler 10.0 Build 74.4006.e.</para>
           </section>
         </section>
-        <section id="vlan-assign-isolated-nw">
-          <title>Assigning VLANs to Isolated Networks</title>
-          <para>&PRODUCT; provides you the ability to control VLAN assignment to Isolated networks.
-            You can assign a VLAN ID when a network is created, just the way it's done for Shared
-            networks.</para>
-          <para>The former behaviour also is supported &mdash; VLAN is randomly allocated to a
-            network from the VNET range of the physical network when the network turns to
-            Implemented state. The VLAN is released back to the VNET pool when the network shuts
-            down as a part of the Network Garbage Collection. The VLAN can be re-used either by the
-            same network when it is implemented again, or by any other network. On each subsequent
-            implementation of a network, a new VLAN can be assigned.</para>
-          <note>
-            <para>You cannot change a VLAN once it's assigned to the network. The VLAN remains with
-              the network for its entire life cycle.</para>
-          </note>
+        <section id="configure-acl">
+          <title>Enhanced Access Control List</title>
+          <para>Network Access Control List (ACL) on the VPC virtual router is enhanced. The network
+            ACLs can be created for the tiers only if the NetworkACL service is supported. In
+            &PRODUCT; terminology, Network ACL is a group of Network ACL items. Network ACL items
+            are nothing but numbered rules that are evaluated in order, starting with the lowest
+            numbered rule. These rules determine whether traffic is allowed in or out of any tier
+            associated with the network ACL. You need to add the Network ACL items to the Network
+            ACL, then associate the Network ACL with a tier. Network ACL is associated with a VPC
+            and can be assigned to multiple VPC tiers within a VPC. A Tier is associated with a
+            Network ACL at all the times. Each tier can be associated with only one ACL.</para>
+          <para>The default Network ACL is used when no ACL is associated. Default behavior is all
+            incoming traffic to guest networks is blocked and all outgoing traffic from guest
+            networks is allowed. Default network ACL cannot be removed or modified.</para>
+          <section id="acl-private-gateway">
+            <title>ACL on Private Gateway</title>
+            <para>The traffic on the VPC private gateway is controlled by creating both ingress and
+              egress network ACL rules. The ACLs contains both allow and deny rules. As per the
+              rule, all the ingress traffic to the private gateway interface and all the egress
+              traffic out from the private gateway interface are blocked. You can change this
+              default behaviour while creating a private gateway.</para>
+          </section>
+          <section id="allow-acl">
+            <title>Allow ACL on All Level 4 Protocols</title>
+            <para>In addition to the existing protocol support for ICMP, TCP, UDP, support for All
+              Level 4 protocols is added. The protocol numbers from 0 to 255 are supported.</para>
+          </section>
+          <section id="acl-deny">
+            <title>Support for ACL Deny Rules</title>
+            <para>In addition to the existing support for ACL Allow rules, support for ACL Deny
+              rules has been added in &PRODUCT; 4.2. As part of this, two operations are supported:
+              Number and Action. You can configure a rule, allow or deny, by using action. Use
+              Number to add a rule number.</para>
+          </section>
         </section>
-        <section id="persistent-network">
-          <title>Persistent Networks</title>
-          <para>&PRODUCT; 4.2 supports Persistent Networks. The network that you can provision
-            without having to deploy any VMs on it is called a Persistent Network. A Persistent
-            Network can be part of a VPC or a non-VPC environment. With the addition of this
-            feature, you will have the ability to create a network in &PRODUCT; in which physical
-            devices can be deployed without having to run any VMs. Additionally, you can deploy
-            physical devices on that network. Another advantages is that you can create a VPC with a
-            tier that consists only physical devices. For example, you might create a VPC for a
-            three-tier application, deploy VMs for Web and Application tier, and use physical
-            machines for the Database tier. Another use case is that if you are providing services
-            by using physical hardware, you can define the network as persistent and therefore even
-            if all its VMs are destroyed the services will not be discontinued.</para>
+        <section id="add-vm-tier-sharednw">
+          <title>Deploying VMs to a VPC Tier and Shared Networks</title>
+          <para>&PRODUCT; allows you to deploy VMs on a VPC tier and one or more shared networks.
+            With this feature, the VMs deployed in a multi-tier application can receive services
+            offered by a service provider over the shared network. One example of such a service is
+            monitoring service.</para>
         </section>
-        <section id="vnmc-cisco">
-          <title>Cisco VNMC Support</title>
-          <para>Cisco Virtual Network Management Center (VNMC) provides centralized multi-device and
-            policy management for Cisco Network Virtual Services. When Cisco VNMC is integrated with
-            ASA 1000v Cloud Firewall and Cisco Nexus 1000v dvSwitch in &PRODUCT; you will be able
-            to: </para>
-          <itemizedlist>
-            <listitem>
-              <para>Configure Cisco ASA 1000v Firewalls</para>
-            </listitem>
-            <listitem>
-              <para>Create and apply security profiles that contain ACL policy sets for both ingress
-                and egress traffic, and NAT policy sets</para>
-            </listitem>
-          </itemizedlist>
-          <para>&PRODUCT; supports Cisco VNMC on Cisco Nexus 1000v dvSwich-enabled VMware
-            hypervisors.</para>
-        </section>
-        <section id="vmware-vswitch">
-          <title>VMware vNetwork Distributed vSwitch</title>
-          <para>&PRODUCT; supports VMware vSphere Distributed Switch (VDS) for virtual network
-            configuration in a VMware vSphere environment. Each vCenter server instance can support
-            up to 128 VDSs and each VDS can manage up to 500 VMware hosts. &PRODUCT; supports
-            configuring virtual networks in a deployment with a mix of Virtual Distributed Switch,
-            Standard Virtual Switch and Nexus 1000v Virtual Switch. </para>
-        </section>
-        <section id="reserved-ip-addresses-non-csvms">
-          <title>IP Reservation in Isolated Guest Networks</title>
-          <para>In Isolated guest networks in &PRODUCT; 4.2, a part of the guest IP address space
-            can be reserved for non-&PRODUCT; VMs or physical servers. To do so, you configure a
-            range of Reserved IP addresses by specifying the CIDR when a guest network is in
-            Implemented state. The advantage of having this feature is that if your customers wish
-            to have non-&PRODUCT; controlled VMs or physical servers on the same network, they can
-            use a part of the IP address space that is primarily provided to the guest network. When
-            IP reservation is configured, the administrator can add additional VMs or physical
-            servers that are not part of &PRODUCT; to the same network and assign them the Reserved
-            IP addresses. &PRODUCT; guest VMs cannot acquire IPs from the Reserved IP Range.</para>
-        </section>
-        <section id="ip-vlan-tenant">
-          <title>Dedicated Resources: Public IP Addresses and VLANs Per Account</title>
-          <para>&PRODUCT; provides you the ability to reserve a set of public IP addresses and VLANs
-            exclusively for an account. During zone creation, you can continue to define a set of
-            VLANs and multiple public IP ranges. This feature extends the functionality to enable
-            you to dedicate a fixed set of VLANs and guest IP addresses for a tenant.</para>
-          <para>This feature provides you the following capabilities:</para>
-          <itemizedlist>
-            <listitem>
-              <para>Reserve a VLAN range and public IP address range from an Advanced zone and
-                assign it to an account</para>
-            </listitem>
-            <listitem>
-              <para>Disassociate a VLAN and public IP address range from an account</para>
-            </listitem>
-          </itemizedlist>
-          <note>
-            <para>Ensure that you check whether the required range is available and conforms to
-              account limits. The maximum IPs per account limit cannot be superseded.</para>
-          </note>
-        </section>
-        <section id="egress-firewall">
-          <title>Enhanced Juniper SRX Support for Egress Firewall Rules</title>
-          <para>Egress firewall rules were previously supported on virtual routers, and now they are
-            also supported on Juniper SRX external networking devices.</para>
-          <para>Egress traffic originates from a private network to a public network, such as the
-            Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed
-            from a guest network to the Internet. However, you can control the egress traffic in an
-            Advanced zone by creating egress firewall rules. When an egress firewall rule is
-            applied, the traffic specific to the rule is allowed and the remaining traffic is
-            blocked. When all the firewall rules are removed the default policy, Block, is
-            applied.</para>
-          <note>
-            <para>Egress firewall rules are not supported on Shared networks. They are supported
-              only on Isolated guest networks.</para>
-          </note>
-        </section>
-        <section id="default-egress-policy">
-          <title>Configuring the Default Egress Policy</title>
-          <para>The default egress policy for Isolated guest network can be configured by using
-            Network offering. Use the create network offering option to determine whether the
-            default policy should be block or allow all the traffic to the public network from a
-            guest network. Use this network offering to create the network. If no policy is
-            specified, by default all the traffic is allowed from the guest network that you create
-            by using this network offering.</para>
-          <para>You have two options: Allow and Deny.</para>
-          <para>If you select Allow for a network offering, by default egress traffic is allowed.
-            However, when an egress rule is configured for a guest network, rules are applied to
-            block the specified traffic and rest are allowed. If no egress rules are configured for
-            the network, egress traffic is accepted. If you select Deny for a network offering, by
-            default egress traffic for the guest network is blocked. However, when an egress rules
-            is configured for a guest network, rules are applied to allow the specified traffic.
-            While implementing a guest network, &PRODUCT; adds the firewall egress rule specific to
-            the default egress policy for the guest network.</para>
-          <para>This feature is supported only on virtual router and Juniper SRX.</para>
-        </section>
-        <section id="non-contiguous-vlan">
-          <title>Non-Contiguous VLAN Ranges</title>
-          <para>&PRODUCT; provides you with the flexibility to add non contiguous VLAN ranges to
-            your network. The administrator can either update an existing VLAN range or add multiple
-            non contiguous VLAN ranges while creating a zone. You can also use the
-            UpdatephysicalNetwork API to extend the VLAN range.</para>
-        </section>
-        <section id="pvlan">
-          <title>Isolation in Advanced Zone Using Private VLAN</title>
-          <para>Isolation of guest traffic in shared networks can be achieved by using Private VLANs
-            (PVLAN). PVLANs provide Layer 2 isolation between ports within the same VLAN. In a
-            PVLAN-enabled shared network, a user VM cannot reach other user VM though they can reach
-            the DHCP server and gateway, this would in turn allow users to control traffic within a
-            network and help them deploy multiple applications without communication between
-            application as well as prevent communication with other users’ VMs.</para>
-          <itemizedlist>
-            <listitem>
-              <para>Isolate VMs in a shared networks by using Private VLANs.</para>
-            </listitem>
-            <listitem>
-              <para>Supported on KVM, XenServer, and VMware hypervisors.</para>
-            </listitem>
-            <listitem>
-              <para>PVLAN-enabled shared network can be a part of multiple networks of a guest VM.
-              </para>
-            </listitem>
-          </itemizedlist>
-          <para>For further reading:</para>
-          <itemizedlist>
-            <listitem>
-              <para><ulink
-                  url="http://www.cisco.com/en/US/docs/switches/lan/catalyst3750/software/release/12.2_25_see/configuration/guide/swpvlan.html#wp1038379"
-                  >Understanding Private VLANs</ulink></para>
-            </listitem>
-            <listitem>
-              <para><ulink url="http://tools.ietf.org/html/rfc5517">Cisco Systems' Private VLANs:
-                  Scalable Security in a Multi-Client Environment</ulink></para>
-            </listitem>
-            <listitem>
-              <para><ulink url="http://kb.vmware.com">Private VLAN (PVLAN) on vNetwork Distributed
-                  Switch - Concept Overview (1010691)</ulink></para>
-            </listitem>
-          </itemizedlist>
-        </section>
-        <section id="multiple-ip-nic">
-          <title>Configuring Multiple IP Addresses on a Single NIC</title>
-          <para>(Supported on XenServer, KVM, and VMware hypervisors)</para>
-          <para>&PRODUCT; now provides you the ability to associate multiple private IP addresses
-            per guest VM NIC. This feature is supported on all the network
-            configurations&mdash;Basic, Advanced, and VPC. Security Groups, Static NAT and Port
-            forwarding services are supported on these additional IPs. In addition to the primary
-            IP, you can assign additional IPs to the guest VM NIC. Up to 256 IP addresses are
-            allowed per NIC.</para>
-          <para>As always, you can specify an IP from the guest subnet; if not specified, an IP is
-            automatically picked up from the guest VM subnet. You can view the IPs associated with
-            for each guest VM NICs on the UI. You can apply NAT on these additional guest IPs by
-            using firewall configuration in the &PRODUCT; UI. You must specify the NIC to which the
-            IP should be associated.</para>
-        </section>
-        <section id="multiple-ip-range">
-          <title>Adding Multiple IP Ranges</title>
-          <para>(Supported on KVM, xenServer, and VMware hypervisors)</para>
-          <para>&PRODUCT; 4.2 provides you with the flexibility to add guest IP ranges from
-            different subnets in Basic zones and security groups-enabled Advanced zones. For
-            security groups-enabled Advanced zones, it implies multiple subnets can be added to the
-            same VLAN. With the addition of this feature, you will be able to add IP address ranges
-            from the same subnet or from a different one when IP address are exhausted. This would
-            in turn allows you to employ higher number of subnets and thus reduce the address
-            management overhead.</para>
-          <para>Ensure that you manually configure the gateway of the new subnet before adding the
-            IP range. Note that &PRODUCT; supports only one gateway for a subnet; overlapping
-            subnets are not currently supported.</para>
-          <para>You can also delete IP ranges. This operation fails if an IP from the remove range
-            is in use. If the remove range contains the IP address on which the DHCP server is
-            running, &PRODUCT; acquires a new IP from the same subnet. If no IP is available in the
-            subnet, the remove operation fails.</para>
-          <note>
-            <para>The feature can only be implemented on IPv4 addresses.</para>
-          </note>
-        </section>
-        <section id="add-remove-network-vm">
-          <title>Support for Multiple Networks in VMs</title>
-          <para>(Supported on XenServer, VMware and KVM hypervisors)</para>
-          <para>&PRODUCT; 4.2 provides you the ability to add and remove multiple networks to a VM.
-            You can remove a network from a VM and add a new network. You can also change the
-            default network of a VM. With this functionality, hybrid or traditional server loads can
-            be accommodated with ease. </para>
-          <para>For adding or removing a NIC to work on VMware, ensure that vm-tools are running on
-            guest VMs.</para>
-        </section>
-        <section id="gslb">
-          <title>Global Server Load Balancing</title>
-          <para>&PRODUCT; 4.2 supports Global Server Load Balancing (GSLB) functionalities to
-            provide business continuity by load balancing traffic to an instance on active zones
-            only in case of zone failures . &PRODUCT; achieve this by extending its functionality of
-            integrating with NetScaler Application Delivery Controller (ADC), which also provides
-            various GSLB capabilities, such as disaster recovery and load balancing. The DNS
-            redirection technique is used to achieve GSLB in &PRODUCT;. In order to support this
-            functionality, region level services and service provider are introduced. A new service
-            'GSLB' is introduced as a region level service. The GSLB service provider is introduced
-            that will provider the GSLB service. Currently, NetScaler is the supported GSLB provider
-            in &PRODUCT;. GSLB functionality works in an Active-Active data center environment.
-          </para>
-        </section>
-        <section id="lb-on-shared-vlan">
-          <title>Enhanced Load Balancing Services Using External Provider on Shared VLANs</title>
-          <para>Network services like Firewall, Load Balancing, and NAT are now supported in shared
-            networks created in an advanced zone. In effect, the following network services shall be
-            made available to a VM in a shared network: Source NAT, Static NAT, Port Forwarding,
-            Firewall and Load balancing. Subset of these service can be chosen while creating a
-            network offering for shared networks. Services available in a shared network is defined
-            by the network offering and the service chosen in the network offering. For example, if
-            network offering for a shared network has source NAT service enabled, a public IP shall
-            be provisioned and source NAT is configured on the firewall device to provide public
-            access to the VMs on the shared network. Static NAT, Port Forwarding, Load Balancing,
-            and Firewall services shall be available only on the acquired public IPs associated with
-            a shared network.</para>
-          <para>Additionally, Netscaler and Juniper SRX firewall device can be configured inline or
-            side-by-side mode.</para>
-        </section>
-        <section id="health-check">
-          <title>Health Checks for Load Balanced Instances</title>
-          <note>
-            <para>This feature is supported only on NetScaler version 10.0 and beyond.</para>
-          </note>
-          <para>(NetScaler load balancer only) A load balancer rule distributes requests among a
-            pool of services (a service in this context means an application running on a virtual
-            machine). When creating a load balancer rule, you can specify a health check which will
-            ensure that the rule forwards requests only to services that are healthy (running and
-            available). When a health check is in effect, the load balancer will stop forwarding
-            requests to any resources that it has found to be unhealthy. If the resource later
-            becomes available again, the periodic health check (periodicity is configurable) will
-            discover it and the resource will once again be made available to the load
-            balancer.</para>
-          <para>To configure how often the health check is performed by default, use the global
-            configuration setting healthcheck.update.interval. This default applies to all the
-            health check policies in the cloud. You can override this value for an individual health
-            check policy.</para>
+        <section id="add-gateway-vpc">
+          <title>Adding a Private Gateway to a VPC</title>
+          <para>A private gateway can be added by the root admin only. The VPC private network has
+            1:1 relationship with the NIC of the physical network. You can configure multiple
+            private gateways to a single VPC. No gateways with duplicated VLAN and IP are allowed in
+            the same data center.</para>
+          <section id="sourcenat-private-gateway">
+            <title>Source NAT on Private Gateway</title>
+            <para>You might want to deploy multiple VPCs with the same super CIDR and guest tier
+              CIDR. Therefore, multiple guest VMs from different VPCs can have the same IPs to reach
+              a enterprise data center through the private gateway. In such cases, a NAT service
+              need to be configured on the private gateway. If Source NAT is enabled, the guest VMs
+              in VPC reaches the enterprise network via private gateway IP address by using the NAT
+              service. </para>
+            <para>The Source NAT service on a private gateway can be enabled while adding the
+              private gateway. On deletion of a private gateway, source NAT rules specific to the
+              private gateway are deleted.</para>
+          </section>
+          <section id="eightvpn">
+            <title>VPN Gateways</title>
+            <para>Support up to 8 VPN Gateways is added.</para>
+          </section>
+          <section id="static-route">
+            <title>Creating a Static Route</title>
+            <para>&PRODUCT; enables you to specify routing for the VPN connection you create. You
+              can enter one or CIDR addresses to indicate which traffic is to be routed back to the
+              gateway.</para>
+          </section>
+          <section id="blacklist-route">
+            <title>Blacklisting Routes</title>
+            <para>&PRODUCT; enables you to block a list of routes so that they are not assigned to
+              any of the VPC private gateways. Specify the list of routes that you want to blacklist
+              in the <code>blacklisted.routes</code> global parameter. Note that the parameter
+              update affects only new static route creations. If you block an existing static route,
+              it remains intact and continue functioning. You cannot add a static route if the route
+              is blacklisted for the zone. </para>
+          </section>
         </section>
       </section>
-      <section id="host-and-vm-enhancements">
-        <title>Host and Virtual Machine Enhancements</title>
-        <para>The following new features expand the ways you can use hosts and virtual
-          machines.</para>
-        <section id="vmware-drs">
-          <title>VMware DRS Support</title>
-          <para>The VMware vSphere Distributed Resources Scheduler (DRS) is supported.</para>
-        </section>
-        <section id="windows-8">
-          <title>Windows 8 and Windows Server 2012 as VM Guest OS</title>
-          <para>(Supported on XenServer, VMware, and KVM)</para>
-          <para>Windows 8 and Windows Server 2012 can now be used as OS types on guest virtual
-            machines. The OS would be made available the same as any other, by uploading an ISO or a
-            template. The instructions for uploading ISOs and templates are given in the
-            Administrator's Guide. </para>
-          <note>
-            <para><emphasis role="bold">Limitation:</emphasis> When used with VMware hosts, this
-              feature works only for the following versions: vSphere ESXi 5.1 and ESXi 5.0 Patch
-              4.</para>
-          </note>
-          <para/>
-        </section>
-        <section id="change-account">
-          <title>Change Account Ownership of Virtual Machines</title>
-          <para>A root administrator can now change the ownership of any virtual machine from one
-            account to any other account. A domain or sub-domain administrator can do the same for
-            VMs within the domain from one account to any other account in the domain.</para>
-        </section>
-        <section id="dedicated-resources">
-          <title>Private Pod, Cluster, or Host</title>
-          <para>Dedicating pod, cluster or host to a specific domain/account means that the
-            domain/account will have sole access to the dedicated pod, cluster or hosts such that
-            scalability, security and manageability within a domain/account can be improved. The
-            resources which belong to that tenant will be placed into that dedicated pod, cluster or
-            host.</para>
-        </section>
-        <section id="resize-volume">
-          <title>Resizing Volumes</title>
-          <para>&PRODUCT; provides the ability to resize data disks; &PRODUCT; controls volume size
-            by using disk offerings. This provides &PRODUCT; administrators with the flexibility to
-            choose how much space they want to make available to the end users. Volumes within the
-            disk offerings with the same storage tag can be resized. For example, if you only want
-            to offer 10, 50, and 100 GB offerings, the allowed resize should stay within those
-            limits. That implies if you define a 10 GB, a 50 GB and a 100 GB disk offerings, a user
-            can upgrade from 10 GB to 50 GB, or 50 GB to 100 GB. If you create a custom-sized disk
-            offering, then you have the option to resize the volume by specifying a new, larger
-            size. Additionally, using the resizeVolume API, a data volume can be moved from a static
-            disk offering to a custom disk offering with the size specified. This functionality
-            allows those who might be billing by certain volume sizes or disk offerings to stick to
-            that model, while providing the flexibility to migrate to whatever custom size
-            necessary. This feature is supported on KVM, XenServer, and VMware hosts. However,
-            shrinking volumes is not supported on VMware hosts</para>
-        </section>
-        <section id="volume-snapshot-enhancement">
-          <title>VMware Volume Snapshot Improved Performance</title>
-          <para>When you take a snapshot of a data volume on VMware, &PRODUCT; will now use a more
-            efficient storage technique to improve performance.</para>
-          <para>Previously, every snapshot was immediately exported from vCenter to a mounted NFS
-            share and packaged into an OVA file format. This operation consumed time and resources.
-            Starting from 4.2, the original file formats (e.g., VMDK) provided by vCenter will be
-            retained. An OVA file will only be created as needed, on demand.</para>
-          <para>The new process applies only to newly created snapshots after upgrade to &PRODUCT;
-            4.2. Snapshots that have already been taken and stored in OVA format will continue to
-            exist in that format, and will continue to work as expected.</para>
-        </section>
-        <section id="storage-migration">
-          <title>Storage Migration: XenMotion and vMotion</title>
-          <para>(Supported on XenServer and VMware)</para>
-          <para>Storage migration allows VMs to be moved from one host to another, where the VMs are
-            not located on storage shared between the two hosts. It provides the option to live
-            migrate a VM’s disks along with the VM itself. It is now possible to migrate a VM from
-            one XenServer resource pool / VMware cluster to another, or to migrate a VM whose disks
-            are on local storage, or even to migrate a VM’s disks from one storage repository to
-            another, all while the VM is running.</para>
-        </section>
-        <section id="vmware-configure-linked-clones">
-          <title>Configuring Usage of Linked Clones on VMware</title>
-          <para>(For ESX hypervisor in conjunction with vCenter)</para>
-          <para>In &PRODUCT; 4.2, the creation of VMs as full clones is allowed. In previous
-            versions, only linked clones were possible.</para>
-          <para>For a full description of clone types, refer to VMware documentation. In summary: A
-            full clone is a copy of an existing virtual machine which, once created, does not depend
-            in any way on the original virtual machine. A linked clone is also a copy of an existing
-            virtual machine, but it has ongoing dependency on the original. A linked clone shares
-            the virtual disk of the original VM, and retains access to all files that were present
-            at the time the clone was created.</para>
-          <para>A new global configuration setting has been added, vmware.create.full.clone. When
-            the administrator sets this to true, end users can create guest VMs only as full clones.
-            The default value is true for new installations. For customers upgrading from a previous
-            version of &PRODUCT;, the default value of vmware.create.full.clone is false.</para>
-        </section>
-        <section id="host-deployment-rules">
-          <title>VM Deployment Rules</title>
-          <para>Rules can be set up to ensure that particular VMs are not placed on the same
-            physical host. These "anti-affinity rules" can increase the reliability of applications
-            by ensuring that the failure of a single host can not take down the entire group of VMs
-            supporting a given application. See Affinity Groups in the &PRODUCT; 4.2 Administration
-            Guide.</para>
-        </section>
-        <section id="cpu-ram-dynamic-scaling">
-          <title>CPU and Memory Scaling for Running VMs</title>
-          <para>(Supported on VMware and XenServer)</para>
-          <para>You can now change the CPU and RAM values for a running virtual machine. In previous
-            versions of &PRODUCT;, this could only be done on a stopped VM.</para>
-          <para>It is not always possible to accurately predict the CPU and RAM requirements when
-            you first deploy a VM. You might need to increase or decrease these resources at any
-            time during the life of a VM. With the new ability to dynamically modify CPU and RAM
-            levels, you can change these resources for a running VM without incurring any
-            downtime.</para>
-          <para>Dynamic CPU and RAM scaling can be used in the following cases:</para>
-          <itemizedlist>
-            <listitem>
-              <para>New VMs that are created after the installation of &PRODUCT; 4.2. If you are
-                upgrading from a previous version of &PRODUCT;, your existing VMs created with
-                previous versions will not have the dynamic scaling capability.</para>
-            </listitem>
-            <listitem>
-              <para>User VMs on hosts running VMware and XenServer.</para>
-            </listitem>
-            <listitem>
-              <para>System VMs on VMware.</para>
-            </listitem>
-            <listitem>
-              <para>VM Tools or XenServer Tools must be installed on the virtual machine.</para>
-            </listitem>
-            <listitem>
-              <para>The new requested CPU and RAM values must be within the constraints allowed by
-                the hypervisor and the VM operating system.</para>
-            </listitem>
-          </itemizedlist>
-          <para>To configure this feature, use the following new global configuration
-            variables:</para>
-          <itemizedlist>
-            <listitem>
-              <para>enable.dynamic.scale.vm: Set to True to enable the feature. By default, the
-                feature is turned off.</para>
-            </listitem>
-            <listitem>
-              <para>scale.retry: How many times to attempt the scaling operation. Default =
-                2.</para>
-            </listitem>
-          </itemizedlist>
-        </section>
-        <section id="cpu-ram-overcommit">
-          <title>CPU and Memory Over-Provisioning</title>
-          <para>(Supported for XenServer, KVM, and VMware)</para>
-          <para>In &PRODUCT; 4.2, CPU and memory (RAM) over-provisioning factors can be set for each
-            cluster to change the number of VMs that can run on each host in the cluster. This helps
-            optimize the use of resources. By increasing the over-provisioning ratio, more resource
-            capacity will be used. If the ratio is set to 1, no over-provisioning is done.</para>
-          <para>In previous releases, &PRODUCT; did not perform memory over-provisioning. It
-            performed CPU over-provisioning based on a ratio configured by the administrator in the
-            global configuration setting cpu.overprovisioning.factor. Starting in 4.2, the
-            administrator can specify a memory over-provisioning ratio, and can specify both CPU and
-            memory over-provisioning ratios on a per-cluster basis, rather than only on a global
-            basis.</para>
-          <para>In any given cloud, the optimum number of VMs for each host is affected by such
-            things as the hypervisor, storage, and hardware configuration. These may be different
-            for each cluster in the same cloud. A single global over-provisioning setting could not
-            provide the best utilization for all the different clusters in the cloud. It had to be
-            set for the lowest common denominator. The new per-cluster setting provides a finer
-            granularity for better utilization of resources, no matter where the &PRODUCT; placement
-            algorithm decides to place a VM.</para>
-        </section>
-        <section id="baremetal">
-          <title>Kickstart Installation for Bare Metal Provisioning</title>
-          <para>&PRODUCT; 4.2 supports the kick start installation method for RPM-based Linux
-            operating systems on baremetal hosts in basic zones. Users can provision a baremetal
-            host managed by &PRODUCT; as long as they have the kick start file and corresponding OS
-            installation ISO ready.</para>
-          <para>Tested on CentOS 5.5, CentOS 6.2, CentOS 6.3, Ubuntu 12.04.</para>
-          <para>For more information, see the Baremetal Installation Guide.</para>
-        </section>
-        <section id="baremetal-ucs">
-          <title>Enhanced Bare Metal Support on Cisco UCS</title>
-          <para>You can now more easily provision new Cisco UCS server blades into &PRODUCT; for use
-            as bare metal hosts. The goal is to enable easy expansion of the cloud by leveraging the
-            programmability of the UCS converged infrastructure and &PRODUCT;’s knowledge of the
-            cloud architecture and ability to orchestrate. With this new feature, &PRODUCT; can
-            automatically understand the UCS environment, server profiles, etc. to make it easy to
-            deploy a bare metal OS on a Cisco UCS.</para>
-        </section>
-        <section id="update-vm-image">
-          <title>Changing a VM's Base Image</title>
-          <para>Every VM is created from a base image, which is a template or ISO which has been
-            created and stored in &PRODUCT;. Both cloud administrators and end users can create and
-            modify templates, ISOs, and VMs.</para>
-          <para>In &PRODUCT; 4.2, there is a new way to modify an existing VM. You can change an
-            existing VM from one base image to another. For example, suppose there is a template
-            based on a particular operating system, and the OS vendor releases a software patch. The
-            administrator or user naturally wants to apply the patch and then make sure existing VMs
-            start using it. Whether a software update is involved or not, it's also possible to
-            simply switch a VM from its current template to any other desired template.</para>
-        </section>
-        <section id="reset-vm-reboot">
-          <title>Reset VM on Reboot</title>
-          <para>In &PRODUCT; 4.2, you can specify that you want to discard the root disk and create
-            a new one whenever a given VM is rebooted. This is useful for secure environments that
-            need a fresh start on every boot and for desktops that should not retain state. The IP
-            address of the VM will not change due to this operation.</para>
-        </section>
-        <section id="vm-snapshots">
-          <title>Virtual Machine Snapshots for VMware</title>
-          <para>(VMware hosts only) In addition to the existing &PRODUCT; ability to snapshot
-            individual VM volumes, you can now take a VM snapshot to preserve all the VM's data
-            volumes as well as (optionally) its CPU/memory state. This is useful for quick restore
-            of a VM. For example, you can snapshot a VM, then make changes such as software
-            upgrades. If anything goes wrong, simply restore the VM to its previous state using the
-            previously saved VM snapshot. </para>
-          <para>The snapshot is created using the VMware native snapshot facility. The VM snapshot
-            includes not only the data volumes, but optionally also whether the VM is running or
-            turned off (CPU state) and the memory contents. The snapshot is stored in &PRODUCT;'s
-            primary storage.</para>
-          <para>VM snapshots can have a parent/child relationship. Each successive snapshot of the
-            same VM is the child of the snapshot that came before it. Each time you take an
-            additional snapshot of the same VM, it saves only the differences between the current
-            state of the VM and the state stored in the most recent previous snapshot. The previous
-            snapshot becomes a parent, and the new snapshot is its child. It is possible to create a
-            long chain of these parent/child snapshots, which amount to a "redo" record leading from
-            the current state of the VM back to the original.</para>
-        </section>
-        <section id="vm-userdata">
-          <title>Increased Userdata Size When Deploying a VM</title>
-          <para>You can now specify up to 32KB of userdata when deploying a virtual machine through
-            the &PRODUCT; UI or the deployVirtualMachine API call. </para>
-        </section>
-        <section id="vmware-cluster-limit">
-          <title>Set VMware Cluster Size Limit Depending on VMware Version</title>
-          <para>The maximum number of hosts in a vSphere cluster is determined by the VMware
-            hypervisor software. For VMware versions 4.2, 4.1, 5.0, and 5.1, the limit is 32
-            hosts.</para>
-          <para>For &PRODUCT; 4.2, the global configuration setting vmware.percluster.host.max has
-            been removed. The maximum number of hosts in a VMware cluster is now determined by the
-            underlying hypervisor software.</para>
-          <note>
-            <para>Best Practice: It is advisable for VMware clusters in &PRODUCT; to be smaller than
-              the VMware hypervisor's maximum size. A cluster size of up to 8 hosts has been found
-              optimal for most real-world situations.</para>
-          </note>
-        </section>
-        <section id="limit-accounts-domains-rn">
-          <title>Limiting Resource Usage</title>
-          <para>Previously in &PRODUCT;, resource usage limit was imposed based on the resource
-            count, that is, restrict a user or domain on the basis of the number of VMs, volumes, or
-            snapshots used. In &PRODUCT; 4.2, a new set of resource types has been added to the
-            existing pool of resources (VMs, Volumes, and Snapshots) to support the customization
-            model&mdash;need-basis usage, such as large VM or small VM. The new resource types are
-            now broadly classified as CPU, RAM, Primary storage, and Secondary storage. &PRODUCT;
-            4.2 allows the root administrator to impose resource usage limit by the following
-            resource types for Domain, Project and Accounts. </para>
-          <itemizedlist>
-            <listitem>
-              <para>CPUs</para>
-            </listitem>
-            <listitem>
-              <para>Memory (RAM)</para>
-            </listitem>
-            <listitem>
-              <para>Primary Storage (Volumes)</para>
-            </listitem>
-            <listitem>
-              <para>Secondary Storage (Snapshots, Templates, ISOs)</para>
-            </listitem>
-          </itemizedlist>
-        </section>
+      <section id="vlan-assign-isolated-nw">
+        <title>Assigning VLANs to Isolated Networks</title>
+        <para>&PRODUCT; provides you the ability to control VLAN assignment to Isolated networks.
+          You can assign a VLAN ID when a network is created, just the way it's done for Shared
+          networks.</para>
+        <para>The former behaviour also is supported &mdash; VLAN is randomly allocated to a network
+          from the VNET range of the physical network when the network turns to Implemented state.
+          The VLAN is released back to the VNET pool when the network shuts down as a part of the
+          Network Garbage Collection. The VLAN can be re-used either by the same network when it is
+          implemented again, or by any other network. On each subsequent implementation of a
+          network, a new VLAN can be assigned.</para>
+        <note>
+          <para>You cannot change a VLAN once it's assigned to the network. The VLAN remains with
+            the network for its entire life cycle.</para>
+        </note>
       </section>
-      <section id="ops">
-        <title>Monitoring, Maintenance, and Operations Enhancements</title>
-        <!-- <section id="mixed-zone">
-        <title>Basic and Advanced Zone Views</title>
-        <para>A new dropdown in the UI provides the choice between Basic and Advanced views.
-          Depending on which type of zone you are working with, you can change the view to show only
-          &PRODUCT; features and choices that are relevant for that type of zone. This makes it
-          easier to work with basic zones, since features that are not relevant will not be shown in
-          the UI.</para>
-      </section> -->
-        <section id="events-pubsub">
-          <title>Publish and Subscribe for Event Notification</title>
-          <para>An event is essentially a significant or meaningful change in the state of both
-            virtual and physical resources associated with a cloud environment. In &PRODUCT; an
-            event could be a state change of virtual or psychical resources, an action performed by
-            an user (action events), or policy based events (alerts). In &PRODUCT; 4.2, a new event
-            notification framework has been added. This framework provides a means for the
-            Management Server components to publish and subscribe to &PRODUCT; events. Event
-            notification is achieved by implementing the concept of event bus abstraction in the
-            Management Server. </para>
-          <para>A new event for state change, resource state change, is introduced as part of Event
-            notification framework. Every resource, such as user VM, volume, NIC, network, public
-            IP, snapshot, and template, is associated with a state machine and generates events as
-            part of the state change. That implies that a change in the state of a resource results
-            in a state change event, and the event is published in the corresponding state machine
-            on the event bus. All the &PRODUCT; events (alerts, action events, usage events) and the
-            additional category of resource state change events, are published on to the events
-            bus.</para>
-        </section>
-        <section id="delete-alerts">
-          <title>Deleting and Archiving Events and Alerts</title>
-          <para>In addition to viewing a list of events and alerts in the UI, the administrator can
-            now delete and archive them. In order to support deleting and archiving alerts, the
-            following global parameters have been added:</para>
-          <itemizedlist>
-            <listitem>
-              <para><emphasis role="bold">alert.purge.delay</emphasis>: The alerts older than
-                specified number of days are purged. Set the value to 0 to never purge alerts
-                automatically.</para>
-            </listitem>
-            <listitem>
-              <para><emphasis role="bold">alert.purge.interval</emphasis>: The interval in seconds
-                to wait before running the alert purge thread. The default is 86400 seconds (one
-                day).</para>
-            </listitem>
-          </itemizedlist>
-          <note>
-            <para>Archived alerts or events cannot be viewed in the UI, or by using the API. They
-              are maintained in the database for auditing or compliance purposes.</para>
-          </note>
-        </section>
-        <section id="global-parameters">
-          <title>Increased Granularity for Configuration Parameters</title>
-          <para>Some configuration parameters which were previously available only at the global
-            level of the cloud can now be set for smaller components of the cloud, such as at the
-            zone level. To set these parameters, look for the new Settings tab in the UI. You will
-            find it on the detail page for an account, cluster, zone, or primary storage.</para>
-          <para>The account level parameters are: <code>remote.access.vpn.client.iprange</code>,
-              <code>allow.public.user.templates</code>, <code>use.system.public.ips</code>, and
-              <code>use.system.guest.vlans</code></para>
-          <para>The cluster level parameters are
-              <code>cluster.storage.allocated.capacity.notificationthreshold</code>,
-              <code>cluster.storage.capacity.notificationthreshold</code>,
-              <code>cluster.cpu.allocated.capacity.notificationthreshold</code>,
-              <code>cluster.memory.allocated.capacity.notificationthreshold</code>, <code>
-              cluster.cpu.allocated.capacity.disablethreshold</code>,
-              <code>cluster.memory.allocated.capacity.disablethreshold</code>,
-              <code>cpu.overprovisioning.factor</code>, <code>mem.overprovisioning.factor</code>,
-              <code>vmware.reserve.cpu</code>, and <code>vmware.reserve.mem</code>.</para>
-          <para>The zone level parameters are
-              <code>pool.storage.allocated.capacity.disablethreshold</code>,
-              <code>pool.storage.capacity.disablethreshold</code>,
-              <code>storage.overprovisioning.factor</code>, <code>network.throttling.rate</code>,
-              <code>guest.domain.suffix</code>, <code>router.template.xen</code>,
-              <code>router.template.kvm</code>, <code>router.template.vmware</code>,
-              <code>router.template.hyperv</code>, <code>router.template.lx</code>c,
-              <code>enable.dynamic.scale.vm</code>, <code>use.external.dns</code>, and
-              <code>blacklisted.routes</code>.</para>
-        </section>
-        <section id="api-request-throttling">
-          <title>API Request Throttling</title>
-          <para>In &PRODUCT; 4.2, you can limit the rate at which API requests can be placed for
-            each account. This is useful to avoid malicious attacks on the Management Server,
-            prevent performance degradation, and provide fairness to all accounts.</para>
-          <para>If the number of API calls exceeds the threshold, an error message is returned for
-            any additional API calls. The caller will have to retry these API calls at another
-            time.</para>
-          <para>To control the API request throttling, use the following new global configuration
-            settings:</para>
-          <itemizedlist>
-            <listitem>
-              <para>api.throttling.enabled - Enable/Disable API throttling. By default, this setting
-                is false, so API throttling is not enabled.</para>
-            </listitem>
-            <listitem>
-              <para>api.throttling.interval (in seconds) - Time interval during which the number of
-                API requests is to be counted. When the interval has passed, the API count is reset
-                to 0.</para>
-            </listitem>
-            <listitem>
-              <para>api.throttling.max - Maximum number of APIs that can be placed within the
-                api.throttling.interval period.</para>
-            </listitem>
-            <listitem>
-              <para>api.throttling.cachesize - Cache size for storing API counters. Use a value
-                higher than the total number of accounts managed by the cloud. One cache entry is
-                needed for each account, to store the running API total for that account within the
-                current time window.</para>
-            </listitem>
-          </itemizedlist>
-        </section>
-        <section id="external-alert-managers">
-          <title>Sending Alerts to External SNMP and Syslog Managers</title>
-          <para>In addition to showing administrator alerts on the Dashboard in the &PRODUCT; UI and
-            sending them in email, &PRODUCT; now can also send the same alerts to external SNMP or
-            Syslog management software. This is useful if you prefer to use an SNMP or Syslog
-            manager to monitor your cloud.</para>
-          <para>The supported protocol is SNMP version 2.</para>
-        </section>
-        <section id="default-pwd-engine">
-          <title>Changing the Default Password Encryption</title>
-          <para>Passwords are encoded when creating or updating users. The new default preferred
-            encoder, replacing MD5, is SHA256. It is more secure than MD5 hashing. If you take no
-            action to customize password encryption and authentication, SHA256 Salt will be
-            used.</para>
-          <para>If you prefer a different authentication mechanism, &PRODUCT; 4.2 provides a way for
-            you to determine the default encoding and authentication mechanism for admin and user
-            logins. Two new configurable lists have been introduced: userPasswordEncoders and
-            userAuthenticators. userPasswordEncoders allow you to configure the order of preference
-            for encoding passwords, and userAuthenticator allows you to configure the order in which
-            authentication schemes are invoked to validate user passwords.</para>
-          <para>The plain text user authenticator has been modified not to convert supplied
-            passwords to their md5 sums before checking them with the database entries. It performs
-            a simple string comparison between retrieved and supplied login passwords instead of
-            comparing the retrieved md5 hash of the stored password against the supplied md5 hash of
-            the password, because clients no longer hash the password.</para>
-        </section>
-        <section id="cloud-bugtool">
-          <title>Log Collection Utility cloud-bugtool</title>
-          <para>&PRODUCT; provides a command-line utility called cloud-bugtool to make it easier to
-            collect the logs and other diagnostic data required for troubleshooting. This is
-            especially useful when interacting with Citrix Technical Support.</para>
-          <para>You can use cloud-bugtool to collect the following:</para>
-          <itemizedlist>
-            <listitem>
-              <para>Basic system and environment information and network configuration including IP
-                addresses, routing, and name resolver settings </para>
-            </listitem>
-            <listitem>
-              <para>Information about running processes</para>
-            </listitem>
-            <listitem>
-              <para>Management Server logs</para>
-            </listitem>
-            <listitem>
-              <para>System logs in /var/log/</para>
-            </listitem>
-            <listitem>
-              <para>Dump of the cloud database</para>
-            </listitem>
-          </itemizedlist>
-          <warning>
-            <para>cloud-bugtool collects information which might be considered sensitive and
-              confidential. Using the <code>--nodb</code> option to avoid the cloud database can
-              reduce this concern, though it is not guaranteed to exclude all sensitive data.</para>
-          </warning>
-          <para/>
-        </section>
-        <section id="rbd-primary-storage">
-          <title>Snaphotting, Backups, Cloning and System VMs for RBD Primary Storage</title>
-          <note>
-            <para>These new RBD features require at least librbd 0.61.7 (Cuttlefish) and libvirt
-              0.9.14 on the KVM hypervisors.</para>
-          </note>
-          <para>This release of &PRODUCT; will leverage the features of RBD format 2. This allows
-            snapshotting and backing up those snapshots.</para>
-          <para>Backups of snapshots to Secondary Storage are full copies of the RBD snapshot, they
-            are not RBD diffs. This because when restoring a backup of a snapshot it is not
-            mandatory that this backup is deployed on RBD again, it could also be a NFS Primary
-            Storage.</para>
-          <para>Another key feature of RBD format 2 is cloning. With this release templates will be
-            copied to Primary Storage once and by using the cloning mechanism new disks will be
-            cloned from this parent template. This saves space and decreases deployment time for
-            instances dramatically.</para>
-          <para>Before this release, a NFS Primary Storage was still required for running the System
-            VMs from. The reason was a so called 'patch disk' that was generated by the hypervisor
-            which contained metadata for the System VM. The scripts generating this disk didn't
-            support RBD and thus System VMs had to be deployed from NFS. With 4.2 instead of the
-            patch disk a VirtIO serial console is used to pass meta information to System VMs. This
-            enabled the deployment of System VMs on RBD Primary Storage.</para>
-        </section>
+      <section id="persistent-network">
+        <title>Persistent Networks</title>
+        <para>&PRODUCT; 4.2 supports Persistent Networks. The network that you can provision without
+          having to deploy any VMs on it is called a Persistent Network. A Persistent Network can be
+          part of a VPC or a non-VPC environment. With the addition of this feature, you will have
+          the ability to create a network in &PRODUCT; in which physical devices can be deployed
+          without having to run any VMs. Additionally, you can deploy physical devices on that
+          network. Another advantages is that you can create a VPC with a tier that consists only
+          physical devices. For example, you might create a VPC for a three-tier application, deploy
+          VMs for Web and Application tier, and use physical machines for the Database tier. Another
+          use case is that if you are providing services by using physical hardware, you can define
+          the network as persistent and therefore even if all its VMs are destroyed the services
+          will not be discontinued.</para>
+      </section>
+      <section id="vnmc-cisco">
+        <title>Cisco VNMC Support</title>
+        <para>Cisco Virtual Network Management Center (VNMC) provides centralized multi-device and
+          policy management for Cisco Network Virtual Services. When Cisco VNMC is integrated with
+          ASA 1000v Cloud Firewall and Cisco Nexus 1000v dvSwitch in &PRODUCT; you will be able to: </para>
+        <itemizedlist>
+          <listitem>
+            <para>Configure Cisco ASA 1000v Firewalls</para>
+          </listitem>
+          <listitem>
+            <para>Create and apply security profiles that contain ACL policy sets for both ingress
+              and egress traffic, and NAT policy sets</para>
+          </listitem>
+        </itemizedlist>
+        <para>&PRODUCT; supports Cisco VNMC on Cisco Nexus 1000v dvSwich-enabled VMware
+          hypervisors.</para>
+      </section>
+      <section id="vmware-vswitch">
+        <title>VMware vNetwork Distributed vSwitch</title>
+        <para>&PRODUCT; supports VMware vSphere Distributed Switch (VDS) for virtual network
+          configuration in a VMware vSphere environment. Each vCenter server instance can support up
+          to 128 VDSs and each VDS can manage up to 500 VMware hosts. &PRODUCT; supports configuring
+          virtual networks in a deployment with a mix of Virtual Distributed Switch, Standard
+          Virtual Switch and Nexus 1000v Virtual Switch. </para>
+      </section>
+      <section id="reserved-ip-addresses-non-csvms">
+        <title>IP Reservation in Isolated Guest Networks</title>
+        <para>In Isolated guest networks in &PRODUCT; 4.2, a part of the guest IP address space can
+          be reserved for non-&PRODUCT; VMs or physical servers. To do so, you configure a range of
+          Reserved IP addresses by specifying the CIDR when a guest network is in Implemented state.
+          The advantage of having this feature is that if your customers wish to have non-&PRODUCT;
+          controlled VMs or physical servers on the same network, they can use a part of the IP
+          address space that is primarily provided to the guest network. When IP reservation is
+          configured, the administrator can add additional VMs or physical servers that are not part
+          of &PRODUCT; to the same network and assign them the Reserved IP addresses. &PRODUCT;
+          guest VMs cannot acquire IPs from the Reserved IP Range.</para>
+      </section>
+      <section id="ip-vlan-tenant">
+        <title>Dedicated Resources: Public IP Addresses and VLANs Per Account</title>
+        <para>&PRODUCT; provides you the ability to reserve a set of public IP addresses and VLANs
+          exclusively for an account. During zone creation, you can continue to define a set of
+          VLANs and multiple public IP ranges. This feature extends the functionality to enable you
+          to dedicate a fixed set of VLANs and guest IP addresses for a tenant.</para>
+        <para>This feature provides you the following capabilities:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Reserve a VLAN range and public IP address range from an Advanced zone and assign
+              it to an account</para>
+          </listitem>
+          <listitem>
+            <para>Disassociate a VLAN and public IP address range from an account</para>
+          </listitem>
+        </itemizedlist>
+        <note>
+          <para>Ensure that you check whether the required range is available and conforms to
+            account limits. The maximum IPs per account limit cannot be superseded.</para>
+        </note>
+      </section>
+      <section id="egress-firewall">
+        <title>Enhanced Juniper SRX Support for Egress Firewall Rules</title>
+        <para>Egress firewall rules were previously supported on virtual routers, and now they are
+          also supported on Juniper SRX external networking devices.</para>
+        <para>Egress traffic originates from a private network to a public network, such as the
+          Internet. By default, the egress traffic is blocked, so no outgoing traffic is allowed
+          from a guest network to the Internet. However, you can control the egress traffic in an
+          Advanced zone by creating egress firewall rules. When an egress firewall rule is applied,
+          the traffic specific to the rule is allowed and the remaining traffic is blocked. When all
+          the firewall rules are removed the default policy, Block, is applied.</para>
+        <note>
+          <para>Egress firewall rules are not supported on Shared networks. They are supported only
+            on Isolated guest networks.</para>
+        </note>
+      </section>
+      <section id="default-egress-policy">
+        <title>Configuring the Default Egress Policy</title>
+        <para>The default egress policy for Isolated guest network can be configured by using
+          Network offering. Use the create network offering option to determine whether the default
+          policy should be block or allow all the traffic to the public network from a guest
+          network. Use this network offering to create the network. If no policy is specified, by
+          default all the traffic is allowed from the guest network that you create by using this
+          network offering.</para>
+        <para>You have two options: Allow and Deny.</para>
+        <para>If you select Allow for a network offering, by default egress traffic is allowed.
+          However, when an egress rule is configured for a guest network, rules are applied to block
+          the specified traffic and rest are allowed. If no egress rules are configured for the
+          network, egress traffic is accepted. If you select Deny for a network offering, by default
+          egress traffic for the guest network is blocked. However, when an egress rules is
+          configured for a guest network, rules are applied to allow the specified traffic. While
+          implementing a guest network, &PRODUCT; adds the firewall egress rule specific to the
+          default egress policy for the guest network.</para>
+        <para>This feature is supported only on virtual router and Juniper SRX.</para>
+      </section>
+      <section id="non-contiguous-vlan">
+        <title>Non-Contiguous VLAN Ranges</title>
+        <para>&PRODUCT; provides you with the flexibility to add non contiguous VLAN ranges to your
+          network. The administrator can either update an existing VLAN range or add multiple non
+          contiguous VLAN ranges while creating a zone. You can also use the UpdatephysicalNetwork
+          API to extend the VLAN range.</para>
+      </section>
+      <section id="pvlan">
+        <title>Isolation in Advanced Zone Using Private VLAN</title>
+        <para>Isolation of guest traffic in shared networks can be achieved by using Private VLANs
+          (PVLAN). PVLANs provide Layer 2 isolation between ports within the same VLAN. In a
+          PVLAN-enabled shared network, a user VM cannot reach other user VM though they can reach
+          the DHCP server and gateway, this would in turn allow users to control traffic within a
+          network and help them deploy multiple applications without communication between
+          application as well as prevent communication with other users’ VMs.</para>
+        <itemizedlist>
+          <listitem>
+            <para>Isolate VMs in a shared networks by using Private VLANs.</para>
+          </listitem>
+          <listitem>
+            <para>Supported on KVM, XenServer, and VMware hypervisors.</para>
+          </listitem>
+          <listitem>
+            <para>PVLAN-enabled shared network can be a part of multiple networks of a guest VM.
+            </para>
+          </listitem>
+        </itemizedlist>
+        <para>For further reading:</para>
+        <itemizedlist>
+          <listitem>
+            <para><ulink
+                url="http://www.cisco.com/en/US/docs/switches/lan/catalyst3750/software/release/12.2_25_see/configuration/guide/swpvlan.html#wp1038379"
+                >Understanding Private VLANs</ulink></para>
+          </listitem>
+          <listitem>
+            <para><ulink url="http://tools.ietf.org/html/rfc5517">Cisco Systems' Private VLANs:
+                Scalable Security in a Multi-Client Environment</ulink></para>
+          </listitem>
+          <listitem>
+            <para><ulink url="http://kb.vmware.com">Private VLAN (PVLAN) on vNetwork Distributed
+                Switch - Concept Overview (1010691)</ulink></para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="multiple-ip-nic">
+        <title>Configuring Multiple IP Addresses on a Single NIC</title>
+        <para>(Supported on XenServer, KVM, and VMware hypervisors)</para>
+        <para>&PRODUCT; now provides you the ability to associate multiple private IP addresses per
+          guest VM NIC. This feature is supported on all the network configurations&mdash;Basic,
+          Advanced, and VPC. Security Groups, Static NAT and Port forwarding services are supported
+          on these additional IPs. In addition to the primary IP, you can assign additional IPs to
+          the guest VM NIC. Up to 256 IP addresses are allowed per NIC.</para>
+        <para>As always, you can specify an IP from the guest subnet; if not specified, an IP is
+          automatically picked up from the guest VM subnet. You can view the IPs associated with for
+          each guest VM NICs on the UI. You can apply NAT on these additional guest IPs by using
+          firewall configuration in the &PRODUCT; UI. You must specify the NIC to which the IP
+          should be associated.</para>
+      </section>
+      <section id="multiple-ip-range">
+        <title>Adding Multiple IP Ranges</title>
+        <para>(Supported on KVM, xenServer, and VMware hypervisors)</para>
+        <para>&PRODUCT; 4.2 provides you with the flexibility to add guest IP ranges from different
+          subnets in Basic zones and security groups-enabled Advanced zones. For security
+          groups-enabled Advanced zones, it implies multiple subnets can be added to the same VLAN.
+          With the addition of this feature, you will be able to add IP address ranges from the same
+          subnet or from a different one when IP address are exhausted. This would in turn allows
+          you to employ higher number of subnets and thus reduce the address management
+          overhead.</para>
+        <para>Ensure that you manually configure the gateway of the new subnet before adding the IP
+          range. Note that &PRODUCT; supports only one gateway for a subnet; overlapping subnets are
+          not currently supported.</para>
+        <para>You can also delete IP ranges. This operation fails if an IP from the remove range is
+          in use. If the remove range contains the IP address on which the DHCP server is running,
+          &PRODUCT; acquires a new IP from the same subnet. If no IP is available in the subnet, the
+          remove operation fails.</para>
+        <note>
+          <para>The feature can only be implemented on IPv4 addresses.</para>
+        </note>
+      </section>
+      <section id="add-remove-network-vm">
+        <title>Support for Multiple Networks in VMs</title>
+        <para>(Supported on XenServer, VMware and KVM hypervisors)</para>
+        <para>&PRODUCT; 4.2 provides you the ability to add and remove multiple networks to a VM.
+          You can remove a network from a VM and add a new network. You can also change the default
+          network of a VM. With this functionality, hybrid or traditional server loads can be
+          accommodated with ease. </para>
+        <para>For adding or removing a NIC to work on VMware, ensure that vm-tools are running on
+          guest VMs.</para>
+      </section>
+      <section id="gslb">
+        <title>Global Server Load Balancing</title>
+        <para>&PRODUCT; 4.2 supports Global Server Load Balancing (GSLB) functionalities to provide
+          business continuity by load balancing traffic to an instance on active zones only in case
+          of zone failures . &PRODUCT; achieve this by extending its functionality of integrating
+          with NetScaler Application Delivery Controller (ADC), which also provides various GSLB
+          capabilities, such as disaster recovery and load balancing. The DNS redirection technique
+          is used to achieve GSLB in &PRODUCT;. In order to support this functionality, region level
+          services and service provider are introduced. A new service 'GSLB' is introduced as a
+          region level service. The GSLB service provider is introduced that will provider the GSLB
+          service. Currently, NetScaler is the supported GSLB provider in &PRODUCT;. GSLB
+          functionality works in an Active-Active data center environment. </para>
+      </section>
+      <section id="lb-on-shared-vlan">
+        <title>Enhanced Load Balancing Services Using External Provider on Shared VLANs</title>
+        <para>Network services like Firewall, Load Balancing, and NAT are now supported in shared
+          networks created in an advanced zone. In effect, the following network services shall be
+          made available to a VM in a shared network: Source NAT, Static NAT, Port Forwarding,
+          Firewall and Load balancing. Subset of these service can be chosen while creating a
+          network offering for shared networks. Services available in a shared network is defined by
+          the network offering and the service chosen in the network offering. For example, if
+          network offering for a shared network has source NAT service enabled, a public IP shall be
+          provisioned and source NAT is configured on the firewall device to provide public access
+          to the VMs on the shared network. Static NAT, Port Forwarding, Load Balancing, and
+          Firewall services shall be available only on the acquired public IPs associated with a
+          shared network.</para>
+        <para>Additionally, Netscaler and Juniper SRX firewall device can be configured inline or
+          side-by-side mode.</para>
+      </section>
+      <section id="health-check">
+        <title>Health Checks for Load Balanced Instances</title>
+        <note>
+          <para>This feature is supported only on NetScaler version 10.0 and beyond.</para>
+        </note>
+        <para>(NetScaler load balancer only) A load balancer rule distributes requests among a pool
+          of services (a service in this context means an application running on a virtual machine).
+          When creating a load balancer rule, you can specify a health check which will ensure that
+          the rule forwards requests only to services that are healthy (running and available). When
+          a health check is in effect, the load balancer will stop forwarding requests to any
+          resources that it has found to be unhealthy. If the resource later becomes available
+          again, the periodic health check (periodicity is configurable) will discover it and the
+          resource will once again be made available to the load balancer.</para>
+        <para>To configure how often the health check is performed by default, use the global
+          configuration setting healthcheck.update.interval. This default applies to all the health
+          check policies in the cloud. You can override this value for an individual health check
+          policy.</para>
+      </section>
+    </section>
+    <section id="host-and-vm-enhancements">
+      <title>Host and Virtual Machine Enhancements</title>
+      <para>The following new features expand the ways you can use hosts and virtual
+        machines.</para>
+      <section id="vmware-drs">
+        <title>VMware DRS Support</title>
+        <para>The VMware vSphere Distributed Resources Scheduler (DRS) is supported.</para>
+      </section>
+      <section id="windows-8">
+        <title>Windows 8 and Windows Server 2012 as VM Guest OS</title>
+        <para>(Supported on XenServer, VMware, and KVM)</para>
+        <para>Windows 8 and Windows Server 2012 can now be used as OS types on guest virtual
+          machines. The OS would be made available the same as any other, by uploading an ISO or a
+          template. The instructions for uploading ISOs and templates are given in the
+          Administrator's Guide. </para>
+        <note>
+          <para><emphasis role="bold">Limitation:</emphasis> When used with VMware hosts, this
+            feature works only for the following versions: vSphere ESXi 5.1 and ESXi 5.0 Patch
+            4.</para>
+        </note>
+        <para/>
+      </section>
+      <section id="change-account">
+        <title>Change Account Ownership of Virtual Machines</title>
+        <para>A root administrator can now change the ownership of any virtual machine from one
+          account to any other account. A domain or sub-domain administrator can do the same for VMs
+          within the domain from one account to any other account in the domain.</para>
+      </section>
+      <section id="dedicated-resources">
+        <title>Private Pod, Cluster, or Host</title>
+        <para>Dedicating pod, cluster or host to a specific domain/account means that the
+          domain/account will have sole access to the dedicated pod, cluster or hosts such that
+          scalability, security and manageability within a domain/account can be improved. The
+          resources which belong to that tenant will be placed into that dedicated pod, cluster or
+          host.</para>
+      </section>
+      <section id="resize-volume">
+        <title>Resizing Volumes</title>
+        <para>&PRODUCT; provides the ability to resize data disks; &PRODUCT; controls volume size by
+          using disk offerings. This provides &PRODUCT; administrators with the flexibility to
+          choose how much space they want to make available to the end users. Volumes within the
+          disk offerings with the same storage tag can be resized. For example, if you only want to
+          offer 10, 50, and 100 GB offerings, the allowed resize should stay within those limits.
+          That implies if you define a 10 GB, a 50 GB and a 100 GB disk offerings, a user can
+          upgrade from 10 GB to 50 GB, or 50 GB to 100 GB. If you create a custom-sized disk
+          offering, then you have the option to resize the volume by specifying a new, larger size.
+          Additionally, using the resizeVolume API, a data volume can be moved from a static disk
+          offering to a custom disk offering with the size specified. This functionality allows
+          those who might be billing by certain volume sizes or disk offerings to stick to that
+          model, while providing the flexibility to migrate to whatever custom size necessary. This
+          feature is supported on KVM, XenServer, and VMware hosts. However, shrinking volumes is
+          not supported on VMware hosts</para>
+      </section>
+      <section id="volume-snapshot-enhancement">
+        <title>VMware Volume Snapshot Improved Performance</title>
+        <para>When you take a snapshot of a data volume on VMware, &PRODUCT; will now use a more
+          efficient storage technique to improve performance.</para>
+        <para>Previously, every snapshot was immediately exported from vCenter to a mounted NFS
+          share and packaged into an OVA file format. This operation consumed time and resources.
+          Starting from 4.2, the original file formats (e.g., VMDK) provided by vCenter will be
+          retained. An OVA file will only be created as needed, on demand.</para>
+        <para>The new process applies only to newly created snapshots after upgrade to &PRODUCT;
+          4.2. Snapshots that have already been taken and stored in OVA format will continue to
+          exist in that format, and will continue to work as expected.</para>
+      </section>
+      <section id="storage-migration">
+        <title>Storage Migration: XenMotion and vMotion</title>
+        <para>(Supported on XenServer and VMware)</para>
+        <para>Storage migration allows VMs to be moved from one host to another, where the VMs are
+          not located on storage shared between the two hosts. It provides the option to live
+          migrate a VM’s disks along with the VM itself. It is now possible to migrate a VM from one
+          XenServer resource pool / VMware cluster to another, or to migrate a VM whose disks are on
+          local storage, or even to migrate a VM’s disks from one storage repository to another, all
+          while the VM is running.</para>
+      </section>
+      <section id="vmware-configure-linked-clones">
+        <title>Configuring Usage of Linked Clones on VMware</title>
+        <para>(For ESX hypervisor in conjunction with vCenter)</para>
+        <para>In &PRODUCT; 4.2, the creation of VMs as full clones is allowed. In previous versions,
+          only linked clones were possible.</para>
+        <para>For a full description of clone types, refer to VMware documentation. In summary: A
+          full clone is a copy of an existing virtual machine which, once created, does not depend
+          in any way on the original virtual machine. A linked clone is also a copy of an existing
+          virtual machine, but it has ongoing dependency on the original. A linked clone shares the
+          virtual disk of the original VM, and retains access to all files that were present at the
+          time the clone was created.</para>
+        <para>A new global configuration setting has been added, vmware.create.full.clone. When the
+          administrator sets this to true, end users can create guest VMs only as full clones. The
+          default value is true for new installations. For customers upgrading from a previous
+          version of &PRODUCT;, the default value of vmware.create.full.clone is false.</para>
+      </section>
+      <section id="host-deployment-rules">
+        <title>VM Deployment Rules</title>
+        <para>Rules can be set up to ensure that particular VMs are not placed on the same physical
+          host. These "anti-affinity rules" can increase the reliability of applications by ensuring
+          that the failure of a single host can not take down the entire group of VMs supporting a
+          given application. See Affinity Groups in the &PRODUCT; 4.2 Administration Guide.</para>
+      </section>
+      <section id="cpu-ram-dynamic-scaling">
+        <title>CPU and Memory Scaling for Running VMs</title>
+        <para>(Supported on VMware and XenServer)</para>
+        <para>You can now change the CPU and RAM values for a running virtual machine. In previous
+          versions of &PRODUCT;, this could only be done on a stopped VM.</para>
+        <para>It is not always possible to accurately predict the CPU and RAM requirements when you
+          first deploy a VM. You might need to increase or decrease these resources at any time
+          during the life of a VM. With the new ability to dynamically modify CPU and RAM levels,
+          you can change these resources for a running VM without incurring any downtime.</para>
+        <para>Dynamic CPU and RAM scaling can be used in the following cases:</para>
+        <itemizedlist>
+          <listitem>
+            <para>New VMs that are created after the installation of &PRODUCT; 4.2. If you are
+              upgrading from a previous version of &PRODUCT;, your existing VMs created with
+              previous versions will not have the dynamic scaling capability.</para>
+          </listitem>
+          <listitem>
+            <para>User VMs on hosts running VMware and XenServer.</para>
+          </listitem>
+          <listitem>
+            <para>System VMs on VMware.</para>
+          </listitem>
+          <listitem>
+            <para>VM Tools or XenServer Tools must be installed on the virtual machine.</para>
+          </listitem>
+          <listitem>
+            <para>The new requested CPU and RAM values must be within the constraints allowed by the
+              hypervisor and the VM operating system.</para>
+          </listitem>
+        </itemizedlist>
+        <para>To configure this feature, use the following new global configuration
+          variables:</para>
+        <itemizedlist>
+          <listitem>
+            <para>enable.dynamic.scale.vm: Set to True to enable the feature. By default, the
+              feature is turned off.</para>
+          </listitem>
+          <listitem>
+            <para>scale.retry: How many times to attempt the scaling operation. Default = 2.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="cpu-ram-overcommit">
+        <title>CPU and Memory Over-Provisioning</title>
+        <para>(Supported for XenServer, KVM, and VMware)</para>
+        <para>In &PRODUCT; 4.2, CPU and memory (RAM) over-provisioning factors can be set for each
+          cluster to change the number of VMs that can run on each host in the cluster. This helps
+          optimize the use of resources. By increasing the over-provisioning ratio, more resource
+          capacity will be used. If the ratio is set to 1, no over-provisioning is done.</para>
+        <para>In previous releases, &PRODUCT; did not perform memory over-provisioning. It performed
+          CPU over-provisioning based on a ratio configured by the administrator in the global
+          configuration setting cpu.overprovisioning.factor. Starting in 4.2, the administrator can
+          specify a memory over-provisioning ratio, and can specify both CPU and memory
+          over-provisioning ratios on a per-cluster basis, rather than only on a global
+          basis.</para>
+        <para>In any given cloud, the optimum number of VMs for each host is affected by such things
+          as the hypervisor, storage, and hardware configuration. These may be different for each
+          cluster in the same cloud. A single global over-provisioning setting could not provide the
+          best utilization for all the different clusters in the cloud. It had to be set for the
+          lowest common denominator. The new per-cluster setting provides a finer granularity for
+          better utilization of resources, no matter where the &PRODUCT; placement algorithm decides
+          to place a VM.</para>
+      </section>
+      <section id="baremetal">
+        <title>Kickstart Installation for Bare Metal Provisioning</title>
+        <para>&PRODUCT; 4.2 supports the kick start installation method for RPM-based Linux
+          operating systems on baremetal hosts in basic zones. Users can provision a baremetal host
+          managed by &PRODUCT; as long as they have the kick start file and corresponding OS
+          installation ISO ready.</para>
+        <para>Tested on CentOS 5.5, CentOS 6.2, CentOS 6.3, Ubuntu 12.04.</para>
+        <para>For more information, see the Baremetal Installation Guide.</para>
+      </section>
+      <section id="baremetal-ucs">
+        <title>Enhanced Bare Metal Support on Cisco UCS</title>
+        <para>You can now more easily provision new Cisco UCS server blades into &PRODUCT; for use
+          as bare metal hosts. The goal is to enable easy expansion of the cloud by leveraging the
+          programmability of the UCS converged infrastructure and &PRODUCT;’s knowledge of the cloud
+          architecture and ability to orchestrate. With this new feature, &PRODUCT; can
+          automatically understand the UCS environment, server profiles, etc. to make it easy to
+          deploy a bare metal OS on a Cisco UCS.</para>
+      </section>
+      <section id="update-vm-image">
+        <title>Changing a VM's Base Image</title>
+        <para>Every VM is created from a base image, which is a template or ISO which has been
+          created and stored in &PRODUCT;. Both cloud administrators and end users can create and
+          modify templates, ISOs, and VMs.</para>
+        <para>In &PRODUCT; 4.2, there is a new way to modify an existing VM. You can change an
+          existing VM from one base image to another. For example, suppose there is a template based
+          on a particular operating system, and the OS vendor releases a software patch. The
+          administrator or user naturally wants to apply the patch and then make sure existing VMs
+          start using it. Whether a software update is involved or not, it's also possible to simply
+          switch a VM from its current template to any other desired template.</para>
+      </section>
+      <section id="reset-vm-reboot">
+        <title>Reset VM on Reboot</title>
+        <para>In &PRODUCT; 4.2, you can specify that you want to discard the root disk and create a
+          new one whenever a given VM is rebooted. This is useful for secure environments that need
+          a fresh start on every boot and for desktops that should not retain state. The IP address
+          of the VM will not change due to this operation.</para>
+      </section>
+      <section id="vm-snapshots">
+        <title>Virtual Machine Snapshots for VMware</title>
+        <para>(VMware hosts only) In addition to the existing &PRODUCT; ability to snapshot
+          individual VM volumes, you can now take a VM snapshot to preserve all the VM's data
+          volumes as well as (optionally) its CPU/memory state. This is useful for quick restore of
+          a VM. For example, you can snapshot a VM, then make changes such as software upgrades. If
+          anything goes wrong, simply restore the VM to its previous state using the previously
+          saved VM snapshot. </para>
+        <para>The snapshot is created using the VMware native snapshot facility. The VM snapshot
+          includes not only the data volumes, but optionally also whether the VM is running or
+          turned off (CPU state) and the memory contents. The snapshot is stored in &PRODUCT;'s
+          primary storage.</para>
+        <para>VM snapshots can have a parent/child relationship. Each successive snapshot of the
+          same VM is the child of the snapshot that came before it. Each time you take an additional
+          snapshot of the same VM, it saves only the differences between the current state of the VM
+          and the state stored in the most recent previous snapshot. The previous snapshot becomes a
+          parent, and the new snapshot is its child. It is possible to create a long chain of these
+          parent/child snapshots, which amount to a "redo" record leading from the current state of
+          the VM back to the original.</para>
+      </section>
+      <section id="vm-userdata">
+        <title>Increased Userdata Size When Deploying a VM</title>
+        <para>You can now specify up to 32KB of userdata when deploying a virtual machine through
+          the &PRODUCT; UI or the deployVirtualMachine API call. </para>
+      </section>
+      <section id="vmware-cluster-limit">
+        <title>Set VMware Cluster Size Limit Depending on VMware Version</title>
+        <para>The maximum number of hosts in a vSphere cluster is determined by the VMware
+          hypervisor software. For VMware versions 4.2, 4.1, 5.0, and 5.1, the limit is 32
+          hosts.</para>
+        <para>For &PRODUCT; 4.2, the global configuration setting vmware.percluster.host.max has
+          been removed. The maximum number of hosts in a VMware cluster is now determined by the
+          underlying hypervisor software.</para>
+        <note>
+          <para>Best Practice: It is advisable for VMware clusters in &PRODUCT; to be smaller than
+            the VMware hypervisor's maximum size. A cluster size of up to 8 hosts has been found
+            optimal for most real-world situations.</para>
+        </note>
+      </section>
+      <section id="limit-accounts-domains-rn">
+        <title>Limiting Resource Usage</title>
+        <para>Previously in &PRODUCT;, resource usage limit was imposed based on the resource count,
+          that is, restrict a user or domain on the basis of the number of VMs, volumes, or
+          snapshots used. In &PRODUCT; 4.2, a new set of resource types has been added to the
+          existing pool of resources (VMs, Volumes, and Snapshots) to support the customization
+          model&mdash;need-basis usage, such as large VM or small VM. The new resource types are now
+          broadly classified as CPU, RAM, Primary storage, and Secondary storage. &PRODUCT; 4.2
+          allows the root administrator to impose resource usage limit by the following resource
+          types for Domain, Project and Accounts. </para>
+        <itemizedlist>
+          <listitem>
+            <para>CPUs</para>
+          </listitem>
+          <listitem>
+            <para>Memory (RAM)</para>
+          </listitem>
+          <listitem>
+            <para>Primary Storage (Volumes)</para>
+          </listitem>
+          <listitem>
+            <para>Secondary Storage (Snapshots, Templates, ISOs)</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+    <section id="ops">
+      <title>Monitoring, Maintenance, and Operations Enhancements</title>
+      <section id="delete-alerts">
+        <title>Deleting and Archiving Events and Alerts</title>
+        <para>In addition to viewing a list of events and alerts in the UI, the administrator can
+          now delete and archive them. In order to support deleting and archiving alerts, the
+          following global parameters have been added:</para>
+        <itemizedlist>
+          <listitem>
+            <para><emphasis role="bold">alert.purge.delay</emphasis>: The alerts older than
+              specified number of days are purged. Set the value to 0 to never purge alerts
+              automatically.</para>
+          </listitem>
+          <listitem>
+            <para><emphasis role="bold">alert.purge.interval</emphasis>: The interval in seconds to
+              wait before running the alert purge thread. The default is 86400 seconds (one
+              day).</para>
+          </listitem>
+        </itemizedlist>
+        <note>
+          <para>Archived alerts or events cannot be viewed in the UI, or by using the API. They are
+            maintained in the database for auditing or compliance purposes.</para>
+        </note>
+      </section>
+      <section id="global-parameters">
+        <title>Increased Granularity for Configuration Parameters</title>
+        <para>Some configuration parameters which were previously available only at the global level
+          of the cloud can now be set for smaller components of the cloud, such as at the zone
+          level. To set these parameters, look for the new Settings tab in the UI. You will find it
+          on the detail page for an account, cluster, zone, or primary storage.</para>
+        <para>The account level parameters are: <code>remote.access.vpn.client.iprange</code>,
+            <code>allow.public.user.templates</code>, <code>use.system.public.ips</code>, and
+            <code>use.system.guest.vlans</code></para>
+        <para>The cluster level parameters are
+            <code>cluster.storage.allocated.capacity.notificationthreshold</code>,
+            <code>cluster.storage.capacity.notificationthreshold</code>,
+            <code>cluster.cpu.allocated.capacity.notificationthreshold</code>,
+            <code>cluster.memory.allocated.capacity.notificationthreshold</code>, <code>
+            cluster.cpu.allocated.capacity.disablethreshold</code>,
+            <code>cluster.memory.allocated.capacity.disablethreshold</code>,
+            <code>cpu.overprovisioning.factor</code>, <code>mem.overprovisioning.factor</code>,
+            <code>vmware.reserve.cpu</code>, and <code>vmware.reserve.mem</code>.</para>
+        <para>The zone level parameters are
+            <code>pool.storage.allocated.capacity.disablethreshold</code>,
+            <code>pool.storage.capacity.disablethreshold</code>,
+            <code>storage.overprovisioning.factor</code>, <code>network.throttling.rate</code>,
+            <code>guest.domain.suffix</code>, <code>router.template.xen</code>,
+            <code>router.template.kvm</code>, <code>router.template.vmware</code>,
+            <code>router.template.hyperv</code>, <code>router.template.lx</code>c,
+            <code>enable.dynamic.scale.vm</code>, <code>use.external.dns</code>, and
+            <code>blacklisted.routes</code>.</para>
+      </section>
+      <section id="api-request-throttling">
+        <title>API Request Throttling</title>
+        <para>In &PRODUCT; 4.2, you can limit the rate at which API requests can be placed for each
+          account. This is useful to avoid malicious attacks on the Management Server, prevent
+          performance degradation, and provide fairness to all accounts.</para>
+        <para>If the number of API calls exceeds the threshold, an error message is returned for any
+          additional API calls. The caller will have to retry these API calls at another
+          time.</para>
+        <para>To control the API request throttling, use the following new global configuration
+          settings:</para>
+        <itemizedlist>
+          <listitem>
+            <para>api.throttling.enabled - Enable/Disable API throttling. By default, this setting
+              is false, so API throttling is not enabled.</para>
+          </listitem>
+          <listitem>
+            <para>api.throttling.interval (in seconds) - Time interval during which the number of
+              API requests is to be counted. When the interval has passed, the API count is reset to
+              0.</para>
+          </listitem>
+          <listitem>
+            <para>api.throttling.max - Maximum number of APIs that can be placed within the
+              api.throttling.interval period.</para>
+          </listitem>
+          <listitem>
+            <para>api.throttling.cachesize - Cache size for storing API counters. Use a value higher
+              than the total number of accounts managed by the cloud. One cache entry is needed for
+              each account, to store the running API total for that account within the current time
+              window.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section id="external-alert-managers">
+        <title>Sending Alerts to External SNMP and Syslog Managers</title>
+        <para>In addition to showing administrator alerts on the Dashboard in the &PRODUCT; UI and
+          sending them in email, &PRODUCT; now can also send the same alerts to external SNMP or
+          Syslog management software. This is useful if you prefer to use an SNMP or Syslog manager
+          to monitor your cloud.</para>
+        <para>The supported protocol is SNMP version 2.</para>
+      </section>
+      <section id="default-pwd-engine">
+        <title>Changing the Default Password Encryption</title>
+        <para>Passwords are encoded when creating or updating users. The new default preferred
+          encoder, replacing MD5, is SHA256. It is more secure than MD5 hashing. If you take no
+          action to customize password encryption and authentication, SHA256 Salt will be
+          used.</para>
+        <para>If you prefer a different authentication mechanism, &PRODUCT; 4.2 provides a way for
+          you to determine the default encoding and authentication mechanism for admin and user
+          logins. Two new configurable lists have been introduced: userPasswordEncoders and
+          userAuthenticators. userPasswordEncoders allow you to configure the order of preference
+          for encoding passwords, and userAuthenticator allows you to configure the order in which
+          authentication schemes are invoked to validate user passwords.</para>
+        <para>The plain text user authenticator has been modified not to convert supplied passwords
+          to their md5 sums before checking them with the database entries. It performs a simple
+          string comparison between retrieved and supplied login passwords instead of comparing the
+          retrieved md5 hash of the stored password against the supplied md5 hash of the password,
+          because clients no longer hash the password.</para>
+      </section>
+      <section id="cloud-bugtool">
+        <title>Log Collection Utility cloud-bugtool</title>
+        <para>&PRODUCT; provides a command-line utility called cloud-bugtool to make it easier to
+          collect the logs and other diagnostic data required for troubleshooting. This is
+          especially useful when interacting with Citrix Technical Support.</para>
+        <para>You can use cloud-bugtool to collect the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Basic system and environment information and network configuration including IP
+              addresses, routing, and name resolver settings </para>
+          </listitem>
+          <listitem>
+            <para>Information about running processes</para>
+          </listitem>
+          <listitem>
+            <para>Management Server logs</para>
+          </listitem>
+          <listitem>
+            <para>System logs in /var/log/</para>
+          </listitem>
+          <listitem>
+            <para>Dump of the cloud database</para>
+          </listitem>
+        </itemizedlist>
+        <warning>
+          <para>cloud-bugtool collects information which might be considered sensitive and
+            confidential. Using the <code>--nodb</code> option to avoid the cloud database can
+            reduce this concern, though it is not guaranteed to exclude all sensitive data.</para>
+        </warning>
+        <para/>
+      </section>
+      <section id="rbd-primary-storage">
+        <title>Snaphotting, Backups, Cloning and System VMs for RBD Primary Storage</title>
+        <note>
+          <para>These new RBD features require at least librbd 0.61.7 (Cuttlefish) and libvirt
+            0.9.14 on the KVM hypervisors.</para>
+        </note>
+        <para>This release of &PRODUCT; will leverage the features of RBD format 2. This allows
+          snapshotting and backing up those snapshots.</para>
+        <para>Backups of snapshots to Secondary Storage are full copies of the RBD snapshot, they
+          are not RBD diffs. This because when restoring a backup of a snapshot it is not mandatory
+          that this backup is deployed on RBD again, it could also be a NFS Primary Storage.</para>
+        <para>Another key feature of RBD format 2 is cloning. With this release templates will be
+          copied to Primary Storage once and by using the cloning mechanism new disks will be cloned
+          from this parent template. This saves space and decreases deployment time for instances
+          dramatically.</para>
+        <para>Before this release, a NFS Primary Storage was still required for running the System
+          VMs from. The reason was a so called 'patch disk' that was generated by the hypervisor
+          which contained metadata for the System VM. The scripts generating this disk didn't
+          support RBD and thus System VMs had to be deployed from NFS. With 4.2 instead of the patch
+          disk a VirtIO serial console is used to pass meta information to System VMs. This enabled
+          the deployment of System VMs on RBD Primary Storage.</para>
       </section>
     </section>
     <section id="issues-fixed-4.2">
@@ -1066,658 +1024,15 @@ under the License.
           >Jira</ulink> to track its issues. All new features and bugs for 4.2.0 have been tracked
         in Jira, and have a standard naming convention of "CLOUDSTACK-NNNN" where "NNNN" is the
         issue number.</para>
-      <para>This section includes a summary of known issues against 4.0.0 that were fixed in 4.2.0.
-        Approximately 470 bugs were resolved or closed in the 4.2.0 cycle.</para>
-      <informaltable>
-        <tgroup cols="2" align="left" colsep="1" rowsep="1">
-          <colspec colwidth="1*" colname="1" colnum="1"/>
-          <colspec colwidth="2*" colname="2" colnum="2"/>
-          <thead>
-            <row>
-              <entry>
-                <para>Defect</para>
-              </entry>
-              <entry>
-                <para>Description</para>
-              </entry>
-            </row>
-          </thead>
-          <tbody>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para/>
-              </entry>
-              <entry>
-                <para/>
-              </entry>
-            </row>
-          </tbody>
-        </tgroup>
-      </informaltable>
+      <para>For list of issues fixed, see <ulink
+          url="https://issues.apache.org/jira/issues/?filter=12324870">Issues Fixed in
+        4.2</ulink>.</para>
     </section>
     <section id="known-issues-4.2">
       <title>Known Issues in 4.2.0</title>
-      <informaltable>
-        <tgroup cols="2" align="left" colsep="1" rowsep="1">
-          <colspec colwidth="1.0*" colname="1" colnum="1"/>
-          <colspec colwidth="4.17*" colname="2" colnum="2"/>
-          <thead>
-            <row>
-              <entry>
-                <para>Issue ID</para>
-              </entry>
-              <entry>
-                <para>Description</para>
-              </entry>
-            </row>
-          </thead>
-          <tbody>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
-                    >CLOUDSTACK-3466</ulink></para></entry>
-              <entry>
-                <para>VM Migration across VMware clusters which are added with different switches
-                  (Standard Switch,Vmware DVS, Cisco Nexus 1000v) is not supported.</para>
-              </entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4207"
-                    >CLOUDSTACK-4207</ulink></para></entry>
-              <entry>
-                <para>The following exception is observed when the Management Server is started
-                  after the upgrade from any older versions to &PRODUCT; 4.2.</para>
-                <para><code>jsonParseException: The JsonDeserializer
-                    com.cloud.agent.transport.ArrayTypeAdaptor@2426e26f failed to deserialize json
-                    object</code></para>
-                <para>Ignore this exception, this would stop after you upgrade the System VM.
-                  However, if you want to prevent this, stop system VM from the hypervisor before
-                  upgrade.</para>
-              </entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
-                    >CLOUDSTACK-2709</ulink></para></entry>
-              <entry>
-                <para>Egress rules are not supported on Shared networks. </para>
-              </entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747"
-                    >CLOUDSTACK-1747</ulink></para></entry>
-              <entry><para>The mvn deploydb command creates only 4.0 database, not 4.2
-                  database.</para>
-                <para>Due to tooling changes between 4.0 and 4.2, &PRODUCT; database is created by
-                  using the 4.0 schema and updated to the 4.2 schema when the management server
-                  starts for the first time. Neglect the same schema if the management server has
-                  not started yet.</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1306"
-                    >CLOUDSTACK-1306</ulink></para>
-              </entry>
-              <entry>
-                <para>Enhance the error message that is displayed when trying to deploy a VM by
-                  passing the static IPv4 addresses that are assigned to another VM or an IPv4
-                  address that is outside the IP range.</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1236"
-                    >CLOUDSTACK-1236</ulink></para>
-              </entry>
-              <entry>
-                <para>Warning while adding a XenSever 6.1 host. The warning displayed is Unable to
-                  create local link network.</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-969"
-                    >CLOUDSTACK-969</ulink></para>
-              </entry>
-              <entry>
-                <para>api: zone response lists vlan in it as &quot;vlan range of zone&quot; but the
-                  vlan belongs to physical network</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-963"
-                    >CLOUDSTACK-963</ulink></para>
-              </entry>
-              <entry>
-                <para>[cloud.utils.AnnotationHelper] class java.lang.Stringdoes not have a Table
-                  annotation</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-458"
-                    >CLOUDSTACK-458</ulink></para>
-              </entry>
-              <entry>
-                <para>xen:snapshots:Storage gc fail to clean the failed snapshot images from
-                  secondarystorage</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-315"
-                    >CLOUDSTACK-315</ulink></para>
-              </entry>
-              <entry>
-                <para>Infrastructure view does not show capacity values</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-300"
-                    >CLOUDSTACK-300</ulink></para>
-              </entry>
-              <entry>
-                <para>Creation of compute offering allow combination of local storage + HA</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-276"
-                    >CLOUDSTACK-276</ulink></para>
-              </entry>
-              <entry>
-                <para>SSVM ID is exposed in the Error Message thrown by AddTrafficType API</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-270"
-                    >CLOUDSTACK-270</ulink></para>
-              </entry>
-              <entry>
-                <para>Ui should not ask for a vlan range if the physical network isolation type is
-                  not VLAN</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-245"
-                    >CLOUDSTACK-245</ulink></para>
-              </entry>
-              <entry>
-                <para>VPC ACLs are not stored and programmed consistently</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-231"
-                    >CLOUDSTACK-231</ulink></para>
-              </entry>
-              <entry>
-                <para>Tag creation using special charecters</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-124"
-                    >CLOUDSTACK-124</ulink></para>
-              </entry>
-              <entry>
-                <para>NetworkGarbageCollector not cleaning up networks</para>
-              </entry>
-            </row>
-            <row>
-              <entry>
-                <para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-62"
-                    >CLOUDSTACK-62</ulink></para>
-              </entry>
-              <entry>
-                <para>console proxy does not support any keymaps besides us, jp</para>
-              </entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4645"
-                    >CLOUDSTACK-4645</ulink></para></entry>
-              <entry><para>There is no upgrade path from 4.1.1 to 4.2.0.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4641"
-                    >CLOUDSTACK-4641</ulink></para></entry>
-              <entry><para>Create volume form snapshot command times out exactly after 1 hour in
-                  case of KVM hosts.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4621"
-                    >CLOUDSTACK-4621</ulink></para></entry>
-              <entry><para>Changing the management server's Ethernet interface or MAC address leaves
-                  the system in unstable state.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4615"
-                    >CLOUDSTACK-4615</ulink></para></entry>
-              <entry><para>(Baremetal) Baremetal agent is missing in the installer.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4598"
-                    >CLOUDSTACK-4598</ulink></para></entry>
-              <entry><para>Long delays during deploying a VM; both network and deployment planner
-                  are delayed.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4596"
-                    >CLOUDSTACK-4596</ulink></para></entry>
-              <entry><para>The same IP range is allowed to be defined in different VLANs across
-                  public and portable ranges.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4588"
-                    >CLOUDSTACK-4588</ulink></para></entry>
-              <entry><para>(VMware) VM deployment failed while creating a volume with null pointer
-                  exception.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4578"
-                    >CLOUDSTACK-4578</ulink></para></entry>
-              <entry><para>(VMware) SSVM is not getting created if one host is down in a
-                  cluster.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4551"
-                    >CLOUDSTACK-4551</ulink></para></entry>
-              <entry><para>Migrating the data volume from NFS to local storage does not change the
-                  underlying disk offering.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4550"
-                    >CLOUDSTACK-4550</ulink></para></entry>
-              <entry><para>Migration does not work in the case of bridge naming while upgrading KVM
-                  agents to version 4.2.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4549"
-                    >CLOUDSTACK-4549</ulink></para></entry>
-              <entry><para>Deploying VMs from template fails if the template is created from a
-                  snapshot.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4540"
-                    >CLOUDSTACK-4540</ulink></para></entry>
-              <entry><para>(VMware) When deploying 30 parallel VMs , 16 VMs fails to get deployed
-                  due to the following error: "VmDataCommand failed due to Exception:
-                  java.lang.Exception Message: Timed out in waiting SSH execution
-                result".</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4506"
-                    >CLOUDSTACK-4506</ulink></para></entry>
-              <entry><para>In a mixed hypervisor setup, destroying a VM whose host has been removed,
-                  throws a null pointer exception. The Root volume of that VM also is not deleted
-                  from the primary memory.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4442"
-                    >CLOUDSTACK-4442</ulink></para></entry>
-              <entry><para>Source NAT not applied when network starts up.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4405"
-                    >CLOUDSTACK-4405</ulink></para></entry>
-              <entry><para>(KVM) Migration between existing hosts and new hosts
-                fails.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4402"
-                    >CLOUDSTACK-4402</ulink></para></entry>
-              <entry><para>No options to delete the primary storage if the last host with which it
-                  was associated is already removed.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4366"
-                    >CLOUDSTACK-4366</ulink></para></entry>
-              <entry><para>(Ubuntu) Key translation fails for the Japanese keyboard for the Menu key
-                  and Caps Lock buttons.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4351"
-                    >CLOUDSTACK-4351</ulink></para></entry>
-              <entry><para>Host/Hypervisor System Requirements has misleading or premature note in
-                  the documentation.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4348"
-                    >CLOUDSTACK-4348</ulink></para></entry>
-              <entry><para>Regression truncation issues occurs when moving the cursor to the "plus"
-                  buttons.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4300"
-                    >CLOUDSTACK-4300</ulink></para></entry>
-              <entry><para>(KVM) System VMs are not coming up after 2.2.14 to 4.2
-                upgrade.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4292"
-                    >CLOUDSTACK-4292</ulink></para></entry>
-              <entry><para>The destroyedvm API failed with ArrayIndexexception while
-                  expunging.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4247"
-                    >CLOUDSTACK-4247</ulink></para></entry>
-              <entry><para>(VMWARE) Network read and write statistics always returns
-                zero.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4224"
-                    >CLOUDSTACK-4224</ulink></para></entry>
-              <entry><para>Deleting UCS returns unknown API.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4220"
-                    >CLOUDSTACK-4220</ulink></para></entry>
-              <entry><para>From 3.0.6 to 4.2 upgrade, Add VMWare DataCenter button is provided for
-                  legacy zones.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4201"
-                    >CLOUDSTACK-4201</ulink></para></entry>
-              <entry><para>The listServiceOfferings API does not take virtualmachineid parameter of
-                  SystemVM to return the Service Offerings available for the VM to change a Service
-                  Offering.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4200"
-                    >CLOUDSTACK-4200</ulink></para></entry>
-              <entry><para>The listSystemVMs API and listRouters API fail to return hypervisor
-                  property.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4148"
-                    >CLOUDSTACK-4148</ulink></para></entry>
-              <entry><para>The usage statistics are not triggered for Shared network.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4139"
-                    >CLOUDSTACK-4139</ulink></para></entry>
-              <entry><para>(VMWARE) Resizing the volumes fails if they are created from
-                  snapshot.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4137"
-                    >CLOUDSTACK-4137</ulink></para></entry>
-              <entry><para>(KVM): After removing a cluster, manage cluster will not bring KVM hosts
-                  to UP state. Manually restart the cloud-agent on KVM hosts.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4128"
-                    >CLOUDSTACK-4128</ulink></para></entry>
-              <entry><para>The System VMs start up does not check for existence of staging secondary
-                  storage in a zone.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4099"
-                    >CLOUDSTACK-4099</ulink></para></entry>
-              <entry><para>Update the systemvm templates in DevCloud2.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4095"
-                    >CLOUDSTACK-4095</ulink></para></entry>
-              <entry><para>Region ID is displayed within the Database Transaction
-                code.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4072"
-                    >CLOUDSTACK-4072</ulink></para></entry>
-              <entry><para>The mysql-connector-java rpm is required while upgrading from 2.2.14 to
-                  4.2.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4036"
-                    >CLOUDSTACK-4036</ulink></para></entry>
-              <entry><para>The UI remains in processing state and the queryAsyncJobResult is being
-                  called repeatedly for the scaleSystemVm API.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-4016"
-                    >CLOUDSTACK-4016</ulink></para></entry>
-              <entry><para>The listPublicIpAddresses lists the portable IP that was already
-                  transferred to a different Isolated network.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3968"
-                    >CLOUDSTACK-3968</ulink></para></entry>
-              <entry><para>Distributed Port groups are not deleted when guest networks are removed.
-                  The user account of this network is removed from &PRODUCT;</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3967"
-                    >CLOUDSTACK-3967</ulink></para></entry>
-              <entry><para>No support for usage statistics collection at the portable IP
-                  level</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3953"
-                    >CLOUDSTACK-3953</ulink></para></entry>
-              <entry><para>The usage statistics are not collected for GSLB rules.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3911"
-                    >CLOUDSTACK-3911</ulink></para></entry>
-              <entry><para>No check available while adding public range in a zone to see whether the
-                  same VLAN exists in a portable IP range.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3888"
-                    >CLOUDSTACK-3888</ulink></para></entry>
-              <entry><para>The UI does not return the mode (Strict/Preferred) when listing the
-                  ServiceOffering that uses ImplicitDedicationPlanner.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3808"
-                    >CLOUDSTACK-3808</ulink></para></entry>
-              <entry><para>Attaching volumes does not work when root is at the zone-level primary
-                  store and data at the cluster level or host level store.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3791"
-                    >CLOUDSTACK-3791</ulink></para></entry>
-              <entry><para>Download template fails with a null pointer exception.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3788"
-                    >CLOUDSTACK-3788</ulink></para></entry>
-              <entry><para>The weekly Snapshot is stuck in Allocated State.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3765"
-                    >CLOUDSTACK-3765</ulink></para></entry>
-              <entry><para>Upgrading CloudPlatform 4.2 build on centos5.5 does not
-                work.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3737"
-                    >CLOUDSTACK-3737</ulink></para></entry>
-              <entry><para>Uploaded volume is not getting deleted from secondary storage after
-                  attaching it to a guest VM.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3658"
-                    >CLOUDSTACK-3658</ulink></para></entry>
-              <entry><para>Several old object storage tables and columns are deprecated as a part of
-                  4.1 to 4.2 database upgrade.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3627"
-                    >CLOUDSTACK-3627</ulink></para></entry>
-              <entry><para>Public IP interface (eth2) is not getting configured with Redundant
-                  virtual router. The State is FAULT.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3608"
-                    >CLOUDSTACK-3608</ulink></para></entry>
-              <entry><para>The guest_os_hypervisor table in the database has repeated mappings of
-                  hypervisor and guest OS.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3583"
-                    >CLOUDSTACK-3583</ulink></para></entry>
-              <entry><para>Stopping the Management server does not remove the PID.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3565"
-                    >CLOUDSTACK-3565</ulink></para></entry>
-              <entry><para>Restarting libvirtd service leads to destroying the storage
-                pool.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3243"
-                    >CLOUDSTACK-3243</ulink></para></entry>
-              <entry><para>Wrong NFS mount point is given in the documentation.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-3138"
-                    >CLOUDSTACK-3138</ulink></para></entry>
-              <entry><para>Flaws in the documentation for the upgrade from 3.0.2 to
-                4.1.0.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2791"
-                    >CLOUDSTACK-2791</ulink></para></entry>
-              <entry><para>Installation instruction is wrong.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1986"
-                    >CLOUDSTACK-1986</ulink></para></entry>
-              <entry><para>Key translation fails for the following Japanese keyboard keys: ¥_,\ |,
-                  Muhenkan, Henkan, Hiragana/Katakana, Kanji Key, and Caps Lock.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1775"
-                    >CLOUDSTACK-1775</ulink></para></entry>
-              <entry><para>Events related to User/Domain/Account are not being generated expect for
-                  the USER-DISABLE,DOMAIN-DELETE and ACCOUNT.DISABLE events.</para></entry>
-            </row>
-            <row>
-              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-732"
-                    >CLOUDSTACK-732</ulink></para></entry>
-              <entry><para>KVM snapshot is not supported.</para></entry>
-            </row>
-          </tbody>
-        </tgroup>
-      </informaltable>
+      <para>This section includes a summary of known issues that were fixed in 4.2.0. For list of
+        known issues, see <ulink url="https://issues.apache.org/jira/issues/?filter=12324873">Known
+          Issues</ulink>.</para>
     </section>
   </chapter>
   <chapter id="upgrade-instructions">
