@@ -42,4 +42,6 @@ public interface UcsManager extends Manager, PluggableService {
     ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd);
     
     void deleteUcsManager(Long id);
+
+    UcsBladeResponse disassociateProfile(Long bladeId);
 }

@@ -618,6 +618,7 @@ listUcsProfiles=1
 listUcsBlades=1
 associateUcsProfileToBlade=1
 deleteUcsManager=1
+disassociateUcsProfileFromBlade=1
 
 #### New Load Balancer commands
 createLoadBalancer=15

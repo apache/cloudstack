@@ -30,17 +30,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.AddUcsManagerCmd;
-import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
-import org.apache.cloudstack.api.ListUcsBladeCmd;
-import org.apache.cloudstack.api.ListUcsManagerCmd;
-import org.apache.cloudstack.api.ListUcsProfileCmd;
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.DeleteUcsManagerCmd;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -296,7 +291,14 @@ public class UcsManagerImpl implements UcsManager {
         UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
         String res = client.call(cmd);
         List<UcsProfile> profiles = UcsProfile.fromXmlString(res);
-        return profiles;
+        List<UcsProfile> unassociated = new ArrayList<UcsProfile>();
+        for (UcsProfile p : profiles) {
+            if (isProfileAssociated(mgrvo.getId(), p.getDn())) {
+                continue;
+            }
+            unassociated.add(p);
+        }
+        return unassociated;
     }
 
     @Override
@@ -324,7 +326,19 @@ public class UcsManagerImpl implements UcsManager {
         return xo.get("outConfig.lsServer.dn");
     }
 
+
     private boolean isProfileAssociated(Long ucsMgrId, String dn) {
+        UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
+        UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
+        String cookie = getCookie(ucsMgrId);
+        String cmd = UcsCommands.configResolveDn(cookie, dn);
+        String res = client.call(cmd);
+        XmlObject xo = XmlObjectParser.parseFromString(res);
+
+        return xo.get("outConfig.lsServer.assocState").equals("associated");
+    }
+
+    private boolean isBladeAssociated(Long ucsMgrId, String dn) {
         UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
         UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
         String cookie = getCookie(ucsMgrId);
@@ -363,7 +377,7 @@ public class UcsManagerImpl implements UcsManager {
         int count = 0;
         int timeout = 600;
         while (count < timeout) {
-            if (isProfileAssociated(mgrvo.getId(), bvo.getDn())) {
+            if (isBladeAssociated(mgrvo.getId(), bvo.getDn())) {
                 break;
             }
 
@@ -504,6 +518,7 @@ public class UcsManagerImpl implements UcsManager {
         cmds.add(AddUcsManagerCmd.class);
         cmds.add(AssociateUcsProfileToBladeCmd.class);
         cmds.add(DeleteUcsManagerCmd.class);
+        cmds.add(DisassociateUcsProfileCmd.class);
         return cmds;
     }
 
@@ -517,4 +532,21 @@ public class UcsManagerImpl implements UcsManager {
         }
 		ucsDao.remove(id);
 	}
+
+    @Override
+    public UcsBladeResponse disassociateProfile(Long bladeId) {
+        UcsBladeVO blade = bladeDao.findById(bladeId);
+        UcsManagerVO mgrvo = ucsDao.findById(blade.getUcsManagerId());
+        UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
+        String cookie = getCookie(mgrvo.getId());
+        String cmd = UcsCommands.disassociateProfileFromBlade(cookie, blade.getProfileDn());
+        client.call(cmd);
+        cmd = UcsCommands.deleteProfile(cookie, blade.getProfileDn());
+        client = new UcsHttpClient(mgrvo.getUrl());
+        client.call(cmd);
+        blade.setProfileDn(null);
+        bladeDao.update(blade.getId(), blade);
+        UcsBladeResponse rsp = bladeVOToResponse(blade);
+        return rsp;
+    }
 }
