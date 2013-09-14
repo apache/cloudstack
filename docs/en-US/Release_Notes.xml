@@ -81,14 +81,6 @@ under the License.
             from a single central Management Server.</para>
           <para>Usage records can also be consolidated and tracked at the region level, creating
             reports or invoices for each geographic region.</para>
-          <mediaobject>
-            <imageobject>
-              <imagedata fileref="./images/region-overview.png"/>
-            </imageobject>
-            <textobject>
-              <phrase>region-overview.png: Nested structure of a region.</phrase>
-            </textobject>
-          </mediaobject>
         </section>
         <section id="object-store">
           <title>Object Storage Plugin Architecture</title>
@@ -106,7 +98,7 @@ under the License.
             that uses the object storage plugin capability introduced in &PRODUCT; 4.2. Several new
             pluggable service interfaces are available so that different storage providers can
             develop vendor-specific plugins based on the well-defined contracts that can be
-            seemlessly managed by &PRODUCT;.</para>
+            seamlessly managed by &PRODUCT;.</para>
         </section>
         <section id="zone-wide-primary-storage">
           <title>Zone-Wide Primary Storage</title>
@@ -153,14 +145,6 @@ under the License.
           a configuration file (plugins.js).</para>
         <para>The next time the user refreshes the UI in the browser, the plugin will appear under
           the Plugins button in the left navigation bar.</para>
-        <mediaobject>
-          <imageobject>
-            <imagedata fileref="./images/plugin4.jpg"/>
-          </imageobject>
-          <textobject>
-            <phrase>plugin4.jpg: The plugin appears in the UI</phrase>
-          </textobject>
-        </mediaobject>
       </section>
       <section id="networking">
         <title>Networking Enhancements</title>
@@ -192,9 +176,6 @@ under the License.
           <itemizedlist>
             <listitem>
               <para><xref linkend="kvm-vpc"/></para>
-            </listitem>
-            <listitem>
-              <para><xref linkend="deploy-vm-vpc"/></para>
             </listitem>
             <listitem>
               <para><xref linkend="add-loadbalancer-rule-vpc"/></para>
@@ -239,16 +220,8 @@ under the License.
               <para><xref linkend="blacklist-route"/></para>
             </listitem>
           </itemizedlist>
-          <section id="kvm-vpc">
-            <title>Support for KVM</title>
-            <para>VPC is now supported on KVM hypervisors.</para>
-          </section>
-          <section id="deploy-vm-vpc">
-            <title>Support for Simultaneously Deploying a VM on VPC and Multiple Shared
-              Networks</title>
-            <para>Support for the ability to simultaneously deploy a VM on a VPC tier and one or
-              more Shared networks is supported.</para>
-          </section>
+          <section id="kvm-vpc"><title>Support for KVM</title>VPC is now supported on KVM
+            hypervisors.</section>
           <section id="add-loadbalancer-rule-vpc">
             <title>Load Balancing Support for VPC</title>
             <para>In a VPC, you can configure two types of load balancing&mdash;external LB and
