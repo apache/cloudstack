@@ -1545,15 +1545,15 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	// return the disk chain (VMDK datastore paths) for cloned snapshot
-	public String[] cloneFromCurrentSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice,
+	public Pair<VirtualMachineMO, String[]> cloneFromCurrentSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice,
 		ManagedObjectReference morDs) throws Exception {
 		assert(morDs != null);
 		String[] disks = getCurrentSnapshotDiskChainDatastorePaths(diskDevice);
-		cloneFromDiskChain(clonedVmName, cpuSpeedMHz, memoryMb, disks, morDs);
-		return disks;
+		VirtualMachineMO clonedVm = cloneFromDiskChain(clonedVmName, cpuSpeedMHz, memoryMb, disks, morDs);
+		return new Pair<VirtualMachineMO, String[]>(clonedVm, disks);
 	}
 
-	public void cloneFromDiskChain(String clonedVmName, int cpuSpeedMHz, int memoryMb,
+	public VirtualMachineMO cloneFromDiskChain(String clonedVmName, int cpuSpeedMHz, int memoryMb,
 		String[] disks, ManagedObjectReference morDs) throws Exception {
 		assert(disks != null);
 	    assert(disks.length >= 1);
@@ -1576,6 +1576,7 @@ public class VirtualMachineMO extends BaseMO {
     	    vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
     	    clonedVmMo.configureVm(vmConfigSpec);
     	    bSuccess = true;
+    	    return clonedVmMo;
 		} finally {
 		    if(!bSuccess) {
 		        clonedVmMo.detachAllDisks();
