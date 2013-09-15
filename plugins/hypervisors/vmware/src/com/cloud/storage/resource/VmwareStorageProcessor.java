@@ -654,15 +654,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
+            Pair<VirtualMachineMO, String[]> cloneResult = vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
                     VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-            if(clonedVm == null) {
-                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
+            clonedVm = cloneResult.first();
+            
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
 
             long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
@@ -978,17 +973,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            String disks[] = vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
-                    VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
-            clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-            if(clonedVm == null) {
-                String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
+            Pair<VirtualMachineMO, String[]> cloneResult = vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
+                VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+            clonedVm = cloneResult.first();
+            String disks[] = cloneResult.second();
 
             clonedVm.exportVm(exportPath, exportName, false, false);
-            
             return new Pair<String, String[]>(volumeDeviceInfo.second(), disks);
         } finally {
             if(clonedVm != null) {
