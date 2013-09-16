@@ -375,7 +375,7 @@ public class UcsManagerImpl implements UcsManager {
         UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
         String res = client.call(ucscmd);
         int count = 0;
-        int timeout = 600;
+        int timeout = 3600;
         while (count < timeout) {
             if (isBladeAssociated(mgrvo.getId(), bvo.getDn())) {
                 break;
