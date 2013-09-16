@@ -14032,25 +14032,25 @@
                                                                 	/*
                                                                 	json = {
                                                                 		    "queryasyncjobresultresponse": {
-                                                                		        "accountid": "b24f6e36-f0ca-11e2-8c16-d637902e3581",
-                                                                		        "userid": "b24f7d8d-f0ca-11e2-8c16-d637902e3581",
-                                                                		        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
+                                                                		        "accountid": "835fb2d5-0b76-11e3-9350-f4f3e49b5dfe",
+                                                                		        "userid": "835fc0e5-0b76-11e3-9350-f4f3e49b5dfe",
+                                                                		        "cmd": "org.apache.cloudstack.api.DisassociateUcsProfileCmd",
                                                                 		        "jobstatus": 1,
                                                                 		        "jobprocstatus": 0,
                                                                 		        "jobresultcode": 0,
                                                                 		        "jobresulttype": "object",
                                                                 		        "jobresult": {
                                                                 		            "ucsblade": {
-                                                                		                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
-                                                                		                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                                		                "bladedn": "sys/chassis-1/blade-4"
+                                                                		                "id": "f8d08575-7a1c-4f79-a588-d129c38bcc4f",
+                                                                		                "ucsmanagerid": "0d87c1a6-5664-425c-9024-2ddd9605d260",
+                                                                		                "bladedn": "sys/chassis-1/blade-1"
                                                                 		            }
                                                                 		        },
-                                                                		        "created": "2013-07-26T13:53:01-0700",
-                                                                		        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                                		        "created": "2013-09-13T22:17:29-0700",
+                                                                		        "jobid": "2c3698a8-39ac-43e6-8ade-86eb2d3726a0"
                                                                 		    }
-                                                                		};
-                                                                	*/
+                                                                		}; 
+                                                                	*/       
                                                                 	//for testing only (end)
                                                                 	                                                                	                                  	    
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
