@@ -13833,15 +13833,13 @@
                                             	*/
                                             	//for testing only (end)
                                             	
-                                            	var data = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
-                                                for (var i = 0; i < data.length; i++) {
-                                                    var array1 = data[i].bladedn.split('/');
-                                                    data[i].chassis = array1[1];
-                                                    data[i].bladeid = array1[2];
+                                            	var items = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
+                                                for (var i = 0; i < items.length; i++) {                                                    
+                                                	addExtraPropertiesToUcsBladeObject(items[i]);   
                                                 }
                                                 args.response.success({
                                                 	actionFilter: bladeActionfilter,
-                                                    data: data
+                                                    data: items
                                                 });
                                             }
                                         });
@@ -13981,7 +13979,8 @@
                                                                 		};
                                                                 	*/
                                                                 	//for testing only (end)
-                                                                	                                                                	                                  	    
+                                                                	 
+                                                                	addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);                                                                	
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
                                                             }
@@ -14052,7 +14051,8 @@
                                                                 		}; 
                                                                 	*/       
                                                                 	//for testing only (end)
-                                                                	                                                                	                                  	    
+                                                                	 
+                                                                	addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);         
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
                                                             }
