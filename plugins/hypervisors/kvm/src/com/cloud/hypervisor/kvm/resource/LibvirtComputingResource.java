@@ -2878,17 +2878,34 @@ ServerResource {
         Connect dconn = null;
         Domain destDomain = null;
         Connect conn = null;
+        String xmlDesc = null;
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
-            dm = conn.domainLookupByName(vmName);
+            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
+                    .getBytes()));
+            /*
+                We replace the private IP address with the address of the destination host.
+                This is because the VNC listens on the private IP address of the hypervisor,
+                but that address is ofcourse different on the target host.
+
+                MigrateCommand.getDestinationIp() returns the private IP address of the target
+                hypervisor. So it's safe to use.
+
+                The Domain.migrate method from libvirt supports passing a different XML
+                description for the instance to be used on the target host.
+
+                This is supported by libvirt-java from version 0.50.0
+            */
+            xmlDesc = dm.getXMLDesc(0).replace(_privateIp, cmd.getDestinationIp());
+
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp()
                     + "/system");
             /*
              * Hard code lm flags: VIR_MIGRATE_LIVE(1<<0) and
              * VIR_MIGRATE_PERSIST_DEST(1<<3)
              */
-            destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), vmName, "tcp:"
+            destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), xmlDesc, vmName, "tcp:"
                     + cmd.getDestinationIp(), _migrateSpeed);
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
@@ -3441,7 +3458,7 @@ ServerResource {
 
          //add the VNC port passwd here, get the passwd from the vmInstance.
         String passwd = vmTO.getVncPassword();
-        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, null, passwd,
+        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, vmTO.getVncAddr(), passwd,
                 null);
         devices.addDevice(grap);
 
