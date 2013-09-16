@@ -6862,7 +6862,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vbdr.bootable = false;
                 vbdr.unpluggable = true;
             }
-            vbdr.userdevice = new Long(volumeTO.getDeviceId()).toString();
+            vbdr.userdevice = Long.toString(volumeTO.getDeviceId());
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
             VBD.create(conn, vbdr);
